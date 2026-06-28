@@ -1,0 +1,14 @@
+name = "skillforge-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "skillforge-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+GITHUB_CLIENT_ID = "REPLACE_WITH_YOUR_GITHUB_CLIENT_ID"
+FRONTEND_URL = "https://MshariSQ.github.io/skillforge"
+WORKER_URL = "https://skillforge-api.REPLACE_WITH_YOUR_SUBDOMAIN.workers.dev"
