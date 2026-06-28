@@ -41,7 +41,14 @@ function HeroSection() {
     window.location.href = `${BASE}/roadmaps/?q=${q}`;
   }
 
-  const tags = ["Cyber Security", "AI", "Cloud", "DevOps", "Frontend", "Data Science"];
+  const tags = [
+    { label: "Cyber Security", slug: "cyber-security" },
+    { label: "AI", slug: "artificial-intelligence" },
+    { label: "Cloud", slug: "cloud-computing" },
+    { label: "DevOps", slug: "devops" },
+    { label: "Frontend", slug: "frontend" },
+    { label: "Data Science", slug: "data-science" },
+  ];
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -96,11 +103,11 @@ function HeroSection() {
         <div className="flex flex-wrap justify-center gap-2 mb-14">
           {tags.map((tag) => (
             <a
-              key={tag}
-              href={`${BASE}/roadmaps/?q=${encodeURIComponent(tag.toLowerCase())}`}
+              key={tag.slug}
+              href={`${BASE}/roadmaps/${tag.slug}/`}
               className="px-3 py-1 text-sm text-gray-500 hover:text-white border border-[#21262d] hover:border-gray-600 rounded-full transition-all"
             >
-              {tag}
+              {tag.label}
             </a>
           ))}
         </div>

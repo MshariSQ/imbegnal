@@ -1,6 +1,13 @@
 import { notFound } from "next/navigation";
 import { roadmaps } from "@/data/roadmaps";
 import { cyberSecurityNodes } from "@/data/roadmap-nodes/cyber-security";
+import { frontendNodes } from "@/data/roadmap-nodes/frontend";
+import { backendNodes } from "@/data/roadmap-nodes/backend";
+import { artificialIntelligenceNodes } from "@/data/roadmap-nodes/artificial-intelligence";
+import { dataScienceNodes } from "@/data/roadmap-nodes/data-science";
+import { cloudComputingNodes } from "@/data/roadmap-nodes/cloud-computing";
+import { devopsNodes } from "@/data/roadmap-nodes/devops";
+import { uiUxNodes } from "@/data/roadmap-nodes/ui-ux";
 import type { Node, Edge } from "reactflow";
 import type { RoadmapNodeInfo } from "@/data/roadmap-nodes/cyber-security";
 import { ArrowLeft } from "lucide-react";
@@ -15,6 +22,13 @@ const STATUS_COLORS: Record<string, { border: string; bg: string }> = {
 // Map of slug → node data
 const NODE_DATA: Record<string, RoadmapNodeInfo[]> = {
   "cyber-security": cyberSecurityNodes,
+  "frontend": frontendNodes,
+  "backend": backendNodes,
+  "artificial-intelligence": artificialIntelligenceNodes,
+  "data-science": dataScienceNodes,
+  "cloud-computing": cloudComputingNodes,
+  "devops": devopsNodes,
+  "ui-ux": uiUxNodes,
 };
 
 // Build React Flow nodes/edges from node data
