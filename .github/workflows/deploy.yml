@@ -31,7 +31,7 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.WORKER_URL }}
-          NEXT_PUBLIC_GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          NEXT_PUBLIC_GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
           NEXT_PUBLIC_BASE_PATH: /skillforge
 
       - uses: actions/upload-pages-artifact@v3
