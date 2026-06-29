@@ -6,6 +6,7 @@ import { getCurrentUser, signOut, type AuthUser } from "@/lib/auth";
 import { getLoginUrl } from "@/lib/api";
 
 const navLinks = [
+  { label: "Home", href: "/" },
   { label: "Roadmaps", href: "/roadmaps" },
   { label: "Certifications", href: "/certifications" },
   { label: "Courses", href: "/courses" },
