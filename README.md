@@ -1,6 +1,5 @@
 # IMBEGNAL
 
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > Free and open-source platform for learning roadmaps, certifications, courses, and career guidance.
@@ -18,23 +17,8 @@ Instead of searching across 20 websites, find every roadmap, certification, cour
 - GitHub login + user profiles
 - Fully responsive dark UI (GitHub + Vercel style)
 
-## Tech Stack
-
-| Layer | Tech |
-|---|---|
-| Frontend | Next.js · TypeScript · Tailwind CSS · React Flow · Framer Motion |
-| Backend | Cloudflare Workers · D1 SQLite |
-| Auth | GitHub OAuth |
-| Deploy | GitHub Pages + Cloudflare |
-
-## Run Locally
-
-```bash
-git clone https://github.com/MshariSQ/skillforge.git
-cd skillforge
-npm install
-npm run dev
-```
+## How to Contribute
+See the guid on how to contribute [here](CONTRIBUTING.md)
 
 ## License
 
