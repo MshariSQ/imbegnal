@@ -1,6 +1,6 @@
-# Contributing to SkillForge
+# Contributing to IMBEGNAL
 
-Thank you for taking the time to contribute! SkillForge is a free, open-source learning platform and every contribution — big or small — makes it better for learners worldwide.
+Thank you for taking the time to contribute! IMBEGNAL is a free, open-source learning platform and every contribution — big or small — makes it better for learners worldwide.
 
 ---
 

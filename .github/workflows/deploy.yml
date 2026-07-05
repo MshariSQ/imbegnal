@@ -32,7 +32,8 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.WORKER_URL }}
           NEXT_PUBLIC_GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
-          NEXT_PUBLIC_BASE_PATH: /skillforge
+          # Served from the root of imbegnal.com — no basePath prefix.
+          NEXT_PUBLIC_BASE_PATH: ""
 
       - uses: actions/upload-pages-artifact@v3
         with:

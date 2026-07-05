@@ -3,7 +3,7 @@
 import { Zap, ExternalLink } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export default function Footer() {
   const { tx } = useLang();
@@ -47,8 +47,8 @@ export default function Footer() {
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                 <Zap size={16} className="text-emerald-400" />
               </div>
-              <span className="text-lg font-bold">
-                Skill<span className="text-emerald-400">Forge</span>
+              <span className="text-lg font-black tracking-wide text-white">
+                IMBEGNAL
               </span>
             </a>
             <p className="text-gray-500 text-sm leading-relaxed mb-4">{tx.footer.tagline}</p>
@@ -88,7 +88,7 @@ export default function Footer() {
 
         <div className="pt-6 border-t border-[#21262d] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-600">
-            © {new Date().getFullYear()} SkillForge. {tx.footer.copyrightPrefix}{" "}
+            © {new Date().getFullYear()} IMBEGNAL. {tx.footer.copyrightPrefix}{" "}
             <a href="https://github.com/MshariSQ/skillforge/blob/main/LICENSE"
               target="_blank" rel="noopener noreferrer"
               className="hover:text-gray-400 underline underline-offset-2">

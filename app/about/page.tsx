@@ -3,7 +3,7 @@
 import { Zap, TrendingUp, Users, Award, Globe, BookOpen, ExternalLink } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export default function AboutPage() {
   const { tx } = useLang();

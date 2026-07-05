@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: "/skillforge",
+  // Served from the root of the custom domain imbegnal.com — no basePath.
   trailingSlash: true,
   images: { unoptimized: true },
 };

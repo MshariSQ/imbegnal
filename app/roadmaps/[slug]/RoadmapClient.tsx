@@ -111,7 +111,7 @@ export default function RoadmapClient({
   const selectedIndex = nodeData.findIndex((n) => n.id === (selected?.id ?? ""));
   const nextNode = nodeData[selectedIndex + 1] ?? null;
   const user = getCurrentUser();
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   const s = STATUS_COLORS[selected?.status ?? "required"];
   const statusLabel = r.statusLabels[selected?.status as keyof typeof r.statusLabels] ?? selected?.status;

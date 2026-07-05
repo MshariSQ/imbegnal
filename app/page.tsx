@@ -12,7 +12,7 @@ import { courses } from "@/data/courses";
 import { getStats } from "@/lib/api";
 import { useLang } from "@/lib/lang-context";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 function HeroSection() {
   const [query, setQuery] = useState("");

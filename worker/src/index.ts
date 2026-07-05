@@ -75,7 +75,7 @@ async function readJson(req: Request): Promise<Record<string, unknown> | null> {
 }
 
 function corsHeaders(origin: string): Record<string, string> {
-  const allowed = ["https://msharisq.github.io", "http://localhost:3000", "http://localhost:3001"];
+  const allowed = ["https://imbegnal.com", "https://www.imbegnal.com", "https://msharisq.github.io", "http://localhost:3000", "http://localhost:3001"];
   return {
     "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : allowed[0],
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
@@ -217,7 +217,7 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
     if (!access_token) return fail("token exchange failed");
 
     const ghUser = await (await fetch("https://api.github.com/user", {
-      headers: { Authorization: `Bearer ${access_token}`, "User-Agent": "SkillForge" },
+      headers: { Authorization: `Bearer ${access_token}`, "User-Agent": "IMBEGNAL" },
     })).json() as { id: number; login: string; name: string; avatar_url: string; email: string; bio: string };
 
     await env.DB.prepare(`

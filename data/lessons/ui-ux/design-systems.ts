@@ -41,7 +41,7 @@ A design system has two layers:
 - **Collaboration** — designers and developers share one language. A "Primary Button" means the exact same thing in Figma and in code.
 - **Easy updates** — rebrand? Change the tokens, and thousands of screens update at once.
 
-Famous examples: Google's **Material Design**, IBM's **Carbon**, Shopify's **Polaris**. This very SkillForge site has an informal one — consistent emerald accents, the same card style, one spacing rhythm.
+Famous examples: Google's **Material Design**, IBM's **Carbon**, Shopify's **Polaris**. This very IMBEGNAL site has an informal one — consistent emerald accents, the same card style, one spacing rhythm.
 
 **The big idea unifying the whole track:** *define once, reuse everywhere.* It's the same principle as functions, React components, Tailwind utilities, and Figma components — a design system applies it to your entire product's visual language. Master this, and you can build interfaces that are consistent, fast to produce, and easy to maintain — exactly what companies pay senior designers and frontend engineers to do.`,
         ar: `## طقم ليغو لمنتجك 🧱
@@ -60,7 +60,7 @@ Famous examples: Google's **Material Design**, IBM's **Carbon**, Shopify's **Pol
 - **التعاون** — المصمّمون والمطوّرون يتشاركون لغة واحدة. "الزر الأساسي" يعني الشيء نفسه بالضبط في Figma والكود.
 - **التحديثات السهلة** — إعادة علامة؟ غيّر الرموز، فتتحدث آلاف الشاشات دفعة واحدة.
 
-أمثلة شهيرة: **Material Design** من قوقل، و**Carbon** من IBM، و**Polaris** من Shopify. وموقع SkillForge نفسه له واحد غير رسمي — لمسات زمردية متسقة، نفس نمط البطاقة، إيقاع مسافات واحد.
+أمثلة شهيرة: **Material Design** من قوقل، و**Carbon** من IBM، و**Polaris** من Shopify. وموقع IMBEGNAL نفسه له واحد غير رسمي — لمسات زمردية متسقة، نفس نمط البطاقة، إيقاع مسافات واحد.
 
 **الفكرة الكبرى التي توحّد المسار كله:** *عرّف مرة، أعد الاستخدام في كل مكان.* إنه نفس مبدأ الدوال ومكوّنات React وأدوات Tailwind ومكوّنات Figma — نظام التصميم يطبّقه على لغة منتجك البصرية كاملة. أتقن هذا فتبني واجهات متسقة، سريعة الإنتاج، وسهلة الصيانة — بالضبط ما تدفع الشركات لكبار المصمّمين ومهندسي الواجهات مقابله.`,
       },

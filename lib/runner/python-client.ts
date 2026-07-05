@@ -12,7 +12,7 @@ let worker: Worker | null = null;
 
 function getWorker(): Worker {
   if (!worker) {
-    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+    const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
     worker = new Worker(`${base}/pyodide-worker.js`);
   }
   return worker;

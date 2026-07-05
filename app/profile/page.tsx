@@ -11,7 +11,7 @@ import { roadmaps } from "@/data/roadmaps";
 import { certifications } from "@/data/certifications";
 import { courses } from "@/data/courses";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 interface ProgressRow { roadmap_id: string; completed: number }
 interface Profile {

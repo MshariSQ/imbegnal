@@ -10,5 +10,5 @@ database_id = "5967e413-1c06-4cb1-930b-5efa1a928fcd"
 
 [vars]
 GITHUB_CLIENT_ID = "Ov23liXa9L5aBSKMyvwi"
-FRONTEND_URL = "https://MshariSQ.github.io/skillforge"
+FRONTEND_URL = "https://imbegnal.com"
 WORKER_URL = "https://skillforge-api.skillforge.workers.dev"

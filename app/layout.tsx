@@ -18,7 +18,7 @@ const tajawal = Tajawal({
 });
 
 export const metadata: Metadata = {
-  title: "SkillForge — Learn Smarter, Build Your Career",
+  title: "IMBEGNAL — Learn Smarter, Build Your Career",
   description:
     "Free and open-source platform for learning roadmaps, certifications, courses, and career guidance. Everything you need in one place.",
   keywords: ["roadmap", "certifications", "courses", "career", "learning", "tech"],

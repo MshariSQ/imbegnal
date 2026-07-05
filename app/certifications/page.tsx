@@ -4,7 +4,7 @@ import { useState } from "react";
 import { certifications } from "@/data/certifications";
 import { Award, ChevronRight, Star, Search } from "lucide-react";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const FIELDS = ["All", ...Array.from(new Set(certifications.map((c) => c.field))).sort()];
 

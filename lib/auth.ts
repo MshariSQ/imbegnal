@@ -44,5 +44,6 @@ export function getCurrentUser(): AuthUser | null {
 
 export function signOut(): void {
   removeToken();
-  window.location.href = "/skillforge/";
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  window.location.href = `${base}/`;
 }

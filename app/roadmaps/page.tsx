@@ -4,7 +4,7 @@ import { roadmaps } from "@/data/roadmaps";
 import { Clock, Users, ArrowRight, TrendingUp } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const levelColors: Record<string, string> = {
   Beginner: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",

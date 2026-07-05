@@ -1,4 +1,4 @@
-# SkillForge
+# IMBEGNAL
 
 [![Users](https://skillforge-api.REPLACE_WITH_YOUR_SUBDOMAIN.workers.dev/api/badge)](https://MshariSQ.github.io/skillforge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -7,7 +7,7 @@
 
 **Live:** https://MshariSQ.github.io/skillforge
 
-## What is SkillForge?
+## What is IMBEGNAL?
 
 Instead of searching across 20 websites, find every roadmap, certification, course, YouTube resource, book, and career path — all in one place, completely free.
 

@@ -29,7 +29,7 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "/skillforge";
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   const navLinks = [
     { label: tx.nav.home, href: "/" },
@@ -51,8 +51,8 @@ export default function Navbar() {
           <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
             <Zap size={16} className="text-emerald-400" />
           </div>
-          <span className="text-lg font-bold tracking-tight">
-            Skill<span className="text-emerald-400">Forge</span>
+          <span className="text-lg font-black tracking-wide text-white">
+            IMBEGNAL
           </span>
         </a>
 
