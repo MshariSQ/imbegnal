@@ -64,8 +64,8 @@ By participating in this project you agree to be respectful, constructive, and w
 
 ```bash
 # 1. Fork the repo on GitHub, then clone your fork
-git clone https://github.com/<your-username>/skillforge.git
-cd skillforge
+git clone https://github.com/<your-username>/imbegnal.git
+cd imbegnal
 
 # 2. Install dependencies
 npm install
@@ -74,7 +74,7 @@ npm install
 npm run dev
 ```
 
-The app runs at `http://localhost:3000`. There is no basePath prefix in development, so URLs look like `/roadmaps/frontend/` instead of `/skillforge/roadmaps/frontend/`.
+The app runs at `http://localhost:3000`. There is no basePath prefix in development, so URLs look like `/roadmaps/frontend/` instead of `/imbegnal/roadmaps/frontend/`.
 
 ### Build check
 
@@ -99,7 +99,7 @@ All TypeScript errors must be resolved before submitting.
 ## Project Structure
 
 ```
-skillforge/
+imbegnal/
 ├── app/                     # Next.js App Router pages
 │   ├── page.tsx             # Homepage
 │   ├── roadmaps/
@@ -359,7 +359,7 @@ docs: clarify node status guide in CONTRIBUTING
 
 ## Reporting Bugs
 
-Open an issue at [github.com/MshariSQ/skillforge/issues](https://github.com/MshariSQ/skillforge/issues) and include:
+Open an issue at [github.com/MshariSQ/imbegnal/issues](https://github.com/MshariSQ/imbegnal/issues) and include:
 
 - What you expected to happen
 - What actually happened
