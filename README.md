@@ -1,11 +1,11 @@
 # IMBEGNAL
 
-[![Users](https://skillforge-api.REPLACE_WITH_YOUR_SUBDOMAIN.workers.dev/api/badge)](https://MshariSQ.github.io/skillforge)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > Free and open-source platform for learning roadmaps, certifications, courses, and career guidance.
 
-**Live:** https://MshariSQ.github.io/skillforge
+**Live:** https://imbegnal.com
 
 ## What is IMBEGNAL?
 
