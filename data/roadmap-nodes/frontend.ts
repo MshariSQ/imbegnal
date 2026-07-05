@@ -84,6 +84,18 @@ export const frontendNodes: RoadmapNodeInfo[] = [
     },
   },
   {
+    id: "getting-paid",
+    label: "Getting Paid: Freelance & Jobs",
+    description: "Turn your skills into income. Build a portfolio that converts, price yourself right, win your first clients on Mostaql/Upwork, and avoid the classic scams. The lesson every self-taught developer needs.",
+    status: "important",
+    resources: {
+      youtube: { title: "How to Get Your First Freelance Client", url: "https://www.youtube.com/watch?v=Pk3QLplgleg", provider: "Traversy Media", tags: ["Free", "Recommended"], duration: "20m" },
+      course: { title: "Mostaql — Arabic Freelance Marketplace", url: "https://mostaql.com", provider: "Hsoub", tags: ["Free", "Official"] },
+      book: { title: "The Freelancer's Bible", url: "https://www.amazon.com/Freelancers-Bible-Everything-Need-Know/dp/0761164888", provider: "Sara Horowitz", tags: ["Recommended"] },
+      docs: { title: "Upwork — Getting Started Guide", url: "https://www.upwork.com/resources/how-to-get-started-on-upwork", tags: ["Free", "Official"] },
+    },
+  },
+  {
     id: "frontend-testing",
     label: "Testing & Performance",
     description: "Jest, React Testing Library, Lighthouse, Core Web Vitals, and bundle optimization. Untested and slow frontends don't survive production — these skills separate juniors from seniors.",

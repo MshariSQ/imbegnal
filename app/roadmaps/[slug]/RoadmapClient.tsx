@@ -1,12 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PlayCircle, BookOpen, Award, FileText, ExternalLink, CheckCircle, ArrowLeft } from "lucide-react";
+import dynamic from "next/dynamic";
+import { PlayCircle, BookOpen, Award, FileText, ExternalLink, CheckCircle, ArrowLeft, GraduationCap, Link2 } from "lucide-react";
 import type { RoadmapNodeInfo } from "@/data/roadmap-nodes/cyber-security";
+import type { Lesson } from "@/data/lessons/types";
+import { hasLesson, loadLesson } from "@/data/lessons";
 import { roadmaps } from "@/data/roadmaps";
 import { getToken, getCurrentUser } from "@/lib/auth";
 import { getProgress, markNodeDone, markNodeUndone } from "@/lib/api";
 import { useLang } from "@/lib/lang-context";
+
+const LessonView = dynamic(() => import("@/components/lesson/LessonView"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center gap-2 text-gray-500 text-sm py-8">
+      <span className="w-4 h-4 border-2 border-emerald-500/40 border-t-emerald-400 rounded-full animate-spin" />
+    </div>
+  ),
+});
 
 const STATUS_COLORS: Record<string, { border: string; bg: string }> = {
   required:  { border: "#10b981", bg: "#10b98120" },
@@ -69,8 +81,12 @@ export default function RoadmapClient({
   const [selectedId, setSelectedId] = useState(nodeData[0]?.id ?? "");
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  // per-node tab choice; the effective tab is derived so switching nodes needs no effect
+  const [tabByNode, setTabByNode] = useState<Record<string, "lesson" | "resources">>({});
+  const [lesson, setLesson] = useState<Lesson | null>(null);
   const { tx, lang } = useLang();
   const r = tx.roadmap;
+  const L = tx.lesson;
 
   useEffect(() => {
     const token = getToken();
@@ -79,6 +95,16 @@ export default function RoadmapClient({
       .then(({ completed: ids }) => setCompleted(new Set(ids)))
       .catch(() => {});
   }, [roadmapId]);
+
+  // Load the lesson (if any) whenever the selected node changes
+  useEffect(() => {
+    if (!hasLesson(roadmapId, selectedId)) return;
+    let cancelled = false;
+    loadLesson(roadmapId, selectedId).then((l) => {
+      if (!cancelled && l) setLesson(l);
+    });
+    return () => { cancelled = true; };
+  }, [roadmapId, selectedId]);
 
   const roadmapMeta = roadmaps.find((rm) => rm.id === roadmapId);
   const selected = nodeData.find((n) => n.id === selectedId) ?? nodeData[0];
@@ -89,6 +115,10 @@ export default function RoadmapClient({
 
   const s = STATUS_COLORS[selected?.status ?? "required"];
   const statusLabel = r.statusLabels[selected?.status as keyof typeof r.statusLabels] ?? selected?.status;
+  const nodeHasLesson = hasLesson(roadmapId, selected?.id ?? "");
+  const activeTab = nodeHasLesson ? (tabByNode[selected?.id ?? ""] ?? "lesson") : "resources";
+  // the stored lesson may still belong to the previously selected node
+  const currentLesson = lesson && lesson.nodeId === selected?.id ? lesson : null;
 
   const STATUS_GROUPS = [
     { key: "required",  label: r.groups.required,  color: "#10b981" },
@@ -116,6 +146,15 @@ export default function RoadmapClient({
         return next;
       });
     } finally { setBusy(false); }
+  }
+
+  // Auto-mark the node complete when all lesson exercises + quizzes pass.
+  // Works anonymously (local state); syncs to the server when signed in.
+  function handleLessonComplete() {
+    const nodeId = selected.id;
+    setCompleted((prev) => new Set(prev).add(nodeId));
+    const token = getToken();
+    if (token) markNodeDone(roadmapId, nodeId, token).catch(() => {});
   }
 
   return (
@@ -161,7 +200,7 @@ export default function RoadmapClient({
                   const active = node.id === selectedId;
                   return (
                     <button key={node.id} onClick={() => setSelectedId(node.id)}
-                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-left transition-all border-s-2 ${
+                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-start transition-all border-s-2 ${
                         active ? "bg-emerald-500/10 text-emerald-400 border-emerald-500"
                           : "text-gray-500 border-transparent hover:bg-white/5 hover:text-gray-300"
                       }`}>
@@ -171,7 +210,10 @@ export default function RoadmapClient({
                       }`}>
                         {done && "✓"}
                       </div>
-                      <span className={`truncate text-xs ${active ? "font-semibold" : "font-medium"}`}>{node.label}</span>
+                      <span className={`truncate text-xs flex-1 ${active ? "font-semibold" : "font-medium"}`}>{node.label}</span>
+                      {hasLesson(roadmapId, node.id) && (
+                        <GraduationCap size={12} className={active ? "text-emerald-400" : "text-gray-600"} />
+                      )}
                     </button>
                   );
                 })}
@@ -227,19 +269,62 @@ export default function RoadmapClient({
                 </div>
               </div>
 
-              <div className="px-10 py-8">
-                <div className="flex items-center gap-2 mb-6">
-                  <BookOpen size={14} className="text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-white">{r.learningResources}</h3>
+              {/* Tabs (only when the node has a lesson) */}
+              {nodeHasLesson && (
+                <div className="px-10 border-b border-[#21262d] flex gap-1">
+                  <button
+                    onClick={() => setTabByNode((prev) => ({ ...prev, [selected.id]: "lesson" }))}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-all ${
+                      activeTab === "lesson"
+                        ? "border-emerald-500 text-emerald-400"
+                        : "border-transparent text-gray-500 hover:text-gray-300"
+                    }`}
+                  >
+                    <GraduationCap size={15} /> {L.tabLesson}
+                  </button>
+                  <button
+                    onClick={() => setTabByNode((prev) => ({ ...prev, [selected.id]: "resources" }))}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-all ${
+                      activeTab === "resources"
+                        ? "border-emerald-500 text-emerald-400"
+                        : "border-transparent text-gray-500 hover:text-gray-300"
+                    }`}
+                  >
+                    <Link2 size={15} /> {L.tabResources}
+                  </button>
                 </div>
-                <div className="flex flex-col gap-5 max-w-2xl">
-                  <ResourceCard icon={<PlayCircle size={11} className="text-red-400" />} type={r.resourceTypes.youtube} resource={selected.resources.youtube} />
-                  <ResourceCard icon={<BookOpen size={11} className="text-blue-400" />} type={r.resourceTypes.course} resource={selected.resources.course} />
-                  <ResourceCard icon={<Award size={11} className="text-amber-400" />} type={r.resourceTypes.certification} resource={selected.resources.certification} />
-                  <ResourceCard icon={<FileText size={11} className="text-purple-400" />} type={r.resourceTypes.book} resource={selected.resources.book} />
-                  <ResourceCard icon={<ExternalLink size={11} className="text-gray-400" />} type={r.resourceTypes.docs} resource={selected.resources.docs} />
+              )}
+
+              {nodeHasLesson && activeTab === "lesson" ? (
+                <div className="px-10 py-8">
+                  {currentLesson ? (
+                    <LessonView
+                      key={selected.id}
+                      lesson={currentLesson}
+                      roadmapId={roadmapId}
+                      onLessonComplete={handleLessonComplete}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 text-gray-500 text-sm py-8">
+                      <span className="w-4 h-4 border-2 border-emerald-500/40 border-t-emerald-400 rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="px-10 py-8">
+                  <div className="flex items-center gap-2 mb-6">
+                    <BookOpen size={14} className="text-emerald-400" />
+                    <h3 className="text-sm font-semibold text-white">{r.learningResources}</h3>
+                  </div>
+                  <div className="flex flex-col gap-5 max-w-2xl">
+                    <ResourceCard icon={<PlayCircle size={11} className="text-red-400" />} type={r.resourceTypes.youtube} resource={selected.resources.youtube} />
+                    <ResourceCard icon={<BookOpen size={11} className="text-blue-400" />} type={r.resourceTypes.course} resource={selected.resources.course} />
+                    <ResourceCard icon={<Award size={11} className="text-amber-400" />} type={r.resourceTypes.certification} resource={selected.resources.certification} />
+                    <ResourceCard icon={<FileText size={11} className="text-purple-400" />} type={r.resourceTypes.book} resource={selected.resources.book} />
+                    <ResourceCard icon={<ExternalLink size={11} className="text-gray-400" />} type={r.resourceTypes.docs} resource={selected.resources.docs} />
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500 text-sm">

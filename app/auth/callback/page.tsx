@@ -10,7 +10,11 @@ function CallbackHandler() {
   const params = useSearchParams();
 
   useEffect(() => {
-    const token = params.get("token");
+    // The worker delivers the token in the URL fragment (#token=...) so it never
+    // hits server logs or the Referer header. Query param kept as a fallback
+    // for the transition window until the worker redeploy.
+    const hashToken = new URLSearchParams(window.location.hash.slice(1)).get("token");
+    const token = hashToken ?? params.get("token");
     const error = params.get("error");
 
     if (error || !token) {
@@ -25,6 +29,8 @@ function CallbackHandler() {
     }
 
     saveToken(token);
+    // Wipe the token from the address bar / history before navigating on.
+    window.history.replaceState(null, "", window.location.pathname);
     router.replace("/");
   }, [params, router]);
 

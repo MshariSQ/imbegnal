@@ -40,9 +40,38 @@ async function verifyJWT(token: string, secret: string): Promise<Record<string, 
     const valid = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(`${header}.${body}`));
     if (!valid) return null;
     const p = JSON.parse(b64urlDecode(body));
-    if (p.exp && Date.now() / 1000 > p.exp) return null;
+    // Tokens without an expiry would verify forever — reject them outright.
+    if (typeof p.exp !== "number") return null;
+    if (Date.now() / 1000 > p.exp) return null;
     return p;
   } catch { return null; }
+}
+
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+// Best-effort per-isolate sliding window. Not global (each Worker isolate has
+// its own memory) but free and good enough at this scale.
+const RATE_GENERAL = { limit: 60, windowMs: 60_000 };
+const RATE_AUTH = { limit: 10, windowMs: 60_000 };
+const rateBuckets = new Map<string, number[]>();
+
+function rateLimited(ip: string, isAuth: boolean): boolean {
+  const { limit, windowMs } = isAuth ? RATE_AUTH : RATE_GENERAL;
+  const now = Date.now();
+  const key = `${isAuth ? "a" : "g"}:${ip}`;
+  if (rateBuckets.size > 10_000) rateBuckets.clear(); // memory cap
+  const hits = (rateBuckets.get(key) ?? []).filter((t) => now - t < windowMs);
+  if (hits.length >= limit) { rateBuckets.set(key, hits); return true; }
+  hits.push(now);
+  rateBuckets.set(key, hits);
+  return false;
+}
+
+// ── Input validation ──────────────────────────────────────────────────────────
+const ID_RE = /^[a-z0-9-]{1,64}$/;
+const isValidId = (v: unknown): v is string => typeof v === "string" && ID_RE.test(v);
+
+async function readJson(req: Request): Promise<Record<string, unknown> | null> {
+  try { return await req.json() as Record<string, unknown>; } catch { return null; }
 }
 
 function corsHeaders(origin: string): Record<string, string> {
@@ -55,12 +84,19 @@ function corsHeaders(origin: string): Record<string, string> {
   };
 }
 
-function json(data: unknown, status = 200, origin = ""): Response {
+function json(data: unknown, status = 200, origin = "", extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
+    headers: {
+      "Content-Type": "application/json",
+      "X-Content-Type-Options": "nosniff",
+      ...corsHeaders(origin),
+      ...extraHeaders,
+    },
   });
 }
+
+const NO_STORE = { "Cache-Control": "no-store" };
 
 async function getUser(req: Request, env: Env) {
   const auth = req.headers.get("Authorization");
@@ -68,10 +104,17 @@ async function getUser(req: Request, env: Env) {
   return verifyJWT(auth.slice(7), env.JWT_SECRET);
 }
 
+function getCookie(req: Request, name: string): string | null {
+  const cookie = req.headers.get("Cookie");
+  if (!cookie) return null;
+  const m = cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return m ? m[1] : null;
+}
+
 // ── GET /api/health ───────────────────────────────────────────────────────────
 function handleHealth(): Response {
   return new Response(JSON.stringify({ status: "ok" }), {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Content-Type-Options": "nosniff" },
   });
 }
 
@@ -107,25 +150,57 @@ async function handleBadge(env: Env): Promise<Response> {
   </g>
 </svg>`;
   return new Response(svg, {
-    headers: { "Content-Type": "image/svg+xml", "Cache-Control": "no-cache, max-age=0" },
+    headers: {
+      "Content-Type": "image/svg+xml",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-cache, max-age=0",
+    },
   });
 }
 
 // ── GET /api/auth/github ──────────────────────────────────────────────────────
 function handleAuthGitHub(env: Env): Response {
+  const state = crypto.randomUUID();
   const params = new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
     redirect_uri: `${env.WORKER_URL}/api/auth/callback`,
     scope: "user:email read:user",
-    state: crypto.randomUUID(),
+    state,
   });
-  return Response.redirect(`https://github.com/login/oauth/authorize?${params}`, 302);
+  // The state round-trips through an HttpOnly cookie on the worker origin so
+  // the callback can prove the flow started here (CSRF protection).
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `https://github.com/login/oauth/authorize?${params}`,
+      "Set-Cookie": `sf_oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
+      "Cache-Control": "no-store",
+    },
+  });
 }
 
 // ── GET /api/auth/callback ────────────────────────────────────────────────────
 async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
-  const code = new URL(req.url).searchParams.get("code");
-  if (!code) return Response.redirect(`${env.FRONTEND_URL}?error=no_code`, 302);
+  const url = new URL(req.url);
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  const cookieState = getCookie(req, "sf_oauth_state");
+  const clearState = `sf_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=0`;
+
+  const fail = (reason: string) => {
+    console.error(`auth callback failed: ${reason}`);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: `${env.FRONTEND_URL}?error=auth_failed`,
+        "Set-Cookie": clearState,
+        "Cache-Control": "no-store",
+      },
+    });
+  };
+
+  if (!code) return fail("missing code");
+  if (!state || !cookieState || state !== cookieState) return fail("state mismatch");
 
   try {
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
@@ -139,7 +214,7 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
       }),
     });
     const { access_token } = await tokenRes.json() as { access_token?: string };
-    if (!access_token) return Response.redirect(`${env.FRONTEND_URL}?error=token_failed`, 302);
+    if (!access_token) return fail("token exchange failed");
 
     const ghUser = await (await fetch("https://api.github.com/user", {
       headers: { Authorization: `Bearer ${access_token}`, "User-Agent": "SkillForge" },
@@ -163,23 +238,32 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
       exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
     }, env.JWT_SECRET);
 
-    return Response.redirect(`${env.FRONTEND_URL}/auth/callback/?token=${token}`, 302);
+    // Token travels in the URL FRAGMENT: fragments are never sent to servers,
+    // never logged by proxies, and never leak via the Referer header.
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: `${env.FRONTEND_URL}/auth/callback/#token=${token}`,
+        "Set-Cookie": clearState,
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (e) {
-    const msg = encodeURIComponent(e instanceof Error ? e.message : String(e));
-    return Response.redirect(`${env.FRONTEND_URL}?error=auth_failed&detail=${msg}`, 302);
+    return fail(e instanceof Error ? e.message : String(e));
   }
 }
 
 // ── GET /api/auth/me ──────────────────────────────────────────────────────────
 async function handleMe(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin);
+  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
   const row = await env.DB.prepare("SELECT * FROM users WHERE github_id = ?").bind(user.sub).first();
-  return json(row, 200, origin);
+  return json(row, 200, origin, NO_STORE);
 }
 
 // ── GET /api/users/:username ──────────────────────────────────────────────────
 async function handleProfile(username: string, env: Env, origin: string): Promise<Response> {
+  if (!/^[A-Za-z0-9-]{1,39}$/.test(username)) return json({ error: "Invalid username" }, 400, origin);
   const row = await env.DB.prepare(
     "SELECT github_id, username, name, avatar_url, bio, created_at FROM users WHERE username = ?"
   ).bind(username).first() as Record<string, unknown> | null;
@@ -220,66 +304,78 @@ async function handleProfile(username: string, env: Env, origin: string): Promis
 // ── GET /api/progress?roadmap_id=xxx ─────────────────────────────────────────
 async function handleProgressGet(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin);
+  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
   const roadmapId = new URL(req.url).searchParams.get("roadmap_id");
-  if (!roadmapId) return json({ error: "roadmap_id required" }, 400, origin);
+  if (!isValidId(roadmapId)) return json({ error: "invalid roadmap_id" }, 400, origin);
   const rows = await env.DB.prepare(
     "SELECT node_id FROM user_roadmap_progress WHERE github_id = ? AND roadmap_id = ?"
   ).bind(user.sub, roadmapId).all();
-  return json({ completed: (rows.results as { node_id: string }[]).map(r => r.node_id) }, 200, origin);
+  return json({ completed: (rows.results as { node_id: string }[]).map(r => r.node_id) }, 200, origin, NO_STORE);
 }
 
 // ── POST /api/progress ────────────────────────────────────────────────────────
 async function handleProgressPost(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin);
-  const { roadmap_id, node_id } = await req.json() as { roadmap_id: string; node_id: string };
+  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const body = await readJson(req);
+  if (!body || !isValidId(body.roadmap_id) || !isValidId(body.node_id)) {
+    return json({ error: "invalid roadmap_id or node_id" }, 400, origin);
+  }
   await env.DB.prepare(
     "INSERT OR IGNORE INTO user_roadmap_progress (github_id, roadmap_id, node_id) VALUES (?, ?, ?)"
-  ).bind(user.sub, roadmap_id, node_id).run();
+  ).bind(user.sub, body.roadmap_id, body.node_id).run();
   return json({ ok: true }, 200, origin);
 }
 
 // ── DELETE /api/progress ──────────────────────────────────────────────────────
 async function handleProgressDelete(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin);
-  const { roadmap_id, node_id } = await req.json() as { roadmap_id: string; node_id: string };
+  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const body = await readJson(req);
+  if (!body || !isValidId(body.roadmap_id) || !isValidId(body.node_id)) {
+    return json({ error: "invalid roadmap_id or node_id" }, 400, origin);
+  }
   await env.DB.prepare(
     "DELETE FROM user_roadmap_progress WHERE github_id = ? AND roadmap_id = ? AND node_id = ?"
-  ).bind(user.sub, roadmap_id, node_id).run();
+  ).bind(user.sub, body.roadmap_id, body.node_id).run();
   return json({ ok: true }, 200, origin);
 }
 
 // ── GET /api/bookmarks ────────────────────────────────────────────────────────
 async function handleBookmarksGet(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin);
+  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
   const rows = await env.DB.prepare(
     "SELECT type, item_id, created_at FROM user_bookmarks WHERE github_id = ? ORDER BY created_at DESC"
   ).bind(user.sub).all();
-  return json({ bookmarks: rows.results }, 200, origin);
+  return json({ bookmarks: rows.results }, 200, origin, NO_STORE);
 }
 
 // ── POST /api/bookmarks ───────────────────────────────────────────────────────
 async function handleBookmarksPost(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin);
-  const { type, item_id } = await req.json() as { type: string; item_id: string };
+  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const body = await readJson(req);
+  if (!body || (body.type !== "certification" && body.type !== "course") || !isValidId(body.item_id)) {
+    return json({ error: "invalid type or item_id" }, 400, origin);
+  }
   await env.DB.prepare(
     "INSERT OR IGNORE INTO user_bookmarks (github_id, type, item_id) VALUES (?, ?, ?)"
-  ).bind(user.sub, type, item_id).run();
+  ).bind(user.sub, body.type, body.item_id).run();
   return json({ ok: true }, 200, origin);
 }
 
 // ── DELETE /api/bookmarks ─────────────────────────────────────────────────────
 async function handleBookmarksDelete(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin);
-  const { type, item_id } = await req.json() as { type: string; item_id: string };
+  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const body = await readJson(req);
+  if (!body || (body.type !== "certification" && body.type !== "course") || !isValidId(body.item_id)) {
+    return json({ error: "invalid type or item_id" }, 400, origin);
+  }
   await env.DB.prepare(
     "DELETE FROM user_bookmarks WHERE github_id = ? AND type = ? AND item_id = ?"
-  ).bind(user.sub, type, item_id).run();
+  ).bind(user.sub, body.type, body.item_id).run();
   return json({ ok: true }, 200, origin);
 }
 
@@ -290,6 +386,12 @@ export default {
     const origin = req.headers.get("Origin") ?? "";
 
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
+
+    const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
+    const isAuthPath = pathname.startsWith("/api/auth/");
+    if (rateLimited(ip, isAuthPath)) {
+      return json({ error: "Too many requests" }, 429, origin, { "Retry-After": "60" });
+    }
 
     if (pathname === "/api/health") return handleHealth();
     if (pathname === "/api/stats") return handleStats(env, origin);

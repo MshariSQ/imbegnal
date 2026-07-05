@@ -13,6 +13,7 @@ Thank you for taking the time to contribute! SkillForge is a free, open-source l
 - [Project Structure](#project-structure)
 - [Making Changes](#making-changes)
 - [Adding a New Roadmap](#adding-a-new-roadmap)
+- [Writing an Interactive Lesson](#writing-an-interactive-lesson)
 - [Adding or Updating Resources](#adding-or-updating-resources)
 - [Pull Request Rules](#pull-request-rules)
 - [Commit Message Format](#commit-message-format)
@@ -256,6 +257,42 @@ Visit `http://localhost:3000/roadmaps/rust/` and confirm:
 - Clicking a node shows the title, description, and resources
 - The progress bar works
 - The page looks correct in both English and Arabic (the node labels and descriptions are intentionally left in English — only the UI chrome switches languages)
+
+---
+
+## Writing an Interactive Lesson
+
+Roadmap nodes can carry a full interactive lesson (explanation + runnable code + auto-checked exercises + quiz). Lessons live in `data/lessons/<roadmapId>/<nodeId>.ts` and are registered in `data/lessons/index.ts`.
+
+### The fixed pedagogy (every lesson follows this order)
+
+1. **Objectives** (`text`) — "in this lesson you will…"
+2. **ELI5 explanation** (`text`) — an analogy a child could follow, *then* the real concept
+3. **Live demo** (`code-demo`) — working code the student can open and tweak
+4. **Exercises** (`exercise` × 2–5, easy → harder) — auto-checked, with progressive hints and a solution
+5. **Quiz** (`quiz`, 3–6 questions) — each answer explained
+6. **Summary + what's next** (`text`)
+
+### Rules
+
+- **Bilingual always.** Every `L10n` field needs real Arabic and English — no machine-translation dumps. Code stays English/LTR.
+- **Honest estimates.** `estMinutes` should match a realistic completion time.
+- **Runner languages:** `"web"` (full HTML doc in a sandboxed iframe), `"js"` (console-based), `"python"` (Pyodide worker). For tools that can't run in a browser (git, Next.js), use non-runnable demos (`runnable: false`) and a quiz-heavy lesson.
+- **Tests must be robust.** `web`/`js` checks are JS expressions evaluated inside the sandbox (they can use `document`, user globals, and `__consoleLog`). Python tests are assert snippets (with `_stdout` available). Verify your solution passes all tests and the starter code fails at least one.
+- **Hints before solutions.** 2–3 progressive hints; the solution unlocks automatically after 2 failed check runs.
+- **No copy-paste tutorials.** Exercises should feel like building something, not filling blanks.
+
+### Wiring it up
+
+```ts
+// data/lessons/index.ts
+const registry = {
+  // ...
+  "frontend/my-node": () => import("./frontend/my-node"),
+};
+```
+
+The lesson tab, sidebar indicator, progress tracking, and auto-completion all light up automatically once the registry entry exists.
 
 ---
 
