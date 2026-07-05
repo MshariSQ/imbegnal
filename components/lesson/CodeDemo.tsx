@@ -5,16 +5,17 @@ import { FlaskConical } from "lucide-react";
 import type { CodeDemoSection } from "@/data/lessons/types";
 import { useLang } from "@/lib/lang-context";
 import CodeRunner from "./CodeRunner";
+import TextBlock from "./TextBlock";
 
 export default function CodeDemo({ section }: { section: CodeDemoSection }) {
-  const { lang, tx } = useLang();
+  const { tx } = useLang();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState(section.code);
   const runnable = section.runnable !== false;
 
   return (
     <div className="my-6">
-      <p className="text-[15px] leading-relaxed text-gray-300 mb-3">{section.explanation[lang]}</p>
+      <div className="mb-3"><TextBlock body={section.explanation} /></div>
       {open && runnable ? (
         <CodeRunner lang={section.lang} value={code} onChange={setCode} tests={[]} />
       ) : (

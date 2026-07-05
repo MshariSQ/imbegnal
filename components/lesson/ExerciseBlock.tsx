@@ -6,6 +6,7 @@ import type { ExerciseSection } from "@/data/lessons/types";
 import type { TestResult } from "@/lib/runner/web-sandbox";
 import { useLang } from "@/lib/lang-context";
 import CodeRunner from "./CodeRunner";
+import TextBlock from "./TextBlock";
 
 export default function ExerciseBlock({
   section,
@@ -54,7 +55,7 @@ export default function ExerciseBlock({
       </div>
 
       <div className="p-5">
-        <p className="text-[15px] leading-relaxed text-gray-300 mb-4">{section.prompt[lang]}</p>
+        <div className="mb-4"><TextBlock body={section.prompt} /></div>
 
         <CodeRunner
           lang={section.lang}
