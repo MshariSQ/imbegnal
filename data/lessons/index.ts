@@ -11,6 +11,7 @@ const registry: Record<string, () => Promise<{ lesson: Lesson }>> = {
   "frontend/frontend-testing": () => import("./frontend/frontend-testing"),
   "frontend/getting-paid": () => import("./frontend/getting-paid"),
 
+  "cyber-security/setup": () => import("./cyber-security/setup"),
   "cyber-security/computer-basics": () => import("./cyber-security/computer-basics"),
   "cyber-security/networking": () => import("./cyber-security/networking"),
   "cyber-security/linux": () => import("./cyber-security/linux"),

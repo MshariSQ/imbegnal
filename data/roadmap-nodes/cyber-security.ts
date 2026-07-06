@@ -22,6 +22,17 @@ export interface RoadmapNodeInfo {
 
 export const cyberSecurityNodes: RoadmapNodeInfo[] = [
   {
+    id: "setup",
+    label: "Setup & Prerequisites",
+    description: "Before you write a single script or run a single scan: install a code editor, install Python, and build a safe, legal virtual lab to practice in. Step-by-step — you'll be 100% ready for the rest of this roadmap.",
+    status: "required",
+    resources: {
+      youtube: { title: "How To Install Kali Linux In VirtualBox", url: "https://www.youtube.com/watch?v=DVUet3JOZ_g", provider: "NetworkChuck", tags: ["Free", "Recommended"], duration: "20m" },
+      course: { title: "TryHackMe — Free Hands-On Labs", url: "https://tryhackme.com/", provider: "TryHackMe", tags: ["Free", "Recommended"] },
+      docs: { title: "Download Visual Studio Code", url: "https://code.visualstudio.com/download", tags: ["Free", "Official"] },
+    },
+  },
+  {
     id: "computer-basics",
     label: "Computer Basics",
     description: "Understanding how computers work — hardware, OS, file systems, and networking fundamentals. The foundation for everything in cybersecurity.",

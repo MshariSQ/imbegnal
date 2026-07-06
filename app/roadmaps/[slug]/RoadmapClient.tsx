@@ -2,11 +2,22 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { PlayCircle, BookOpen, Award, FileText, ExternalLink, CheckCircle, ArrowLeft, GraduationCap, Link2 } from "lucide-react";
+import { PlayCircle, BookOpen, Award, FileText, ExternalLink, CheckCircle, ArrowLeft, GraduationCap, Link2, Trophy } from "lucide-react";
 import type { RoadmapNodeInfo } from "@/data/roadmap-nodes/cyber-security";
 import type { Lesson } from "@/data/lessons/types";
 import { hasLesson, loadLesson } from "@/data/lessons";
 import { roadmaps } from "@/data/roadmaps";
+import { certifications } from "@/data/certifications";
+
+// Maps a roadmap to the certifications field it should recommend on completion.
+// Extend this as new roadmaps get a matching certifications catalog entry.
+const ROADMAP_CERT_FIELD: Record<string, string> = {
+  "cyber-security": "Cyber Security",
+  "cloud-computing": "Cloud",
+  "devops": "DevOps",
+  "data-science": "Data Science",
+  "ui-ux": "UI/UX",
+};
 import { getToken, getCurrentUser } from "@/lib/auth";
 import { getProgress, markNodeDone, markNodeUndone } from "@/lib/api";
 import { useLang } from "@/lib/lang-context";
@@ -120,6 +131,15 @@ export default function RoadmapClient({
   // the stored lesson may still belong to the previously selected node
   const currentLesson = lesson && lesson.nodeId === selected?.id ? lesson : null;
 
+  const isRoadmapComplete = nodeData.length > 0 && completed.size === nodeData.length;
+  const certField = ROADMAP_CERT_FIELD[roadmapId];
+  const recommendedCerts = certField
+    ? certifications
+        .filter((c) => c.field === certField)
+        .sort((a, b) => Number(b.popular) - Number(a.popular))
+        .slice(0, 3)
+    : [];
+
   const STATUS_GROUPS = [
     { key: "required",  label: r.groups.required,  color: "#10b981" },
     { key: "important", label: r.groups.important, color: "#3b82f6" },
@@ -181,13 +201,37 @@ export default function RoadmapClient({
           <div className="px-4 py-4 border-b border-[#21262d] shrink-0">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-500">{r.progress}</span>
-              <span className="text-xs font-semibold text-emerald-400">{completed.size} / {nodeData.length}</span>
+              <span dir="ltr" className="text-xs font-semibold text-emerald-400">{completed.size} / {nodeData.length}</span>
             </div>
             <div className="h-1.5 bg-[#21262d] rounded-full overflow-hidden">
               <div className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                 style={{ width: `${nodeData.length ? (completed.size / nodeData.length) * 100 : 0}%` }} />
             </div>
           </div>
+
+          {isRoadmapComplete && recommendedCerts.length > 0 && (
+            <div className="px-4 py-4 border-b border-[#21262d] shrink-0 bg-emerald-500/5">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy size={14} className="text-amber-400" />
+                <span className="text-xs font-bold text-white">{r.allDoneTitle}</span>
+              </div>
+              <p className="text-[11px] text-gray-400 leading-relaxed mb-3">{r.allDoneText}</p>
+              <div className="flex flex-col gap-1.5">
+                {recommendedCerts.map((cert) => (
+                  <a key={cert.id} href={cert.url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-xs text-gray-300 hover:text-emerald-400 bg-[#161B22] border border-[#21262d] hover:border-emerald-500/30 rounded-lg px-2.5 py-2 transition-all">
+                    <span className="shrink-0">{cert.providerLogo}</span>
+                    <span className="truncate flex-1">{cert.name}</span>
+                    <ExternalLink size={11} className="shrink-0 text-gray-600" />
+                  </a>
+                ))}
+              </div>
+              <a href={`${basePath}/certifications/`}
+                className="block text-center text-[11px] text-emerald-400 hover:underline mt-2.5">
+                {r.viewAllCerts}
+              </a>
+            </div>
+          )}
 
           <nav className="flex-1 overflow-y-auto py-3">
             {groups.map((group) => (

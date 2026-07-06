@@ -119,6 +119,9 @@ export const translations = {
       breadcrumb: "Roadmap",
       comingSoon: "roadmap coming soon",
       comingSoonNote: "We're building this one. Check back soon!",
+      allDoneTitle: "Roadmap complete! 🎉",
+      allDoneText: "You finished every topic. Ready to prove it? Get certified:",
+      viewAllCerts: "Browse all certifications",
     },
     lesson: {
       tabLesson: "Lesson",
@@ -318,6 +321,9 @@ export const translations = {
       breadcrumb: "خريطة التعلم",
       comingSoon: "قريباً",
       comingSoonNote: "نحن نبنيها الآن. تحقق مجدداً قريباً!",
+      allDoneTitle: "اكتملت خريطة التعلم! 🎉",
+      allDoneText: "أنهيت كل المواضيع بنجاح. جاهز لإثبات ذلك؟ احصل على شهادة معتمدة:",
+      viewAllCerts: "تصفح كل الشهادات",
     },
     lesson: {
       tabLesson: "الدرس",
