@@ -13,6 +13,7 @@ import { certifications } from "@/data/certifications";
 // Extend this as new roadmaps get a matching certifications catalog entry.
 const ROADMAP_CERT_FIELD: Record<string, string> = {
   "cyber-security": "Cyber Security",
+  "artificial-intelligence": "Artificial Intelligence",
   "cloud-computing": "Cloud",
   "devops": "DevOps",
   "data-science": "Data Science",

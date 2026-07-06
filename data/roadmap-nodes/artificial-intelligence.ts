@@ -2,6 +2,17 @@ import type { RoadmapNodeInfo } from "./cyber-security";
 
 export const artificialIntelligenceNodes: RoadmapNodeInfo[] = [
   {
+    id: "setup",
+    label: "Setup & Prerequisites",
+    description: "Before your first model: install a code editor, install Python, get a real AI notebook running (Google Colab or Anaconda), and create free accounts on Kaggle and Hugging Face. Step-by-step — ready for everything else in this roadmap.",
+    status: "required",
+    resources: {
+      youtube: { title: "Google Colab Tutorial for Beginners", url: "https://www.youtube.com/watch?v=RLYoEyIHL6A", provider: "freeCodeCamp", tags: ["Free", "Recommended"], duration: "12m" },
+      course: { title: "Google Colab", url: "https://colab.research.google.com/", provider: "Google", tags: ["Free", "Official"] },
+      docs: { title: "Download Visual Studio Code", url: "https://code.visualstudio.com/download", tags: ["Free", "Official"] },
+    },
+  },
+  {
     id: "python-for-ai",
     label: "Python for AI",
     description: "Python is the language of AI. NumPy for arrays, Pandas for data, Matplotlib for visualization, and Jupyter notebooks for experimentation. You cannot do AI without Python.",

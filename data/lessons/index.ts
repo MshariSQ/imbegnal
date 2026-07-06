@@ -30,6 +30,7 @@ const registry: Record<string, () => Promise<{ lesson: Lesson }>> = {
   "backend/devops-backend": () => import("./backend/devops-backend"),
   "backend/system-design": () => import("./backend/system-design"),
 
+  "artificial-intelligence/setup": () => import("./artificial-intelligence/setup"),
   "artificial-intelligence/python-for-ai": () => import("./artificial-intelligence/python-for-ai"),
   "artificial-intelligence/math-for-ml": () => import("./artificial-intelligence/math-for-ml"),
   "artificial-intelligence/machine-learning": () => import("./artificial-intelligence/machine-learning"),
