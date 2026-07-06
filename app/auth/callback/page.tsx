@@ -11,10 +11,8 @@ function CallbackHandler() {
 
   useEffect(() => {
     // The worker delivers the token in the URL fragment (#token=...) so it never
-    // hits server logs or the Referer header. Query param kept as a fallback
-    // for the transition window until the worker redeploy.
-    const hashToken = new URLSearchParams(window.location.hash.slice(1)).get("token");
-    const token = hashToken ?? params.get("token");
+    // hits server logs or the Referer header.
+    const token = new URLSearchParams(window.location.hash.slice(1)).get("token");
     const error = params.get("error");
 
     if (error || !token) {
