@@ -12,18 +12,20 @@ export const lesson: Lesson = {
 
 - What "types" mean and why companies demand TypeScript
 - Reading TypeScript signatures (you'll see them everywhere)
-- Practice the *thinking* with a runnable exercise
+- **Union types** — the pattern behind "one of these exact values"
+- Practice the *thinking* with runnable exercises
 - The exact setup steps for your machine
 
-TypeScript needs a compile step, so the runnable part uses JavaScript to practice type-thinking — then you'll set up the real thing locally.`,
+TypeScript needs a compile step, so the runnable parts use JavaScript to practice type-thinking — then you'll set up the real thing locally.`,
         ar: `## ماذا ستتعلم
 
 - ماذا تعني "الأنواع (types)" ولماذا تشترط الشركات TypeScript
 - قراءة توقيعات TypeScript (ستراها في كل مكان)
-- التدرّب على *طريقة التفكير* بتمرين قابل للتشغيل
+- **الأنواع الاتحادية (union types)** — نمط "واحدة من هذه القيم بالضبط"
+- التدرّب على *طريقة التفكير* بتمارين قابلة للتشغيل
 - خطوات التجهيز الدقيقة على جهازك
 
-TypeScript يحتاج خطوة ترجمة، لذلك الجزء القابل للتشغيل يستخدم JavaScript للتدرّب على تفكير الأنواع — ثم تجهّز الأداة الحقيقية محلياً.`,
+TypeScript يحتاج خطوة ترجمة، لذلك الأجزاء القابلة للتشغيل تستخدم JavaScript للتدرّب على تفكير الأنواع — ثم تجهّز الأداة الحقيقية محلياً.`,
       },
     },
     {
@@ -171,6 +173,102 @@ console.log(safeAdd(2, "3"));    // TypeError`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Union types — "one of these, exactly" 🎯
+
+Sometimes \`string\` is too loose. A task's status isn't *any* string — it's only ever \`"loading"\`, \`"success"\`, or \`"error"\`. TypeScript lets you say that precisely with a **union type**:
+
+\`\`\`ts
+type Status = "loading" | "success" | "error";
+
+function showStatus(status: Status) {
+  console.log("Current status:", status);
+}
+
+showStatus("success");   // ✅
+showStatus("done");      // ❌ Error: "done" is not assignable to type 'Status'
+\`\`\`
+
+The \`|\` (pipe) means "or" — \`Status\` can be exactly one of those three strings, nothing else. Typo \`"scucess"\` and the compiler catches it *instantly*, before you ever run the code. This is far stronger than a plain \`string\`, which would happily accept any typo.
+
+You'll also see \`type\` used to name any shape, not just unions:
+
+\`\`\`ts
+type Point = { x: number; y: number };
+\`\`\`
+
+(\`interface\` and \`type\` overlap a lot in everyday use — \`interface\` is more common for object shapes, \`type\` is more common for unions like \`Status\` above.)`,
+        ar: `## الأنواع الاتحادية — "واحدة من هذه، بالضبط" 🎯
+
+أحياناً \`string\` فضفاض جداً. حالة مهمة ليست *أي* نص — بل فقط \`"loading"\` أو \`"success"\` أو \`"error"\`. يتيح لك TypeScript قول ذلك بدقة عبر **نوع اتحادي (union type)**:
+
+\`\`\`ts
+type Status = "loading" | "success" | "error";
+
+function showStatus(status: Status) {
+  console.log("Current status:", status);
+}
+
+showStatus("success");   // ✅
+showStatus("done");      // ❌ خطأ: "done" غير قابلة للإسناد للنوع 'Status'
+\`\`\`
+
+الرمز \`|\` (الأنبوب) يعني "أو" — \`Status\` يمكن أن يكون بالضبط واحداً من هذه النصوص الثلاثة، لا شيء آخر. أخطئ إملائياً بكتابة \`"scucess"\` ويمسكها المترجم *فوراً*، قبل أن تشغّل الكود أصلاً. هذا أقوى بكثير من \`string\` عادي، الذي كان سيقبل بسعادة أي خطأ إملائي.
+
+سترى أيضاً \`type\` تُستخدم لتسمية أي شكل، لا الأنواع الاتحادية فقط:
+
+\`\`\`ts
+type Point = { x: number; y: number };
+\`\`\`
+
+(\`interface\` و\`type\` يتداخلان كثيراً في الاستخدام اليومي — \`interface\` أشيع لأشكال الكائنات، و\`type\` أشيع للأنواع الاتحادية مثل \`Status\` أعلاه.)`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `**Simulate a union-type checker.** Write \`isValidStatus(status)\` that returns \`true\` only if \`status\` is exactly \`"loading"\`, \`"success"\`, or \`"error"\` — this is exactly what the TypeScript compiler checks for you automatically with a union type.`,
+        ar: `**حاكِ فاحص نوع اتحادي.** اكتب \`isValidStatus(status)\` تعيد \`true\` فقط إذا كانت \`status\` بالضبط \`"loading"\` أو \`"success"\` أو \`"error"\` — هذا بالضبط ما يفحصه مترجم TypeScript لك تلقائياً بنوع اتحادي.`,
+      },
+      starterCode: `function isValidStatus(status) {
+  const allowed = ["loading", "success", "error"];
+  // return true if status is one of allowed
+
+}
+
+console.log(isValidStatus("success"));  // true
+console.log(isValidStatus("done"));     // false`,
+      solution: `function isValidStatus(status) {
+  const allowed = ["loading", "success", "error"];
+  return allowed.includes(status);
+}
+
+console.log(isValidStatus("success"));  // true
+console.log(isValidStatus("done"));     // false`,
+      hints: [
+        { en: `Array.includes checks membership: allowed.includes(status).`, ar: `Array.includes يفحص العضوية: allowed.includes(status).` },
+        { en: `Just return that boolean directly.`, ar: `أعِد تلك القيمة المنطقية مباشرة.` },
+      ],
+      tests: [
+        { name: { en: "\"success\" is valid", ar: "\"success\" صحيحة" }, check: `isValidStatus("success") === true` },
+        { name: { en: "\"loading\" is valid", ar: "\"loading\" صحيحة" }, check: `isValidStatus("loading") === true` },
+        { name: { en: "\"done\" is NOT valid", ar: "\"done\" غير صحيحة" }, check: `isValidStatus("done") === false` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: this platform's own types 🔍
+
+Union types aren't academic — this exact lesson platform uses them constantly. Its language system is typed as \`type Lang = "en" | "ar"\` — so passing anything other than exactly those two strings is a compile error, guaranteeing the app can never end up in a broken third "language." The code runner you're using right now types its languages as \`type RunnerLang = "web" | "js" | "python"\`. Same idea as your \`Status\` exercise, just wired into a real production app.`,
+        ar: `## دراسة حالة واقعية: أنواع هذه المنصة نفسها 🔍
+
+الأنواع الاتحادية ليست أكاديمية — منصة الدروس هذه بالضبط تستخدمها باستمرار. نظام لغتها مُصنَّف كـ \`type Lang = "en" | "ar"\` — فتمرير أي شيء غير هذين النصين بالضبط خطأ ترجمة، ما يضمن ألا ينتهي التطبيق أبداً بـ"لغة" ثالثة مكسورة. ومُشغّل الكود الذي تستخدمه الآن يُصنِّف لغاته كـ \`type RunnerLang = "web" | "js" | "python"\`. نفس فكرة تمرين \`Status\` الذي حللته، لكن مدمجة في تطبيق إنتاجي حقيقي.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -225,6 +323,32 @@ console.log(safeAdd(2, "3"));    // TypeError`,
             ar: "هذه هي القيمة كلها: نقل اكتشاف الأخطاء من الإنتاج (المستخدمون) إلى التطوير (أنت، فوراً، في المحرر).",
           },
         },
+        {
+          q: { en: "What does type Status = \"loading\" | \"success\" | \"error\" mean?", ar: "ماذا يعني type Status = \"loading\" | \"success\" | \"error\"؟" },
+          choices: [
+            { en: "Status must be exactly one of those three strings — nothing else is valid", ar: "يجب أن تكون Status واحدة من هذه النصوص الثلاثة بالضبط — لا شيء آخر صالح" },
+            { en: "Status can be any string", ar: "يمكن أن تكون Status أي نص" },
+            { en: "The three values run one after another", ar: "القيم الثلاث تعمل الواحدة تلو الأخرى" },
+          ],
+          answer: 0,
+          explain: {
+            en: "The | (pipe) means 'or' between exact allowed values — a union type. A typo like \"scucess\" is caught at compile time.",
+            ar: "الرمز | (الأنبوب) يعني 'أو' بين قيم مسموحة بالضبط — نوع اتحادي. خطأ إملائي مثل \"scucess\" يُكتشف عند الترجمة.",
+          },
+        },
+        {
+          q: { en: "Why is a union type stricter than a plain string?", ar: "لماذا النوع الاتحادي أكثر صرامة من نص عادي؟" },
+          choices: [
+            { en: "A plain string accepts any typo; a union only accepts the exact listed values", ar: "النص العادي يقبل أي خطأ إملائي؛ والاتحادي يقبل فقط القيم المذكورة بالضبط" },
+            { en: "They are equally strict", ar: "متساويان في الصرامة" },
+            { en: "Union types are slower at runtime", ar: "الأنواع الاتحادية أبطأ وقت التشغيل" },
+          ],
+          answer: 0,
+          explain: {
+            en: "string says 'any text is fine'; a union says 'only these specific values are fine' — a much stronger guarantee for things like status flags or language codes.",
+            ar: "string تقول 'أي نص مقبول'؛ والاتحادي يقول 'هذه القيم المحددة فقط مقبولة' — ضمان أقوى بكثير لأشياء مثل أعلام الحالة أو رموز اللغة.",
+          },
+        },
       ],
     },
     {
@@ -234,7 +358,7 @@ console.log(safeAdd(2, "3"));    // TypeError`,
 
 1. In any project: \`npm install -D typescript\` then \`npx tsc --init\`
 2. Rename a \`.js\` file to \`.ts\` — errors appear as red squiggles in VS Code
-3. Label your functions' parameters and returns; define one \`interface\`
+3. Label your functions' parameters and returns; define one \`interface\` and one union \`type\`
 4. The official handbook (Resources tab) chapter "TypeScript for JavaScript Programmers" takes 20 minutes and covers 80% of daily usage
 
 **Reality check:** on the job you'll mostly *read* types others wrote and add types to your own functions. You now know how to do both.`,
@@ -242,7 +366,7 @@ console.log(safeAdd(2, "3"));    // TypeError`,
 
 1. في أي مشروع: \`npm install -D typescript\` ثم \`npx tsc --init\`
 2. غيّر امتداد ملف \`.js\` إلى \`.ts\` — ستظهر الأخطاء كخطوط حمراء في VS Code
-3. ضع ملصقات على وسائط دوالك وقيمها المعادة؛ وعرّف \`interface\` واحدة
+3. ضع ملصقات على وسائط دوالك وقيمها المعادة؛ وعرّف \`interface\` واحدة ونوعاً اتحادياً \`type\` واحداً
 4. فصل "TypeScript for JavaScript Programmers" في الدليل الرسمي (تبويب المصادر) يستغرق 20 دقيقة ويغطي 80% من الاستخدام اليومي
 
 **واقعياً:** في العمل ستقرأ غالباً أنواعاً كتبها غيرك وتضيف أنواعاً لدوالك. الآن تعرف كيف تفعل الاثنين.`,

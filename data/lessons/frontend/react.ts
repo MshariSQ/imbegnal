@@ -12,6 +12,8 @@ export const lesson: Lesson = {
 
 - The one idea behind React: **components**
 - What **props** and **state** mean (with toys, not jargon)
+- Rendering **lists** of components from an array — the pattern behind every feed, grid, and table
+- Why real apps need **useEffect** to fetch data
 - Write component-style code right here in the browser
 - Know exactly what to install and study next
 
@@ -20,6 +22,8 @@ React itself needs a build setup, so our exercise uses plain JavaScript to pract
 
 - الفكرة الوحيدة خلف React: **المكوّنات**
 - ماذا تعني **props** و **state** (بالألعاب، لا بالمصطلحات)
+- عرض **قوائم** من المكوّنات من مصفوفة — النمط خلف كل تغذية أخبار وشبكة وجدول
+- لماذا تحتاج التطبيقات الحقيقية **useEffect** لجلب البيانات
 - تكتب كوداً بأسلوب المكوّنات هنا في المتصفح
 - تعرف بالضبط ماذا تثبّت وماذا تدرس بعد ذلك
 
@@ -176,6 +180,187 @@ Then render **three different cards** into \`#app\` by calling it three times (t
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Lists — the pattern behind every feed and grid 📃
+
+In the exercise above you called \`UserCard\` three times, by hand. Real apps don't know how many items they'll have — a feed might have 3 posts or 3,000. React's answer is \`.map()\`: transform an **array of data** into an **array of components**, in one line:
+
+\`\`\`jsx
+const users = [
+  { name: "Sara", role: "Designer" },
+  { name: "Omar", role: "Developer" },
+  { name: "Lina", role: "Manager" },
+];
+
+function App() {
+  return (
+    <div>
+      {users.map((u) => (
+        <UserCard key={u.name} name={u.name} role={u.role} />
+      ))}
+    </div>
+  );
+}
+\`\`\`
+
+Add a 4th person to the \`users\` array and a 4th card appears automatically — no new \`<UserCard>\` line needed. That \`key={u.name}\` prop is required: it's a unique ID that helps React track which card is which when the list changes (adds, removes, reorders) — always give list items a stable, unique \`key\`.
+
+This single pattern — **data array → \`.map()\` → components** — is how you'll build almost every list, grid, or feed you ever make in React.`,
+        ar: `## القوائم — النمط خلف كل تغذية وشبكة 📃
+
+في التمرين أعلاه استدعيت \`UserCard\` ثلاث مرات، يدوياً. التطبيقات الحقيقية لا تعرف كم عنصراً ستملك — قد تحتوي التغذية 3 منشورات أو 3000. إجابة React هي \`.map()\`: حوّل **مصفوفة بيانات** إلى **مصفوفة مكوّنات**، بسطر واحد:
+
+\`\`\`jsx
+const users = [
+  { name: "Sara", role: "Designer" },
+  { name: "Omar", role: "Developer" },
+  { name: "Lina", role: "Manager" },
+];
+
+function App() {
+  return (
+    <div>
+      {users.map((u) => (
+        <UserCard key={u.name} name={u.name} role={u.role} />
+      ))}
+    </div>
+  );
+}
+\`\`\`
+
+أضف شخصاً رابعاً لمصفوفة \`users\` فتظهر بطاقة رابعة تلقائياً — بلا حاجة لسطر \`<UserCard>\` جديد. خاصية \`key={u.name}\` تلك مطلوبة: معرّف فريد يساعد React على تتبّع أي بطاقة هي أيّ عند تغيّر القائمة (إضافة، حذف، إعادة ترتيب) — أعطِ عناصر القائمة دائماً \`key\` فريداً ثابتاً.
+
+هذا النمط الواحد — **مصفوفة بيانات ← \`.map()\` ← مكوّنات** — هو كيف تبني تقريباً كل قائمة أو شبكة أو تغذية ستصنعها في React.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "web",
+      prompt: {
+        en: `**Render from data, not by hand.** Extend the card idea: instead of calling \`UserCard\` manually per person, build the HTML string by looping over the \`users\` array (plain JS \`for\` or \`.map()\` both work — this models what React's \`.map()\` does).
+
+Requirements: render **one \`.card\`** per entry in \`users\`, each showing that person's \`name\` in an \`<h3>\`.`,
+        ar: `**اعرض من البيانات، لا يدوياً.** وسّع فكرة البطاقة: بدل استدعاء \`UserCard\` يدوياً لكل شخص، ابنِ نص HTML بالتكرار على مصفوفة \`users\` (\`for\` عادية أو \`.map()\` كلاهما يعمل — هذا يحاكي ما تفعله \`.map()\` في React).
+
+المتطلبات: اعرض **بطاقة \`.card\`** واحدة لكل مُدخل في \`users\`، تُظهر كل منها اسم الشخص \`name\` داخل \`<h3>\`.`,
+      },
+      starterCode: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; background: #f0f4f8; padding: 20px; }
+      .card { background: white; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      const users = [
+        { name: "Sara", role: "Designer" },
+        { name: "Omar", role: "Developer" },
+        { name: "Lina", role: "Manager" },
+        { name: "Yusuf", role: "QA Engineer" },
+      ];
+
+      // loop over users and build one .card per entry
+
+    </script>
+  </body>
+</html>`,
+      solution: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; background: #f0f4f8; padding: 20px; }
+      .card { background: white; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      const users = [
+        { name: "Sara", role: "Designer" },
+        { name: "Omar", role: "Developer" },
+        { name: "Lina", role: "Manager" },
+        { name: "Yusuf", role: "QA Engineer" },
+      ];
+
+      let html = "";
+      for (const u of users) {
+        html += '<div class="card"><h3>' + u.name + '</h3><p>' + u.role + '</p></div>';
+      }
+      document.querySelector("#app").innerHTML = html;
+    </script>
+  </body>
+</html>`,
+      hints: [
+        { en: `Start with an empty string: let html = "";`, ar: `ابدأ بنص فارغ: let html = "";` },
+        { en: `In the loop: html += '<div class="card"><h3>' + u.name + '</h3></div>'; then set #app's innerHTML to html.`, ar: `في الحلقة: html += '<div class="card"><h3>' + u.name + '</h3></div>'; ثم اضبط innerHTML لـ #app على html.` },
+      ],
+      tests: [
+        { name: { en: "There are 4 cards — one per user", ar: "توجد 4 بطاقات — واحدة لكل مستخدم" }, check: `document.querySelectorAll("#app .card").length === 4` },
+        { name: { en: "Each card shows its person's name", ar: "كل بطاقة تعرض اسم صاحبها" }, check: `(function(){ var names = Array.from(document.querySelectorAll("#app .card h3")).map(function(h){return h.textContent;}); return names.includes("Sara") && names.includes("Yusuf"); })()` },
+        { name: { en: "Adding a 5th user would add a 5th card (loop-driven, not hardcoded)", ar: "إضافة مستخدم خامس تضيف بطاقة خامسة (مدفوع بحلقة، لا مكتوب يدوياً)" }, check: `document.querySelectorAll("#app .card").length === users.length` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## useEffect — fetching real data 🌐
+
+Everything so far lives inside the browser. But real apps load data from a server — a list of products, a user's profile. React handles this with \`useEffect\`, which runs code *after* the component appears on screen:
+
+\`\`\`jsx
+function ProfilePage({ userId }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/users/" + userId)
+      .then((res) => res.json())
+      .then((data) => setUser(data));
+  }, [userId]); // re-run whenever userId changes
+
+  if (!user) return <p>Loading...</p>;
+  return <h1>{user.name}</h1>;
+}
+\`\`\`
+
+Read the \`[userId]\` at the end as "only re-run this fetch if \`userId\` changes" — without it, React would re-fetch on every single render, hammering your server. The pattern is always the same: start with \`null\`/loading state, fetch in \`useEffect\`, call \`setUser\` when data arrives, and React re-renders automatically with the real data. This exact pattern is how this platform's own Profile page loads your GitHub stats after you sign in.`,
+        ar: `## useEffect — جلب بيانات حقيقية 🌐
+
+كل ما سبق يعيش داخل المتصفح. لكن التطبيقات الحقيقية تحمّل بيانات من خادم — قائمة منتجات، ملف مستخدم شخصي. يتعامل React مع هذا بـ\`useEffect\`، الذي يشغّل كوداً *بعد* ظهور المكوّن على الشاشة:
+
+\`\`\`jsx
+function ProfilePage({ userId }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/users/" + userId)
+      .then((res) => res.json())
+      .then((data) => setUser(data));
+  }, [userId]); // أعد التشغيل فقط عند تغيّر userId
+
+  if (!user) return <p>Loading...</p>;
+  return <h1>{user.name}</h1>;
+}
+\`\`\`
+
+اقرأ \`[userId]\` في النهاية كـ"أعد تشغيل هذا الجلب فقط إن تغيّر \`userId\`" — بدونها، سيعيد React الجلب مع كل رسم، مثقلاً خادمك. النمط دائماً واحد: ابدأ بـ\`null\`/حالة تحميل، اجلب داخل \`useEffect\`، استدعِ \`setUser\` عند وصول البيانات، ويعيد React الرسم تلقائياً بالبيانات الحقيقية. هذا النمط بالضبط هو كيف تُحمّل صفحة الملف الشخصي لهذه المنصة نفسها إحصائيات GitHub الخاصة بك بعد تسجيل الدخول.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: this site's own cards 🔍
+
+Every roadmap card, certification card, and course card on this platform is **one component**, rendered exactly like the exercise above: a data array (\`data/roadmaps.ts\`, \`data/certifications.ts\`) is \`.map()\`-ed into a row of cards. Add a new roadmap to that one data file, and a new card appears on the site automatically — nobody hand-writes a new \`<RoadmapCard>\` line for it. That's the entire payoff of thinking in components: change the data, not the UI code.`,
+        ar: `## دراسة حالة واقعية: بطاقات هذا الموقع نفسها 🔍
+
+كل بطاقة خريطة تعلم وبطاقة شهادة وبطاقة دورة في هذه المنصة هي **مكوّن واحد**، تُعرَض تماماً كالتمرين أعلاه: مصفوفة بيانات (\`data/roadmaps.ts\`، \`data/certifications.ts\`) تُمرَّر عبر \`.map()\` إلى صف بطاقات. أضف خريطة تعلم جديدة لذلك الملف الواحد، وتظهر بطاقة جديدة على الموقع تلقائياً — لا أحد يكتب سطر \`<RoadmapCard>\` جديداً يدوياً لها. هذه هي الفائدة الكاملة للتفكير بالمكوّنات: غيّر البيانات، لا كود الواجهة.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -230,6 +415,32 @@ Then render **three different cards** into \`#app\` by calling it three times (t
             ar: "هذه عقلية المكوّنات: عرّف مرة، وأعد الاستخدام بـ props مختلفة. غيّر التصميم في مكان واحد فتتحدث كل البطاقات.",
           },
         },
+        {
+          q: { en: "Why does React need a key prop when rendering a list with .map()?", ar: "لماذا يحتاج React خاصية key عند عرض قائمة بـ .map()؟" },
+          choices: [
+            { en: "It's a unique ID that helps React track each item when the list changes", ar: "معرّف فريد يساعد React على تتبّع كل عنصر عند تغيّر القائمة" },
+            { en: "It sets the item's color", ar: "يضبط لون العنصر" },
+            { en: "It's optional and does nothing", ar: "اختياري ولا يفعل شيئاً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Without a stable key, React can't reliably tell which item was added, removed, or reordered — leading to bugs when the list changes.",
+            ar: "بلا key ثابت، لا يستطيع React معرفة أي عنصر أُضيف أو حُذف أو أُعيد ترتيبه بموثوقية — ما يسبب أخطاء عند تغيّر القائمة.",
+          },
+        },
+        {
+          q: { en: "What does [userId] at the end of a useEffect call mean?", ar: "ماذا تعني [userId] في نهاية استدعاء useEffect؟" },
+          choices: [
+            { en: "Only re-run the effect when userId changes", ar: "أعد تشغيل التأثير فقط عند تغيّر userId" },
+            { en: "Delete userId after use", ar: "احذف userId بعد الاستخدام" },
+            { en: "It has no effect at all", ar: "لا تأثير له إطلاقاً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "That's the dependency array — it controls when the effect re-runs. Omitting it (or getting it wrong) is a very common source of React bugs.",
+            ar: "هذه مصفوفة الاعتماديات — تتحكم بمتى يُعاد تشغيل التأثير. حذفها (أو ضبطها خطأً) سبب شائع جداً لأخطاء React.",
+          },
+        },
       ],
     },
     {
@@ -242,9 +453,10 @@ You already think in components now. To write real React:
 1. **Install Node.js** (nodejs.org), then run: \`npm create vite@latest my-app -- --template react\`
 2. Follow the official tutorial at **react.dev/learn** — genuinely one of the best tutorials in software
 3. Rebuild the click counter and UserCard as real components with \`useState\` and props
-4. The freeCodeCamp video in the Resources tab walks through everything on camera
+4. Practice \`.map()\`-ing a data array into a list of components, and fetching real data with \`useEffect\`
+5. The freeCodeCamp video in the Resources tab walks through everything on camera
 
-**Rule of thumb:** if you catch yourself copy-pasting UI, that's a component waiting to be born.`,
+**Rule of thumb:** if you catch yourself copy-pasting UI, that's a component waiting to be born. If you catch yourself writing the same component call for every item in a list, that's a \`.map()\` waiting to happen.`,
         ar: `## طريقك إلى React الحقيقي
 
 أنت الآن تفكر بالمكوّنات. لكتابة React حقيقي:
@@ -252,9 +464,10 @@ You already think in components now. To write real React:
 1. **ثبّت Node.js** (من nodejs.org)، ثم نفّذ: \`npm create vite@latest my-app -- --template react\`
 2. اتبع الدرس الرسمي على **react.dev/learn** — فعلياً من أفضل الدروس في عالم البرمجة
 3. أعد بناء عدّاد النقرات و UserCard كمكوّنات حقيقية بـ \`useState\` و props
-4. فيديو freeCodeCamp في تبويب المصادر يشرح كل شيء بالتطبيق المصوّر
+4. تدرّب على تحويل مصفوفة بيانات إلى قائمة مكوّنات بـ\`.map()\`، وجلب بيانات حقيقية بـ\`useEffect\`
+5. فيديو freeCodeCamp في تبويب المصادر يشرح كل شيء بالتطبيق المصوّر
 
-**قاعدة ذهبية:** إذا وجدت نفسك تنسخ وتلصق واجهة، فهناك مكوّن ينتظر أن يولد.`,
+**قاعدة ذهبية:** إذا وجدت نفسك تنسخ وتلصق واجهة، فهناك مكوّن ينتظر أن يولد. وإذا وجدت نفسك تكتب نفس استدعاء المكوّن لكل عنصر في قائمة، فهناك \`.map()\` ينتظر أن يحدث.`,
       },
     },
   ],

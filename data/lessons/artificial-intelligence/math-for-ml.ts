@@ -66,6 +66,49 @@ price = (size × 1000) + (bedrooms × 5000) + (bathrooms × 3000)
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Comparing two vectors: dot products and similarity 🧭
+
+You now know a vector is just a list of numbers describing something. But ML constantly needs to answer a different question: **how similar are two vectors?** "Is this new email like the spam ones I've seen? Is this product similar to ones this customer already liked?"
+
+The building block is the **dot product**: multiply the matching entries of two vectors together, then add up the results. You've actually already computed one — the weighted sum from a moment ago (\`price = size×1000 + bedrooms×5000 + ...\`) *is* a dot product between a "features" vector and a "weights" vector!
+
+\`\`\`
+a = [1, 2, 3]
+b = [4, 5, 6]
+dot(a, b) = (1×4) + (2×5) + (3×6) = 4 + 10 + 18 = 32
+\`\`\`
+
+On its own, the dot product's *size* is hard to interpret — it grows just because vectors are long or have big numbers. So ML usually uses **cosine similarity**: the dot product divided by the lengths of both vectors, which rescales the result to always sit between **-1 and 1**:
+
+- **1** → the vectors point in exactly the same direction (very similar)
+- **0** → no relationship (at right angles)
+- **-1** → pointing in opposite directions (very different)
+
+This one number is how a search engine finds the passage most relevant to your question, how a recommendation system finds "customers like you," and how an embedding lesson later will measure whether "king" and "queen" are close in meaning. Same math, everywhere: multiply matching entries, add them up, then rescale.`,
+        ar: `## مقارنة متجهين: الجداء النقطي والتشابه 🧭
+
+تعرف الآن أن المتجه مجرد قائمة أرقام تصف شيئاً. لكن تعلّم الآلة يحتاج باستمرار للإجابة عن سؤال مختلف: **ما مدى تشابه متجهين؟** "هل هذا البريد الجديد يشبه رسائل الإزعاج التي رأيتها؟ هل هذا المنتج يشبه ما أعجب هذا العميل من قبل؟"
+
+اللبنة الأساسية هي **الجداء النقطي (dot product)**: اضرب المدخلات المتقابلة لمتجهين، ثم اجمع النتائج. لقد حسبت واحداً بالفعل — المجموع المرجّح قبل قليل (\`price = size×1000 + bedrooms×5000 + ...\`) *هو* جداء نقطي بين متجه "سمات" ومتجه "أوزان"!
+
+\`\`\`
+a = [1, 2, 3]
+b = [4, 5, 6]
+dot(a, b) = (1×4) + (2×5) + (3×6) = 4 + 10 + 18 = 32
+\`\`\`
+
+بمفرده، *حجم* الجداء النقطي صعب التفسير — يكبر لمجرد أن المتجهات طويلة أو أرقامها كبيرة. لذا يستخدم تعلّم الآلة عادة **تشابه جيب التمام (cosine similarity)**: الجداء النقطي مقسوماً على طولي المتجهين، ما يعيد تحجيم النتيجة لتقع دائماً بين **-1 و1**:
+
+- **1** ← المتجهان يشيران لنفس الاتجاه تماماً (متشابهان جداً)
+- **0** ← لا علاقة (بزاوية قائمة)
+- **-1** ← يشيران لاتجاهين متعاكسين (مختلفان جداً)
+
+هذا الرقم الواحد هو كيف يجد محرك بحث الفقرة الأكثر صلة بسؤالك، وكيف يجد نظام توصية "عملاء مثلك"، وكيف سيقيس درس embeddings لاحقاً هل "king" و"queen" متقاربان في المعنى. نفس الرياضيات، في كل مكان: اضرب المدخلات المتقابلة، اجمعها، ثم أعد التحجيم.`,
+      },
+    },
+    {
       type: "exercise",
       lang: "python",
       prompt: {
@@ -98,6 +141,59 @@ print(predict([120, 3, 2], [1000, 5000, 3000]))  # 141000`,
         { name: { en: "All-zero weights give 0", ar: "أوزان صفرية تعطي 0" }, check: `assert predict([5,5],[0,0]) == 0` },
         { name: { en: "Single feature works", ar: "سمة واحدة تعمل" }, check: `assert predict([4],[10]) == 40` },
       ],
+    },
+    {
+      type: "exercise",
+      lang: "python",
+      prompt: {
+        en: `Write \`dot_product(a, b)\` for two equal-length lists of numbers: multiply matching entries and sum the results. This is the exact operation behind similarity search and recommendation systems.
+
+Example: \`dot_product([1, 2, 3], [4, 5, 6])\` → \`32\``,
+        ar: `اكتب \`dot_product(a, b)\` لقائمتين متساويتي الطول من الأرقام: اضرب المدخلات المتقابلة واجمع النتائج. هذه بالضبط العملية خلف بحث التشابه وأنظمة التوصية.
+
+مثال: \`dot_product([1, 2, 3], [4, 5, 6])\` ← \`32\``,
+      },
+      starterCode: `def dot_product(a, b):
+    total = 0
+    # for each pair (x, y) in zip(a, b): total += x * y
+    return total
+
+print(dot_product([1, 2, 3], [4, 5, 6]))  # 32`,
+      solution: `def dot_product(a, b):
+    total = 0
+    for x, y in zip(a, b):
+        total += x * y
+    return total
+
+print(dot_product([1, 2, 3], [4, 5, 6]))  # 32`,
+      hints: [
+        { en: `Pair up the two lists with zip(a, b): for x, y in zip(a, b):`, ar: `زاوج القائمتين بـ zip(a, b): for x, y in zip(a, b):` },
+        { en: `Add x * y to total on each iteration.`, ar: `أضف x * y إلى total في كل تكرار.` },
+      ],
+      tests: [
+        { name: { en: "The example gives 32", ar: "المثال يعطي 32" }, check: `assert dot_product([1,2,3],[4,5,6]) == 32` },
+        { name: { en: "All-zero vector gives 0", ar: "متجه صفري يعطي 0" }, check: `assert dot_product([0,0,0],[1,2,3]) == 0` },
+        { name: { en: "Single-element vectors work", ar: "متجهات بعنصر واحد تعمل" }, check: `assert dot_product([5],[3]) == 15` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: recommendation systems 🔍
+
+When Netflix, Spotify, or Amazon suggest "you might also like," they aren't magic — they're mostly vector similarity at massive scale. Each user gets turned into a vector describing their taste (learned from what they watched, played, or bought), and each item gets turned into a vector describing its characteristics. Finding good recommendations becomes a search for items whose vectors have the highest cosine similarity to a user's vector.
+
+This approach was proven at industrial scale during the well-documented **Netflix Prize** (2006–2009): Netflix publicly released a dataset of movie ratings and offered $1,000,000 to any team that could improve their recommendation accuracy by 10%. Thousands of teams competed for nearly three years; the winning approaches leaned heavily on representing users and movies as vectors in a shared "taste space" and measuring their similarity — the same dot-product idea from this lesson, just with far more dimensions and far more data.
+
+The takeaway: a concept as simple as "multiply matching numbers, add them up, rescale" — something you just implemented in a few lines of Python — is the mathematical core of one of the most commercially valuable ideas in modern software.`,
+        ar: `## دراسة حالة واقعية: أنظمة التوصية 🔍
+
+حين تقترح Netflix أو Spotify أو Amazon "قد يعجبك أيضاً"، فهي ليست سحراً — بل غالباً تشابه متجهات على نطاق هائل. يتحوّل كل مستخدم إلى متجه يصف ذوقه (متعلَّم مما شاهده أو استمع إليه أو اشتراه)، ويتحوّل كل عنصر إلى متجه يصف خصائصه. إيجاد توصيات جيدة يصبح بحثاً عن عناصر متجهاتها الأعلى تشابه جيب تمام مع متجه المستخدم.
+
+أُثبت هذا النهج على نطاق صناعي خلال **جائزة Netflix** الموثّقة جيداً (2006–2009): أصدرت Netflix علناً بيانات تقييمات أفلام وعرضت مليون دولار لأي فريق يحسّن دقة توصياتها بنسبة 10%. تنافست آلاف الفرق قرابة ثلاث سنوات؛ اعتمدت الأساليب الفائزة بشدة على تمثيل المستخدمين والأفلام كمتجهات في "فضاء ذوق" مشترك وقياس تشابهها — نفس فكرة الجداء النقطي من هذا الدرس، لكن بأبعاد وبيانات أكثر بكثير.
+
+الخلاصة: مفهوم بسيط مثل "اضرب الأرقام المتقابلة، اجمعها، أعد التحجيم" — شيء نفّذته للتو في أسطر قليلة من بايثون — هو الجوهر الرياضي لواحدة من أكثر الأفكار قيمة تجارية في البرمجيات الحديثة.`,
+      },
     },
     {
       type: "quiz",
@@ -141,6 +237,45 @@ print(predict([120, 3, 2], [1000, 5000, 3000]))  # 141000`,
             ar: "يحرّك الأوزان خطوة خطوة في الاتجاه الذي يقلّل الخطأ — يتدحرج في الوادي نحو القاع.",
           },
         },
+        {
+          q: { en: "What does the dot product of two vectors compute?", ar: "ماذا يحسب الجداء النقطي لمتجهين؟" },
+          choices: [
+            { en: "Multiply matching entries together, then add up the results", ar: "اضرب المدخلات المتقابلة معاً، ثم اجمع النتائج" },
+            { en: "Subtract one vector from the other", ar: "اطرح متجهاً من الآخر" },
+            { en: "Sort both vectors", ar: "رتّب المتجهين" },
+          ],
+          answer: 0,
+          explain: {
+            en: "dot([1,2,3],[4,5,6]) = 1×4 + 2×5 + 3×6 = 32 — the same weighted-sum math used throughout ML.",
+            ar: "dot([1,2,3],[4,5,6]) = 1×4 + 2×5 + 3×6 = 32 — نفس رياضيات المجموع المرجّح المستخدمة في تعلّم الآلة كله.",
+          },
+        },
+        {
+          q: { en: "A cosine similarity of 1 between two vectors means…", ar: "تشابه جيب تمام يساوي 1 بين متجهين يعني…" },
+          choices: [
+            { en: "They point in exactly the same direction — very similar", ar: "يشيران لنفس الاتجاه تماماً — متشابهان جداً" },
+            { en: "They are completely unrelated", ar: "لا علاقة بينهما إطلاقاً" },
+            { en: "One of them contains an error", ar: "أحدهما يحتوي خطأ" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Cosine similarity rescales the dot product to between -1 and 1; 1 means maximum similarity, 0 means unrelated, -1 means opposite.",
+            ar: "تشابه جيب التمام يعيد تحجيم الجداء النقطي بين -1 و1؛ 1 يعني أقصى تشابه، و0 يعني لا علاقة، و-1 يعني تعاكساً.",
+          },
+        },
+        {
+          q: { en: "What did the Netflix Prize competition rely on mathematically?", ar: "على ماذا اعتمدت مسابقة جائزة Netflix رياضياً؟" },
+          choices: [
+            { en: "Representing users and movies as vectors and measuring their similarity", ar: "تمثيل المستخدمين والأفلام كمتجهات وقياس تشابهها" },
+            { en: "Manually written if/else rules for each movie", ar: "قواعد if/else مكتوبة يدوياً لكل فيلم" },
+            { en: "Random guessing improved over time", ar: "تخمين عشوائي تحسّن مع الوقت" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Winning teams placed users and movies in a shared vector 'taste space' and used similarity — the same dot-product idea, at scale.",
+            ar: "وضعت الفرق الفائزة المستخدمين والأفلام في 'فضاء ذوق' متجهي مشترك واستخدمت التشابه — نفس فكرة الجداء النقطي، على نطاق واسع.",
+          },
+        },
       ],
     },
     {
@@ -151,7 +286,9 @@ print(predict([120, 3, 2], [1000, 5000, 3000]))  # 141000`,
 - ML math = linear algebra (vectors), statistics (understanding data), calculus (gradient descent)
 - The core concept is weights: a prediction is a weighted sum of inputs
 - Training = finding the weights that minimize error
-- You computed a real weighted prediction
+- The dot product measures alignment between vectors; cosine similarity rescales it to -1..1
+- You computed a real weighted prediction and a real dot product
+- Case study: the Netflix Prize showed vector similarity is the mathematical core of recommendation systems
 
 **Next:** Machine Learning — putting these pieces together into a model that learns from examples.`,
         ar: `## الخلاصة
@@ -159,7 +296,9 @@ print(predict([120, 3, 2], [1000, 5000, 3000]))  # 141000`,
 - رياضيات تعلّم الآلة = الجبر الخطي (المتجهات)، الإحصاء (فهم البيانات)، التفاضل (الانحدار التدريجي)
 - المفهوم الجوهري هو الأوزان: التنبؤ مجموع مرجّح للمدخلات
 - التدريب = إيجاد الأوزان التي تقلّل الخطأ
-- حسبت تنبؤاً مرجّحاً حقيقياً
+- الجداء النقطي يقيس التوافق بين متجهين؛ وتشابه جيب التمام يعيد تحجيمه بين -1 و1
+- حسبت تنبؤاً مرجّحاً حقيقياً وجداءً نقطياً حقيقياً
+- دراسة الحالة: جائزة Netflix أظهرت أن تشابه المتجهات هو الجوهر الرياضي لأنظمة التوصية
 
 **التالي:** تعلّم الآلة — تجميع هذه القطع في نموذج يتعلّم من الأمثلة.`,
       },

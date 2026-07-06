@@ -13,6 +13,8 @@ export const lesson: Lesson = {
 - What JavaScript actually does (with zero jargon)
 - **Variables** — boxes that remember things
 - **Functions** — recipes you write once and reuse forever
+- **Conditionals** — how code makes decisions
+- **Arrays and loops** — handling many things at once, not just one
 - **The DOM** — how JavaScript touches the page
 - Finish with a real interactive click counter
 
@@ -22,6 +24,8 @@ Everything runs right here. No setup.`,
 - ما الذي يفعله JavaScript فعلياً (بدون مصطلحات معقدة)
 - **المتغيرات** — صناديق تتذكر الأشياء
 - **الدوال** — وصفات تكتبها مرة وتعيد استخدامها للأبد
+- **الشروط** — كيف يتخذ الكود قرارات
+- **المصفوفات والحلقات** — التعامل مع أشياء كثيرة، لا شيء واحد فقط
 - **الـ DOM** — كيف يلمس JavaScript الصفحة
 - وتختم بعدّاد نقرات تفاعلي حقيقي
 
@@ -204,6 +208,272 @@ console.log(add(2, 3)); // 5`,
     {
       type: "text",
       body: {
+        en: `## Conditionals — teaching the robot to decide 🤔
+
+Real programs don't just run top to bottom blindly — they make decisions. "**If** it's raining, take an umbrella. **Otherwise**, don't." JavaScript writes that exact sentence:
+
+\`\`\`js
+const isRaining = true;
+
+if (isRaining) {
+  console.log("Take an umbrella");
+} else {
+  console.log("Enjoy the sun");
+}
+\`\`\`
+
+To make decisions you need **comparisons**, which produce \`true\` or \`false\`:
+
+\`\`\`js
+5 > 3          // true
+5 === 5        // true  ("===" means "is exactly equal to")
+5 !== 3        // true  ("!==" means "is not equal to")
+age >= 18      // true if age is 18 or more
+\`\`\`
+
+⚠️ **Common trap:** always use \`===\` (three equals) to compare values, not \`=\` (one equals, which *assigns* a value and would silently break your logic). This trips up every beginner at least once.
+
+You can chain more conditions with \`else if\`:
+
+\`\`\`js
+const score = 75;
+
+if (score >= 90) {
+  console.log("Grade: A");
+} else if (score >= 70) {
+  console.log("Grade: B");
+} else {
+  console.log("Grade: C or below");
+}
+\`\`\``,
+        ar: `## الشروط — تعليم الروبوت أن يقرر 🤔
+
+البرامج الحقيقية لا تعمل من الأعلى للأسفل بعمى — بل تتخذ قرارات. "**إن** كانت السماء تمطر، خذ مظلة. **وإلا**، لا تفعل." JavaScript تكتب نفس الجملة بالضبط:
+
+\`\`\`js
+const isRaining = true;
+
+if (isRaining) {
+  console.log("Take an umbrella");
+} else {
+  console.log("Enjoy the sun");
+}
+\`\`\`
+
+لاتخاذ قرارات تحتاج **مقارنات**، تُنتج \`true\` أو \`false\`:
+
+\`\`\`js
+5 > 3          // true
+5 === 5        // true  ("===" تعني "يساوي تماماً")
+5 !== 3        // true  ("!==" تعني "لا يساوي")
+age >= 18      // true إن كان العمر 18 أو أكثر
+\`\`\`
+
+⚠️ **فخ شائع:** استخدم دائماً \`===\` (ثلاث علامات مساواة) لمقارنة القيم، لا \`=\` (علامة واحدة، التي *تُسند* قيمة وقد تكسر منطقك بصمت). هذا يوقع كل مبتدئ مرة واحدة على الأقل.
+
+يمكنك سلسلة شروط أكثر بـ \`else if\`:
+
+\`\`\`js
+const score = 75;
+
+if (score >= 90) {
+  console.log("Grade: A");
+} else if (score >= 70) {
+  console.log("Grade: B");
+} else {
+  console.log("Grade: C or below");
+}
+\`\`\``,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `Write a function \`checkAge(age)\` that returns:
+- \`"child"\` if age is less than 13
+- \`"teen"\` if age is 13 to 17 (inclusive)
+- \`"adult"\` if age is 18 or more`,
+        ar: `اكتب دالة \`checkAge(age)\` تعيد:
+- \`"child"\` إذا كان العمر أقل من 13
+- \`"teen"\` إذا كان العمر بين 13 و17 (شاملاً)
+- \`"adult"\` إذا كان العمر 18 أو أكثر`,
+      },
+      starterCode: `function checkAge(age) {
+  // use if / else if / else
+
+}
+
+console.log(checkAge(8));   // "child"
+console.log(checkAge(15));  // "teen"
+console.log(checkAge(30));  // "adult"`,
+      solution: `function checkAge(age) {
+  if (age < 13) {
+    return "child";
+  } else if (age <= 17) {
+    return "teen";
+  } else {
+    return "adult";
+  }
+}
+
+console.log(checkAge(8));   // "child"
+console.log(checkAge(15));  // "teen"
+console.log(checkAge(30));  // "adult"`,
+      hints: [
+        { en: `Check the smallest range first: if (age < 13) return "child";`, ar: `افحص أصغر نطاق أولاً: if (age < 13) return "child";` },
+        { en: `Then: else if (age <= 17) return "teen"; else return "adult";`, ar: `ثم: else if (age <= 17) return "teen"; else return "adult";` },
+      ],
+      tests: [
+        { name: { en: "checkAge(8) is \"child\"", ar: "checkAge(8) هي \"child\"" }, check: `checkAge(8) === "child"` },
+        { name: { en: "checkAge(13) is \"teen\" (boundary)", ar: "checkAge(13) هي \"teen\" (الحد)" }, check: `checkAge(13) === "teen"` },
+        { name: { en: "checkAge(17) is \"teen\" (boundary)", ar: "checkAge(17) هي \"teen\" (الحد)" }, check: `checkAge(17) === "teen"` },
+        { name: { en: "checkAge(18) is \"adult\" (boundary)", ar: "checkAge(18) هي \"adult\" (الحد)" }, check: `checkAge(18) === "adult"` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Arrays and loops — many things, one instruction 📋
+
+A **variable** holds one value. An **array** holds a whole *list* — like a shopping list in one box:
+
+\`\`\`js
+const fruits = ["apple", "banana", "mango"];
+
+console.log(fruits[0]);      // "apple"  — arrays start counting at 0!
+console.log(fruits.length);  // 3
+fruits.push("orange");       // add to the end
+\`\`\`
+
+Now, what if you want to print *every* fruit? Writing \`console.log(fruits[0])\`, \`console.log(fruits[1])\`… by hand doesn't scale. A **loop** repeats an instruction for you:
+
+\`\`\`js
+for (let i = 0; i < fruits.length; i++) {
+  console.log(fruits[i]);
+}
+\`\`\`
+
+Read it as: "starting at \`i = 0\`, while \`i\` is less than the list's length, print \`fruits[i]\`, then add 1 to \`i\`, and repeat." This one pattern — loop over an array — is everywhere: rendering a list of products, checking every item in a cart, searching a list of users.
+
+A shorter, modern version that many developers prefer:
+
+\`\`\`js
+for (const fruit of fruits) {
+  console.log(fruit);
+}
+\`\`\`
+
+This reads even more like English: "for each fruit of fruits, print it."`,
+        ar: `## المصفوفات والحلقات — أشياء كثيرة، تعليمة واحدة 📋
+
+**المتغير** يحمل قيمة واحدة. أما **المصفوفة (array)** فتحمل *قائمة* كاملة — كقائمة تسوق في صندوق واحد:
+
+\`\`\`js
+const fruits = ["apple", "banana", "mango"];
+
+console.log(fruits[0]);      // "apple"  — المصفوفات تبدأ العدّ من 0!
+console.log(fruits.length);  // 3
+fruits.push("orange");       // أضف في النهاية
+\`\`\`
+
+الآن، ماذا لو أردت طباعة *كل* فاكهة؟ كتابة \`console.log(fruits[0])\`، \`console.log(fruits[1])\`… يدوياً لا يصلح لقوائم كبيرة. **الحلقة (loop)** تكرر تعليمة نيابة عنك:
+
+\`\`\`js
+for (let i = 0; i < fruits.length; i++) {
+  console.log(fruits[i]);
+}
+\`\`\`
+
+اقرأها: "ابدأ من \`i = 0\`، وطالما \`i\` أصغر من طول القائمة، اطبع \`fruits[i]\`، ثم أضف 1 إلى \`i\`، وكرّر." هذا النمط الواحد — التكرار على مصفوفة — موجود في كل مكان: عرض قائمة منتجات، فحص كل عنصر في سلة، البحث في قائمة مستخدمين.
+
+نسخة أقصر وأحدث يفضّلها كثير من المطورين:
+
+\`\`\`js
+for (const fruit of fruits) {
+  console.log(fruit);
+}
+\`\`\`
+
+تُقرأ أشبه بالإنجليزية: "لكل فاكهة من fruits، اطبعها."`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `Write a function \`sumArray(nums)\` that adds up every number in the array \`nums\` and returns the total, using a loop.`,
+        ar: `اكتب دالة \`sumArray(nums)\` تجمع كل الأرقام في المصفوفة \`nums\` وتعيد المجموع، باستخدام حلقة.`,
+      },
+      starterCode: `function sumArray(nums) {
+  let total = 0;
+  // loop over nums and add each one to total
+
+  return total;
+}
+
+console.log(sumArray([1, 2, 3]));    // 6
+console.log(sumArray([10, 20]));     // 30`,
+      solution: `function sumArray(nums) {
+  let total = 0;
+  for (const n of nums) {
+    total = total + n;
+  }
+  return total;
+}
+
+console.log(sumArray([1, 2, 3]));    // 6
+console.log(sumArray([10, 20]));     // 30`,
+      hints: [
+        { en: `for (const n of nums) { total = total + n; }`, ar: `for (const n of nums) { total = total + n; }` },
+        { en: `Make sure total starts at 0 before the loop, and is returned after it.`, ar: `تأكّد أن total تبدأ من 0 قبل الحلقة، وتُعاد بعدها.` },
+      ],
+      tests: [
+        { name: { en: "sumArray([1,2,3]) is 6", ar: "sumArray([1,2,3]) تساوي 6" }, check: `sumArray([1,2,3]) === 6` },
+        { name: { en: "sumArray([10,20]) is 30", ar: "sumArray([10,20]) تساوي 30" }, check: `sumArray([10,20]) === 30` },
+        { name: { en: "sumArray([]) is 0 (empty list)", ar: "sumArray([]) تساوي 0 (قائمة فارغة)" }, check: `sumArray([]) === 0` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the search bar on this site 🔍
+
+The roadmap search on this very platform's homepage runs on exactly what you just learned. Conceptually, it does this:
+
+\`\`\`js
+const roadmaps = ["Frontend", "Cyber Security", "AI", "Cloud Computing"];
+const query = "cloud";
+
+for (const name of roadmaps) {
+  if (name.toLowerCase().includes(query)) {
+    console.log("Match:", name);
+  }
+}
+\`\`\`
+
+Loop over a list (\`roadmaps\`) + a condition (\`if\`) that checks each one against what you typed = a working live search. Every "search," "filter," or "sort" feature you've ever used on any website is this same combination, just with more polish around it. You already know the core of it.`,
+        ar: `## دراسة حالة واقعية: شريط البحث في هذا الموقع 🔍
+
+بحث خرائط التعلم في الصفحة الرئيسية لهذه المنصة نفسها يعمل بما تعلمته للتو بالضبط. مفاهيمياً، يفعل هذا:
+
+\`\`\`js
+const roadmaps = ["Frontend", "Cyber Security", "AI", "Cloud Computing"];
+const query = "cloud";
+
+for (const name of roadmaps) {
+  if (name.toLowerCase().includes(query)) {
+    console.log("Match:", name);
+  }
+}
+\`\`\`
+
+حلقة على قائمة (\`roadmaps\`) + شرط (\`if\`) يفحص كل عنصر مقابل ما كتبته = بحث حيّ عامل. كل ميزة "بحث" أو "تصفية" أو "ترتيب" استخدمتها على أي موقع هي نفس هذا التركيب، فقط بصقل أكثر حوله. أنت تعرف جوهرها بالفعل.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
         en: `## The DOM — the robot's hands 🖐️
 
 So far the robot only talks to the console. But it can also **touch the page**: read it, change it, react to clicks. The page, as JavaScript sees it, is called the **DOM** (Document Object Model) — think of it as the house's control panel.
@@ -370,6 +640,45 @@ Steps: grab both elements → make a \`let clicks = 0\` box → listen for "clic
             ar: "تسجّل وصفة لتعمل لاحقاً، في كل مرة يقع الحدث. لا يحدث شيء حتى ينقر المستخدم فعلاً.",
           },
         },
+        {
+          q: { en: "Why should you use === instead of = to compare two values?", ar: "لماذا نستخدم === بدل = لمقارنة قيمتين؟" },
+          choices: [
+            { en: "= assigns a value (changes it); === checks equality without changing anything", ar: "= تُسند قيمة (تغيّرها)؛ و === تفحص التساوي دون تغيير أي شيء" },
+            { en: "They are identical", ar: "متطابقتان" },
+            { en: "=== is just faster", ar: "=== أسرع فقط" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Using = in a condition silently overwrites the variable instead of comparing it — one of the most common beginner bugs in JavaScript.",
+            ar: "استخدام = في شرط يستبدل قيمة المتغير بصمت بدل مقارنتها — أحد أشيع أخطاء المبتدئين في JavaScript.",
+          },
+        },
+        {
+          q: { en: "What does fruits[0] give you in const fruits = [\"apple\",\"banana\"]?", ar: "ماذا يعطيك fruits[0] في const fruits = [\"apple\",\"banana\"]؟" },
+          choices: [
+            { en: "\"apple\" — arrays start counting at 0", ar: "\"apple\" — المصفوفات تبدأ العدّ من 0" },
+            { en: "\"banana\"", ar: "\"banana\"" },
+            { en: "The number of items", ar: "عدد العناصر" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Array indexes start at 0, not 1 — fruits[0] is the first item, fruits[1] is the second.",
+            ar: "فهارس المصفوفة تبدأ من 0 لا 1 — fruits[0] هو العنصر الأول، وfruits[1] الثاني.",
+          },
+        },
+        {
+          q: { en: "What does a for loop let you do?", ar: "ماذا تتيح لك حلقة for؟" },
+          choices: [
+            { en: "Repeat an instruction automatically for every item in a list", ar: "تكرار تعليمة تلقائياً لكل عنصر في قائمة" },
+            { en: "Delete an array", ar: "حذف مصفوفة" },
+            { en: "Create a new function", ar: "إنشاء دالة جديدة" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Instead of writing the same line once per item by hand, a loop runs it for you across the whole array — the pattern behind search, filtering, and rendering lists.",
+            ar: "بدل كتابة نفس السطر يدوياً لكل عنصر، تشغّله الحلقة نيابة عنك عبر المصفوفة كلها — النمط خلف البحث والتصفية وعرض القوائم.",
+          },
+        },
       ],
     },
     {
@@ -381,18 +690,22 @@ You now know:
 
 - **Variables** (\`let\`, \`const\`) — remembering things
 - **Functions** — reusable recipes with \`return\`
+- **Conditionals** (\`if\` / \`else if\` / \`else\`) — making decisions
+- **Arrays and loops** — handling lists, not just single values
 - **DOM** — grab, listen, change
 
-**What's next?** Practice is everything in JavaScript. Try: a counter that also goes down, a button that changes the page color, a name-greeting input. Then continue to **Git & GitHub** to save your work like a professional — and later **React**, which builds on everything here.`,
+**What's next?** Practice is everything in JavaScript. Try: a counter that also goes down, a button that changes the page color, a name-greeting input, a search box that filters a list of names as you type. Then continue to **Git & GitHub** to save your work like a professional — and later **React**, which builds on everything here.`,
         ar: `## اكتملت المرحلة 🏆
 
 أنت الآن تعرف:
 
 - **المتغيرات** (\`let\`، \`const\`) — تذكّر الأشياء
 - **الدوال** — وصفات قابلة لإعادة الاستخدام مع \`return\`
+- **الشروط** (\`if\` / \`else if\` / \`else\`) — اتخاذ القرارات
+- **المصفوفات والحلقات** — التعامل مع القوائم، لا القيم المفردة فقط
 - **DOM** — أمسِك، استمع، غيّر
 
-**ما التالي؟** الممارسة هي كل شيء في JavaScript. جرّب: عدّاداً ينقص أيضاً، زراً يغيّر لون الصفحة، حقلَ اسمٍ يرحب بك. ثم تابع إلى **Git و GitHub** لتحفظ عملك كالمحترفين — ولاحقاً **React** الذي يبني على كل ما هنا.`,
+**ما التالي؟** الممارسة هي كل شيء في JavaScript. جرّب: عدّاداً ينقص أيضاً، زراً يغيّر لون الصفحة، حقلَ اسمٍ يرحب بك، مربّع بحث يصفّي قائمة أسماء أثناء الكتابة. ثم تابع إلى **Git و GitHub** لتحفظ عملك كالمحترفين — ولاحقاً **React** الذي يبني على كل ما هنا.`,
       },
     },
   ],

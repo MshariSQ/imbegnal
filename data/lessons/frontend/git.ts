@@ -12,16 +12,20 @@ export const lesson: Lesson = {
 
 - Why every developer on Earth uses Git
 - The 5 commands you'll type every single day
+- \`.gitignore\` — keeping secrets and junk out of your history
 - What GitHub is (and how it gets you hired)
+- A simulated coding exercise modeling how commit history works
 
-This lesson is theory + quiz — Git runs in your computer's terminal, so we'll prepare you to use it there.`,
+This lesson is mostly theory + quiz — Git itself runs in your computer's terminal, so we'll prepare you to use it there, plus one browser exercise that models the core idea.`,
         ar: `## ماذا ستتعلم
 
 - لماذا يستخدم كل مبرمج على وجه الأرض Git
 - الأوامر الخمسة التي ستكتبها كل يوم
+- \`.gitignore\` — إبقاء الأسرار والملفات غير المهمة خارج سجلّك
 - ما هو GitHub (وكيف يوصلك إلى وظيفة)
+- تمرين برمجي محاكٍ يمثّل كيف يعمل سجلّ الـ commits
 
-هذا الدرس نظري + اختبار — لأن Git يعمل في طرفية جهازك، سنجهزك لاستخدامه هناك.`,
+هذا الدرس نظري + اختبار في معظمه — لأن Git نفسه يعمل في طرفية جهازك، سنجهزك لاستخدامه هناك، بالإضافة إلى تمرين واحد في المتصفح يحاكي الفكرة الجوهرية.`,
       },
     },
     {
@@ -118,6 +122,91 @@ git merge new-feature         # أدخل تجربتك إلى main
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## .gitignore — keeping junk (and secrets) out 🚫
+
+Not everything in your project folder belongs in the photo album. Two categories you must **never** commit:
+
+1. **Generated junk** — folders like \`node_modules/\` (downloaded libraries, sometimes gigabytes) or \`.next/\` (build output). They can always be regenerated from your actual code, so committing them just bloats the album for no reason.
+2. **Secrets** — API keys, database passwords, \`.env\` files. If you commit a secret once, it lives in your Git history *forever*, even if you delete the file in a later commit — anyone with repo access (or who finds a leaked public repo) can dig it out. This is a real, common cause of security breaches.
+
+The fix is a file named exactly \`.gitignore\` in your project's root, listing what Git should never track:
+
+\`\`\`
+node_modules/
+.env
+.next/
+*.log
+\`\`\`
+
+Create it *before* your first commit. Git will simply skip anything listed here — \`git status\` won't even mention it.`,
+        ar: `## .gitignore — إبقاء الفوضى (والأسرار) خارجاً 🚫
+
+ليس كل ما في مجلد مشروعك ينتمي لألبوم الصور. فئتان يجب **ألا** تودعهما (commit) أبداً:
+
+1. **الفوضى المولّدة** — مجلدات مثل \`node_modules/\` (مكتبات مُنزَّلة، أحياناً بحجم جيجابايتات) أو \`.next/\` (ناتج البناء). يمكن دائماً إعادة توليدها من كودك الفعلي، فإيداعها يُضخّم الألبوم بلا داعٍ.
+2. **الأسرار** — مفاتيح API، كلمات مرور قواعد البيانات، ملفات \`.env\`. إن أودعت سراً مرة، يعيش في سجلّ Git *للأبد*، حتى لو حذفت الملف في commit لاحق — أي شخص لديه وصول للمستودع (أو يجد مستودعاً عاماً مسرّباً) يستطيع استخراجه. هذا سبب حقيقي وشائع لاختراقات الأمن.
+
+الحل ملف اسمه بالضبط \`.gitignore\` في جذر مشروعك، يسرد ما يجب ألا يتتبعه Git:
+
+\`\`\`
+node_modules/
+.env
+.next/
+*.log
+\`\`\`
+
+أنشئه *قبل* أول commit. سيتجاهل Git ببساطة أي شيء مذكور هنا — حتى \`git status\` لن يذكره.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `Model how \`git log\` shows recent history. Write \`recentCommits(commits, n)\` where \`commits\` is an array of messages in chronological order (oldest first). Return the **last \`n\` commits, most recent first** — exactly what \`git log -n\` shows you.
+
+Example: \`recentCommits(["Init", "Add navbar", "Fix bug", "Add footer"], 2)\` → \`["Add footer", "Fix bug"]\``,
+        ar: `حاكِ كيف يعرض \`git log\` السجلّ الأخير. اكتب \`recentCommits(commits, n)\` حيث \`commits\` مصفوفة رسائل بالترتيب الزمني (الأقدم أولاً). أعِد **آخر \`n\` commits، الأحدث أولاً** — تماماً كما يعرضها \`git log -n\`.
+
+مثال: \`recentCommits(["Init", "Add navbar", "Fix bug", "Add footer"], 2)\` ← \`["Add footer", "Fix bug"]\``,
+      },
+      starterCode: `function recentCommits(commits, n) {
+  // take the last n, then reverse them (most recent first)
+
+}
+
+console.log(recentCommits(["Init", "Add navbar", "Fix bug", "Add footer"], 2));
+// ["Add footer", "Fix bug"]`,
+      solution: `function recentCommits(commits, n) {
+  const lastN = commits.slice(-n);
+  return lastN.reverse();
+}
+
+console.log(recentCommits(["Init", "Add navbar", "Fix bug", "Add footer"], 2));
+// ["Add footer", "Fix bug"]`,
+      hints: [
+        { en: `commits.slice(-n) grabs the last n items while keeping chronological order.`, ar: `commits.slice(-n) يأخذ آخر n عناصر مع الحفاظ على الترتيب الزمني.` },
+        { en: `Then .reverse() flips them so the most recent comes first.`, ar: `ثم .reverse() يعكسها ليأتي الأحدث أولاً.` },
+      ],
+      tests: [
+        { name: { en: "Returns the last 2, most recent first", ar: "يعيد آخر 2، الأحدث أولاً" }, check: `JSON.stringify(recentCommits(["Init","Add navbar","Fix bug","Add footer"],2)) === JSON.stringify(["Add footer","Fix bug"])` },
+        { name: { en: "Works with n=1", ar: "يعمل مع n=1" }, check: `JSON.stringify(recentCommits(["A","B","C"],1)) === JSON.stringify(["C"])` },
+        { name: { en: "Works when n equals the full list", ar: "يعمل عندما n تساوي القائمة كاملة" }, check: `JSON.stringify(recentCommits(["A","B"],2)) === JSON.stringify(["B","A"])` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: this exact platform 🔍
+
+This isn't hypothetical — the very site you're learning on is built exactly this way. Its [CONTRIBUTING.md](https://github.com/MshariSQ/skillforge/blob/main/CONTRIBUTING.md) tells every contributor to branch off \`main\`, commit their roadmap or lesson changes, and open a Pull Request for review before anything merges. Every lesson you've completed on this site shipped through that exact \`branch → commit → push → Pull Request → merge\` flow you just learned. Open-source projects you use every day — React, VS Code, Python itself — all run on this same rhythm.`,
+        ar: `## دراسة حالة واقعية: هذه المنصة بالضبط 🔍
+
+هذا ليس افتراضياً — الموقع نفسه الذي تتعلم عليه مبني بهذه الطريقة بالضبط. ملف [CONTRIBUTING.md](https://github.com/MshariSQ/skillforge/blob/main/CONTRIBUTING.md) الخاص به يطلب من كل مساهم التفرّع من \`main\`، وإيداع تعديلاته على خرائط التعلم أو الدروس، وفتح Pull Request للمراجعة قبل أن يُدمج أي شيء. كل درس أنهيته على هذا الموقع وصل عبر نفس تدفق \`فرع ← commit ← push ← Pull Request ← دمج\` الذي تعلمته للتو. مشاريع مفتوحة المصدر تستخدمها يومياً — React، VS Code، بايثون نفسه — تعمل جميعها بنفس هذا الإيقاع.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -185,6 +274,32 @@ git merge new-feature         # أدخل تجربتك إلى main
             ar: "الـ PR يقول: \"فرعي جاهز — راجعوه وادمجوه.\" هنا تحدث مراجعة الكود، وهكذا تعمل المساهمات مفتوحة المصدر.",
           },
         },
+        {
+          q: { en: "Why should you never commit a .env file with real secrets?", ar: "لماذا يجب ألا تودع (commit) ملف .env بأسرار حقيقية أبداً؟" },
+          choices: [
+            { en: "Once committed, the secret stays in Git history forever, even if deleted later", ar: "بمجرد إيداعه، يبقى السر في سجلّ Git للأبد، حتى لو حُذف لاحقاً" },
+            { en: ".env files are too small for Git to handle", ar: "ملفات .env صغيرة جداً على Git" },
+            { en: "It slows down git push", ar: "يبطئ git push" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Deleting a file in a new commit doesn't erase it from history — anyone with repo access can still find it in an old commit. List secrets in .gitignore instead.",
+            ar: "حذف ملف في commit جديد لا يمحوه من السجلّ — أي شخص لديه وصول للمستودع يستطيع إيجاده في commit قديم. أدرج الأسرار في .gitignore بدلاً من ذلك.",
+          },
+        },
+        {
+          q: { en: "Why skip committing node_modules/?", ar: "لماذا نتجنب إيداع node_modules/؟" },
+          choices: [
+            { en: "It can always be regenerated from your code, and just bloats the repo", ar: "يمكن دائماً إعادة توليده من كودك، وإيداعه يُضخّم المستودع فقط" },
+            { en: "Git cannot read folders", ar: "Git لا يستطيع قراءة المجلدات" },
+            { en: "It contains secrets by default", ar: "يحتوي أسراراً افتراضياً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Generated/downloaded folders belong in .gitignore — they add no real information and can be rebuilt anytime with a single install command.",
+            ar: "المجلدات المولّدة/المُنزَّلة مكانها .gitignore — لا تضيف معلومة حقيقية ويمكن إعادة بنائها بأمر تثبيت واحد.",
+          },
+        },
       ],
     },
     {
@@ -193,15 +308,19 @@ git merge new-feature         # أدخل تجربتك إلى main
         en: `## Summary
 
 - Git = snapshot album on your machine (init, status, add, commit)
+- \`.gitignore\` keeps junk and secrets out of that album forever
 - GitHub = your album online (push) + your public portfolio
 - Branch = safe parallel universe; merge via Pull Request
+- Real open-source projects — including this very site — run on exactly this workflow
 
 **Career tip:** commit and push something every week. A green GitHub activity graph is one of the strongest signals a junior developer can show an employer.`,
         ar: `## الخلاصة
 
 - Git = ألبوم لقطات على جهازك (init، status، add، commit)
+- \`.gitignore\` يُبقي الفوضى والأسرار خارج ذلك الألبوم للأبد
 - GitHub = ألبومك على الإنترنت (push) + معرض أعمالك العام
 - الفرع = كون موازٍ آمن؛ والدمج عبر Pull Request
+- مشاريع مفتوحة المصدر حقيقية — بما فيها هذا الموقع نفسه — تعمل بنفس سير العمل هذا بالضبط
 
 **نصيحة مهنية:** ارفع commit كل أسبوع. مخطط النشاط الأخضر في GitHub من أقوى الإشارات التي يقدمها المبرمج المبتدئ لصاحب العمل.`,
       },

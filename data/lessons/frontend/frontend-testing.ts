@@ -12,6 +12,7 @@ export const lesson: Lesson = {
 
 - What automated tests actually are (you'll write a tiny test tool yourself)
 - The testing pyramid every team talks about
+- **Mocking** — testing in isolation without a real server or database
 - Core Web Vitals — the 3 numbers Google grades your site with
 
 Fun fact: every exercise you've passed in this course was checked by automated tests. Today you look behind the curtain.`,
@@ -19,6 +20,7 @@ Fun fact: every exercise you've passed in this course was checked by automated t
 
 - ما هي الاختبارات الآلية فعلياً (ستكتب أداة اختبار مصغّرة بنفسك)
 - هرم الاختبارات الذي تتحدث عنه كل الفرق
+- **المحاكاة (Mocking)** — الاختبار بمعزل دون خادم أو قاعدة بيانات حقيقية
 - مؤشرات الويب الأساسية — الأرقام الثلاثة التي تقيّم بها Google موقعك
 
 معلومة ممتعة: كل تمرين اجتزته في هذه الدورة صُحّح باختبارات آلية. اليوم تنظر خلف الستار.`,
@@ -150,6 +152,124 @@ expectEqual(multiply(2, 2), 5);    // FAIL expected 5 got 4`,
     {
       type: "text",
       body: {
+        en: `## Arrays and objects need a different check ⚠️
+
+Your \`expectEqual\` uses \`===\`, which works perfectly for numbers and strings. But try comparing two arrays with it:
+
+\`\`\`js
+[1, 2, 3] === [1, 2, 3]   // false! Even though they "look" the same
+\`\`\`
+
+\`===\` checks *identity* (are these the exact same object in memory?), not *contents*. Two separately-created arrays are never the same object, even with identical items. Real test tools solve this by comparing contents deeply — the simplest trick is turning both into strings first:
+
+\`\`\`js
+JSON.stringify([1, 2, 3]) === JSON.stringify([1, 2, 3])   // true!
+\`\`\`
+
+This is exactly why several exercises in this course compare arrays using \`JSON.stringify(...)  === JSON.stringify(...)\` inside their checks — now you know why, instead of just copying the pattern.`,
+        ar: `## المصفوفات والكائنات تحتاج فحصاً مختلفاً ⚠️
+
+دالتك \`expectEqual\` تستخدم \`===\`، وتعمل تماماً مع الأرقام والنصوص. لكن جرّب مقارنة مصفوفتين بها:
+
+\`\`\`js
+[1, 2, 3] === [1, 2, 3]   // false! رغم أنهما "تبدوان" متطابقتين
+\`\`\`
+
+\`===\` تفحص *الهوية* (هل هذان نفس الكائن بالضبط في الذاكرة؟)، لا *المحتوى*. مصفوفتان أُنشئتا منفصلتين ليستا أبداً نفس الكائن، حتى بعناصر متطابقة. أدوات الاختبار الحقيقية تحل هذا بمقارنة المحتوى بعمق — أبسط حيلة هي تحويل كليهما لنص أولاً:
+
+\`\`\`js
+JSON.stringify([1, 2, 3]) === JSON.stringify([1, 2, 3])   // true!
+\`\`\`
+
+هذا بالضبط لماذا تقارن عدة تمارين في هذه الدورة المصفوفات بـ\`JSON.stringify(...) === JSON.stringify(...)\` داخل فحوصاتها — الآن تعرف السبب، لا مجرد نسخ النمط.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `Write \`expectArrayEqual(actual, expected)\` — like \`expectEqual\`, but correct for arrays. Print \`"PASS"\` if their contents match, otherwise \`"FAIL"\`.`,
+        ar: `اكتب \`expectArrayEqual(actual, expected)\` — كـ\`expectEqual\`، لكن صحيحة للمصفوفات. اطبع \`"PASS"\` إن تطابق المحتوى، وإلا \`"FAIL"\`.`,
+      },
+      starterCode: `function expectArrayEqual(actual, expected) {
+  // compare contents, not identity — JSON.stringify both sides
+
+}
+
+expectArrayEqual([1, 2, 3], [1, 2, 3]);   // should print PASS
+expectArrayEqual([1, 2], [1, 2, 3]);      // should print FAIL`,
+      solution: `function expectArrayEqual(actual, expected) {
+  if (JSON.stringify(actual) === JSON.stringify(expected)) {
+    console.log("PASS");
+  } else {
+    console.log("FAIL");
+  }
+}
+
+expectArrayEqual([1, 2, 3], [1, 2, 3]);   // PASS
+expectArrayEqual([1, 2], [1, 2, 3]);      // FAIL`,
+      hints: [
+        { en: `if (JSON.stringify(actual) === JSON.stringify(expected)) { console.log("PASS"); }`, ar: `if (JSON.stringify(actual) === JSON.stringify(expected)) { console.log("PASS"); }` },
+        { en: `else { console.log("FAIL"); }`, ar: `else { console.log("FAIL"); }` },
+      ],
+      tests: [
+        { name: { en: "Matching arrays print PASS", ar: "المصفوفات المتطابقة تطبع PASS" }, check: `window.__consoleLog.includes("PASS")` },
+        { name: { en: "Different arrays print FAIL", ar: "المصفوفات المختلفة تطبع FAIL" }, check: `window.__consoleLog.includes("FAIL")` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Mocking — testing without the real thing 🎭
+
+What if your function calls a real API or database? You don't want tests hitting a live server every time (slow, costs money, fails if the internet is down). **Mocking** replaces the real dependency with a fake stand-in that returns known data instantly:
+
+\`\`\`js
+// real version — calls an actual API
+function getUser(id) {
+  return fetch("/api/users/" + id).then(r => r.json());
+}
+
+// mocked version, used only during tests
+function mockGetUser(id) {
+  return Promise.resolve({ id: id, name: "Test User" });
+}
+\`\`\`
+
+The test calls \`mockGetUser\` instead of the real one, so it runs in milliseconds, never touches the network, and always returns the same predictable data — perfect for checking "does my component *display* the user correctly?" without caring whether the real API works today.`,
+        ar: `## المحاكاة — الاختبار دون الشيء الحقيقي 🎭
+
+ماذا لو استدعت دالتك API أو قاعدة بيانات حقيقية؟ لا تريد اختبارات تضرب خادماً حياً كل مرة (بطيء، يكلّف مالاً، يفشل إن انقطع الإنترنت). **المحاكاة (Mocking)** تستبدل الاعتمادية الحقيقية ببديل وهمي يعيد بيانات معروفة فوراً:
+
+\`\`\`js
+// النسخة الحقيقية — تستدعي API فعلياً
+function getUser(id) {
+  return fetch("/api/users/" + id).then(r => r.json());
+}
+
+// النسخة المحاكاة، تُستخدم فقط أثناء الاختبار
+function mockGetUser(id) {
+  return Promise.resolve({ id: id, name: "Test User" });
+}
+\`\`\`
+
+الاختبار يستدعي \`mockGetUser\` بدل الحقيقية، فيعمل بأجزاء من الثانية، ولا يلمس الشبكة أبداً، ويعيد دائماً نفس البيانات المتوقعة — مثالي لفحص "هل يعرض مكوّني المستخدم بشكل صحيح؟" دون الاهتمام بهل يعمل الـ API الحقيقي اليوم.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: this exact course 🔍
+
+You don't need to imagine how automated testing works — you've been inside it this entire course. Every exercise you've passed has a hidden \`check\` string, like \`add(2,3) === 5\`, that runs against your code the instant you click "Check" — that *is* \`expectEqual\`, just wired into this platform's UI instead of printing to a console. When your code passes all checks, the lesson marks itself complete automatically. You weren't just learning about tests in this lesson; every lesson before it was testing you the same way.`,
+        ar: `## دراسة حالة واقعية: هذه الدورة نفسها 🔍
+
+لا تحتاج تخيّل كيف يعمل الاختبار الآلي — كنت بداخله طوال هذه الدورة. كل تمرين اجتزته له نص \`check\` خفي، مثل \`add(2,3) === 5\`، يعمل ضد كودك لحظة ضغطك "تحقّق" — هذا *هو* \`expectEqual\`، لكن موصول بواجهة هذه المنصة بدل الطباعة في وحدة تحكم. حين ينجح كودك في كل الفحوصات، يُعلَّم الدرس مكتملاً تلقائياً. لم تكن تتعلم عن الاختبارات في هذا الدرس فقط؛ كل درس قبله كان يختبرك بنفس الطريقة.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
         en: `## Performance — Core Web Vitals ⚡
 
 Google measures every site with three numbers (they affect your search ranking!):
@@ -229,6 +349,32 @@ The usual junior-level wins: compress/resize images (biggest one by far), set wi
             ar: "Lighthouse مجاني ومدمج في كروم (F12) ويعطي درجات وإصلاحات ملموسة. ويعمل web.dev/measure أيضاً.",
           },
         },
+        {
+          q: { en: "Why does [1,2,3] === [1,2,3] return false?", ar: "لماذا تعيد [1,2,3] === [1,2,3] القيمة false؟" },
+          choices: [
+            { en: "=== checks if it's the exact same object in memory, not matching contents", ar: "=== تفحص هل هو نفس الكائن بالضبط في الذاكرة، لا تطابق المحتوى" },
+            { en: "Arrays cannot hold numbers", ar: "المصفوفات لا يمكن أن تحمل أرقاماً" },
+            { en: "This is a bug in JavaScript", ar: "هذا خطأ في JavaScript" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Two separately created arrays are never === , even with identical items. Compare contents with JSON.stringify() instead.",
+            ar: "مصفوفتان أُنشئتا منفصلتين ليستا أبداً ===، حتى بعناصر متطابقة. قارن المحتوى بـ JSON.stringify() بدلاً من ذلك.",
+          },
+        },
+        {
+          q: { en: "Why mock a real API call in a test?", ar: "لماذا نحاكي استدعاء API حقيقياً في اختبار؟" },
+          choices: [
+            { en: "So the test runs fast, predictably, and without needing a live server", ar: "ليعمل الاختبار سريعاً وبشكل متوقع دون الحاجة لخادم حيّ" },
+            { en: "Mocking makes the real API faster", ar: "المحاكاة تجعل الـ API الحقيقي أسرع" },
+            { en: "It's required by every programming language", ar: "كل لغة برمجة تفرضها" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A mock returns known fake data instantly, letting you test your own logic in isolation from network issues or a down server.",
+            ar: "المحاكاة تعيد بيانات وهمية معروفة فوراً، فتختبر منطقك الخاص بمعزل عن مشاكل الشبكة أو خادم متوقف.",
+          },
+        },
       ],
     },
     {
@@ -237,15 +383,21 @@ The usual junior-level wins: compress/resize images (biggest one by far), set wi
         en: `## Summary
 
 - Tests = robot taste-testers; you built expectEqual, the seed of Jest's expect().toBe()
+- Arrays/objects need content comparison (JSON.stringify), not ===
+- Mocking replaces real APIs/databases with fast, predictable fakes during tests
 - Pyramid: many unit, some integration, few end-to-end
 - Core Web Vitals: LCP < 2.5s, INP < 200ms, CLS < 0.1 — audit with Lighthouse
+- Every exercise in this entire course has been testing you with exactly this mechanism
 
 **Next step on your machine:** \`npm create vite@latest\`, add Vitest, and write 3 real tests for the add and safeAdd functions from earlier lessons. Then Lighthouse-audit your Next.js site and fix the top finding.`,
         ar: `## الخلاصة
 
 - الاختبارات = متذوّقون آليون؛ بنيت expectEqual، بذرة expect().toBe() في Jest
+- المصفوفات/الكائنات تحتاج مقارنة محتوى (JSON.stringify)، لا ===
+- المحاكاة تستبدل الـ APIs/قواعد البيانات الحقيقية ببدائل سريعة متوقعة أثناء الاختبار
 - الهرم: كثير وحدة، بعض تكامل، قليل نهاية-إلى-نهاية
 - مؤشرات الويب: LCP < 2.5s و INP < 200ms و CLS < 0.1 — افحص بـ Lighthouse
+- كل تمرين في هذه الدورة كاملة كان يختبرك بهذه الآلية بالضبط
 
 **خطوتك التالية على جهازك:** \`npm create vite@latest\`، أضف Vitest، واكتب 3 اختبارات حقيقية لدالتي add و safeAdd من الدروس السابقة. ثم افحص موقع Next.js الخاص بك بـ Lighthouse وأصلح أول ملاحظة.`,
       },

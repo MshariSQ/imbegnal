@@ -115,6 +115,110 @@ print(neuron([0, 0], [0.5, 0.5], -0.7))  # 0`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Activation functions, and the trap of overfitting ⚡
+
+The step activation you just coded (fire 1 or 0) is the simplest possible activation, but real networks almost always use smoother ones:
+
+- **ReLU** (Rectified Linear Unit): \`max(0, x)\` — output the input unchanged if positive, otherwise 0. Dead simple, cheap to compute, and the most common activation in modern hidden layers.
+- **Sigmoid**: squashes any number into a range between 0 and 1 — handy for outputs that represent a probability.
+- **Softmax**: turns a list of raw scores into probabilities that all add up to 1 — used for "which of these 10 categories is this?" type outputs.
+
+Without a nonlinear activation function like these, stacking layers would be pointless — a stack of purely linear steps collapses mathematically into a single linear step, no matter how many layers you add. The nonlinearity is what lets deep networks bend and curve to fit complex patterns instead of just straight lines.
+
+**The trap: overfitting.** A large network with millions of weights is powerful enough to simply *memorize* every training example, including its noise and quirks, rather than learning the general pattern. The symptom is a model that scores nearly perfectly on training data but performs poorly on new, unseen data. Common fixes:
+
+- **More training data** — harder to memorize, easier to generalize.
+- **Dropout** — randomly "switch off" some neurons during training so the network can't over-rely on any single one.
+- **Early stopping** — stop training once performance on held-out validation data stops improving, even if training accuracy keeps climbing.
+
+A model that aces its training set but flops in the real world hasn't actually learned — it's cheated by memorizing the answer key.`,
+        ar: `## دوال التفعيل، وفخ الإفراط في المطابقة ⚡
+
+تفعيل الخطوة الذي برمجته للتو (أُطلق 1 أو 0) أبسط تفعيل ممكن، لكن الشبكات الحقيقية تستخدم غالباً تفعيلات أنعم:
+
+- **ReLU** (وحدة الخطي المُقوَّم): \`max(0, x)\` — أخرج المدخل كما هو إن كان موجباً، وإلا 0. بسيط جداً، رخيص الحساب، وأشيع تفعيل في الطبقات الخفية الحديثة.
+- **Sigmoid**: يضغط أي رقم إلى نطاق بين 0 و1 — مفيد لمخرجات تمثّل احتمالاً.
+- **Softmax**: يحوّل قائمة درجات خام إلى احتمالات يجمع مجموعها 1 — يُستخدم لمخرجات نوع "أي هذه الفئات العشر هذا؟"
+
+بدون دالة تفعيل غير خطية كهذه، تكديس الطبقات عديم الجدوى — كومة من خطوات خطية بحتة تنهار رياضياً إلى خطوة خطية واحدة، مهما أضفت طبقات. اللاخطية هي ما يتيح للشبكات العميقة الانحناء والالتواء لتطابق أنماطاً معقدة بدلاً من خطوط مستقيمة فقط.
+
+**الفخ: الإفراط في المطابقة (overfitting).** شبكة كبيرة بملايين الأوزان قوية بما يكفي لتحفظ ببساطة كل مثال تدريبي، بما في ذلك ضوضاؤه وشوائبه، بدلاً من تعلّم النمط العام. العرض هو نموذج يسجّل شبه كمال على بيانات التدريب لكن يؤدي ضعيفاً على بيانات جديدة لم يرها. الحلول الشائعة:
+
+- **بيانات تدريب أكثر** — يصعب حفظها، ويسهل التعميم منها.
+- **Dropout** — "أطفئ" عشوائياً بعض الخلايا أثناء التدريب حتى لا تعتمد الشبكة كثيراً على خلية واحدة.
+- **التوقف المبكر (Early stopping)** — أوقف التدريب حين يتوقف الأداء على بيانات تحقق منفصلة عن التحسّن، حتى لو استمرت دقة التدريب بالارتفاع.
+
+نموذج يتفوّق في مجموعة تدريبه لكن يفشل في العالم الحقيقي لم يتعلّم فعلاً — بل غشّ بحفظ ورقة الإجابة.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "python",
+      prompt: {
+        en: `Implement the most common activation function in deep learning: **ReLU**. Write \`relu(x)\` that returns \`x\` if \`x > 0\`, otherwise returns \`0\`.
+
+Then write \`relu_layer(values)\` that applies \`relu\` to every number in a list (a whole layer's outputs at once).`,
+        ar: `نفّذ أشيع دالة تفعيل في التعلّم العميق: **ReLU**. اكتب \`relu(x)\` تعيد \`x\` إذا كان \`x > 0\`، وإلا تعيد \`0\`.
+
+ثم اكتب \`relu_layer(values)\` تطبّق \`relu\` على كل رقم في قائمة (مخرجات طبقة كاملة دفعة واحدة).`,
+      },
+      starterCode: `def relu(x):
+    # return x if positive, else 0
+    pass
+
+def relu_layer(values):
+    # apply relu to every value in the list
+    return []
+
+print(relu(5))            # 5
+print(relu(-3))           # 0
+print(relu_layer([-2, 0, 3, -1, 7]))  # [0, 0, 3, 0, 7]`,
+      solution: `def relu(x):
+    return x if x > 0 else 0
+
+def relu_layer(values):
+    return [relu(v) for v in values]
+
+print(relu(5))            # 5
+print(relu(-3))           # 0
+print(relu_layer([-2, 0, 3, -1, 7]))  # [0, 0, 3, 0, 7]`,
+      hints: [
+        { en: `relu is one line: return x if x > 0 else 0`, ar: `relu سطر واحد: return x if x > 0 else 0` },
+        { en: `relu_layer is a list comprehension: [relu(v) for v in values]`, ar: `relu_layer قائمة استيعابية: [relu(v) for v in values]` },
+      ],
+      tests: [
+        { name: { en: "relu(5) is 5", ar: "relu(5) تساوي 5" }, check: `assert relu(5) == 5` },
+        { name: { en: "relu(-3) is 0", ar: "relu(-3) تساوي 0" }, check: `assert relu(-3) == 0` },
+        { name: { en: "relu(0) is 0", ar: "relu(0) تساوي 0" }, check: `assert relu(0) == 0` },
+        { name: { en: "relu_layer zeroes out negatives only", ar: "relu_layer يصفّر السالب فقط" }, check: `assert relu_layer([-2,0,3,-1,7]) == [0,0,3,0,7]` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: AlphaGo 🔍
+
+For decades, the ancient board game **Go** was considered a grand challenge for AI — far harder for a computer than chess, because the number of possible positions is so vast that brute-force search doesn't work. Experts predicted it would take decades more before a computer could beat a top human player.
+
+In 2016, DeepMind's **AlphaGo** played a five-game match against Lee Sedol, one of the greatest Go players in history — and won four games to one. AlphaGo combined deep neural networks (trained on both human game records and self-play) with a search algorithm, letting it develop an intuition for the game similar in spirit to how the neurons in this lesson combine simple weighted sums into increasingly abstract judgments about "how good is this position?"
+
+One moment from the match became famous: in game two, AlphaGo played a move so unusual that commentators initially thought it was a mistake — it later proved brilliant, a move no human professional would likely have played, showing the network had learned genuinely novel strategic ideas rather than just copying human style.
+
+The result stunned the AI research community and the Go world alike, and is widely seen as a landmark moment showing deep learning could master domains requiring intuition and long-term strategic judgment, not just pattern recognition on static images or text.`,
+        ar: `## دراسة حالة واقعية: AlphaGo 🔍
+
+لعقود، اعتُبرت لعبة اللوح القديمة **Go** تحدياً كبيراً للذكاء الاصطناعي — أصعب على الحاسوب بكثير من الشطرنج، لأن عدد المواضع الممكنة هائل جداً لدرجة أن البحث الشامل لا يجدي. توقّع الخبراء أن يستغرق الأمر عقوداً إضافية قبل أن يتغلّب حاسوب على لاعب بشري من القمة.
+
+في 2016، لعبت **AlphaGo** من DeepMind مباراة من خمس جولات ضد Lee Sedol، أحد أعظم لاعبي Go في التاريخ — وفازت بأربع جولات مقابل واحدة. جمعت AlphaGo بين شبكات عصبية عميقة (مدرَّبة على سجلات ألعاب بشرية ولعب ذاتي) وخوارزمية بحث، ما مكّنها من تطوير حدس للعبة يشبه بروحه كيف تجمع الخلايا العصبية في هذا الدرس مجاميع مرجّحة بسيطة في أحكام متزايدة التجريد حول "ما مدى جودة هذا الموضع؟"
+
+اشتهرت لحظة من المباراة: في الجولة الثانية، لعبت AlphaGo نقلة غير اعتيادية لدرجة أن المعلّقين ظنّوها خطأ في البداية — تبيّن لاحقاً أنها عبقرية، نقلة لم يكن ليلعبها أي محترف بشري على الأرجح، ما أظهر أن الشبكة تعلّمت أفكاراً استراتيجية جديدة فعلاً لا مجرد نسخ أسلوب بشري.
+
+صدمت النتيجة مجتمع أبحاث الذكاء الاصطناعي وعالم Go على حدّ سواء، وتُعتبر على نطاق واسع لحظة فارقة أظهرت أن التعلّم العميق يستطيع إتقان مجالات تتطلّب حدساً وحكماً استراتيجياً طويل المدى، لا مجرد التعرّف على أنماط في صور أو نصوص ثابتة.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -156,6 +260,45 @@ print(neuron([0, 0], [0.5, 0.5], -0.7))  # 0`,
             ar: "التمرير الأمامي يتنبأ؛ والانتشار الخلفي يقيس الخطأ ويحرّك كل وزن لتقليصه — انحدار تدريجي على نطاق واسع.",
           },
         },
+        {
+          q: { en: "Why do neural networks need a nonlinear activation function (like ReLU)?", ar: "لماذا تحتاج الشبكات العصبية دالة تفعيل غير خطية (مثل ReLU)؟" },
+          choices: [
+            { en: "Without nonlinearity, stacking layers collapses into a single linear step, no matter how many layers", ar: "بدون اللاخطية، تنهار الطبقات المكدّسة إلى خطوة خطية واحدة، مهما بلغ عدد الطبقات" },
+            { en: "It makes the code run without errors", ar: "يجعل الكود يعمل بلا أخطاء" },
+            { en: "It's only needed for image data", ar: "يُحتاج فقط لبيانات الصور" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Nonlinear activations let deep networks bend and curve to fit complex patterns; without them, depth would be mathematically pointless.",
+            ar: "التفعيلات اللاخطية تتيح للشبكات العميقة الانحناء لتطابق أنماطاً معقدة؛ بدونها يكون العمق عديم الجدوى رياضياً.",
+          },
+        },
+        {
+          q: { en: "What is overfitting?", ar: "ما هو الإفراط في المطابقة (overfitting)؟" },
+          choices: [
+            { en: "A model memorizes training data quirks instead of learning general patterns, and performs poorly on new data", ar: "نموذج يحفظ خصائص بيانات التدريب العرضية بدلاً من تعلّم أنماط عامة، ويؤدي ضعيفاً على بيانات جديدة" },
+            { en: "A model that trains too quickly", ar: "نموذج يتدرّب بسرعة زائدة" },
+            { en: "A network with too few neurons", ar: "شبكة بخلايا قليلة جداً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Symptoms: near-perfect training accuracy but weak real-world performance. Fixes include more data, dropout, and early stopping.",
+            ar: "الأعراض: دقة تدريب شبه كاملة لكن أداء ضعيف في الواقع. الحلول تشمل بيانات أكثر، وdropout، والتوقف المبكر.",
+          },
+        },
+        {
+          q: { en: "What made AlphaGo's 2016 victory over Lee Sedol significant?", ar: "ما الذي جعل فوز AlphaGo على Lee Sedol عام 2016 مهماً؟" },
+          choices: [
+            { en: "It showed deep learning could master a game requiring intuition and strategy, once thought decades away for AI", ar: "أظهر أن التعلّم العميق يستطيع إتقان لعبة تتطلّب حدساً واستراتيجية، كان يُعتقد أنها بعيدة عقوداً عن الذكاء الاصطناعي" },
+            { en: "It was the first computer program to play any game", ar: "كان أول برنامج حاسوبي يلعب أي لعبة" },
+            { en: "It proved Go was easier than chess for computers all along", ar: "أثبت أن Go كانت أسهل من الشطرنج على الحواسيب طوال الوقت" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Go's vast search space made it a grand AI challenge; AlphaGo's deep-learning-plus-search approach, including genuinely novel moves, was a landmark result.",
+            ar: "فضاء بحث Go الهائل جعلها تحدياً كبيراً للذكاء الاصطناعي؛ ونهج AlphaGo (تعلّم عميق مع بحث)، بما في ذلك نقلات جديدة فعلاً، كان نتيجة فارقة.",
+          },
+        },
       ],
     },
     {
@@ -166,7 +309,9 @@ print(neuron([0, 0], [0.5, 0.5], -0.7))  # 0`,
 - Neural networks = layers of simple neurons (weighted sum + activation)
 - "Deep" = many layers; early layers learn simple features, later layers learn concepts
 - Learning = forward pass + backpropagation (gradient descent)
-- You implemented a working neuron
+- Nonlinear activations (ReLU, sigmoid, softmax) are what let depth matter; overfitting is the trap of memorizing instead of generalizing
+- You implemented a working neuron and a ReLU activation layer
+- Case study: AlphaGo's 2016 win over Lee Sedol showed deep learning could master intuition-heavy strategic games
 
 **Next:** NLP & LLMs — how machines understand language, the tech behind ChatGPT.`,
         ar: `## الخلاصة
@@ -174,7 +319,9 @@ print(neuron([0, 0], [0.5, 0.5], -0.7))  # 0`,
 - الشبكات العصبية = طبقات من خلايا بسيطة (مجموع مرجّح + تفعيل)
 - "عميق" = طبقات كثيرة؛ الأولى تتعلّم سمات بسيطة، والمتأخرة تتعلّم مفاهيم
 - التعلّم = تمرير أمامي + انتشار خلفي (انحدار تدريجي)
-- نفّذت خلية عصبية عاملة
+- التفعيلات اللاخطية (ReLU وSigmoid وSoftmax) هي ما يجعل العمق مهماً؛ والإفراط في المطابقة فخ حفظ البيانات بدل تعميمها
+- نفّذت خلية عصبية عاملة وطبقة تفعيل ReLU
+- دراسة الحالة: فوز AlphaGo على Lee Sedol عام 2016 أظهر أن التعلّم العميق يتقن ألعاباً استراتيجية تعتمد الحدس
 
 **التالي:** معالجة اللغة الطبيعية وLLMs — كيف تفهم الآلات اللغة، التقنية خلف ChatGPT.`,
       },

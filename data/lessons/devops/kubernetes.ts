@@ -64,6 +64,103 @@ From that one idea, superpowers emerge automatically:
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Rolling updates and health checks 🩺
+
+Pods are constantly created and destroyed — during scaling, self-healing, and especially **deployments**. So how does Kubernetes deploy a new version of your app without downtime?
+
+**Rolling updates** replace pods gradually, never all at once:
+
+\`\`\`
+Desired: 4 pods running v2 (currently: 4 running v1)
+
+Step 1: start 1 pod on v2  → [v1 v1 v1 v1 v2]      (5 running briefly)
+Step 2: kill 1 pod on v1   → [v1 v1 v1 v2]
+Step 3: start 1 pod on v2  → [v1 v1 v1 v2 v2]
+... repeat until all 4 are v2, one small batch at a time
+\`\`\`
+
+At every moment, there are always enough healthy pods serving traffic — users never see a gap. If a **health check** on the new version fails partway through, Kubernetes automatically halts the rollout before it replaces every pod, limiting the blast radius of a bad release.
+
+**Health checks (probes)** are how Kubernetes knows a pod is actually working, not just "running":
+- **Liveness probe** — "is this pod still alive?" If it fails repeatedly, Kubernetes kills and restarts the pod (self-healing in action).
+- **Readiness probe** — "is this pod ready to receive traffic yet?" A pod can be alive but still warming up (loading data, connecting to a database) — Kubernetes won't send it traffic until readiness passes.
+
+Without probes, Kubernetes would treat a frozen, unresponsive pod as perfectly healthy just because the process hasn't crashed — probes are what make self-healing and rolling updates actually safe in practice.`,
+        ar: `## التحديثات المتدرّجة وفحوص السلامة 🩺
+
+الـ pods تُنشأ وتُدمَّر باستمرار — أثناء التوسّع، الشفاء الذاتي، وخصوصاً **النشرات**. فكيف ينشر Kubernetes نسخة جديدة من تطبيقك بلا توقّف؟
+
+**التحديثات المتدرّجة (rolling updates)** تستبدل الـ pods تدريجياً، لا كلها دفعة واحدة:
+
+\`\`\`
+المطلوب: 4 pods تعمل v2 (حالياً: 4 تعمل v1)
+
+خطوة 1: ابدأ pod واحدة على v2  → [v1 v1 v1 v1 v2]      (5 تعمل لحظياً)
+خطوة 2: اقتل pod واحدة على v1  → [v1 v1 v1 v2]
+خطوة 3: ابدأ pod واحدة على v2  → [v1 v1 v1 v2 v2]
+... كرّر حتى تصبح كل الـ 4 على v2، دفعة صغيرة تلو الأخرى
+\`\`\`
+
+في كل لحظة، هناك دائماً ما يكفي من الـ pods السليمة تخدم الحركة — المستخدمون لا يرون فجوة أبداً. إن فشل **فحص سلامة (health check)** على النسخة الجديدة في منتصف الطريق، يوقف Kubernetes تلقائياً النشر قبل استبدال كل pod، محدّداً نطاق ضرر إصدار سيّئ.
+
+**فحوص السلامة (probes)** هي كيف يعرف Kubernetes أن pod تعمل فعلاً، لا فقط "تشتغل":
+- **فحص الحيوية (Liveness probe)** — "هل هذه الـ pod ما زالت حية؟" إن فشل مراراً، يقتل Kubernetes الـ pod ويعيد تشغيلها (الشفاء الذاتي في العمل).
+- **فحص الجاهزية (Readiness probe)** — "هل هذه الـ pod جاهزة لاستقبال حركة بعد؟" قد تكون pod حية لكنها لا تزال تُحمَّى (تحمّل بيانات، تتصل بقاعدة بيانات) — لن يرسل لها Kubernetes حركة حتى ينجح فحص الجاهزية.
+
+بلا فحوص، سيعامل Kubernetes pod متجمّدة وغير مستجيبة كسليمة تماماً لمجرد أن العملية لم تنهر — الفحوص هي ما يجعل الشفاء الذاتي والتحديثات المتدرّجة آمنة فعلياً في الممارسة.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `Simulate a rolling update step-count. Write \`rolloutSteps(totalPods)\` that returns the number of individual "start new, kill old" steps needed to fully replace \`totalPods\` pods one at a time (a simple one-by-one rolling strategy).
+
+Example: \`rolloutSteps(4)\` → \`4\` (each of the 4 pods gets replaced individually)`,
+        ar: `حاكِ عدّ خطوات تحديث متدرّج. اكتب \`rolloutSteps(totalPods)\` يعيد عدد خطوات "ابدأ جديدة، اقتل قديمة" الفردية اللازمة لاستبدال \`totalPods\` pod كاملاً واحدة تلو الأخرى (استراتيجية تدرّج بسيطة واحدة تلو الأخرى).
+
+مثال: \`rolloutSteps(4)\` ← \`4\` (كل من الـ 4 pods تُستبدل فردياً)`,
+      },
+      starterCode: `function rolloutSteps(totalPods) {
+  // one-by-one strategy: each pod needs exactly one replacement step
+}
+
+console.log(rolloutSteps(4)); // 4
+console.log(rolloutSteps(1)); // 1`,
+      solution: `function rolloutSteps(totalPods) {
+  return totalPods;
+}
+
+console.log(rolloutSteps(4)); // 4
+console.log(rolloutSteps(1)); // 1`,
+      hints: [
+        { en: `With a strict one-by-one strategy, replacing N pods takes exactly N steps.`, ar: `مع استراتيجية واحدة تلو الأخرى الصارمة، استبدال N pod يأخذ بالضبط N خطوة.` },
+        { en: `No loop needed — just return totalPods directly.`, ar: `لا حاجة لحلقة — فقط أعِد totalPods مباشرة.` },
+      ],
+      tests: [
+        { name: { en: "4 pods need 4 steps", ar: "4 pods تحتاج 4 خطوات" }, check: `rolloutSteps(4) === 4` },
+        { name: { en: "1 pod needs 1 step", ar: "pod واحدة تحتاج خطوة واحدة" }, check: `rolloutSteps(1) === 1` },
+        { name: { en: "10 pods need 10 steps", ar: "10 pods تحتاج 10 خطوات" }, check: `rolloutSteps(10) === 10` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: Pokémon GO's launch-day crush 🔍
+
+When Pokémon GO launched in 2016, demand exploded far beyond anyone's forecasts — reportedly **50x** the traffic the team had planned for, arriving within days. The game's backend ran on Google's cloud infrastructure with container orchestration handling the workload, and the team has since spoken publicly about how that architecture was the only reason the service survived launch week at all: instead of provisioning fixed servers sized for an estimate, the orchestration layer could keep adding capacity as real traffic demanded it.
+
+A launch of that scale on traditional, manually-provisioned servers would have meant an outright outage lasting days while engineers scrambled to rack up more hardware. This is the exact promise of Kubernetes-style orchestration you learned in this lesson: you declare "keep enough healthy pods running to serve demand," and the system keeps making that true — even when demand is 50 times higher than anyone predicted.`,
+        ar: `## دراسة حالة واقعية: ازدحام إطلاق Pokémon GO 🔍
+
+حين أُطلقت Pokémon GO عام 2016، انفجر الطلب متجاوزاً كل توقعات الفريق — أُبلغ عن حركة أعلى بـ**50 ضعفاً** مما خطط له الفريق، وصلت خلال أيام. عملت خلفية اللعبة على بنية Google السحابية بتنسيق حاويات يتعامل مع الحمل، وتحدّث الفريق علناً منذ ذلك الحين عن كون تلك البنية السبب الوحيد لنجاة الخدمة أسبوع الإطلاق أصلاً: بدل توفير خوادم ثابتة بحجم تقديري، استطاعت طبقة التنسيق الاستمرار بإضافة سعة كلما تطلّبتها الحركة الحقيقية.
+
+إطلاق بذلك الحجم على خوادم تقليدية موفَّرة يدوياً كان سيعني انقطاعاً صريحاً يدوم أياماً بينما يتسابق المهندسون لتركيب عتاد إضافي. هذا بالضبط وعد التنسيق بأسلوب Kubernetes الذي تعلمته في هذا الدرس: تُصرّح "أبقِ ما يكفي من pods سليمة تعمل لخدمة الطلب"، والنظام يستمر بتحقيق ذلك — حتى حين يكون الطلب أعلى بـ50 ضعفاً مما توقعه أحد.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -105,6 +202,32 @@ From that one idea, superpowers emerge automatically:
             ar: "الشفاء الذاتي: الواقع (4) ≠ المطلوب (5)، فيطلق K8s pod جديدة فوراً. بلا استدعاء الساعة 3 فجراً.",
           },
         },
+        {
+          q: { en: "What is the purpose of a rolling update?", ar: "ما الغرض من التحديث المتدرّج؟" },
+          choices: [
+            { en: "Replace pods gradually in small batches so there's zero downtime during a deployment", ar: "استبدال الـ pods تدريجياً بدفعات صغيرة بلا توقّف أثناء النشر" },
+            { en: "Delete all pods at once for a clean slate", ar: "حذف كل الـ pods دفعة واحدة لبداية نظيفة" },
+            { en: "Roll the servers physically to a new data center", ar: "نقل الخوادم فعلياً لمركز بيانات جديد" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Rolling updates swap old pods for new ones a few at a time, keeping enough healthy pods serving traffic throughout the deploy.",
+            ar: "التحديثات المتدرّجة تستبدل pods قديمة بجديدة قليلاً في كل مرة، مُبقيةً ما يكفي من pods سليمة تخدم الحركة طوال النشر.",
+          },
+        },
+        {
+          q: { en: "What's the difference between a liveness probe and a readiness probe?", ar: "ما الفرق بين فحص الحيوية وفحص الجاهزية؟" },
+          choices: [
+            { en: "Liveness checks if a pod should be restarted; readiness checks if it should receive traffic yet", ar: "الحيوية تفحص إن كان يجب إعادة تشغيل pod؛ والجاهزية تفحص إن كان يجب أن تستقبل حركة بعد" },
+            { en: "They are two names for the exact same check", ar: "اسمان لنفس الفحص تماماً" },
+            { en: "Liveness only runs once at pod creation", ar: "الحيوية تعمل مرة واحدة فقط عند إنشاء pod" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A failing liveness probe triggers a restart (self-healing); a failing readiness probe just withholds traffic until the pod is truly ready.",
+            ar: "فشل فحص الحيوية يحفّز إعادة تشغيل (شفاء ذاتي)؛ وفشل فحص الجاهزية يمنع الحركة فقط حتى تصبح الـ pod جاهزة فعلاً.",
+          },
+        },
       ],
     },
     {
@@ -115,7 +238,9 @@ From that one idea, superpowers emerge automatically:
 - Kubernetes orchestrates hundreds of containers across a cluster
 - Pods run on nodes; you declare desired state and K8s enforces it
 - Self-healing, auto-scaling, rolling updates, load balancing come for free
+- Rolling updates deploy new versions gradually with zero downtime; liveness/readiness probes are what make self-healing and rollouts actually safe
 - Powerful but complex — worth it at scale, overkill for small apps
+- Pokémon GO's 2016 launch (50x expected traffic) shows why declarative, self-scaling orchestration matters at real-world scale
 
 **Next:** Infrastructure as Code — declaring not just containers but entire environments.`,
         ar: `## الخلاصة
@@ -123,7 +248,9 @@ From that one idea, superpowers emerge automatically:
 - Kubernetes ينسّق مئات الحاويات عبر عنقود
 - الـ Pods تعمل على nodes؛ تُصرّح بالحالة المطلوبة وينفّذها K8s
 - الشفاء الذاتي، التوسّع التلقائي، التحديثات المتدرّجة، موازنة الحِمل مجاناً
+- التحديثات المتدرّجة تنشر نسخاً جديدة تدريجياً بلا توقّف؛ فحوص الحيوية/الجاهزية هي ما يجعل الشفاء الذاتي والنشرات آمنة فعلياً
 - قوي لكن معقّد — يستحق على نطاق واسع، ومبالغة للتطبيقات الصغيرة
+- إطلاق Pokémon GO عام 2016 (حركة أعلى بـ50 ضعفاً من المتوقع) يُظهر لماذا يهم التنسيق التصريحي ذاتي التوسّع على نطاق واقعي
 
 **التالي:** البنية التحتية ككود — التصريح ليس بالحاويات فقط بل بالبيئات كاملة.`,
       },

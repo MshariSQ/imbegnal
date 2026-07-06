@@ -127,6 +127,130 @@ console.log(route("GET", "/nope"));    // 404`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Query parameters and pagination 📄
+
+Not every request is "give me everything." A URL can carry extra details after a \`?\` — these are **query parameters**:
+
+\`\`\`
+GET /users?role=admin&sort=name
+              ↑            ↑
+        filter by role   sort by name
+\`\`\`
+
+Each \`key=value\` pair (joined by \`&\`) tells the server exactly what slice of data you want, without needing a different URL for every combination.
+
+The most common use is **pagination**. Imagine \`/posts\` has 2 million rows — returning all of them in one response would be huge and slow, for both the server and the client. Instead, APIs return one **page** at a time:
+
+\`\`\`
+GET /posts?page=1&limit=20   → posts 1-20
+GET /posts?page=2&limit=20   → posts 21-40
+\`\`\`
+
+The server uses \`limit\` (how many items) and \`page\` (which chunk) to slice the data — in SQL terms, this maps almost directly to \`LIMIT 20 OFFSET 20\`. A well-designed paginated response also tells the client how to get more:
+
+\`\`\`json
+{ "data": [ /* 20 posts */ ], "page": 2, "totalPages": 100000 }
+\`\`\`
+
+Query parameters are for **filtering, sorting, and paging** — optional details about *how* to fetch a resource. Contrast this with the URL *path* (\`/users/5\`), which identifies *which* resource. Mixing the two up is a common beginner mistake: the resource's identity goes in the path, everything else goes in the query string.`,
+        ar: `## معاملات الاستعلام والترقيم 📄
+
+ليس كل طلب "أعطني كل شيء". يمكن لعنوان URL أن يحمل تفاصيل إضافية بعد \`?\` — هذه **معاملات الاستعلام (query parameters)**:
+
+\`\`\`
+GET /users?role=admin&sort=name
+              ↑            ↑
+        صفّ حسب الدور   رتّب حسب الاسم
+\`\`\`
+
+كل زوج \`key=value\` (مربوط بـ \`&\`) يخبر الخادم بالضبط أي شريحة من البيانات تريدها، دون الحاجة لعنوان مختلف لكل توليفة.
+
+الاستخدام الأشيع هو **الترقيم (pagination)**. تخيّل \`/posts\` فيه مليونا صف — إعادتها كلها في استجابة واحدة ستكون ضخمة وبطيئة، للخادم والعميل معاً. بدلاً من ذلك، تُعيد الواجهات **صفحة** واحدة في كل مرة:
+
+\`\`\`
+GET /posts?page=1&limit=20   → المنشورات 1-20
+GET /posts?page=2&limit=20   → المنشورات 21-40
+\`\`\`
+
+يستخدم الخادم \`limit\` (عدد العناصر) و\`page\` (أي جزء) ليقطّع البيانات — بمصطلحات SQL، هذا يقابل تقريباً \`LIMIT 20 OFFSET 20\`. الاستجابة المُرقّمة جيدة التصميم تخبر العميل أيضاً كيف يحصل على المزيد:
+
+\`\`\`json
+{ "data": [ /* 20 منشوراً */ ], "page": 2, "totalPages": 100000 }
+\`\`\`
+
+معاملات الاستعلام مخصصة لـ**التصفية والترتيب والترقيم** — تفاصيل اختيارية حول *كيفية* جلب المورد. قارن هذا بـ*مسار* URL (\`/users/5\`)، الذي يحدد *أي* مورد. الخلط بينهما خطأ شائع للمبتدئين: هوية المورد تذهب في المسار، وكل شيء آخر يذهب في سلسلة الاستعلام.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `Build a pagination slicer. Write \`paginate(items, page, limit)\` that returns the correct **slice** of an array for a given page — page numbers start at \`1\`.
+
+Example: \`paginate([1,2,3,4,5], 1, 2)\` → \`[1,2]\`; \`paginate([1,2,3,4,5], 2, 2)\` → \`[3,4]\`.`,
+        ar: `ابنِ مُقطِّع ترقيم. اكتب \`paginate(items, page, limit)\` تعيد **الشريحة** الصحيحة من مصفوفة لصفحة معطاة — أرقام الصفحات تبدأ من \`1\`.
+
+مثال: \`paginate([1,2,3,4,5], 1, 2)\` ← \`[1,2]\`؛ \`paginate([1,2,3,4,5], 2, 2)\` ← \`[3,4]\`.`,
+      },
+      starterCode: `function paginate(items, page, limit) {
+  // page 1 -> items[0..limit)
+  // page 2 -> items[limit..2*limit)
+  // hint: figure out the starting index from (page - 1) * limit
+}
+
+console.log(paginate([1,2,3,4,5], 1, 2)); // [1, 2]
+console.log(paginate([1,2,3,4,5], 2, 2)); // [3, 4]
+console.log(paginate([1,2,3,4,5], 3, 2)); // [5]`,
+      solution: `function paginate(items, page, limit) {
+  const start = (page - 1) * limit;
+  return items.slice(start, start + limit);
+}
+
+console.log(paginate([1,2,3,4,5], 1, 2)); // [1, 2]
+console.log(paginate([1,2,3,4,5], 2, 2)); // [3, 4]
+console.log(paginate([1,2,3,4,5], 3, 2)); // [5]`,
+      hints: [
+        { en: `The start index is (page - 1) * limit — page 1 starts at index 0.`, ar: `مؤشر البداية هو (page - 1) * limit — الصفحة 1 تبدأ من الفهرس 0.` },
+        { en: `Use Array.prototype.slice(start, start + limit) to grab that chunk.`, ar: `استخدم Array.prototype.slice(start, start + limit) لأخذ ذلك الجزء.` },
+      ],
+      tests: [
+        { name: { en: "Page 1 returns the first chunk", ar: "الصفحة 1 تعيد الجزء الأول" }, check: `JSON.stringify(paginate([1,2,3,4,5],1,2)) === JSON.stringify([1,2])` },
+        { name: { en: "Page 2 returns the next chunk", ar: "الصفحة 2 تعيد الجزء التالي" }, check: `JSON.stringify(paginate([1,2,3,4,5],2,2)) === JSON.stringify([3,4])` },
+        { name: { en: "Last partial page returns remaining items", ar: "الصفحة الأخيرة الجزئية تعيد العناصر المتبقية" }, check: `JSON.stringify(paginate([1,2,3,4,5],3,2)) === JSON.stringify([5])` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: this platform's own API 🔍
+
+This isn't abstract — the very login system behind this site is a small REST API. Its backend (a Cloudflare Worker, in \`worker/src/index.ts\`) exposes real REST-style endpoints such as an OAuth callback, a \`GET\` endpoint returning the logged-in user's profile, and \`GET\`/\`POST\` endpoints for progress and bookmarks — each one reads the HTTP method and path, checks an \`Authorization\` header for a valid token, and returns JSON with an appropriate status code.
+
+For example, a request for the current user's stats runs a query like:
+
+\`\`\`
+GET /api/me   (with header: Authorization: Bearer <token>)
+→ 200 { "username": "...", "progress": {...}, "bookmarks": {...} }
+\`\`\`
+
+If the token is missing or invalid, the same endpoint returns \`401 Unauthorized\` instead — exactly the status-code discipline from this lesson. This is a real, deployed, minimal REST API doing exactly what you just learned: HTTP methods mapped to actions, resources identified by path, and status codes communicating success or failure — running right now, powering the account system on the page you're reading this lesson on.`,
+        ar: `## دراسة حالة واقعية: واجهة API هذه المنصة نفسها 🔍
+
+هذا ليس تجريدياً — نظام تسجيل الدخول وراء هذا الموقع نفسه واجهة REST صغيرة. خلفيته (Cloudflare Worker، في \`worker/src/index.ts\`) تعرض نقاط REST حقيقية مثل استدعاء عودة OAuth، ونقطة \`GET\` تعيد ملف المستخدم المسجّل دخوله، ونقاط \`GET\`/\`POST\` للتقدّم والمفضّلات — كل واحدة تقرأ طريقة HTTP والمسار، وتفحص ترويسة \`Authorization\` لرمز صالح، وتعيد JSON برمز حالة مناسب.
+
+مثلاً، طلب إحصاءات المستخدم الحالي ينفّذ استعلاماً مثل:
+
+\`\`\`
+GET /api/me   (مع الترويسة: Authorization: Bearer <token>)
+→ 200 { "username": "...", "progress": {...}, "bookmarks": {...} }
+\`\`\`
+
+وإن كان الرمز مفقوداً أو غير صالح، تعيد نفس النقطة \`401 Unauthorized\` بدلاً من ذلك — بالضبط انضباط رموز الحالة من هذا الدرس. هذه واجهة REST حقيقية ومنشورة وبسيطة تفعل بالضبط ما تعلّمته للتو: طرق HTTP تُربط بأفعال، والموارد تُحدَّد بالمسار، ورموز الحالة تُبلّغ عن النجاح أو الفشل — تعمل الآن، وتُشغّل نظام الحساب في الصفحة التي تقرأ فيها هذا الدرس.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {

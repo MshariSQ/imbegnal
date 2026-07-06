@@ -156,6 +156,56 @@ Four sentences. No autobiography, no "I am hardworking and passionate".
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## A simple written agreement keeps you safe 📝
+
+"Scope in writing" isn't just advice — here's exactly what it looks like. Before starting any paid work, send the client a short message (email or platform chat, saved and dated) covering five things:
+
+1. **Deliverables** — exactly what you're building: "5-page responsive site: Home, About, Menu, Gallery, Contact."
+2. **Price and payment schedule** — "$150 total: $75 to start, $75 on delivery."
+3. **Timeline** — "Delivered within 7 business days of receiving your content (photos/text)."
+4. **Revisions included** — "2 rounds of revisions included; additional changes billed at $15/round."
+5. **What's NOT included** — "Domain and hosting costs are separate, paid by you directly."
+
+You don't need a lawyer or a fancy template — a clear, itemized message that both sides reply "agreed" to *is* a contract. The goal is simple: when a disagreement happens (and eventually one will), you both look at the same written list instead of arguing from memory.`,
+        ar: `## اتفاق مكتوب بسيط يحميك 📝
+
+"نطاق العمل مكتوباً" ليست مجرد نصيحة — إليك كيف يبدو بالضبط. قبل بدء أي عمل مدفوع، أرسل للعميل رسالة قصيرة (بريد أو محادثة منصة، محفوظة ومؤرَّخة) تغطي خمسة أشياء:
+
+1. **المُخرَجات** — بالضبط ما تبنيه: "موقع من 5 صفحات متجاوب: الرئيسية، من نحن، القائمة، المعرض، تواصل."
+2. **السعر وجدول الدفع** — "150$ إجمالاً: 75$ للبدء، 75$ عند التسليم."
+3. **الجدول الزمني** — "التسليم خلال 7 أيام عمل من استلام المحتوى (صور/نصوص)."
+4. **التعديلات المشمولة** — "جولتا تعديل مشمولتان؛ تعديلات إضافية بـ15$/جولة."
+5. **ما هو غير مشمول** — "تكاليف النطاق والاستضافة منفصلة، يدفعها العميل مباشرة."
+
+لا تحتاج محامياً أو نموذجاً فاخراً — رسالة واضحة ومُبوَّبة يوافق عليها الطرفان بـ"موافق" *هي* عقد. الهدف بسيط: عندما يحدث خلاف (وسيحدث يوماً)، ينظر كلاكما لنفس القائمة المكتوبة بدل الجدال من الذاكرة.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Case study: Sara's first $50 🎯
+
+Sara finished this exact roadmap. Week 1, she deployed 3 projects: a bakery site, a small expense-tracker dashboard, and a store-front UI. Week 2, she made a Mostaql profile linking all three.
+
+Her first reply came from a small café owner wanting a menu page. Her proposal followed the four-sentence formula: *"Your café has no website, so people can't find your hours or menu on Google. Here's a similar bakery site I built: [link]. I'll build a 3-page mobile-friendly site — Home, Menu, Contact — delivered in 5 days for $50, half upfront. Free for a 15-minute call this week?"*
+
+She sent the 5-point written scope before starting, delivered on day 4, and asked for the review immediately after final payment (not before — clients rate more honestly once the transaction is fully closed). That review, plus the finished site as a 4th portfolio piece, got her next client at $120 two weeks later — no cold outreach needed, the client found her profile.
+
+Nothing about this required luck. It required exactly the steps in this lesson, in order, without skipping any.`,
+        ar: `## دراسة حالة: أول 50$ لسارة 🎯
+
+أنهت سارة هذا المسار بالضبط. الأسبوع 1، نشرت 3 مشاريع: موقع مخبز، لوحة تحكم صغيرة لتتبع المصاريف، وواجهة متجر. الأسبوع 2، أنشأت ملفاً على مستقل يربط الثلاثة.
+
+جاء أول ردّ من صاحب مقهى صغير يريد صفحة قائمة. اتبع عرضها صيغة الأربع جمل: *"مقهاكم بلا موقع، فلا يستطيع الناس إيجاد أوقاتكم أو قائمتكم على قوقل. هذا موقع مخبز مشابه بنيته: [رابط]. سأبني موقعاً من 3 صفحات متوافقاً مع الجوال — الرئيسية، القائمة، تواصل — تسليم خلال 5 أيام مقابل 50$، نصفها مقدماً. مكالمة مجانية 15 دقيقة هذا الأسبوع؟"*
+
+أرسلت نطاق العمل المكتوب من 5 نقاط قبل البدء، سلّمت في اليوم الرابع، وطلبت التقييم فوراً بعد الدفعة الأخيرة (لا قبلها — العملاء يقيّمون بصدق أكبر بعد إغلاق المعاملة كاملة). ذلك التقييم، بالإضافة للموقع المكتمل كقطعة معرض رابعة، جلب لها عميلاً تالياً بـ120$ بعد أسبوعين — بلا أي تواصل بارد، العميل وجد ملفها بنفسه.
+
+لا شيء في هذا يتطلب حظاً. تطلّب بالضبط خطوات هذا الدرس، بالترتيب، دون تخطي أي منها.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -221,6 +271,32 @@ Four sentences. No autobiography, no "I am hardworking and passionate".
           explain: {
             en: "The fake-check overpayment is one of the oldest freelancer scams. Real clients pay exact amounts through traceable channels.",
             ar: "الدفع الزائد بشيك مزيف من أقدم احتيالات العمل الحر. العملاء الحقيقيون يدفعون مبالغ مضبوطة عبر قنوات موثوقة.",
+          },
+        },
+        {
+          q: { en: "What belongs in a simple written scope before starting work?", ar: "ماذا ينتمي لنطاق عمل مكتوب بسيط قبل البدء؟" },
+          choices: [
+            { en: "Deliverables, price/payment schedule, timeline, revisions included, and what's excluded", ar: "المُخرَجات، السعر/جدول الدفع، الجدول الزمني، التعديلات المشمولة، وما هو مستثنى" },
+            { en: "Just a price, nothing else", ar: "السعر فقط، لا شيء آخر" },
+            { en: "A formal lawyer-drafted contract only", ar: "عقد رسمي بصياغة محامٍ فقط" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A clear itemized message both sides agree to is enough — the goal is a shared written reference, not legal formality.",
+            ar: "رسالة واضحة مُبوَّبة يوافق عليها الطرفان تكفي — الهدف مرجع مكتوب مشترك، لا شكلية قانونية.",
+          },
+        },
+        {
+          q: { en: "When should you ask a client for a review?", ar: "متى تطلب من العميل تقييماً؟" },
+          choices: [
+            { en: "Immediately after final payment is fully complete", ar: "فوراً بعد اكتمال الدفعة الأخيرة بالكامل" },
+            { en: "Before starting the work", ar: "قبل بدء العمل" },
+            { en: "Never — it's rude to ask", ar: "أبداً — من الوقاحة أن تطلب" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Clients rate more honestly once the transaction is fully closed — and a fresh review right after delivery is when goodwill is highest.",
+            ar: "العملاء يقيّمون بصدق أكبر بعد إغلاق المعاملة كاملة — والتقييم الطازج بعد التسليم مباشرة هو حين تكون النوايا الحسنة في أعلاها.",
           },
         },
       ],

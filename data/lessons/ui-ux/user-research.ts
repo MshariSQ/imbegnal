@@ -56,6 +56,75 @@ The most expensive mistake in product design is building something beautiful tha
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Quick, cheap tests you can run this week 🧪
+
+Not all research requires recruiting strangers and scheduling calls. A few lightweight tests fit into an afternoon and still catch major problems:
+
+- **The 5-second test.** Show someone your design for exactly 5 seconds, then hide it and ask: "What was this? What was it for? What would you click first?" If they can't answer, your hierarchy and messaging aren't communicating fast enough — real visitors also glance and judge in seconds, so this simulates that ruthless first impression cheaply.
+- **Card sorting.** Write every piece of content or feature on its own index card (or sticky note), then ask a few people to group the cards into categories that make sense *to them*, and name each group. Do this with 5 people and patterns emerge — this is how you build navigation/IA (from the wireframing lesson) that matches how real users think, instead of how your team happens to be organized internally.
+- **The "first click" test.** Show a screen and a task ("find where to update your password"), and just watch where they click first — nothing else. Research shows that if the first click is right, people usually complete the task; if it's wrong, they often struggle. One click tells you a lot.
+- **Guerrilla testing.** No lab required — sit in a coffee shop or ask 3 coworkers "can I get 5 minutes of your time?" and run a mini usability test on your phone or laptop. Imperfect, but *some* real-user feedback beats zero, and it costs nothing but asking.
+
+None of these require a research budget or a dedicated researcher — they require only the willingness to show your work to a real person before you're finished, which is the actual hard part.`,
+        ar: `## اختبارات سريعة رخيصة يمكنك تشغيلها هذا الأسبوع 🧪
+
+ليس كل بحث يتطلب تجنيد غرباء وجدولة مكالمات. بضعة اختبارات خفيفة تناسب بعد ظهر واحد وما زالت تكشف مشاكل كبرى:
+
+- **اختبار الخمس ثوانٍ.** أرِ أحدهم تصميمك لخمس ثوانٍ بالضبط، ثم أخفِه واسأل: "ما هذا؟ ما غرضه؟ ماذا ستنقر أولاً؟" إن لم يستطع الإجابة، فتسلسلك ورسالتك لا يتواصلان بسرعة كافية — الزوار الحقيقيون أيضاً يلقون نظرة ويحكمون خلال ثوانٍ، فهذا يحاكي ذلك الانطباع الأول القاسي برخص.
+- **فرز البطاقات (Card sorting).** اكتب كل قطعة محتوى أو ميزة على بطاقة فهرسة (أو ملاحظة لاصقة) خاصة بها، ثم اطلب من بضعة أشخاص تجميع البطاقات في فئات منطقية *بالنسبة لهم*، وتسمية كل مجموعة. افعل هذا مع 5 أشخاص وستظهر الأنماط — هكذا تبني تنقّلاً/IA (من درس الإطار السلكي) يطابق كيف يفكّر المستخدمون الحقيقيون، لا كيف يصادف أن يُنظَّم فريقك داخلياً.
+- **اختبار "النقرة الأولى".** أرِ شاشة ومهمة ("جد أين تحدّث كلمة مرورك")، وراقب فقط أين ينقرون أولاً — لا شيء آخر. تُظهر الأبحاث أنه إن كانت النقرة الأولى صحيحة، يكمل الناس المهمة عادة؛ وإن كانت خاطئة، غالباً يتعثّرون. نقرة واحدة تخبرك بالكثير.
+- **الاختبار الارتجالي (Guerrilla testing).** لا مختبر مطلوب — اجلس في مقهى أو اسأل 3 زملاء "هل أحصل على 5 دقائق من وقتك؟" وشغّل اختبار استخدام مصغّراً على هاتفك أو حاسوبك. غير مثالي، لكن *بعض* ملاحظات المستخدمين الحقيقية أفضل من لا شيء، ولا يكلّف سوى السؤال.
+
+لا شيء من هذا يتطلب ميزانية بحث أو باحثاً مخصصاً — يتطلب فقط الاستعداد لإظهار عملك لشخص حقيقي قبل أن تنتهي، وهذا هو الجزء الصعب فعلاً.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Try it yourself: run a 5-second test today 🔍
+
+Pick any screen or page you've designed (or even a screenshot of an app you admire) and do this right now:
+
+1. Find a friend, family member, or coworker willing to give you 60 seconds.
+2. Show them the design for exactly 5 seconds (count it, or use a phone timer), then hide the screen.
+3. Ask: "What is this? What's it for? What would you click or tap first?"
+4. Write down their answer *exactly*, without correcting or explaining anything, even if they got it "wrong."
+
+If their answer matches what you intended, your hierarchy and messaging are working. If it doesn't, you've just learned — for the cost of one minute — something no amount of staring at your own design would have revealed, because you already know what it's supposed to say.`,
+        ar: `## جرّب بنفسك: شغّل اختبار خمس ثوانٍ اليوم 🔍
+
+اختر أي شاشة أو صفحة صمّمتها (أو حتى لقطة شاشة لتطبيق تعجبك) وافعل هذا الآن:
+
+1. جد صديقاً أو أحد العائلة أو زميلاً مستعداً لمنحك 60 ثانية.
+2. أرِه التصميم لخمس ثوانٍ بالضبط (عدّها، أو استخدم مؤقّت الهاتف)، ثم أخفِ الشاشة.
+3. اسأل: "ما هذا؟ ما غرضه؟ ماذا ستنقر أو تلمس أولاً؟"
+4. اكتب إجابته *بالضبط*، بلا تصحيح أو شرح أي شيء، حتى لو أخطأ.
+
+إن طابقت إجابته ما قصدته، فتسلسلك ورسالتك يعملان. وإن لم تطابق، فقد تعلّمت للتو — بتكلفة دقيقة واحدة — شيئاً لم يكن ليكشفه أي قدر من التحديق بتصميمك، لأنك تعرف مسبقاً ما يُفترض أن يقوله.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the checkout field that cost millions 🔍
+
+One of the most famous stories in UX research concerns an e-commerce checkout form that required every visitor to create an account before buying — an extra "Register" step with a password field, standing between a shopper and their purchase. Analytics and user research consistently pointed to the same problem: a huge share of shoppers abandoned their cart at exactly that step, frustrated at being forced to create yet another password just to buy something.
+
+The team running the research proposed a small, almost boring change: replace the "Register" button with a "Continue" button, and simply ask for an email address at checkout — turning account creation into an *optional* step offered only after the purchase was complete, framed around removing friction rather than demanding commitment upfront. The change was tested and rolled out, and the resulting jump in completed purchases was large enough that the story is still cited in UX and conversion-research circles as a canonical example of how research-driven insight into a single, unglamorous field can move revenue enormously.
+
+The lesson isn't "always remove registration" — it's that research turned a vague, arguable business opinion ("users should create accounts") into an observed fact ("this exact step is where real people quit"), and that a famously small, unglamorous change, backed by evidence instead of assumption, outperformed a much flashier redesign would have.`,
+        ar: `## دراسة حالة واقعية: حقل الدفع الذي كلّف ملايين 🔍
+
+من أشهر القصص في بحث UX نموذج دفع لمتجر إلكتروني كان يتطلّب من كل زائر إنشاء حساب قبل الشراء — خطوة "تسجيل" إضافية بحقل كلمة مرور، تقف بين المتسوّق وشرائه. أشارت التحليلات وبحث المستخدم باستمرار لنفس المشكلة: نسبة هائلة من المتسوّقين تخلّت عن سلتها عند تلك الخطوة بالضبط، محبَطين من إجبارهم على إنشاء كلمة مرور أخرى فقط ليشتروا شيئاً.
+
+اقترح الفريق القائم بالبحث تغييراً صغيراً يكاد يكون مملاً: استبدال زر "تسجيل" بزر "متابعة،" وطلب بريد إلكتروني فقط عند الدفع — محوّلين إنشاء الحساب لخطوة *اختيارية* تُعرض فقط بعد اكتمال الشراء، مؤطَّرة حول إزالة الاحتكاك لا المطالبة بالتزام مسبق. اختُبر التغيير ونُشر، وكانت القفزة الناتجة في المشتريات المكتملة كبيرة بما يكفي أن تُذكر القصة حتى الآن في أوساط UX وبحث التحويل كمثال كلاسيكي على كيف يمكن لرؤية مدفوعة بالبحث في حقل واحد غير برّاق أن تحرّك الإيرادات بشدة.
+
+الدرس ليس "أزل التسجيل دائماً" — بل أن البحث حوّل رأي عمل غامضاً قابلاً للجدل ("يجب أن ينشئ المستخدمون حسابات") إلى حقيقة مُلاحَظة ("هذه الخطوة بالضبط هي حيث ينسحب الناس الحقيقيون")، وأن تغييراً صغيراً غير برّاق بشكل مشهور، مدعوماً بالدليل لا الافتراض، تفوّق على ما كانت لتحققه إعادة تصميم أكثر بريقاً بكثير.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -97,6 +166,32 @@ The most expensive mistake in product design is building something beautiful tha
             ar: "الشخصية تُبقي الفريق مركّزاً على احتياجات إنسان محدد وسياقه بدل 'الجميع' الغامض.",
           },
         },
+        {
+          q: { en: "What does a 5-second test measure?", ar: "ماذا يقيس اختبار الخمس ثوانٍ؟" },
+          choices: [
+            { en: "Whether a design's purpose and hierarchy communicate fast enough for a quick first impression", ar: "هل يتواصل غرض التصميم وتسلسله بسرعة كافية لانطباع أول سريع" },
+            { en: "How fast a page loads technically", ar: "كم تحمّل الصفحة تقنياً بسرعة" },
+            { en: "The number of colors used", ar: "عدد الألوان المستخدمة" },
+          ],
+          answer: 0,
+          explain: {
+            en: "It simulates the ruthless glance-and-judge moment real visitors give a page, cheaply and in under a minute.",
+            ar: "يحاكي لحظة النظرة والحكم القاسية التي يمنحها الزوار الحقيقيون للصفحة، برخص وفي أقل من دقيقة.",
+          },
+        },
+        {
+          q: { en: "What does card sorting help you build?", ar: "بماذا يساعدك فرز البطاقات في البناء؟" },
+          choices: [
+            { en: "Navigation/IA that matches how real users naturally group and name things", ar: "تنقّل/IA يطابق كيف يجمّع المستخدمون الحقيقيون الأشياء ويسمّونها طبيعياً" },
+            { en: "The color palette", ar: "لوحة الألوان" },
+            { en: "The database schema", ar: "مخطط قاعدة البيانات" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Letting real users group and label content reveals a structure that matches their mental model, not your internal org chart.",
+            ar: "السماح للمستخدمين الحقيقيين بتجميع وتسمية المحتوى يكشف بنية تطابق نموذجهم الذهني، لا مخطط شركتك الداخلي.",
+          },
+        },
       ],
     },
     {
@@ -107,6 +202,8 @@ The most expensive mistake in product design is building something beautiful tha
 - You are not the user — research replaces assumptions with evidence
 - Methods: interviews (why), surveys (how many), usability testing (watch them struggle)
 - Personas and journey maps keep design focused on real people and pain points
+- Cheap tests you can run this week: 5-second test, card sorting, first-click test, guerrilla testing
+- The famous checkout case study: one research-driven field change moved revenue enormously
 - Even testing with ~5 people uncovers most major problems
 
 **Next:** Wireframing & IA — turning research insights into the skeleton of a design.`,
@@ -115,6 +212,8 @@ The most expensive mistake in product design is building something beautiful tha
 - أنت لست المستخدم — البحث يستبدل الافتراضات بالأدلة
 - الطرق: المقابلات (لماذا)، الاستبيانات (كم)، اختبار الاستخدام (راقبهم يتعثّرون)
 - الشخصيات وخرائط الرحلة تُبقي التصميم مركّزاً على الناس الحقيقيين ونقاط الألم
+- اختبارات رخيصة تشغّلها هذا الأسبوع: اختبار الخمس ثوانٍ، فرز البطاقات، اختبار النقرة الأولى، الاختبار الارتجالي
+- دراسة حالة الدفع الشهيرة: تغيير حقل واحد مدفوع بالبحث حرّك الإيرادات بشدة
 - حتى الاختبار مع ~5 أشخاص يكشف معظم المشاكل الكبرى
 
 **التالي:** الإطار السلكي وهندسة المعلومات — تحويل رؤى البحث إلى هيكل التصميم.`,

@@ -62,6 +62,55 @@ Normal programming: *you* write the rules. "If email contains 'lottery' and 'win
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Decision trees: learning a flowchart of questions 🌳
+
+The threshold classifier you're about to build ("spam if score ≥ 0.5") is actually the simplest possible example of one of ML's most intuitive models: the **decision tree**. Instead of one threshold, a decision tree learns a whole **flowchart of yes/no questions**, each one splitting the data a bit more cleanly.
+
+Imagine deciding whether to approve a loan:
+
+\`\`\`
+Is income > $50,000?
+├── No  → Is existing debt < $5,000?
+│         ├── Yes → Approve
+│         └── No  → Reject
+└── Yes → Approve
+\`\`\`
+
+A decision tree doesn't need a human to write this flowchart. Given labeled training examples, it **learns which question to ask at each step** — specifically, it picks the question (and the threshold, like "$50,000") that best separates the labels ("approve" vs "reject") at that point. It repeats this, splitting each group further, until the groups are mostly pure (mostly one label) or it reaches a stopping point.
+
+Trees are popular for three reasons:
+- **They're readable** — you can literally draw the flowchart and explain a decision to a human, unlike many "black box" models.
+- **They handle messy, mixed data well** — numbers and categories together, no need to normalize first.
+- **They're the building block of ensembles** — a **Random Forest** trains hundreds of slightly different trees on random slices of the data and lets them vote, which is usually far more accurate than any single tree (this "wisdom of crowds" trick shows up throughout ML).
+
+The one thing to watch for: a tree allowed to grow with no limit will keep asking questions until it perfectly memorizes the training data — a textbook case of the **overfitting** you just learned about. That's why real trees are limited in depth, or combined into a forest.`,
+        ar: `## أشجار القرار: تعلّم مخطط انسيابي من الأسئلة 🌳
+
+مصنّف العتبة الذي ستبنيه الآن ("مزعج إذا الدرجة ≥ 0.5") هو في الحقيقة أبسط مثال ممكن على واحد من أكثر نماذج تعلّم الآلة حدسية: **شجرة القرار (decision tree)**. بدل عتبة واحدة، تتعلّم شجرة القرار **مخططاً انسيابياً كاملاً من أسئلة نعم/لا**، كل واحد يقسّم البيانات بوضوح أكبر قليلاً.
+
+تخيّل قرار الموافقة على قرض:
+
+\`\`\`
+هل الدخل > 50,000 دولار؟
+├── لا  ← هل الدين الحالي < 5,000 دولار؟
+│         ├── نعم ← وافق
+│         └── لا  ← ارفض
+└── نعم ← وافق
+\`\`\`
+
+شجرة القرار لا تحتاج إنساناً ليكتب هذا المخطط. بمعطى أمثلة تدريب مُسمّاة، **تتعلّم أي سؤال تطرحه في كل خطوة** — تحديداً، تختار السؤال (والعتبة، مثل "50,000 دولار") الذي يفصل التسميات ("وافق" مقابل "ارفض") بأفضل شكل في تلك النقطة. تكرر هذا، تقسّم كل مجموعة أكثر، حتى تصبح المجموعات نقية غالباً (تسمية واحدة غالباً) أو تصل لنقطة توقف.
+
+الأشجار شائعة لثلاثة أسباب:
+- **قابلة للقراءة** — يمكنك رسم المخطط الانسيابي فعلياً وشرح قرار لإنسان، خلافاً لكثير من النماذج "الصندوق الأسود".
+- **تتعامل جيداً مع بيانات فوضوية ومختلطة** — أرقام وفئات معاً، دون حاجة لتحجيم أولاً.
+- **لبنة بناء المجاميع (ensembles)** — **الغابة العشوائية (Random Forest)** تدرّب مئات الأشجار المختلفة قليلاً على شرائح عشوائية من البيانات وتترك لها التصويت، وعادة أدق بكثير من أي شجرة واحدة (حيلة "حكمة الحشود" هذه تظهر في تعلّم الآلة كله).
+
+الشيء الوحيد الذي يجب الحذر منه: شجرة يُسمح لها بالنمو دون حد ستستمر بطرح الأسئلة حتى تحفظ بيانات التدريب تماماً — مثال كلاسيكي على **الإفراط في الملاءمة** الذي تعلّمته للتو. لهذا تُحدَّد الأشجار الحقيقية بعمق أقصى، أو تُدمَج في غابة.`,
+      },
+    },
+    {
       type: "exercise",
       lang: "python",
       prompt: {

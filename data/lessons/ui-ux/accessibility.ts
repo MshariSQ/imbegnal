@@ -62,6 +62,33 @@ Accessibility isn't extra work bolted on at the end — it's a mark of a thought
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Forms and focus: the parts people forget 🔎
+
+Beyond images and buttons, two more accessibility basics quietly make or break a product for many users:
+
+**1. Labels on form fields.** An \`<input>\` with only a placeholder ("Email...") is a trap: the placeholder vanishes the moment someone starts typing, and screen readers often don't announce placeholder text as a label at all. The fix is a real \`<label>\` tied to the input with \`for\`/\`id\`: \`<label for="email">Email</label><input id="email">\`. Now a screen reader announces "Email, edit text" and — as a bonus — clicking the label text focuses the input, which helps anyone with shaky motor control aim more easily.
+
+**2. Visible focus indicators.** When you press Tab, the browser draws an outline around the currently focused element by default. Many designers strip this with \`outline: none\` because they think it looks messy — but without it, a keyboard user has no idea where they are on the page. It's like hiding the cursor in a text editor. If you must restyle it, replace it with an equally clear alternative (a colored ring, a background change) — never delete it outright.
+
+**3. Skip links.** On a page with a long navigation menu, a sighted mouse user just clicks past it — but a keyboard user must Tab through *every single link* before reaching the main content, every single page load. A "Skip to main content" link (visually hidden until it receives focus) lets keyboard users jump straight past the repeated navigation.
+
+None of these are exotic. They're small, cheap details that separate a page that merely *looks* accessible from one that actually *is*.`,
+        ar: `## النماذج والتركيز: الأجزاء التي ينساها الناس 🔎
+
+بعد الصور والأزرار، أساسان آخران لإمكانية الوصول يصنعان أو يكسران المنتج بصمت لكثير من المستخدمين:
+
+**1. تسميات حقول النماذج.** \`<input>\` بمجرد نص توضيحي placeholder ("البريد الإلكتروني...") فخ: النص التوضيحي يختفي لحظة يبدأ أحدهم الكتابة، وقارئات الشاشة غالباً لا تعلن نص placeholder كتسمية أصلاً. الحل \`<label>\` حقيقي مرتبط بالحقل بـ for/id: \`<label for="email">البريد</label><input id="email">\`. الآن يعلن قارئ الشاشة "البريد، تحرير نص" — وكمكافأة، النقر على نص التسمية يركّز الحقل، ما يساعد أي شخص بتحكّم حركي مرتجف على التصويب بسهولة أكبر.
+
+**2. مؤشرات التركيز المرئية.** عند الضغط على Tab، يرسم المتصفح إطاراً حول العنصر المُركَّز عليه حالياً افتراضياً. كثير من المصمّمين يزيلونه بـ \`outline: none\` ظنّاً أنه يبدو فوضوياً — لكن بدونه، مستخدم لوحة المفاتيح لا يعرف أين هو في الصفحة إطلاقاً. مثل إخفاء المؤشر في محرّر نصوص. إن اضطررت لإعادة تصميمه، استبدله ببديل واضح بنفس القدر (حلقة ملوّنة، تغيير خلفية) — لا تحذفه إطلاقاً.
+
+**3. روابط التخطي (Skip links).** في صفحة بقائمة تنقّل طويلة، المستخدم المبصر بالفأرة ينقر متجاوزاً إياها فقط — لكن مستخدم لوحة المفاتيح يجب أن يمرّ بـTab عبر *كل رابط* قبل الوصول للمحتوى الرئيسي، في كل تحميل صفحة. رابط "تخطَّ إلى المحتوى الرئيسي" (مخفي بصرياً حتى يتلقّى التركيز) يتيح لمستخدمي لوحة المفاتيح القفز مباشرة متجاوزين التنقّل المتكرر.
+
+لا شيء من هذا غريب. إنها تفاصيل صغيرة رخيصة تفصل صفحة *تبدو* فقط متاحة عن أخرى *فعلاً* متاحة.`,
+      },
+    },
+    {
       type: "exercise",
       lang: "web",
       prompt: {
@@ -115,6 +142,74 @@ Accessibility isn't extra work bolted on at the end — it's a mark of a thought
       ],
     },
     {
+      type: "exercise",
+      lang: "web",
+      prompt: {
+        en: `Give a form field a real label and a visible focus ring. Make two changes:
+1. Add a \`<label for="name">\` with any text right before the \`<input id="name">\`, so the label and input are properly connected
+2. In the \`<style>\`, give \`input:focus\` a visible \`outline\` (e.g. \`3px solid #2563eb\`) instead of the current \`outline: none\``,
+        ar: `أعطِ حقل النموذج تسمية حقيقية وحلقة تركيز مرئية. أجرِ تغييرين:
+1. أضف \`<label for="name">\` بأي نص مباشرة قبل \`<input id="name">\`، ليرتبط الحقل بالتسمية بشكل صحيح
+2. في \`<style>\`، أعطِ \`input:focus\` إطاراً \`outline\` مرئياً (مثل \`3px solid #2563eb\`) بدل \`outline: none\` الحالي`,
+      },
+      starterCode: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; padding: 24px; }
+      input { padding: 8px; border: 1px solid #999; border-radius: 6px; }
+      input:focus { outline: none; }  /* keyboard users lose track of focus! */
+    </style>
+  </head>
+  <body>
+    <!-- add a <label for="name"> right here -->
+    <input id="name" type="text" placeholder="Your name">
+  </body>
+</html>`,
+      solution: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; padding: 24px; }
+      input { padding: 8px; border: 1px solid #999; border-radius: 6px; }
+      input:focus { outline: 3px solid #2563eb; }
+    </style>
+  </head>
+  <body>
+    <label for="name">Your name</label>
+    <input id="name" type="text" placeholder="Your name">
+  </body>
+</html>`,
+      hints: [
+        { en: `Add <label for="name">Your name</label> right before the <input>.`, ar: `أضف <label for="name">اسمك</label> مباشرة قبل <input>.` },
+        { en: `Change input:focus { outline: none; } to input:focus { outline: 3px solid #2563eb; }`, ar: `غيّر input:focus { outline: none; } إلى input:focus { outline: 3px solid #2563eb; }` },
+      ],
+      tests: [
+        { name: { en: "A <label> is connected to the input via for=\"name\"", ar: "يوجد <label> مرتبط بالحقل عبر for=\"name\"" }, check: `(function(){ var l = document.querySelector('label[for="name"]'); return l && l.textContent.trim().length > 0; })()` },
+        { name: { en: "The input has id=\"name\" matching the label", ar: "الحقل له id=\"name\" مطابق للتسمية" }, check: `document.getElementById("name") !== null` },
+        { name: { en: "input:focus has a visible outline (not none)", ar: "input:focus له إطار مرئي (لا none)" }, check: `(function(){ var el = document.getElementById("name"); el.focus(); var o = getComputedStyle(el).outlineStyle; return o && o !== "none"; })()` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the screen-reader user who couldn't checkout 🔍
+
+A pattern reported again and again in accessibility audits and lawsuits (large retailers have been sued over exactly this) goes like this: an online store looks perfectly polished — until a blind customer using a screen reader tries to buy something. The "Add to Cart" button turns out to be a styled \`<div>\` with a click handler, invisible to keyboard navigation. The size dropdown has no associated \`<label>\`, so the screen reader just says "combo box" with no idea it means "shoe size." The checkout form's error messages appear only as a color change, silent to anyone who can't see red.
+
+None of these are exotic bugs — each is one of the exact issues from this lesson: a fake button instead of a real one, a missing label, color-only feedback. Individually small, but stacked together they form a wall the customer cannot get past, at the exact moment they were ready to pay. The business loses a sale it never even knows it lost, silently, over and over, for every affected visitor.
+
+The fix in every real case is the same, unglamorous checklist: real semantic elements, real labels, redundant (non-color) signals, and visible focus. None of it requires redesigning the store — it requires not skipping the basics. That's exactly why accessibility audits keep finding the same handful of issues: they're easy to overlook and cheap to fix, if you know to look.`,
+        ar: `## دراسة حالة واقعية: مستخدم قارئ الشاشة الذي لم يستطع إتمام الشراء 🔍
+
+نمط يُذكر مراراً في تدقيقات الوصول والدعاوى القضائية (متاجر كبرى رُفعت عليها دعاوى بسبب هذا بالضبط) يسير هكذا: متجر إلكتروني يبدو مصقولاً تماماً — حتى يحاول عميل كفيف يستخدم قارئ شاشة شراء شيء. يتضح أن زر "أضف للسلة" هو \`<div>\` مُنسَّق بمعالج نقر، غير مرئي لتنقّل لوحة المفاتيح. قائمة اختيار المقاس بلا \`<label>\` مرتبطة، فيقول قارئ الشاشة فقط "قائمة منسدلة" بلا أي فكرة أنها تعني "مقاس الحذاء." رسائل خطأ نموذج الدفع تظهر فقط كتغيير لون، صامتة لمن لا يرى الأحمر.
+
+لا شيء من هذا خلل غريب — كلٌّ منها بالضبط إحدى المشاكل من هذا الدرس: زر مزيّف بدل حقيقي، تسمية مفقودة، تغذية راجعة بلون فقط. صغيرة فردياً، لكنها مجتمعة تشكّل جداراً لا يستطيع الزبون تجاوزه، في اللحظة بالضبط حين كان مستعداً للدفع. يخسر العمل بيعاً لا يعرف حتى أنه خسره، بصمت، مراراً وتكراراً، لكل زائر متأثر.
+
+الإصلاح في كل حالة حقيقية هو نفس القائمة غير البرّاقة: عناصر دلالية حقيقية، تسميات حقيقية، إشارات متكررة (غير لونية)، وتركيز مرئي. لا شيء من هذا يتطلّب إعادة تصميم المتجر — يتطلّب فقط عدم تخطّي الأساسيات. لهذا بالضبط تستمر تدقيقات الوصول بإيجاد نفس الحفنة من المشاكل: يسهل تجاهلها ورخيصة الإصلاح، إن عرفت أين تنظر.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -156,6 +251,32 @@ Accessibility isn't extra work bolted on at the end — it's a mark of a thought
             ar: "المنحدرات تساعد الكراسي والعربات؛ والتسميات تساعد الصمّ والغرف الصاخبة. الوصول يرفع التجربة كلها.",
           },
         },
+        {
+          q: { en: "What's wrong with using only a placeholder instead of a <label>?", ar: "ما الخطأ في استخدام placeholder فقط بدل <label>؟" },
+          choices: [
+            { en: "It disappears when typing starts and may not be announced as a label by screen readers", ar: "يختفي عند بدء الكتابة وقد لا يُعلَن كتسمية من قارئات الشاشة" },
+            { en: "Nothing — placeholders are always a full replacement for labels", ar: "لا شيء — الـplaceholder يحل محل التسمية دائماً بالكامل" },
+            { en: "Placeholders are only a decoration issue, not accessibility", ar: "الـplaceholder مسألة زخرفية فقط لا علاقة لها بالوصول" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A real <label> stays announced and clickable at all times; a placeholder vanishes the moment the user types and is often skipped by assistive tech.",
+            ar: "الـ<label> الحقيقي يبقى مُعلَناً وقابلاً للنقر دائماً؛ والـplaceholder يختفي لحظة الكتابة وغالباً تتجاهله التقنية المساعدة.",
+          },
+        },
+        {
+          q: { en: "Why should you avoid outline: none on :focus without replacing it?", ar: "لماذا نتجنب outline: none على :focus دون استبداله؟" },
+          choices: [
+            { en: "It removes the only visual clue keyboard users have for where they are on the page", ar: "يزيل الدليل البصري الوحيد لمستخدمي لوحة المفاتيح على مكانهم في الصفحة" },
+            { en: "It's a syntax error in CSS", ar: "إنه خطأ نحوي في CSS" },
+            { en: "It makes the page load more slowly", ar: "يجعل الصفحة أبطأ تحميلاً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Removing focus outlines is like hiding a text cursor — keyboard users lose all sense of where they are. Replace it, never delete it.",
+            ar: "إزالة إطار التركيز أشبه بإخفاء مؤشر النص — يفقد مستخدمو لوحة المفاتيح كل إحساس بمكانهم. استبدله، لا تحذفه.",
+          },
+        },
       ],
     },
     {
@@ -168,6 +289,8 @@ Your UI/UX foundation is built:
 - Design principles, typography & color — the fundamentals of looking good
 - Figma, user research, wireframing, prototyping — the design process
 - Design systems & accessibility — consistent, inclusive products at scale
+- Labels, visible focus, and skip links — the form/keyboard details many designers forget
+- The screen-reader checkout case study — small oversights stack into a wall users can't get past
 
 **Path to paid work:** UX/UI designers are in high demand. Learn Figma deeply, rebuild 3–4 real app screens applying everything here, do one small user test, and assemble a portfolio (a personal site or Behance/Dribbble). If you also learned the Frontend track, you're a rare designer-who-codes — extremely employable and perfect for freelance. Pair it with the "Getting Paid" lesson and start landing clients. Design things people love — and that everyone can use! 🎨`,
         ar: `## اكتمل المسار! 🎓
@@ -177,6 +300,8 @@ Your UI/UX foundation is built:
 - مبادئ التصميم، الطباعة والألوان — أساسيات المظهر الجيد
 - Figma، بحث المستخدم، الإطار السلكي، النماذج — عملية التصميم
 - أنظمة التصميم وإمكانية الوصول — منتجات متسقة شاملة على نطاق واسع
+- التسميات، تركيز مرئي، وروابط التخطي — تفاصيل النماذج/لوحة المفاتيح التي ينساها كثير من المصمّمين
+- دراسة حالة قارئ الشاشة عند الدفع — إغفالات صغيرة تتراكم لجدار لا يتجاوزه المستخدمون
 
 **طريق العمل المدفوع:** مصمّمو UX/UI مطلوبون بشدة. تعلّم Figma بعمق، أعد بناء 3–4 شاشات تطبيق حقيقية مطبّقاً كل ما هنا، أجرِ اختبار مستخدم صغيراً، واجمع معرضاً (موقع شخصي أو Behance/Dribbble). وإن تعلّمت مسار الواجهات أيضاً، فأنت مصمّم-يبرمج نادر — قابل للتوظيف بشدة ومثالي للعمل الحر. ازوجها بدرس "التكسّب" وابدأ بجذب العملاء. صمّم أشياء يحبها الناس — ويستطيع الجميع استخدامها! 🎨`,
       },

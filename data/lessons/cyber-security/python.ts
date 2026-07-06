@@ -12,12 +12,14 @@ export const lesson: Lesson = {
 
 - Why Python is the #1 language for security work
 - Variables, lists, loops, and functions — the core toolkit
+- **Regular expressions (regex)** — finding patterns like IPs and emails in a sea of text
 - Write real security-flavored scripts, checked live
 - Everything runs in your browser via Python (Pyodide)`,
         ar: `## ماذا ستتعلم
 
 - لماذا بايثون اللغة رقم 1 في عمل الأمن
 - المتغيرات والقوائم والحلقات والدوال — العدّة الأساسية
+- **التعابير النمطية (Regex)** — إيجاد أنماط مثل عناوين IP والبريد في بحر من النص
 - تكتب سكربتات أمنية حقيقية، تُصحَّح مباشرة
 - كل شيء يعمل في متصفحك عبر بايثون (Pyodide)`,
       },
@@ -166,6 +168,72 @@ print(is_strong("Password1"))   # True`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Regex — finding needles in a haystack of text 🔍
+
+Log files are huge and messy. Searching for an exact word (like \`"ERROR"\`) is easy — but what if you need to find *any* IP address, without knowing which ones appear? **Regular expressions (regex)** describe a *pattern* instead of exact text:
+
+\`\`\`python
+import re
+
+text = "Login from 192.168.1.5 failed, then 10.0.0.9 succeeded"
+ips = re.findall(r"\\d+\\.\\d+\\.\\d+\\.\\d+", text)
+print(ips)   # ['192.168.1.5', '10.0.0.9']
+\`\`\`
+
+Read the pattern \`\\d+\\.\\d+\\.\\d+\\.\\d+\` piece by piece: \`\\d\` means "any digit," \`+\` means "one or more of those," and \`\\.\` means "a literal dot" (a plain dot in regex means "any character," so it must be escaped). Put together: "one or more digits, a dot, one or more digits, a dot…" — exactly the shape of an IPv4 address.
+
+This is a genuinely core security skill: SOC analysts and SIEM tools (you'll meet these in the SOC lesson) run regex patterns like this over millions of log lines to pull out **IOCs** (Indicators of Compromise) — suspicious IPs, email addresses, file hashes — automatically, instead of reading every line by eye.`,
+        ar: `## Regex — إيجاد إبرة في كومة نص 🔍
+
+ملفات السجلّات ضخمة وفوضوية. البحث عن كلمة محددة (مثل \`"ERROR"\`) سهل — لكن ماذا لو احتجت إيجاد *أي* عنوان IP، دون معرفة أيها سيظهر؟ **التعابير النمطية (regex)** تصف *نمطاً* بدل نص محدد:
+
+\`\`\`python
+import re
+
+text = "Login from 192.168.1.5 failed, then 10.0.0.9 succeeded"
+ips = re.findall(r"\\d+\\.\\d+\\.\\d+\\.\\d+", text)
+print(ips)   # ['192.168.1.5', '10.0.0.9']
+\`\`\`
+
+اقرأ النمط \`\\d+\\.\\d+\\.\\d+\\.\\d+\` قطعة بقطعة: \`\\d\` تعني "أي رقم،" و\`+\` تعني "واحد أو أكثر من ذلك،" و\`\\.\` تعني "نقطة حرفية" (النقطة العادية في regex تعني "أي حرف،" فيجب الهروب منها). مجتمعة: "رقم أو أكثر، نقطة، رقم أو أكثر، نقطة…" — بالضبط شكل عنوان IPv4.
+
+هذه مهارة أمنية جوهرية حقاً: محللو SOC وأدوات SIEM (ستقابلهم في درس SOC) يشغّلون أنماط regex كهذه على ملايين أسطر السجلّات لاستخراج **مؤشرات الاختراق (IOCs)** — عناوين IP مشبوهة، عناوين بريد، تجزئات ملفات — تلقائياً، بدل قراءة كل سطر بالعين.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "python",
+      prompt: {
+        en: `Write \`extract_ips(text)\` using \`re.findall\` that returns a list of every IP address found in \`text\`.`,
+        ar: `اكتب \`extract_ips(text)\` باستخدام \`re.findall\` تعيد قائمة بكل عنوان IP موجود في \`text\`.`,
+      },
+      starterCode: `import re
+
+def extract_ips(text):
+    # use re.findall with the IPv4 pattern
+    pass
+
+log = "Connections from 192.168.1.5 and 10.0.0.9, blocked 203.0.113.7"
+print(extract_ips(log))  # ['192.168.1.5', '10.0.0.9', '203.0.113.7']`,
+      solution: `import re
+
+def extract_ips(text):
+    return re.findall(r"\\d+\\.\\d+\\.\\d+\\.\\d+", text)
+
+log = "Connections from 192.168.1.5 and 10.0.0.9, blocked 203.0.113.7"
+print(extract_ips(log))  # ['192.168.1.5', '10.0.0.9', '203.0.113.7']`,
+      hints: [
+        { en: `re.findall(pattern, text) returns every match as a list.`, ar: `re.findall(pattern, text) تعيد كل تطابق كقائمة.` },
+        { en: `Pattern: r"\\d+\\.\\d+\\.\\d+\\.\\d+"`, ar: `النمط: r"\\d+\\.\\d+\\.\\d+\\.\\d+"` },
+      ],
+      tests: [
+        { name: { en: "Finds all 3 IPs in the log", ar: "يجد كل الـ3 عناوين IP في السجلّ" }, check: `assert extract_ips(log) == ["192.168.1.5", "10.0.0.9", "203.0.113.7"]` },
+        { name: { en: "Returns empty list when no IPs present", ar: "يعيد قائمة فارغة عند عدم وجود عناوين IP" }, check: `assert extract_ips("no addresses here") == []` },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -207,6 +275,32 @@ print(is_strong("Password1"))   # True`,
             ar: "سهولة القراءة + نظام مكتبات ضخم (requests، scapy…) يجعل كتابة الفاحصات والمحلّلات سريعة. السرعة ليست ميزتها.",
           },
         },
+        {
+          q: { en: "What does \\d+ mean in a regex pattern?", ar: "ماذا تعني \\d+ في نمط regex؟" },
+          choices: [
+            { en: "One or more digits", ar: "رقم واحد أو أكثر" },
+            { en: "Exactly one letter", ar: "حرف واحد بالضبط" },
+            { en: "Any punctuation mark", ar: "أي علامة ترقيم" },
+          ],
+          answer: 0,
+          explain: {
+            en: "\\d matches a single digit; + means 'one or more of the previous thing' — together, any run of digits.",
+            ar: "\\d تطابق رقماً واحداً؛ و+ تعني 'واحد أو أكثر مما قبلها' — معاً، أي سلسلة أرقام.",
+          },
+        },
+        {
+          q: { en: "Why do SOC analysts use regex on log files?", ar: "لماذا يستخدم محللو SOC الـ regex على ملفات السجلّات؟" },
+          choices: [
+            { en: "To automatically pull out patterns like IPs or hashes from millions of lines", ar: "لاستخراج أنماط مثل عناوين IP أو التجزئات تلقائياً من ملايين الأسطر" },
+            { en: "Regex deletes log files", ar: "الـ regex يحذف ملفات السجلّات" },
+            { en: "It only works on images", ar: "يعمل فقط على الصور" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Regex finds patterns, not exact text — exactly what's needed to hunt for indicators of compromise across massive logs without reading every line.",
+            ar: "الـ regex يجد أنماطاً، لا نصاً محدداً — بالضبط ما يلزم لتصيّد مؤشرات الاختراق عبر سجلّات ضخمة دون قراءة كل سطر.",
+          },
+        },
       ],
     },
     {
@@ -216,14 +310,16 @@ print(is_strong("Password1"))   # True`,
 
 - Python = the automation language of security
 - You mastered variables, lists, loops, conditions, functions
-- You built a port filter and a password-strength checker — both real tools
+- Regex finds patterns (IPs, emails, hashes) instead of exact text — the engine behind SIEM log analysis
+- You built a port filter, a password-strength checker, and an IP extractor — all real tools
 
 **Next:** Cyber Security Basics — the core concepts (CIA triad, threats, defense) that turn these skills into a security mindset.`,
         ar: `## الخلاصة
 
 - بايثون = لغة أتمتة الأمن
 - أتقنت المتغيرات والقوائم والحلقات والشروط والدوال
-- بنيت مُرشِّح منافذ وفاحص قوة كلمات مرور — أداتان حقيقيتان
+- الـ regex يجد أنماطاً (عناوين IP، بريد، تجزئات) بدل نص محدد — المحرك خلف تحليل سجلّات SIEM
+- بنيت مُرشِّح منافذ وفاحص قوة كلمات مرور ومستخرج عناوين IP — أدوات حقيقية
 
 **التالي:** أساسيات الأمن السيبراني — المفاهيم الجوهرية (ثالوث CIA، التهديدات، الدفاع) التي تحوّل هذه المهارات إلى عقلية أمنية.`,
       },

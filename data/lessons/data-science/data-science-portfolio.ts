@@ -78,6 +78,66 @@ Data skills are among the most in-demand and well-paid on earth. A focused portf
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Anatomy of a project people actually read 📓
+
+A portfolio project isn't a code dump — it's a **short story** that happens to include code. Reviewers (recruiters, hiring managers, other analysts) skim; you have seconds to earn a real read. Structure every project the same way:
+
+1. **Title + one-sentence question** at the top — "Do Riyadh house prices depend more on size or location?" Not "House Price Analysis."
+2. **Why it matters** — 2–3 sentences on why anyone should care about the answer.
+3. **Data source** — where it came from, how big it is, any known limitations (be honest — this builds trust).
+4. **Process, briefly** — cleaning steps and key decisions, but don't paste every line of code; summarize, and link to the notebook for detail.
+5. **The finding** — 1–2 charts that directly answer the question, with a plain-English caption.
+6. **Conclusion** — a direct answer, plus one honest limitation ("this only covers 2023 listings, so seasonal effects aren't captured").
+
+**The checklist before you publish:**
+- Does the README alone (no need to open the notebook) tell the whole story?
+- Could someone re-run your notebook top-to-bottom without errors?
+- Is there a clear conclusion, not just "here are some charts"?
+- Did you credit the data source?
+
+Three projects built this way outperform ten half-finished notebooks with no writeup. Depth and honesty beat volume every time.`,
+        ar: `## تشريح مشروع يقرأه الناس فعلاً 📓
+
+مشروع المعرض ليس تفريغ كود — إنه **قصة قصيرة** تتضمّن كوداً بالصدفة. المراجعون (مسؤولو التوظيف، المديرون، محلّلون آخرون) يتصفّحون سريعاً؛ لديك ثوانٍ لكسب قراءة حقيقية. رتّب كل مشروع بنفس الطريقة:
+
+1. **عنوان + سؤال بجملة واحدة** في الأعلى — "هل تعتمد أسعار منازل الرياض على المساحة أكثر أم الموقع؟" لا "تحليل أسعار المنازل."
+2. **لماذا يهم** — 2–3 جمل عن سبب اهتمام أي أحد بالإجابة.
+3. **مصدر البيانات** — من أين جاءت، حجمها، أي قيود معروفة (كن صادقاً — هذا يبني الثقة).
+4. **العملية، باختصار** — خطوات التنظيف والقرارات الأساسية، لكن لا تلصق كل سطر كود؛ لخّص، واربط بالدفتر للتفاصيل.
+5. **الاكتشاف** — 1–2 رسم يجيب مباشرة على السؤال، بتعليق واضح بلغة بسيطة.
+6. **الاستنتاج** — إجابة مباشرة، بالإضافة إلى قيد صادق واحد ("هذا يغطي فقط قوائم 2023، فالتأثيرات الموسمية غير مُلتقطة").
+
+**قائمة التحقق قبل النشر:**
+- هل يروي الـ README وحده (دون فتح الدفتر) القصة كاملة؟
+- هل يستطيع أحد إعادة تشغيل دفترك من البداية للنهاية دون أخطاء؟
+- هل يوجد استنتاج واضح، لا مجرد "إليك بعض الرسوم"؟
+- هل نسبت الفضل لمصدر البيانات؟
+
+ثلاثة مشاريع مبنية بهذه الطريقة تتفوّق على عشرة دفاتر نصف منجزة بلا شرح. العمق والصدق يتفوّقان على الكمّ دائماً.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the Netflix Prize 🔍
+
+In 2006, Netflix publicly released a dataset of about 100 million anonymized movie ratings and offered **$1,000,000** to anyone who could improve its recommendation algorithm's accuracy by 10%. It became one of the most famous open data science competitions ever run — a direct ancestor of every Kaggle competition today.
+
+Thousands of teams worldwide — students, hobbyists, and professional researchers — competed for nearly three years. The eventual winning team, "BellKor's Pragmatic Chaos," didn't win with one clever trick; they won by **combining (ensembling) hundreds of different models** built by merging several competing teams' approaches together. The competition also became a landmark case study in data privacy: researchers later showed that some "anonymized" viewers could be re-identified by cross-referencing the ratings with public data (like IMDb reviews) — a lesson every data scientist since has had to reckon with when handling "anonymous" data.
+
+The takeaway for your own portfolio: the Netflix Prize proved that **public datasets + transparent competition + a clear, measurable goal** is one of the best ways to learn real data science and get noticed — exactly what Kaggle offers you today, minus the million-dollar prize (usually).`,
+        ar: `## دراسة حالة واقعية: جائزة Netflix 🔍
+
+في 2006، أصدرت Netflix علناً مجموعة بيانات من نحو 100 مليون تقييم فيلم مجهول الهوية، وعرضت **مليون دولار** لأي فريق يحسّن دقة خوارزمية توصياتها بنسبة 10%. أصبحت واحدة من أشهر مسابقات علم البيانات المفتوحة على الإطلاق — سلف مباشر لكل مسابقة Kaggle اليوم.
+
+تنافست آلاف الفرق حول العالم — طلاب، هواة، وباحثون محترفون — لقرابة ثلاث سنوات. الفريق الفائز أخيراً، "BellKor's Pragmatic Chaos"، لم يفز بحيلة ذكية واحدة؛ بل فاز بـ**دمج (ensembling) مئات النماذج المختلفة** المبنية بدمج طرق عدة فرق متنافسة معاً. أصبحت المسابقة أيضاً دراسة حالة بارزة في خصوصية البيانات: أظهر باحثون لاحقاً أن بعض المشاهدين "المجهولين" يمكن إعادة تحديد هويتهم بمطابقة التقييمات مع بيانات عامة (كمراجعات IMDb) — درس اضطر كل عالِم بيانات منذ ذلك الحين للتعامل معه عند التعامل مع بيانات "مجهولة الهوية".
+
+الدرس المستفاد لمعرضك الخاص: أثبتت جائزة Netflix أن **بيانات عامة + منافسة شفافة + هدف واضح قابل للقياس** من أفضل طرق تعلّم علم البيانات الحقيقي ولفت الانتباه — بالضبط ما يقدّمه لك Kaggle اليوم، بلا جائزة المليون دولار (عادة).`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -119,6 +179,32 @@ Data skills are among the most in-demand and well-paid on earth. A focused portf
             ar: "Kaggle يقدّم بيانات ومسابقات تنبؤ ودفاتر للتعلّم ومجتمعاً وحوسبة مجانية — مثالي للتدرّب والإشارة.",
           },
         },
+        {
+          q: { en: "What structure should a portfolio project README follow?", ar: "أي بنية يجب أن يتّبعها README مشروع المعرض؟" },
+          choices: [
+            { en: "Question → why it matters → data source → brief process → finding → conclusion", ar: "سؤال ← لماذا يهم ← مصدر البيانات ← عملية موجزة ← اكتشاف ← استنتاج" },
+            { en: "Just the raw code with no explanation", ar: "الكود الخام فقط بلا شرح" },
+            { en: "A list of every library you imported", ar: "قائمة بكل مكتبة استوردتها" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A reviewer should get the whole story from the README alone — question, context, data, process, finding, and a clear conclusion.",
+            ar: "يجب أن يحصل المراجع على القصة كاملة من الـ README وحده — السؤال، السياق، البيانات، العملية، الاكتشاف، واستنتاج واضح.",
+          },
+        },
+        {
+          q: { en: "What did the Netflix Prize demonstrate about real-world data science?", ar: "ماذا أظهرت جائزة Netflix عن علم البيانات في الواقع؟" },
+          choices: [
+            { en: "Public datasets + a clear measurable goal can drive huge collective progress — and 'anonymized' data can still be re-identified", ar: "البيانات العامة + هدف واضح قابل للقياس يمكن أن يدفعا تقدماً جماعياً ضخماً — والبيانات 'مجهولة الهوية' قد يُعاد تحديد هويتها" },
+            { en: "One person working alone always beats a team", ar: "شخص واحد يعمل بمفرده يتفوّق دائماً على فريق" },
+            { en: "Anonymized data can never be traced back to individuals", ar: "البيانات مجهولة الهوية لا يمكن أبداً تتبعها لأفراد" },
+          ],
+          answer: 0,
+          explain: {
+            en: "The winning solution combined many teams' models, and researchers later showed some 'anonymous' viewers could be re-identified — a lasting privacy lesson.",
+            ar: "الحل الفائز دمج نماذج فرق عديدة، وأظهر باحثون لاحقاً أن بعض المشاهدين 'المجهولين' يمكن إعادة تحديد هويتهم — درس خصوصية دائم.",
+          },
+        },
       ],
     },
     {
@@ -132,6 +218,8 @@ Your data science foundation is built:
 - Visualization + BI — communicating it
 - ML + data engineering — predicting and pipelining
 - Portfolio + Kaggle — proving it and getting hired
+- You now know how to structure a project README so it actually gets read
+- The Netflix Prize shows how public data + a clear goal turns into real skill and recognition
 
 **Your path to paid work:** build 3 honest, curious projects on GitHub, practice on Kaggle, learn a BI tool, and apply the job/freelance tactics from the "Getting Paid" lesson. Data roles are plentiful and well-paid — go earn one. 🚀`,
         ar: `## اكتمل المسار! 🎓
@@ -142,6 +230,8 @@ Your data science foundation is built:
 - التصوير + BI — توصيلها
 - ML + هندسة البيانات — التنبؤ وبناء الخطوط
 - المعرض + Kaggle — إثباتها والحصول على وظيفة
+- تعرف الآن كيف تبني README مشروع بحيث يُقرأ فعلاً
+- جائزة Netflix تُظهر كيف تتحوّل البيانات العامة + هدف واضح إلى مهارة حقيقية وتقدير
 
 **طريقك للعمل المدفوع:** ابنِ 3 مشاريع صادقة فضولية على GitHub، تدرّب على Kaggle، تعلّم أداة BI، وطبّق تكتيكات الوظيفة/العمل الحر من درس "التكسّب". أدوار البيانات كثيرة وجيدة الأجر — اذهب واكسب واحدة. 🚀`,
       },

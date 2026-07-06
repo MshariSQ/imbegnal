@@ -13,9 +13,11 @@ export const lesson: Lesson = {
 By the end of this lesson you will:
 
 - Understand what HTML and CSS actually **are** (no scary words)
-- Write a real web page with your own hands
+- Write a real web page with your own hands, using semantic tags
+- Master the CSS box model — padding, border, and margin, precisely
 - Style it with colors, spacing, and rounded corners
-- Pass 3 hands-on exercises checked automatically by the browser
+- Build a real layout with **Flexbox** — the tool behind almost every navbar and card grid on the web
+- Pass hands-on exercises checked automatically by the browser, including a live layout challenge
 
 You don't need to install anything. The code runs right here on this page.`,
         ar: `## ماذا ستتعلم
@@ -23,9 +25,11 @@ You don't need to install anything. The code runs right here on this page.`,
 في نهاية هذا الدرس ستكون قادراً على:
 
 - فهم ما هو HTML وما هو CSS **فعلياً** (بدون كلمات مخيفة)
-- كتابة صفحة ويب حقيقية بيدك
+- كتابة صفحة ويب حقيقية بيدك، باستخدام وسوم دلالية
+- إتقان نموذج الصندوق في CSS — الحشو والحدود والهامش، بدقة
 - تنسيقها بالألوان والمسافات والزوايا الدائرية
-- اجتياز 3 تمارين عملية يصحّحها المتصفح تلقائياً
+- بناء تخطيط حقيقي بـ **Flexbox** — الأداة خلف كل شريط تنقّل وشبكة بطاقات تقريباً على الويب
+- اجتياز تمارين عملية يصحّحها المتصفح تلقائياً، بما فيها تحدٍّ تخطيط حقيقي
 
 لا تحتاج إلى تثبيت أي شيء. الكود يعمل هنا مباشرة في هذه الصفحة.`,
       },
@@ -231,6 +235,51 @@ Two more building blocks you'll use every single day:
     {
       type: "text",
       body: {
+        en: `## Semantic HTML — tags with meaning 🏷️
+
+So far you've used generic tags. But HTML has special tags that describe *what a section of the page means*, not just how it looks. These are called **semantic tags**:
+
+\`\`\`html
+<header>   <!-- the top of the page: logo, title -->
+<nav>      <!-- the navigation links -->
+<main>     <!-- the main content, once per page -->
+<section>  <!-- a themed group of content -->
+<article>  <!-- a self-contained piece, like a blog post -->
+<footer>   <!-- the bottom: copyright, links -->
+\`\`\`
+
+You *could* build a whole page out of \`<div>\` alone — the browser wouldn't complain. So why bother?
+
+1. **Screen readers depend on it.** A blind user's screen reader announces "navigation" when it hits a \`<nav>\`, letting them jump straight to it. A page built entirely of \`<div>\`s is a maze with no signposts for them.
+2. **Search engines read it.** Google gives more weight to text inside \`<article>\` and \`<h1>\` than inside a meaningless \`<div>\` — semantic tags are a free SEO boost.
+3. **Other developers (including future you) read it faster.** \`<footer>\` instantly tells a reader of your code what that block is, no comment needed.
+
+Rule of thumb: reach for a semantic tag first. Only fall back to a plain \`<div>\` when nothing else fits.`,
+        ar: `## HTML الدلالي — وسوم لها معنى 🏷️
+
+استخدمت حتى الآن وسوماً عامة. لكن HTML لديه وسوم خاصة تصف *ماذا يعني جزء من الصفحة*، لا شكله فقط. تُسمى **الوسوم الدلالية**:
+
+\`\`\`html
+<header>   <!-- أعلى الصفحة: الشعار، العنوان -->
+<nav>      <!-- روابط التنقّل -->
+<main>     <!-- المحتوى الرئيسي، مرة واحدة في الصفحة -->
+<section>  <!-- مجموعة محتوى بموضوع واحد -->
+<article>  <!-- قطعة قائمة بذاتها، كمقال مدونة -->
+<footer>   <!-- الأسفل: حقوق النشر، الروابط -->
+\`\`\`
+
+كان بإمكانك بناء صفحة كاملة من \`<div>\` فقط — والمتصفح لن يعترض. فلماذا العناء؟
+
+1. **قارئات الشاشة تعتمد عليها.** قارئ شاشة مستخدم كفيف يعلن "تنقّل" عند وصوله لـ \`<nav>\`، فيقفز إليه مباشرة. الصفحة المبنية بالكامل من \`<div>\` متاهة بلا لافتات إرشادية له.
+2. **محركات البحث تقرؤها.** قوقل يعطي وزناً أكبر للنص داخل \`<article>\` و\`<h1>\` مقارنة بـ\`<div>\` بلا معنى — الوسوم الدلالية دفعة مجانية لـ SEO.
+3. **المطورون الآخرون (وأنت مستقبلاً) يقرؤون كودك أسرع.** \`<footer>\` يخبر قارئ كودك فوراً ماذا يعني ذلك الجزء، بلا حاجة لتعليق.
+
+قاعدة عامة: الجأ للوسم الدلالي أولاً. استخدم \`<div>\` العادي فقط حين لا يناسب شيء آخر.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
         en: `## Now let's paint the house — CSS 🎨
 
 Plain HTML looks like a document from 1995. **CSS** (Cascading Style Sheets) is how we make it beautiful.
@@ -395,6 +444,266 @@ h1 {
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## The box model — every element is a box 📦
+
+Here's the single most important mental model in CSS: **every HTML element is a rectangular box**, made of four layers, from the inside out:
+
+\`\`\`
+┌─────────────────────────────────┐
+│           margin (outside)       │
+│  ┌─────────────────────────────┐ │
+│  │        border                │ │
+│  │  ┌───────────────────────┐  │ │
+│  │  │     padding            │  │ │
+│  │  │  ┌─────────────────┐  │  │ │
+│  │  │  │     content      │  │  │ │
+│  │  │  └─────────────────┘  │  │ │
+│  │  └───────────────────────┘  │ │
+│  └─────────────────────────────┘ │
+└─────────────────────────────────┘
+\`\`\`
+
+- **Content** — the actual text or image.
+- **Padding** — space between the content and the border (increasing it makes the box bigger, pushing the border outward).
+- **Border** — a visible (or invisible) line around the padding.
+- **Margin** — space *outside* the border, pushing away other elements.
+
+**The gotcha every beginner hits:** by default, \`width: 200px\` sets the width of the *content only* — padding and border get added on top, so a box with \`width: 200px; padding: 20px; border: 2px;\` actually renders **244px** wide. This surprises everyone at least once.
+
+The fix, used in almost every professional stylesheet:
+
+\`\`\`css
+* {
+  box-sizing: border-box;
+}
+\`\`\`
+
+This changes the rule so \`width\` includes padding and border — what you set is what you get. Add this once at the top of your CSS and the surprise disappears forever.`,
+        ar: `## نموذج الصندوق — كل عنصر صندوق 📦
+
+إليك أهم نموذج ذهني واحد في CSS: **كل عنصر HTML صندوق مستطيل**، مكوّن من أربع طبقات، من الداخل للخارج:
+
+\`\`\`
+┌─────────────────────────────────┐
+│         الهامش margin (خارجي)     │
+│  ┌─────────────────────────────┐ │
+│  │        الحدود border          │ │
+│  │  ┌───────────────────────┐  │ │
+│  │  │     الحشو padding        │  │ │
+│  │  │  ┌─────────────────┐  │  │ │
+│  │  │  │  المحتوى content   │  │  │ │
+│  │  │  └─────────────────┘  │  │ │
+│  │  └───────────────────────┘  │ │
+│  └─────────────────────────────┘ │
+└─────────────────────────────────┘
+\`\`\`
+
+- **المحتوى (Content)** — النص أو الصورة الفعلية.
+- **الحشو (Padding)** — مسافة بين المحتوى والحدود (زيادته يكبّر الصندوق، فيدفع الحدود للخارج).
+- **الحدود (Border)** — خط مرئي (أو غير مرئي) حول الحشو.
+- **الهامش (Margin)** — مسافة *خارج* الحدود، تدفع العناصر الأخرى بعيداً.
+
+**الفخ الذي يقع فيه كل مبتدئ:** افتراضياً، \`width: 200px\` تضبط عرض *المحتوى فقط* — يُضاف الحشو والحدود فوق ذلك، فصندوق بـ \`width: 200px; padding: 20px; border: 2px;\` يُعرض فعلياً بعرض **244px**. هذا يفاجئ الجميع مرة واحدة على الأقل.
+
+الحل، المستخدم في كل ورقة أنماط احترافية تقريباً:
+
+\`\`\`css
+* {
+  box-sizing: border-box;
+}
+\`\`\`
+
+هذا يغيّر القاعدة بحيث يشمل \`width\` الحشو والحدود — ما تضبطه هو ما تحصل عليه. أضف هذا مرة في أعلى CSS وتختفي المفاجأة للأبد.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Flexbox — real layout, not guesswork 📐
+
+Before Flexbox, lining up boxes side by side (like a navbar, or a row of cards) required fragile hacks. **Flexbox** fixed this: give a container \`display: flex\` and it automatically arranges its children in a row (or column), and gives you simple controls for spacing and alignment.
+
+\`\`\`css
+.container {
+  display: flex;             /* turn on flexbox */
+  justify-content: space-between; /* spacing along the row */
+  align-items: center;       /* alignment across the row */
+  gap: 16px;                 /* space between items */
+}
+\`\`\`
+
+Think of \`.container\` as a shelf, and its direct children as books on it:
+
+- \`display: flex\` — "arrange my children in a row" (the default direction).
+- \`justify-content\` — how items spread out **along** the row: \`flex-start\` (packed left), \`center\`, \`space-between\` (edges touch the container, gaps spread evenly between), \`space-around\`.
+- \`align-items\` — how items line up **across** the row: \`flex-start\` (top), \`center\`, \`stretch\` (fill the height).
+- \`gap\` — clean, even spacing between items — no more fiddly margins on every child.
+
+This one tool builds navbars, card grids, centered modals, and sidebars — probably 80% of the layouts you'll ever build.`,
+        ar: `## Flexbox — تخطيط حقيقي، لا تخمين 📐
+
+قبل Flexbox، كان ترتيب الصناديق جنباً إلى جنب (كشريط تنقّل، أو صف بطاقات) يتطلب حيلاً هشّة. **Flexbox** حلّ هذا: أعطِ الحاوية \`display: flex\` فترتّب أبناءها تلقائياً في صف (أو عمود)، وتمنحك تحكّماً بسيطاً بالمسافات والمحاذاة.
+
+\`\`\`css
+.container {
+  display: flex;             /* فعّل Flexbox */
+  justify-content: space-between; /* التباعد على طول الصف */
+  align-items: center;       /* المحاذاة عبر الصف */
+  gap: 16px;                 /* مسافة بين العناصر */
+}
+\`\`\`
+
+تخيّل \`.container\` رفّاً، وأبناءه المباشرين كتباً عليه:
+
+- \`display: flex\` — "رتّب أبنائي في صف" (الاتجاه الافتراضي).
+- \`justify-content\` — كيف تتوزع العناصر **على طول** الصف: \`flex-start\` (متجمّعة يساراً)، \`center\`، \`space-between\` (الأطراف تلامس الحاوية، والفجوات تتوزع بالتساوي بينها)، \`space-around\`.
+- \`align-items\` — كيف تتراصف العناصر **عبر** الصف: \`flex-start\` (أعلى)، \`center\`، \`stretch\` (تملأ الارتفاع).
+- \`gap\` — تباعد نظيف ومتساوٍ بين العناصر — لا مزيد من الهوامش المزعجة على كل ابن.
+
+هذه الأداة الواحدة تبني أشرطة التنقّل وشبكات البطاقات والنوافذ المتمركزة والأشرطة الجانبية — على الأرجح 80% من التخطيطات التي ستبنيها يوماً ما.`,
+      },
+    },
+    {
+      type: "code-demo",
+      lang: "web",
+      code: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; margin: 0; }
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #0D1117;
+        padding: 16px 24px;
+      }
+      .navbar .logo { color: #10b981; font-weight: bold; }
+      .navbar .links { display: flex; gap: 20px; }
+      .navbar a { color: white; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="logo">MySite</div>
+      <div class="links">
+        <a href="#">Home</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+  </body>
+</html>`,
+      explanation: {
+        en: `A real navbar, built with two nested flex containers: the outer one spaces the logo and links apart (\`space-between\`), the inner one lines up the links with a \`gap\`. Try changing \`justify-content\` to \`center\` and watch everything move.`,
+        ar: `شريط تنقّل حقيقي، مبني بحاويتي flex متداخلتين: الخارجية تباعد الشعار والروابط (\`space-between\`)، والداخلية ترصّ الروابط بـ\`gap\`. جرّب تغيير \`justify-content\` إلى \`center\` وشاهد كل شيء يتحرك.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "web",
+      prompt: {
+        en: `**Build a row of pricing cards.** The HTML has 3 \`.card\` divs inside a \`.row\` container. Make \`.row\`:
+1. \`display: flex\`
+2. \`gap\` of **at least 16px** between the cards
+
+The cards should end up in a neat horizontal row with visible space between them.`,
+        ar: `**ابنِ صفاً من بطاقات الأسعار.** الـ HTML فيه 3 عناصر \`.card\` داخل حاوية \`.row\`. اجعل \`.row\`:
+1. \`display: flex\`
+2. \`gap\` بمقدار **16px على الأقل** بين البطاقات
+
+يجب أن تنتهي البطاقات في صف أفقي مرتّب بمسافة واضحة بينها.`,
+      },
+      starterCode: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; padding: 20px; background: #f0f4f8; }
+      .row {
+        /* make this a flex row with a gap */
+      }
+      .card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="card">Basic</div>
+      <div class="card">Pro</div>
+      <div class="card">Team</div>
+    </div>
+  </body>
+</html>`,
+      solution: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; padding: 20px; background: #f0f4f8; }
+      .row {
+        display: flex;
+        gap: 20px;
+      }
+      .card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="card">Basic</div>
+      <div class="card">Pro</div>
+      <div class="card">Team</div>
+    </div>
+  </body>
+</html>`,
+      hints: [
+        { en: `In .row, add: display: flex;`, ar: `في .row، أضف: display: flex;` },
+        { en: `Then add: gap: 20px; on the same .row rule.`, ar: `ثم أضف: gap: 20px; في نفس قاعدة .row.` },
+      ],
+      tests: [
+        {
+          name: { en: ".row is a flex container", ar: ".row حاوية flex" },
+          check: `getComputedStyle(document.querySelector(".row")).display === "flex"`,
+        },
+        {
+          name: { en: "Cards are side by side (row direction)", ar: "البطاقات جنباً إلى جنب (اتجاه صف)" },
+          check: `(function(){ var cards = document.querySelectorAll(".card"); return cards.length === 3 && cards[0].getBoundingClientRect().top === cards[1].getBoundingClientRect().top; })()`,
+        },
+        {
+          name: { en: "Gap between cards is at least 16px", ar: "المسافة بين البطاقات 16px على الأقل" },
+          check: `parseFloat(getComputedStyle(document.querySelector(".row")).gap) >= 16`,
+        },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: this exact site 🔍
+
+You don't need to imagine a real example — you're using one right now. Open your browser's DevTools (press **F12**, or right-click → "Inspect"), click the arrow-cursor icon, then click on the top navigation bar of this very page.
+
+You'll find the top nav is built almost exactly like the pricing-card exercise you just solved: a flex container spacing the logo on one side and the links + buttons on the other, with \`gap\` handling the spacing between the nav links. The rounded cards you see on the roadmaps and certifications pages use the same \`border-radius\` + \`padding\` + \`box-shadow\` combination from the card exercise earlier in this lesson.
+
+This is the actual, honest truth about frontend work: the fundamentals you just practiced — box model, flexbox, semantic tags — are not "toy" exercises. They are *literally* what every production website, including this one, is built from.`,
+        ar: `## دراسة حالة واقعية: هذا الموقع بالضبط 🔍
+
+لا تحتاج تخيّل مثال حقيقي — أنت تستخدم واحداً الآن. افتح أدوات المطوّر في متصفحك (اضغط **F12**، أو زر الفأرة الأيمن ← "Inspect")، اضغط أيقونة مؤشر السهم، ثم اضغط على شريط التنقّل العلوي لهذه الصفحة نفسها.
+
+ستجد أن الشريط العلوي مبني تقريباً تماماً كتمرين بطاقات الأسعار الذي حللته للتو: حاوية flex تباعد الشعار في جهة والروابط + الأزرار في الجهة الأخرى، مع \`gap\` يتولى التباعد بين روابط التنقّل. والبطاقات الدائرية التي تراها في صفحتي خرائط التعلم والشهادات تستخدم نفس تركيبة \`border-radius\` + \`padding\` + \`box-shadow\` من تمرين البطاقة سابقاً في هذا الدرس.
+
+هذه هي الحقيقة الصادقة عن عمل الواجهات: الأساسيات التي تدرّبت عليها للتو — نموذج الصندوق، Flexbox، الوسوم الدلالية — ليست تمارين "لعب". إنها *حرفياً* ما يُبنى منه كل موقع إنتاجي، بما فيه هذا الموقع.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -449,6 +758,45 @@ h1 {
             ar: "padding = مسافة داخلية (بين المحتوى والإطار). margin = مسافة خارجية (بين الصندوق وجيرانه).",
           },
         },
+        {
+          q: { en: "Why use <nav> instead of a plain <div> for navigation links?", ar: "لماذا نستخدم <nav> بدل <div> عادي لروابط التنقّل؟" },
+          choices: [
+            { en: "Screen readers and search engines understand its meaning", ar: "قارئات الشاشة ومحركات البحث تفهم معناه" },
+            { en: "<div> cannot contain links", ar: "<div> لا يمكن أن يحتوي روابط" },
+            { en: "<nav> makes the page load faster", ar: "<nav> يجعل الصفحة تحمّل أسرع" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Semantic tags like <nav> carry meaning that assistive technology and search engines use — a plain <div> looks identical but says nothing.",
+            ar: "الوسوم الدلالية مثل <nav> تحمل معنى تستخدمه تقنيات المساعدة ومحركات البحث — أما <div> العادي فيبدو مطابقاً لكنه لا يقول شيئاً.",
+          },
+        },
+        {
+          q: { en: "With the default box-sizing, if width: 200px and padding: 20px, how wide does the box actually render?", ar: "بصندوق افتراضي، إذا كان width: 200px و padding: 20px، كم يُعرض عرض الصندوق فعلياً؟" },
+          choices: [
+            { en: "200px", ar: "200px" },
+            { en: "240px (padding adds to both sides)", ar: "240px (الحشو يُضاف على الجانبين)" },
+            { en: "180px", ar: "180px" },
+          ],
+          answer: 1,
+          explain: {
+            en: "By default, width sets only the content box — padding (20px × 2 sides) is added on top, making it 240px. box-sizing: border-box fixes this.",
+            ar: "افتراضياً، width تضبط صندوق المحتوى فقط — يُضاف الحشو (20px × جانبين) فوق ذلك، فيصبح 240px. و box-sizing: border-box يعالج هذا.",
+          },
+        },
+        {
+          q: { en: "What does display: flex do to a container's direct children?", ar: "ماذا يفعل display: flex بأبناء الحاوية المباشرين؟" },
+          choices: [
+            { en: "Arranges them automatically in a row (by default), with easy spacing and alignment controls", ar: "يرتّبهم تلقائياً في صف (افتراضياً)، مع تحكّم سهل بالتباعد والمحاذاة" },
+            { en: "Hides them", ar: "يخفيهم" },
+            { en: "Deletes their padding", ar: "يحذف الحشو الخاص بهم" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Flexbox turns a container into a row (or column) layout engine — justify-content, align-items, and gap give you full control without hacks.",
+            ar: "Flexbox يحوّل الحاوية إلى محرك تخطيط صف (أو عمود) — و justify-content و align-items و gap تمنحك تحكّماً كاملاً بلا حيل.",
+          },
+        },
       ],
     },
     {
@@ -459,23 +807,29 @@ h1 {
 Today you:
 
 - Built real pages with headings, paragraphs, lists and links
+- Used semantic tags (\`<nav>\`, \`<header>\`, \`<footer>\`) that screen readers and search engines understand
+- Mastered the box model — content, padding, border, margin — and the \`box-sizing: border-box\` fix
 - Styled a card with background, padding and rounded corners
+- Built a real flexbox layout — a navbar and a row of pricing cards
 - Learned the three-part anatomy of every CSS rule
 
-**What's next?** Learning flexbox and CSS Grid for layout (the freeCodeCamp course in the Resources tab covers them for free), then move to the **JavaScript** lesson to make your pages come alive.
+**What's next?** CSS Grid (for two-dimensional layouts) is worth exploring on your own via the freeCodeCamp course in the Resources tab — then move to the **JavaScript** lesson to make your pages come alive.
 
-> Practice idea: rebuild the demo card from memory tomorrow. If you can, you've truly learned it.`,
+> Practice idea: rebuild the navbar demo from memory tomorrow, then try turning it into a mobile-friendly layout. If you can, you've truly learned it.`,
         ar: `## أحسنت! 🎉
 
 اليوم أنت:
 
 - بنيت صفحات حقيقية بعناوين وفقرات وقوائم وروابط
+- استخدمت وسوماً دلالية (\`<nav>\`، \`<header>\`، \`<footer>\`) تفهمها قارئات الشاشة ومحركات البحث
+- أتقنت نموذج الصندوق — المحتوى والحشو والحدود والهامش — وحل \`box-sizing: border-box\`
 - نسّقت بطاقة بخلفية ومسافات وزوايا دائرية
+- بنيت تخطيط flexbox حقيقياً — شريط تنقّل وصف بطاقات أسعار
 - تعلمت التركيبة الثلاثية لكل قاعدة CSS
 
-**ما التالي؟** تعلّم flexbox و CSS Grid للتخطيط (دورة freeCodeCamp في تبويب المصادر تغطيهما مجاناً)، ثم انتقل إلى درس **JavaScript** لتجعل صفحاتك تنبض بالحياة.
+**ما التالي؟** يستحق CSS Grid (للتخطيطات ثنائية الأبعاد) استكشافه بنفسك عبر دورة freeCodeCamp في تبويب المصادر — ثم انتقل إلى درس **JavaScript** لتجعل صفحاتك تنبض بالحياة.
 
-> فكرة للتمرين: أعد بناء البطاقة من الذاكرة غداً. إن استطعت، فقد تعلمتها حقاً.`,
+> فكرة للتمرين: أعد بناء عرض شريط التنقّل من الذاكرة غداً، ثم جرّب تحويله لتخطيط صديق للجوال. إن استطعت، فقد تعلمته حقاً.`,
       },
     },
   ],

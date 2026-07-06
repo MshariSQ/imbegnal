@@ -56,6 +56,77 @@ Before a single line of code is written, interfaces are *designed* — and today
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## The layer panel and naming: the unglamorous skill 🗂️
+
+Every Figma file has a **layers panel** — a tree of every frame, group, and shape in your design, top to bottom. Beginners ignore it and just click around the canvas; professionals live in it, because it's how you actually *think* about a design's structure, not just its pixels.
+
+**Two habits separate a messy file from a professional one:**
+
+- **Naming layers.** A shape called "Rectangle 47" tells you nothing a week later. The same shape named "card-background" or "primary-button" tells you (and any collaborator) exactly what it is at a glance. When a file has hundreds of layers, good names are the only thing that keeps it navigable — exactly like naming variables sensibly in code instead of leaving them as \`x1\`, \`x2\`, \`x3\`.
+- **Grouping and frames as structure.** Related elements (an icon + its label, a card's title + description + button) should be grouped or wrapped in a frame together, mirroring how a developer nests \`<div>\`s. A flat pile of 200 ungrouped shapes is nearly impossible to edit later; a clean hierarchy of named groups is easy to update months on.
+
+This is invisible in a screenshot — nobody sees your layer names in the final app — but it's exactly what a hiring manager or collaborator checks when they open your file. A beautifully designed screen built in one chaotic, unnamed layer soup signals an amateur; the same screen built with clean, named, grouped layers signals someone who can work on a real team. It costs a few extra seconds per layer and pays for itself the first time anyone (including future-you) needs to edit the file.`,
+        ar: `## لوحة الطبقات والتسمية: المهارة غير البرّاقة 🗂️
+
+كل ملف Figma فيه **لوحة طبقات** — شجرة لكل إطار ومجموعة وشكل في تصميمك، من الأعلى للأسفل. المبتدئون يتجاهلونها وينقرون في اللوحة فقط؛ المحترفون يعيشون فيها، لأنها كيف تفكّر فعلاً في بنية التصميم، لا بكسلاته فقط.
+
+**عادتان تفصلان الملف الفوضوي عن المحترف:**
+
+- **تسمية الطبقات.** شكل اسمه "Rectangle 47" لا يخبرك بشيء بعد أسبوع. نفس الشكل مسمّى "card-background" أو "primary-button" يخبرك (وأي متعاون) بالضبط ما هو بلمحة. حين يحتوي الملف مئات الطبقات، الأسماء الجيدة هي الشيء الوحيد الذي يُبقيه قابلاً للتصفّح — تماماً كتسمية المتغيرات بحكمة في الكود بدل تركها x1، x2، x3.
+- **التجميع والإطارات كبنية.** العناصر المترابطة (أيقونة + تسميتها، عنوان بطاقة + وصفها + زرها) يجب تجميعها أو لفّها في إطار معاً، محاكيةً كيف يعشّش المطوّر \`<div>\`. كومة مسطحة من 200 شكل غير مجمّع يكاد يستحيل تعديلها لاحقاً؛ وتسلسل هرمي نظيف من مجموعات مسمّاة سهل التحديث بعد أشهر.
+
+هذا غير مرئي في لقطة شاشة — لا أحد يرى أسماء طبقاتك في التطبيق النهائي — لكنه بالضبط ما يفحصه مدير التوظيف أو المتعاون عند فتح ملفك. شاشة مصمّمة بجمال لكن ببناء فوضوي من طبقات بلا أسماء تدل على هاوٍ؛ ونفس الشاشة ببناء نظيف مسمّى مجمّع تدل على شخص يستطيع العمل ضمن فريق حقيقي. يكلّف ثوانٍ إضافية قليلة لكل طبقة ويُسدَّد بمجرد أن يحتاج أي أحد (بما فيه أنت مستقبلاً) تعديل الملف.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Try it yourself: your first 30 minutes in Figma 🚀
+
+Right now, before moving on, open Figma (free, no install — figma.com) and do this small, concrete exercise:
+
+1. **Create a new file** and one Frame sized like a phone screen (Figma has phone-size presets).
+2. **Draw a rectangle** for a button, add text on top saying "Sign Up," and give the rectangle a fill color and a corner radius.
+3. **Rename both layers** properly — not "Rectangle 1" and "Text 1," but "button-bg" and "button-label."
+4. **Turn it into a component** (right-click → "Create component"), then drag 2 more copies onto the canvas. Change the color of the original component — watch all 3 copies update instantly.
+5. **Apply Auto Layout** to the button (select it, press Shift+A) and try changing the text — watch the button resize itself to fit.
+
+This one small exercise touches frames, layers, naming, components, and auto-layout — every core concept from this lesson — in about 30 minutes, hands-on. That's worth more than an hour of reading about it.`,
+        ar: `## جرّب بنفسك: أول 30 دقيقة في Figma 🚀
+
+الآن، قبل المتابعة، افتح Figma (مجاني، بلا تثبيت — figma.com) وافعل هذا التمرين الصغير الملموس:
+
+1. **أنشئ ملفاً جديداً** وإطاراً واحداً بحجم شاشة هاتف (Figma فيه أحجام هاتف جاهزة).
+2. **ارسم مستطيلاً** لزر، أضف نصاً فوقه يقول "اشترك،" وأعطِ المستطيل لون تعبئة ونصف قطر زوايا.
+3. **أعد تسمية الطبقتين** بشكل صحيح — لا "Rectangle 1" و"Text 1،" بل "button-bg" و"button-label."
+4. **حوّله لمكوّن** (انقر بزر الفأرة الأيمن ← "Create component")، ثم اسحب نسختين إضافيتين للوحة. غيّر لون المكوّن الأصلي — راقب النسخ الثلاث تتحدث فوراً.
+5. **طبّق Auto Layout** على الزر (اخترْه، اضغط Shift+A) وجرّب تغيير النص — راقب الزر يعيد تحجيم نفسه ليناسبه.
+
+هذا التمرين الصغير يلمس الإطارات، والطبقات، والتسمية، والمكوّنات، وAuto Layout — كل مفهوم أساسي من هذا الدرس — في حوالي 30 دقيقة عملياً. يستحق أكثر من ساعة قراءة عنه.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: Figma's live-collaboration bet 🔍
+
+Before Figma, the dominant design tools (like Sketch) were desktop-only applications with files saved locally — designing together meant emailing files back and forth or manually merging versions, the same painful workflow developers had before real-time collaborative tools existed. Figma's founders made a contrarian bet: build a full professional design tool that runs *entirely in the browser*, with multiple people editing the same file live, like Google Docs.
+
+Many in the industry doubted a browser could ever match desktop software's performance for serious design work. Figma proved it could, and the live-collaboration feature turned out to be the deciding factor for its adoption — teams that tried it once rarely wanted to go back to emailing design files. Remote and distributed teams in particular found they could run a design review with everyone watching (and even editing) the same file simultaneously, cursors visible, comments in context.
+
+The lesson generalizes well beyond design tools: removing the friction of "whose version is the real one?" often matters more to adoption than any single feature. Figma didn't win by having more shapes or filters than competitors — it won by making design a shared, live activity instead of a solitary, file-passing one.`,
+        ar: `## دراسة حالة واقعية: رهان Figma على التعاون المباشر 🔍
+
+قبل Figma، كانت أدوات التصميم المهيمنة (مثل Sketch) تطبيقات سطح مكتب فقط بملفات محفوظة محلياً — والتصميم معاً يعني تبادل الملفات بالبريد أو دمج النسخ يدوياً، نفس سير العمل المؤلم الذي عاشه المطوّرون قبل وجود أدوات تعاون فورية حقيقية. راهن مؤسسو Figma رهاناً مخالفاً للسائد: بناء أداة تصميم احترافية كاملة تعمل *بالكامل في المتصفح*، بعدة أشخاص يحرّرون نفس الملف مباشرة، كـ Google Docs.
+
+شكّك كثيرون في الصناعة أن يضاهي متصفح أداء برامج سطح المكتب لعمل تصميم جاد. أثبتت Figma أنها تستطيع، وتبيّن أن ميزة التعاون المباشر هي العامل الحاسم في تبنّيها — الفرق التي جرّبتها مرة نادراً ما أرادت العودة لتبادل ملفات التصميم بالبريد. الفرق البعيدة والموزّعة بالذات وجدت أنها تستطيع إجراء مراجعة تصميم بالجميع يشاهد (وحتى يحرّر) نفس الملف في آن واحد، مؤشرات مرئية، وتعليقات في سياقها.
+
+الدرس يتعمّم أبعد من أدوات التصميم: إزالة احتكاك "أي نسخة هي الحقيقية؟" غالباً أهم للتبنّي من أي ميزة منفردة. لم تفز Figma بأشكال أو فلاتر أكثر من المنافسين — فازت بجعل التصميم نشاطاً مشتركاً مباشراً بدل نشاط منفرد بتبادل ملفات.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -97,6 +168,32 @@ Before a single line of code is written, interfaces are *designed* — and today
             ar: "ملف التصميم مصدر الحقيقة للمطوّرين — مواصفات دقيقة (وCSS) تجعل البناء يطابق التصميم بالضبط.",
           },
         },
+        {
+          q: { en: "Why does naming layers well ('button-bg') matter instead of leaving defaults ('Rectangle 47')?", ar: "لماذا تهم تسمية الطبقات جيداً ('button-bg') بدل ترك الافتراضي ('Rectangle 47')؟" },
+          choices: [
+            { en: "It keeps large files navigable and understandable for you and collaborators later", ar: "تُبقي الملفات الكبيرة قابلة للتصفّح والفهم لك وللمتعاونين لاحقاً" },
+            { en: "Figma requires unique names to save the file", ar: "Figma يتطلّب أسماء فريدة لحفظ الملف" },
+            { en: "It changes how the design looks visually", ar: "يغيّر شكل التصميم بصرياً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Like naming variables sensibly in code, clear layer names are invisible in the final product but essential for maintainability.",
+            ar: "كتسمية المتغيرات بحكمة في الكود، أسماء الطبقات الواضحة غير مرئية في المنتج النهائي لكنها أساسية لقابلية الصيانة.",
+          },
+        },
+        {
+          q: { en: "What was the key factor behind Figma's adoption over older desktop design tools?", ar: "ما العامل الأساسي وراء تبنّي Figma بدل أدوات تصميم سطح المكتب القديمة؟" },
+          choices: [
+            { en: "Real-time browser-based collaboration removed the pain of emailing files back and forth", ar: "التعاون الفوري في المتصفح أزال ألم تبادل الملفات بالبريد" },
+            { en: "It had more filters and shapes than any competitor", ar: "كان لديه فلاتر وأشكال أكثر من أي منافس" },
+            { en: "It was the first design tool ever created", ar: "كان أول أداة تصميم أُنشئت على الإطلاق" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Figma won by making design a shared, live activity — the same shift real-time docs brought to writing.",
+            ar: "فازت Figma بجعل التصميم نشاطاً مشتركاً مباشراً — نفس التحوّل الذي أحدثته المستندات الفورية في الكتابة.",
+          },
+        },
       ],
     },
     {
@@ -107,6 +204,8 @@ Before a single line of code is written, interfaces are *designed* — and today
 - Figma is the free, collaborative, browser-based industry-standard design tool
 - Frames = screens; components = reusable elements; auto-layout = flexbox-like
 - It powers the design-to-dev handoff with exact specs and CSS
+- Naming and grouping layers is what separates a maintainable file from a messy one
+- Figma's live collaboration — not more features — is what won over desktop-only tools
 - Learning frontend + Figma makes you rare and employable
 
 **Next:** User Research — making sure you design the right thing, not just a pretty thing.`,
@@ -115,6 +214,8 @@ Before a single line of code is written, interfaces are *designed* — and today
 - Figma أداة التصميم المجانية التعاونية معيار الصناعة في المتصفح
 - الإطارات = شاشات؛ المكوّنات = عناصر معاد استخدامها؛ التخطيط التلقائي = شبيه flexbox
 - يشغّل تسليم التصميم للتطوير بمواصفات دقيقة وCSS
+- تسمية وتجميع الطبقات هو ما يفصل ملفاً قابلاً للصيانة عن آخر فوضوي
+- تعاون Figma المباشر — لا ميزات أكثر — هو ما فاز به على أدوات سطح المكتب فقط
 - تعلّم الواجهات + Figma يجعلك نادراً وقابلاً للتوظيف
 
 **التالي:** بحث المستخدم — التأكد من تصميم الشيء الصحيح، لا مجرد شيء جميل.`,

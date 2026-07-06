@@ -12,6 +12,7 @@ export const lesson: Lesson = {
 
 - What actually happens inside a computer (CPU, RAM, storage)
 - Why everything is **1s and 0s** (binary) — and you'll convert some yourself
+- **Hexadecimal** — the shorthand security tools use for everything from hashes to file signatures
 - What an operating system does
 - The words every security professional uses daily
 
@@ -20,6 +21,7 @@ Security is about protecting computers, so first you must understand what a comp
 
 - ما الذي يحدث فعلاً داخل الحاسوب (المعالج، الذاكرة، التخزين)
 - لماذا كل شيء **أصفار وواحدات** (النظام الثنائي) — وستحوّل بعضها بنفسك
+- **النظام الست عشري (Hex)** — الاختصار الذي تستخدمه أدوات الأمن لكل شيء من التجزئات إلى توقيعات الملفات
 - ماذا يفعل نظام التشغيل
 - الكلمات التي يستخدمها كل محترف أمن يومياً
 
@@ -120,6 +122,87 @@ print(bytes_needed)`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Hexadecimal — binary's shorthand 🔢
+
+Binary is precise but painfully long — a single byte is 8 characters (\`11010110\`). Security tools almost never show you raw binary; they show **hexadecimal (base 16)** instead, because 2 hex digits pack exactly one byte:
+
+\`\`\`
+Binary:  11010110  →  Hex:  D6
+\`\`\`
+
+Hex uses 16 symbols: \`0-9\` then \`A-F\` (where A=10, B=11, … F=15). You'll recognize hex everywhere in security work:
+
+- **MAC addresses**: \`3C:A6:F6:1E:2B:9D\` — each pair is one byte in hex
+- **File signatures ("magic bytes")**: every file type starts with a fixed hex pattern regardless of its extension — a JPEG always starts \`FF D8 FF\`, a PDF starts \`25 50 44 46\`. Malware analysts rename suspicious files and check these bytes, because an attacker can label a program "photo.jpg" but can't hide its true magic bytes.
+- **Hashes** (like MD5, SHA-256) are always displayed as long hex strings.
+- **Colors in web design** (\`#FF5733\`) are hex too — same system, different use.
+
+Python converts to hex just as easily as binary:
+
+\`\`\`python
+print(hex(214))          # '0xd6'
+print(int("d6", 16))     # 214
+\`\`\``,
+        ar: `## النظام الست عشري — اختصار الثنائي 🔢
+
+الثنائي دقيق لكنه طويل بشكل مؤلم — البايت الواحد 8 أحرف (\`11010110\`). أدوات الأمن نادراً ما تُظهر لك الثنائي الخام؛ تُظهر **النظام الست عشري (Hex، قاعدة 16)** بدلاً منه، لأن رقمين سداسيين عشريين يمثّلان بايتاً واحداً بالضبط:
+
+\`\`\`
+الثنائي:  11010110  ←  Hex:  D6
+\`\`\`
+
+يستخدم Hex 16 رمزاً: \`0-9\` ثم \`A-F\` (حيث A=10، B=11، … F=15). ستتعرّف على Hex في كل مكان بعمل الأمن:
+
+- **عناوين MAC**: \`3C:A6:F6:1E:2B:9D\` — كل زوج بايت واحد بالـ hex
+- **توقيعات الملفات ("magic bytes")**: كل نوع ملف يبدأ بنمط hex ثابت بغض النظر عن امتداده — ملف JPEG يبدأ دائماً بـ\`FF D8 FF\`، وPDF يبدأ بـ\`25 50 44 46\`. محللو البرمجيات الخبيثة يعيدون تسمية الملفات المشبوهة ويفحصون هذه البايتات، لأن المهاجم يستطيع تسمية برنامج "photo.jpg" لكن لا يستطيع إخفاء magic bytes الحقيقية.
+- **التجزئات (hashes)** (مثل MD5، SHA-256) تُعرض دائماً كنصوص hex طويلة.
+- **الألوان في تصميم الويب** (\`#FF5733\`) أيضاً hex — نفس النظام، استخدام مختلف.
+
+تحوّل بايثون إلى hex بسهولة تحويلها للثنائي:
+
+\`\`\`python
+print(hex(214))          # '0xd6'
+print(int("d6", 16))     # 214
+\`\`\``,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "python",
+      prompt: {
+        en: `Write Python that:
+1. Converts the number \`255\` to hex and stores the string result in \`hex_value\`
+2. Converts the hex string \`"ff"\` back to a decimal number, stored in \`decimal_value\`
+
+(Use \`hex(x)\` and \`int(x, 16)\` — the same pattern you used for binary.)`,
+        ar: `اكتب بايثون:
+1. يحوّل الرقم \`255\` إلى hex ويخزّن النتيجة كنص في \`hex_value\`
+2. يحوّل نص hex \`"ff"\` إلى رقم عشري، مخزّن في \`decimal_value\`
+
+(استخدم \`hex(x)\` و\`int(x, 16)\` — نفس النمط الذي استخدمته للثنائي.)`,
+      },
+      starterCode: `hex_value = ""
+decimal_value = 0
+
+# hex_value = hex(255)
+# decimal_value = int("ff", 16)
+`,
+      solution: `hex_value = hex(255)
+decimal_value = int("ff", 16)
+
+print(hex_value, decimal_value)`,
+      hints: [
+        { en: `hex_value = hex(255) gives '0xff'.`, ar: `hex_value = hex(255) تعطي '0xff'.` },
+        { en: `decimal_value = int("ff", 16) gives 255.`, ar: `decimal_value = int("ff", 16) تعطي 255.` },
+      ],
+      tests: [
+        { name: { en: "hex_value is the hex of 255", ar: "hex_value هو hex الرقم 255" }, check: `assert hex_value == hex(255)` },
+        { name: { en: "decimal_value equals 255", ar: "decimal_value يساوي 255" }, check: `assert decimal_value == 255` },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -174,6 +257,32 @@ print(bytes_needed)`,
             ar: "نظام التشغيل ينسّق العتاد ويفرض الصلاحيات — وهنا بالضبط يعيش جزء كبير من الأمن.",
           },
         },
+        {
+          q: { en: "Why do security tools display data in hex instead of raw binary?", ar: "لماذا تعرض أدوات الأمن البيانات بـ hex بدل الثنائي الخام؟" },
+          choices: [
+            { en: "Hex is far more compact — 2 hex digits represent a full byte", ar: "Hex أكثر إيجازاً بكثير — رقمان سداسيان يمثّلان بايتاً كاملاً" },
+            { en: "Computers cannot process binary directly", ar: "الحواسيب لا تستطيع معالجة الثنائي مباشرة" },
+            { en: "Hex is a newer replacement for binary", ar: "Hex بديل أحدث للثنائي" },
+          ],
+          answer: 0,
+          explain: {
+            en: "8-character binary (11010110) becomes 2-character hex (D6) — much easier for humans to read in logs, hashes, and memory dumps.",
+            ar: "الثنائي بـ8 أحرف (11010110) يصبح hex بحرفين (D6) — أسهل بكثير على البشر قراءته في السجلّات والتجزئات وتفريغات الذاكرة.",
+          },
+        },
+        {
+          q: { en: "Why do malware analysts check a file's 'magic bytes' instead of trusting its file extension?", ar: "لماذا يفحص محللو البرمجيات الخبيثة 'magic bytes' الملف بدل الثقة بامتداده؟" },
+          choices: [
+            { en: "An attacker can rename a file's extension, but can't change its true starting hex pattern", ar: "يستطيع المهاجم إعادة تسمية امتداد الملف، لكن لا يستطيع تغيير نمط الـ hex الحقيقي في بدايته" },
+            { en: "Magic bytes are just a legend, not real", ar: "الـ magic bytes مجرد أسطورة، ليست حقيقية" },
+            { en: "File extensions are always accurate", ar: "امتدادات الملفات دقيقة دائماً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A malicious .exe renamed to 'invoice.pdf' still starts with the .exe's real magic bytes, not PDF's — a classic detection technique.",
+            ar: "ملف exe. خبيث أُعيدت تسميته إلى 'invoice.pdf' يبدأ رغم ذلك بـ magic bytes الحقيقية لملف exe.، لا PDF — تقنية كشف كلاسيكية.",
+          },
+        },
       ],
     },
     {
@@ -183,14 +292,16 @@ print(bytes_needed)`,
 
 - CPU = chef, RAM = countertop (volatile), Storage = pantry (permanent), OS = manager
 - Everything is binary: switches grouped into bytes (8 bits = 1 character)
-- You converted numbers with Python's \`bin()\` and \`int(x, 2)\`
+- Hexadecimal is binary's compact shorthand — used in MAC addresses, hashes, and file signatures
+- You converted numbers with Python's \`bin()\`/\`int(x, 2)\` and \`hex()\`/\`int(x, 16)\`
 
 **Next:** Networking — how these computers talk to each other, and where attackers try to listen in.`,
         ar: `## الخلاصة
 
 - المعالج = الطبّاخ، الذاكرة = سطح العمل (متطايرة)، التخزين = المخزن (دائم)، نظام التشغيل = المدير
 - كل شيء ثنائي: مفاتيح مجمّعة في بايتات (8 بِت = حرف واحد)
-- حوّلت الأرقام بـ \`bin()\` و\`int(x, 2)\` في بايثون
+- Hex اختصار الثنائي المُدمَج — يُستخدم في عناوين MAC والتجزئات وتوقيعات الملفات
+- حوّلت الأرقام بـ \`bin()\`/\`int(x, 2)\` و\`hex()\`/\`int(x, 16)\` في بايثون
 
 **التالي:** الشبكات — كيف تتحدث هذه الحواسيب فيما بينها، وأين يحاول المهاجمون التنصّت.`,
       },

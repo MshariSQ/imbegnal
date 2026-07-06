@@ -68,6 +68,90 @@ This is why MLOps engineers are in demand: anyone can train a model from a tutor
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Catching drift before users do: monitoring in practice 📊
+
+Saying "monitor for drift" is easy; doing it means comparing numbers over time. The simplest and most common technique: track the **distribution** of the data the model sees in production, and compare it against the distribution it was trained on.
+
+Concretely, teams often track simple summary statistics — like the **average** and **range** of a key input feature — computed on a rolling window of recent production data, and alert when they stray too far from the training-time baseline. For example, if a house-pricing model was trained when average house size was 150 m², and this month's incoming requests average 300 m², something has shifted in the population the model is seeing — maybe a new market segment, maybe a data pipeline bug. Either way, it's a signal to investigate before accuracy visibly degrades.
+
+Beyond data drift, teams also run **A/B tests** when deploying a new model version: send a small percentage of real traffic to the new "challenger" model, keep most traffic on the proven "champion" model, and compare business metrics (not just accuracy) before fully rolling out. This protects against a model that looks great on a test set but behaves badly on real users.
+
+None of this requires exotic tools to understand the *idea*: monitoring is fundamentally taking the statistics you learned about earlier in this track (averages, spread) and running them continuously in production instead of once during training.`,
+        ar: `## رصد الانجراف قبل أن يرصده المستخدمون: المراقبة عملياً 📊
+
+قول "راقب الانجراف" سهل؛ فعله يعني مقارنة أرقام عبر الوقت. الأسلوب الأبسط والأشيع: تتبّع **توزيع** البيانات التي يراها النموذج في الإنتاج، ومقارنته بالتوزيع الذي دُرّب عليه.
+
+عملياً، تتبّع الفرق غالباً إحصاءات ملخّصة بسيطة — كـ**المتوسط** و**المدى** لسمة مدخل رئيسية — محسوبة على نافذة متحرّكة من بيانات الإنتاج الحديثة، وتنبّه حين تبتعد كثيراً عن خط الأساس وقت التدريب. مثلاً، إذا دُرّب نموذج تسعير منازل حين كان متوسط مساحة المنزل 150 م²، وطلبات هذا الشهر متوسطها 300 م²، فقد تغيّر شيء في المجتمع الذي يراه النموذج — ربما شريحة سوق جديدة، أو ربما خلل في خط أنابيب البيانات. في الحالتين، إنها إشارة للتحقيق قبل أن تتدهور الدقة بشكل ملحوظ.
+
+إلى جانب انجراف البيانات، تُجري الفرق أيضاً **اختبارات A/B** عند نشر إصدار نموذج جديد: أرسل نسبة صغيرة من الحركة الحقيقية إلى النموذج "المتحدي" الجديد، وأبقِ معظم الحركة على النموذج "البطل" المُثبت، وقارن مقاييس العمل (لا الدقة فقط) قبل النشر الكامل. هذا يحمي من نموذج يبدو رائعاً على مجموعة اختبار لكن يتصرّف بشكل سيئ مع مستخدمين حقيقيين.
+
+لا شيء من هذا يحتاج أدوات غريبة لفهم *الفكرة*: المراقبة في جوهرها أخذ الإحصاءات التي تعلّمتها سابقاً في هذا المسار (المتوسطات، التشتت) وتشغيلها باستمرار في الإنتاج بدلاً من مرة واحدة أثناء التدريب.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "python",
+      prompt: {
+        en: `Write a tiny drift detector. Write \`has_drifted(training_avg, production_values, threshold)\` that:
+1. Computes the average of \`production_values\`
+2. Returns \`True\` if the absolute difference between that average and \`training_avg\` is greater than \`threshold\`, otherwise \`False\`
+
+Example: \`has_drifted(150, [280, 300, 320], 50)\` → production average is 300, difference from 150 is 150, which is > 50 → \`True\``,
+        ar: `اكتب كاشف انجراف مصغّراً. اكتب \`has_drifted(training_avg, production_values, threshold)\`:
+1. يحسب متوسط \`production_values\`
+2. يعيد \`True\` إذا كان الفرق المطلق بين ذلك المتوسط و\`training_avg\` أكبر من \`threshold\`، وإلا \`False\`
+
+مثال: \`has_drifted(150, [280, 300, 320], 50)\` ← متوسط الإنتاج 300، والفرق عن 150 هو 150، وهو > 50 ← \`True\``,
+      },
+      starterCode: `def has_drifted(training_avg, production_values, threshold):
+    prod_avg = sum(production_values) / len(production_values)
+    # compare abs(prod_avg - training_avg) to threshold
+    return False
+
+print(has_drifted(150, [280, 300, 320], 50))  # True
+print(has_drifted(150, [140, 155, 160], 50))  # False`,
+      solution: `def has_drifted(training_avg, production_values, threshold):
+    prod_avg = sum(production_values) / len(production_values)
+    return abs(prod_avg - training_avg) > threshold
+
+print(has_drifted(150, [280, 300, 320], 50))  # True
+print(has_drifted(150, [140, 155, 160], 50))  # False`,
+      hints: [
+        { en: `Python's abs() gives the absolute value: abs(prod_avg - training_avg)`, ar: `abs() في بايثون تعطي القيمة المطلقة: abs(prod_avg - training_avg)` },
+        { en: `Return the comparison directly: return abs(prod_avg - training_avg) > threshold`, ar: `أعِد المقارنة مباشرة: return abs(prod_avg - training_avg) > threshold` },
+      ],
+      tests: [
+        { name: { en: "Detects real drift", ar: "يكتشف الانجراف الحقيقي" }, check: `assert has_drifted(150, [280,300,320], 50) == True` },
+        { name: { en: "No drift when values are close", ar: "لا انجراف عندما القيم متقاربة" }, check: `assert has_drifted(150, [140,155,160], 50) == False` },
+        { name: { en: "Boundary is exclusive (equal to threshold is not drift)", ar: "الحد الفاصل غير شامل (يساوي الحد ليس انجرافاً)" }, check: `assert has_drifted(100, [150,150,150], 50) == False` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: Zillow's home-buying algorithm 🔍
+
+Zillow, the online real-estate company, ran a program called **Zillow Offers** that used a machine learning model — nicknamed internally as a pricing algorithm — to make instant cash offers on homes, aiming to buy, lightly renovate, and resell them for a profit. The model estimated a home's future sale price to decide how much to bid.
+
+In late 2021, Zillow shut the entire program down and took a massive financial write-down, after the algorithm had been systematically overpaying for homes. Housing market conditions shifted quickly and unpredictably during that period, and the model's price predictions hadn't kept pace with the changing reality on the ground — the exact **model drift** problem from this lesson, except each wrong prediction meant overpaying for an actual house, not just a wrong label in a spreadsheet.
+
+The company had to lay off a large share of the division's staff and absorb hundreds of millions of dollars in losses on homes purchased above what they could resell them for. Zillow's own leadership publicly acknowledged that the algorithm's error rate had been wider than anticipated and that they'd been unable to accurately forecast home prices amid unprecedented market conditions.
+
+This is one of the most vivid, well-documented illustrations of why MLOps — continuous monitoring, and the willingness to catch and react to drift fast — is not a "nice to have." When a model quietly stops matching reality and nobody catches it in time, the cost isn't an abstract accuracy metric; real money, real houses, and real jobs are on the line.`,
+        ar: `## دراسة حالة واقعية: خوارزمية شراء المنازل لدى Zillow 🔍
+
+شغّلت Zillow، شركة العقارات الإلكترونية، برنامجاً يسمى **Zillow Offers** استخدم نموذج تعلّم آلة — يُلقَّب داخلياً بخوارزمية التسعير — لتقديم عروض نقدية فورية لشراء منازل، بهدف الشراء وتجديدها قليلاً وإعادة بيعها بربح. قدّر النموذج سعر بيع المنزل المستقبلي لتحديد قيمة العرض.
+
+في أواخر 2021، أغلقت Zillow البرنامج بالكامل وسجّلت خسارة مالية ضخمة، بعد أن كانت الخوارزمية تدفع أكثر من اللازم لشراء المنازل بشكل منهجي. تغيّرت ظروف سوق الإسكان بسرعة وبشكل غير متوقّع خلال تلك الفترة، ولم تواكب تنبؤات أسعار النموذج الواقع المتغيّر على الأرض — بالضبط مشكلة **انجراف النموذج** من هذا الدرس، إلا أن كل تنبؤ خاطئ عنى دفع مبلغ زائد لمنزل حقيقي، لا مجرد وسم خاطئ في جدول بيانات.
+
+اضطرت الشركة لتسريح جزء كبير من موظفي القسم واستيعاب خسائر بمئات ملايين الدولارات على منازل اشترتها بأكثر مما تستطيع بيعها به. اعترفت قيادة Zillow نفسها علناً بأن معدّل خطأ الخوارزمية كان أوسع من المتوقع وأنهم عجزوا عن توقّع أسعار المنازل بدقة وسط ظروف سوق غير مسبوقة.
+
+هذه من أوضح الأمثلة الموثّقة جيداً على لماذا MLOps — المراقبة المستمرة، والاستعداد لرصد الانجراف والاستجابة له بسرعة — ليست "ميزة إضافية". حين يتوقف نموذج بصمت عن مطابقة الواقع ولا يرصده أحد في الوقت المناسب، لا تكون التكلفة مقياس دقة مجرداً؛ بل أموال حقيقية ومنازل حقيقية ووظائف حقيقية على المحك.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -109,6 +193,32 @@ This is why MLOps engineers are in demand: anyone can train a model from a tutor
             ar: "تعلّم الآلة حلقة: مراقبة ← رصد الانخفاض ← إعادة تدريب على بيانات حديثة ← إعادة نشر. النشر البداية لا النهاية.",
           },
         },
+        {
+          q: { en: "What is an A/B test used for when deploying a new model version?", ar: "لماذا يُستخدم اختبار A/B عند نشر إصدار نموذج جديد؟" },
+          choices: [
+            { en: "Sending a small share of real traffic to the new model and comparing results before a full rollout", ar: "إرسال حصة صغيرة من الحركة الحقيقية للنموذج الجديد ومقارنة النتائج قبل النشر الكامل" },
+            { en: "Testing the model's code for syntax errors", ar: "اختبار كود النموذج بحثاً عن أخطاء صياغية" },
+            { en: "Deleting the old model immediately", ar: "حذف النموذج القديم فوراً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A/B testing protects against a model that scores well offline but behaves badly with real users, by comparing champion vs. challenger on live traffic.",
+            ar: "اختبار A/B يحمي من نموذج يسجّل جيداً دون اتصال لكن يتصرّف بسوء مع مستخدمين حقيقيين، بمقارنة البطل مقابل المتحدي على حركة حية.",
+          },
+        },
+        {
+          q: { en: "What ultimately went wrong with Zillow's home-buying algorithm (Zillow Offers)?", ar: "ما الذي حدث في النهاية بخوارزمية شراء المنازل لدى Zillow (Zillow Offers)؟" },
+          choices: [
+            { en: "The model's price predictions didn't keep up with fast-shifting housing market conditions, causing systematic overpaying", ar: "تنبؤات أسعار النموذج لم تواكب تغيّرات سوق الإسكان السريعة، ما سبّب دفع مبالغ زائدة بشكل منهجي" },
+            { en: "The website's servers crashed permanently", ar: "انهارت خوادم الموقع بشكل دائم" },
+            { en: "The algorithm refused to make any offers at all", ar: "رفضت الخوارزمية تقديم أي عروض إطلاقاً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "This was model drift in the real world: predictions trained on older market data stopped matching a rapidly changing market, leading to major financial losses and the program's shutdown.",
+            ar: "كان هذا انجراف نموذج في الواقع: توقّفت تنبؤات مدرَّبة على بيانات سوق أقدم عن مطابقة سوق يتغيّر بسرعة، ما أدى لخسائر مالية كبيرة وإغلاق البرنامج.",
+          },
+        },
       ],
     },
     {
@@ -119,7 +229,10 @@ This is why MLOps engineers are in demand: anyone can train a model from a tutor
 - A trained model is only half the job; MLOps runs it in production
 - Covers deployment, monitoring, versioning, and automated retraining
 - Model drift makes models silently decay — fight it with a monitor→retrain loop
+- Monitoring in practice means tracking data statistics (like averages) over time and using A/B tests before a full model rollout
 - MLOps = DevOps for machine learning
+- You wrote a real drift-detection function
+- Case study: Zillow's home-buying algorithm shows the real financial cost of undetected model drift
 
 **Next:** Generative AI — the models that create text, images, and code.`,
         ar: `## الخلاصة
@@ -127,7 +240,10 @@ This is why MLOps engineers are in demand: anyone can train a model from a tutor
 - النموذج المدرّب نصف المهمة؛ وMLOps يشغّله في الإنتاج
 - يغطّي النشر والمراقبة والإصدارات وإعادة التدريب الآلية
 - انجراف النموذج يجعل النماذج تتحلّل بصمت — كافحه بحلقة مراقبة←إعادة تدريب
+- المراقبة عملياً تعني تتبّع إحصاءات البيانات (كالمتوسطات) عبر الوقت واستخدام اختبارات A/B قبل النشر الكامل للنموذج
 - MLOps = DevOps لتعلّم الآلة
+- كتبت دالة كشف انجراف حقيقية
+- دراسة الحالة: خوارزمية شراء المنازل لدى Zillow تُظهر التكلفة المالية الحقيقية لانجراف نموذج لم يُرصد
 
 **التالي:** الذكاء التوليدي — النماذج التي تنشئ النصوص والصور والكود.`,
       },

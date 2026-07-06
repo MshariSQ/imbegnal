@@ -116,6 +116,52 @@ print(invert(img))  # [[255, 0], [127, 155]]`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Before training: preprocessing and data augmentation 🧹
+
+Raw photos are messy — different sizes, lighting, orientations. Before a CNN ever sees an image, it almost always goes through **preprocessing**:
+
+- **Resizing** every image to the same fixed dimensions (a CNN expects a consistent input shape).
+- **Normalizing** pixel values from the 0–255 range down to something like 0–1, which helps training converge faster and more stably.
+- **Grayscale or channel adjustments** depending on the task.
+
+Even more important is **data augmentation** — artificially creating more training variety by taking each image and generating slightly altered copies: flipped horizontally, rotated a few degrees, cropped, or brightness-shifted. A photo of a cat flipped left-right is still obviously a cat, but to the network it's a "new" example.
+
+Why bother? Because vision models are notorious for **overfitting** — memorizing quirks of the exact training photos (like always seeing cats photographed indoors) rather than learning the general concept "cat." Augmentation forces the model to focus on the actual object, not incidental details like background, angle, or lighting. It's one of the cheapest, highest-leverage tricks in the entire computer vision toolbox — free extra data from data you already have.`,
+        ar: `## قبل التدريب: المعالجة المسبقة وتضخيم البيانات 🧹
+
+الصور الخام فوضوية — أحجام وإضاءات واتجاهات مختلفة. قبل أن ترى شبكة CNN أي صورة، تمرّ غالباً بـ**معالجة مسبقة**:
+
+- **تغيير الحجم** لكل صورة إلى أبعاد ثابتة موحّدة (تتوقّع CNN شكل مدخل ثابتاً).
+- **التطبيع (Normalizing)** لقيم البكسلات من نطاق 0–255 إلى شيء كـ 0–1، ما يساعد التدريب على التقارب أسرع وأثبت.
+- **تعديلات الرمادي أو القنوات** حسب المهمة.
+
+الأهم هو **تضخيم البيانات (data augmentation)** — خلق تنوّع تدريب إضافي اصطناعياً بأخذ كل صورة وتوليد نسخ معدّلة قليلاً منها: معكوسة أفقياً، مدارة بضع درجات، مقصوصة، أو بإضاءة مختلفة. صورة قطة معكوسة يميناً-يساراً تبقى قطة واضحة، لكن للشبكة هي مثال "جديد".
+
+لماذا العناء؟ لأن نماذج الرؤية سيئة الصيت بـ**الإفراط في المطابقة (overfitting)** — حفظ خصائص الصور التدريبية بالتحديد (مثل رؤية القطط دوماً مصوَّرة داخلياً) بدلاً من تعلّم مفهوم "قطة" العام. التضخيم يجبر النموذج على التركيز على الجسم الفعلي، لا التفاصيل العرضية كالخلفية أو الزاوية أو الإضاءة. إنها من أرخص وأقوى الحيل في صندوق أدوات الرؤية الحاسوبية كله — بيانات إضافية مجانية من بيانات تملكها أصلاً.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the ImageNet moment 🔍
+
+For decades, computer vision progressed slowly with hand-crafted rules ("edges look like this, corners look like that"). Then in 2012, a team entered the **ImageNet** competition — a benchmark of over a million labeled images across 1,000 categories — with a deep CNN called **AlexNet**. It didn't just win; it beat the second-place entry by a stunning margin, roughly halving the error rate of the best traditional approaches.
+
+The result sent a shockwave through the entire field. Researchers who had spent careers hand-designing feature detectors realized that a deep CNN, given enough data (ImageNet) and enough compute (trained on GPUs, which were a relatively new trick for this at the time), could learn better features automatically than humans could design by hand. Within a couple of years, nearly every serious computer vision system had switched to deep learning.
+
+This single competition result is widely credited as a turning point that kicked off the modern deep learning boom — the same core CNN ideas from this lesson (convolutions detecting edges → shapes → objects) scaled up with more data and more layers. It's a vivid reminder that in AI, sometimes the breakthrough isn't a clever new trick, but simply proving that a simple idea works dramatically better once you have enough data and computing power behind it.`,
+        ar: `## دراسة حالة واقعية: لحظة ImageNet 🔍
+
+لعقود، تقدّمت الرؤية الحاسوبية ببطء بقواعد مصمَّمة يدوياً ("الحواف تبدو هكذا، الزوايا هكذا"). ثم في 2012، شارك فريق في مسابقة **ImageNet** — معيار من أكثر من مليون صورة موسومة عبر 1000 فئة — بشبكة CNN عميقة تسمى **AlexNet**. لم تفز فقط؛ بل تفوّقت على المركز الثاني بفارق مذهل، وخفّضت تقريباً نسبة خطأ أفضل الأساليب التقليدية إلى النصف.
+
+أحدثت النتيجة صدمة في المجال كله. الباحثون الذين أمضوا مسيرات مهنية في تصميم كاشفات سمات يدوياً أدركوا أن CNN عميقة، بمعطى بيانات كافية (ImageNet) وحوسبة كافية (مدرَّبة على وحدات GPU، حيلة جديدة نسبياً حينها لهذا الغرض)، تستطيع تعلّم سمات أفضل تلقائياً مما يصممه البشر يدوياً. خلال عامين تقريباً، تحوّل كل نظام رؤية حاسوبية جاد تقريباً إلى التعلّم العميق.
+
+تُنسب نتيجة هذه المسابقة الواحدة على نطاق واسع كنقطة تحوّل أشعلت طفرة التعلّم العميق الحديثة — نفس أفكار CNN الأساسية من هذا الدرس (الالتفافات تكتشف حواف ← أشكال ← أجسام) موسّعة ببيانات وطبقات أكثر. إنها تذكير حيّ بأن الاختراق في الذكاء الاصطناعي أحياناً ليس حيلة ذكية جديدة، بل مجرد إثبات أن فكرة بسيطة تعمل بشكل أفضل بكثير حين يكون خلفها بيانات وحوسبة كافية.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -157,6 +203,32 @@ print(invert(img))  # [[255, 0], [127, 155]]`,
             ar: "قفزة مفاجئة بين قيم بكسلات متجاورة (مثل أبيض 255 بجوار أسود 0) تعلّم حافة — الإشارة الأساسية لـ CNN.",
           },
         },
+        {
+          q: { en: "Why do we use data augmentation on training images?", ar: "لماذا نستخدم تضخيم البيانات على صور التدريب؟" },
+          choices: [
+            { en: "It creates useful variety (flips, rotations, crops) so the model generalizes instead of memorizing quirks", ar: "يخلق تنوعاً مفيداً (عكس، دوران، قص) فيعمّم النموذج بدلاً من حفظ الخصائص العرضية" },
+            { en: "It makes images load faster on websites", ar: "يجعل الصور تحمّل أسرع في المواقع" },
+            { en: "It deletes low-quality images automatically", ar: "يحذف الصور رديئة الجودة تلقائياً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Augmentation fights overfitting: a flipped or rotated cat is still a cat, forcing the model to learn the real concept, not incidental details.",
+            ar: "التضخيم يكافح الإفراط في المطابقة: قطة معكوسة أو مدارة تبقى قطة، فيجبر النموذج على تعلّم المفهوم الحقيقي لا التفاصيل العرضية.",
+          },
+        },
+        {
+          q: { en: "What made the 2012 ImageNet result (AlexNet) so significant?", ar: "ما الذي جعل نتيجة ImageNet عام 2012 (AlexNet) مهمة جداً؟" },
+          choices: [
+            { en: "A deep CNN dramatically beat hand-crafted approaches, kicking off the modern deep learning boom", ar: "تفوّقت CNN عميقة بشكل كبير على الأساليب المصمَّمة يدوياً، ما أشعل طفرة التعلّم العميق الحديثة" },
+            { en: "It was the first image ever digitized", ar: "كانت أول صورة تُرقمن على الإطلاق" },
+            { en: "It proved computers could never understand images", ar: "أثبتت أن الحواسيب لن تفهم الصور أبداً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "AlexNet's huge margin of victory showed that CNNs with enough data and GPU compute could learn better features than hand-designed rules — nearly the whole field switched to deep learning within a couple of years.",
+            ar: "فارق فوز AlexNet الكبير أظهر أن CNNs بمعطى بيانات وحوسبة GPU كافية تتعلّم سمات أفضل من القواعد المصمَّمة يدوياً — تحوّل المجال كله تقريباً للتعلّم العميق خلال عامين.",
+          },
+        },
       ],
     },
     {
@@ -167,7 +239,9 @@ print(invert(img))  # [[255, 0], [127, 155]]`,
 - Images are grids of numbers; color = R/G/B grids
 - CNNs detect edges → shapes → objects, layer by layer
 - Powers face unlock, self-driving, medical imaging, OCR
+- Preprocessing (resize, normalize) and data augmentation (flips, rotations) fight overfitting and improve generalization
 - You wrote a real image-inversion function
+- Case study: the 2012 ImageNet/AlexNet result kicked off the modern deep learning boom in vision
 
 **Next:** MLOps — how AI models actually get deployed and maintained in the real world.`,
         ar: `## الخلاصة
@@ -175,7 +249,9 @@ print(invert(img))  # [[255, 0], [127, 155]]`,
 - الصور شبكات أرقام؛ اللون = شبكات R/G/B
 - CNNs تكتشف الحواف ← الأشكال ← الأجسام، طبقة طبقة
 - تشغّل فتح الوجه، القيادة الذاتية، التصوير الطبي، OCR
+- المعالجة المسبقة (تغيير الحجم، التطبيع) وتضخيم البيانات (عكس، دوران) يكافحان الإفراط في المطابقة ويحسّنان التعميم
 - كتبت دالة عكس صورة حقيقية
+- دراسة الحالة: نتيجة ImageNet/AlexNet عام 2012 أشعلت طفرة التعلّم العميق الحديثة في الرؤية
 
 **التالي:** MLOps — كيف تُنشر نماذج الذكاء وتُصان فعلاً في العالم الحقيقي.`,
       },

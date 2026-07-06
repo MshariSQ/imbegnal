@@ -135,6 +135,27 @@ You now have an isolated, disposable security lab. Anything you do inside Kali s
     {
       type: "text",
       body: {
+        en: `## A note on VM networking — NAT vs Bridged 🌐
+
+When you first open your Kali VM, VirtualBox asks how it connects to the internet. This trips up almost every beginner, so know the two main modes:
+
+- **NAT (default, and what you want for now)** — Kali shares your real computer's internet connection but stays on its own private network, invisible to other devices on your WiFi. Safe default for practicing.
+- **Bridged Adapter** — Kali gets its own address directly on your real network, as if it were a second physical computer plugged into your router. Useful later when a lab needs your VM to be reachable *from* another device, but it also means your practice machine is now visible to your whole home network.
+
+**Rule while you're learning:** leave it on NAT. Only switch to Bridged when a specific tutorial tells you to, and switch back afterward — an exposed practice VM is a real, if small, security risk on shared networks (cafés, dorms, offices).`,
+        ar: `## ملاحظة حول شبكة الجهاز الافتراضي — NAT مقابل Bridged 🌐
+
+عند فتح جهاز Kali الافتراضي أول مرة، يسألك VirtualBox كيف يتصل بالإنترنت. هذا يوقع كل مبتدئ تقريباً، فاعرف الوضعين الرئيسيين:
+
+- **NAT (الافتراضي، وما تريده الآن)** — يشارك Kali اتصال إنترنت حاسوبك الحقيقي لكنه يبقى على شبكته الخاصة المعزولة، غير مرئي لأجهزة أخرى على شبكة WiFi لديك. الخيار الآمن الافتراضي للتدريب.
+- **Bridged Adapter** — يحصل Kali على عنوانه الخاص مباشرة على شبكتك الحقيقية، كأنه حاسوب فيزيائي ثانٍ متصل بالراوتر. مفيد لاحقاً حين يحتاج مختبر أن يكون جهازك الافتراضي قابلاً للوصول *من* جهاز آخر، لكنه يعني أيضاً أن جهاز تدريبك أصبح مرئياً لشبكة منزلك كاملة.
+
+**قاعدة أثناء التعلّم:** أبقِه على NAT. بدّل إلى Bridged فقط حين يطلب منك درس محدد ذلك، وأعِده بعدها — جهاز تدريب مكشوف خطر أمني حقيقي، وإن كان صغيراً، على الشبكات المشتركة (المقاهي، السكن الجامعي، المكاتب).`,
+      },
+    },
+    {
+      type: "text",
+      body: {
         en: `## Step 4 (optional but recommended) — Free practice accounts
 
 Later in this roadmap (especially the Penetration Testing lesson) you'll want deliberately-vulnerable machines to practice on legally. Create free accounts now so they're ready when you need them:
@@ -246,6 +267,32 @@ print(my_name + " is ready to become a " + goal + ".")`,
           explain: {
             en: "Kali is a Linux distribution built specifically for security work, with hundreds of tools ready to use — the standard practice OS.",
             ar: "Kali توزيعة لينكس مبنية خصيصاً لعمل الأمن، بمئات الأدوات الجاهزة للاستخدام — نظام التشغيل المعياري للتدريب.",
+          },
+        },
+        {
+          q: { en: "Which VirtualBox network mode should you use by default while learning?", ar: "أي وضع شبكة في VirtualBox تستخدمه افتراضياً أثناء التعلّم؟" },
+          choices: [
+            { en: "NAT — shares internet but stays hidden from your local network", ar: "NAT — يشارك الإنترنت لكنه يبقى مخفياً عن شبكتك المحلية" },
+            { en: "Bridged Adapter — always, for every task", ar: "Bridged Adapter — دائماً، لكل مهمة" },
+            { en: "No network mode is needed", ar: "لا حاجة لأي وضع شبكة" },
+          ],
+          answer: 0,
+          explain: {
+            en: "NAT is the safe default: your Kali VM gets internet access without being directly exposed to your home or office network.",
+            ar: "NAT هو الخيار الآمن الافتراضي: يحصل جهاز Kali الافتراضي على إنترنت دون أن يُكشف مباشرة لشبكة منزلك أو مكتبك.",
+          },
+        },
+        {
+          q: { en: "Why should you switch back to NAT after using Bridged mode?", ar: "لماذا تعيد الضبط إلى NAT بعد استخدام وضع Bridged؟" },
+          choices: [
+            { en: "A bridged practice VM is directly visible on the network — a small but real exposure risk", ar: "جهاز التدريب الافتراضي على Bridged مرئي مباشرة على الشبكة — خطر كشف صغير لكنه حقيقي" },
+            { en: "Bridged mode disables the internet entirely", ar: "وضع Bridged يعطّل الإنترنت تماماً" },
+            { en: "It's not necessary to switch back", ar: "لا داعي للعودة" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Bridged makes your VM act like a separate physical device on the network — fine for a specific lab task, but not something to leave on by default, especially on shared WiFi.",
+            ar: "Bridged يجعل جهازك الافتراضي يتصرف كجهاز فيزيائي منفصل على الشبكة — مناسب لمهمة مختبر محددة، لكن ليس شيئاً تتركه مفعّلاً افتراضياً، خصوصاً على WiFi مشترك.",
           },
         },
       ],

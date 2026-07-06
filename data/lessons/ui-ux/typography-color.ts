@@ -126,6 +126,103 @@ Together, clean typography and a disciplined palette do more for "looking profes
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Never rely on color alone 🎨🚫
+
+About **1 in 12 men** and 1 in 200 women have some form of color blindness (most commonly red-green). If your design's *only* signal for something important is a color — a red vs. green dot for "offline/online," a red border on an invalid field with no other clue — a meaningful slice of your users literally cannot perceive the difference.
+
+**The fix is simple and always works: pair color with a second signal.**
+- An error field should get a red border **and** an icon **and** a text message ("Email is required") — not just red.
+- A status dot should have color **and** a label ("● Online" vs "● Offline") or a distinct shape.
+- A chart shouldn't rely on "the blue line vs the green line" alone — add different line styles (dashed/solid) or direct labels.
+
+This is directly related to the type scale you just learned. A well-built **type scale** (a fixed set of font sizes, usually multiplying by a ratio like 1.25× or 1.333× each step: 16 → 20 → 25 → 31px) does something similar for hierarchy — it means *size alone*, not just color or boldness, reliably tells users what's most important, which helps low-vision users too. Redundant signals — color + icon + text, or size + weight + spacing — make a design robust for everyone, not just an edge case.
+
+This single habit (never color alone) is one of the most-cited items in real accessibility audits, and it costs almost nothing to apply if you build it in from the start.`,
+        ar: `## لا تعتمد على اللون وحده أبداً 🎨🚫
+
+نحو **1 من كل 12 رجلاً** و1 من كل 200 امرأة لديهم شكل من عمى الألوان (الأشيع هو الأحمر-الأخضر). إن كانت إشارة تصميمك *الوحيدة* لشيء مهم هي لون — نقطة حمراء مقابل خضراء لـ"غير متصل/متصل"، أو حدّ أحمر على حقل غير صالح بلا أي دليل آخر — فشريحة معتبرة من مستخدميك لا يستطيعون فعلياً إدراك الفرق.
+
+**الحل بسيط ويعمل دائماً: ازوج اللون بإشارة ثانية.**
+- الحقل الخاطئ يجب أن يحصل على حدّ أحمر **و**أيقونة **و**رسالة نصية ("البريد الإلكتروني مطلوب") — لا الأحمر فقط.
+- نقطة الحالة يجب أن تحمل لوناً **و**تسمية ("● متصل" مقابل "● غير متصل") أو شكلاً مميّزاً.
+- الرسم البياني يجب ألّا يعتمد على "الخط الأزرق مقابل الأخضر" وحده — أضف أنماط خطوط مختلفة (متقطع/متصل) أو تسميات مباشرة.
+
+هذا مرتبط مباشرة بمقياس الخط الذي تعلّمته للتو. **مقياس الخط** المبني جيداً (مجموعة ثابتة من أحجام الخط، عادة بضرب نسبة كـ1.25× أو 1.333× كل خطوة: 16 → 20 → 25 → 31px) يفعل شيئاً مشابهاً للتسلسل — يعني أن *الحجم وحده*، لا اللون أو العريض فقط، يخبر المستخدمين بموثوقية ما هو الأهم، وهذا يساعد ضعاف البصر أيضاً. الإشارات المتكررة — لون + أيقونة + نص، أو حجم + وزن + تباعد — تجعل التصميم متيناً للجميع، لا لحالة استثنائية فقط.
+
+هذه العادة الواحدة (لا تعتمد على اللون وحده أبداً) من أكثر البنود المذكورة في تدقيقات الوصول الحقيقية، وتكلفتها شبه معدومة إن طبّقتها من البداية.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "web",
+      prompt: {
+        en: `Fix a color-only error state. The invalid field below only turns red — someone with color blindness (or on a washed-out screen) can't tell it's an error. In the HTML, add a text error message; in the \`<style>\`, style it clearly:
+1. Add a \`<p class="error-msg">\` right after the input, with text like "Email is required" (any non-empty text)
+2. Give \`.error-msg\` a \`color\` of red (or \`#dc2626\`) so it's visually tied to the error, IN ADDITION to the border — color is now a bonus signal, not the only one`,
+        ar: `أصلِح حالة خطأ تعتمد على اللون وحده. الحقل غير الصالح أدناه يتحوّل للأحمر فقط — من لديه عمى ألوان (أو على شاشة باهتة) لا يستطيع معرفة أنه خطأ. في HTML، أضف رسالة خطأ نصية؛ وفي \`<style>\`، صمّمها بوضوح:
+1. أضف \`<p class="error-msg">\` مباشرة بعد الحقل، بنص مثل "البريد الإلكتروني مطلوب" (أي نص غير فارغ)
+2. أعطِ \`.error-msg\` لون \`color\` أحمر (أو \`#dc2626\`) ليرتبط بصرياً بالخطأ، بالإضافة إلى الحدّ — اللون الآن إشارة إضافية لا الوحيدة`,
+      },
+      starterCode: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; padding: 24px; }
+      .field { border: 2px solid #dc2626; padding: 8px; border-radius: 6px; width: 220px; }
+      .error-msg { }
+    </style>
+  </head>
+  <body>
+    <input class="field" type="email" placeholder="you@example.com">
+    <!-- add an error message paragraph below -->
+  </body>
+</html>`,
+      solution: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: sans-serif; padding: 24px; }
+      .field { border: 2px solid #dc2626; padding: 8px; border-radius: 6px; width: 220px; }
+      .error-msg { color: #dc2626; font-size: 14px; margin-top: 6px; }
+    </style>
+  </head>
+  <body>
+    <input class="field" type="email" placeholder="you@example.com">
+    <p class="error-msg">Email is required</p>
+  </body>
+</html>`,
+      hints: [
+        { en: `Add <p class="error-msg">Email is required</p> right after the <input>.`, ar: `أضف <p class="error-msg">البريد الإلكتروني مطلوب</p> مباشرة بعد <input>.` },
+        { en: `In .error-msg add: color: #dc2626;`, ar: `في .error-msg أضف: color: #dc2626;` },
+      ],
+      tests: [
+        { name: { en: "An error message paragraph with text exists", ar: "توجد فقرة رسالة خطأ بنص" }, check: `(function(){ var el = document.querySelector(".error-msg"); return el && el.textContent.trim().length > 0; })()` },
+        { name: { en: "Error message uses a red color as a bonus signal", ar: "رسالة الخطأ تستخدم لوناً أحمر كإشارة إضافية" }, check: `(function(){ var c = getComputedStyle(document.querySelector(".error-msg")).color.match(/\\d+/g); return c && parseInt(c[0]) > 150 && parseInt(c[1]) < 100 && parseInt(c[2]) < 100; })()` },
+        { name: { en: "The field still has its red border too (color is now a second signal, not the only one)", ar: "الحقل لا يزال له حدّه الأحمر أيضاً (اللون الآن إشارة ثانية لا وحيدة)" }, check: `(function(){ var b = getComputedStyle(document.querySelector(".field")).borderTopColor; return b && b !== "rgb(0, 0, 0)"; })()` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the traffic-light dashboard fix 🔍
+
+A well-documented pattern in enterprise software: early analytics dashboards commonly used a plain red/yellow/green "traffic light" to show project or system status — color as the *only* signal. Accessibility audits (and real complaints from colorblind engineers and managers) repeatedly flagged the same problem: a red-green colorblind user looking at a dot could not reliably tell "critical" from "healthy" at a glance, especially in quick scans of large tables.
+
+The fix that spread industry-wide is exactly the principle from this lesson: keep the color, but add a shape and a label — a filled circle for "critical," a triangle for "warning," a check mark for "healthy" — plus a text status column. Now the dashboard works correctly whether or not the viewer can distinguish red from green, and as a side effect it also became easier to read for *everyone*, including on low-quality screens, printed reports, and screenshots dropped into black-and-white slide decks.
+
+This is the curb-cut effect again, now applied to color specifically: designing for colorblind users produced a dashboard that was simply better for every single viewer.`,
+        ar: `## دراسة حالة واقعية: إصلاح لوحة تحكم "الإشارة الضوئية" 🔍
+
+نمط موثّق جيداً في برمجيات المؤسسات: لوحات التحليلات المبكرة استخدمت غالباً "إشارة ضوئية" بسيطة أحمر/أصفر/أخضر لعرض حالة مشروع أو نظام — اللون بوصفه الإشارة *الوحيدة*. تدقيقات الوصول (وشكاوى حقيقية من مهندسين ومديرين مصابين بعمى الألوان) رصدت مراراً نفس المشكلة: مستخدم مصاب بعمى الألوان الأحمر-الأخضر ينظر لنقطة لا يستطيع بموثوقية تمييز "حرِج" عن "سليم" بلمحة سريعة، خصوصاً في مسح سريع لجداول كبيرة.
+
+الإصلاح الذي انتشر في الصناعة كلها هو بالضبط مبدأ هذا الدرس: أبقِ اللون، لكن أضف شكلاً وتسمية — دائرة ممتلئة لـ"حرِج"، مثلث لـ"تحذير"، علامة صح لـ"سليم" — بالإضافة لعمود حالة نصي. الآن تعمل اللوحة بشكل صحيح سواء استطاع المُشاهد تمييز الأحمر عن الأخضر أم لا، وكأثر جانبي أصبحت أيضاً أسهل قراءة للجميع، بما في ذلك على شاشات رديئة الجودة وتقارير مطبوعة ولقطات شاشة موضوعة في عروض تقديمية بالأبيض والأسود.
+
+هذا أثر منحدر الرصيف مجدداً، مطبّقاً هذه المرة على اللون تحديداً: التصميم لمستخدمي عمى الألوان أنتج لوحة تحكم أفضل ببساطة لكل مُشاهد على الإطلاق.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {

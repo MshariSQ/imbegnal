@@ -84,6 +84,55 @@ df.groupby("city").size()   # عدّ الأشخاص لكل مدينة
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## The gaps in real data: missing values 🕳️
+
+Textbook data is complete. Real data has holes — a customer who skipped the "age" field, a sensor that dropped a reading, a survey question left blank. pandas represents a missing value as **NaN** ("Not a Number"), and dealing with it well is one of the most common tasks in the job.
+
+pandas gives you three main moves:
+
+\`\`\`python
+df.isna()               # True/False grid: where are the gaps?
+df["age"].isna().sum()  # how many missing ages?
+df.dropna()             # drop any row that has a missing value
+df.fillna(0)            # fill gaps with a specific value
+df["age"].fillna(df["age"].mean(), inplace=True)  # fill with the column's mean
+\`\`\`
+
+**Why you can't just ignore NaN:** if you compute \`df["age"].mean()\` pandas quietly skips the missing rows for you — convenient, but dangerous if you don't realize a third of your data was silently excluded. And if a NaN slips into a machine-learning model later, most models will simply crash.
+
+**Choosing a strategy matters:**
+- **Drop rows** — fine if missing data is rare and random.
+- **Fill with mean/median** — reasonable for numeric columns when you want to keep every row.
+- **Fill with a placeholder** (like \`"unknown"\`) — often best for categorical/text columns, so you don't pretend to know something you don't.
+
+There's no universally "correct" choice — the right one depends on *why* the data is missing, and a good data scientist always asks that question before typing \`.fillna()\`.`,
+        ar: `## الثغرات في البيانات الحقيقية: القيم المفقودة 🕳️
+
+بيانات الكتب المدرسية كاملة. أما البيانات الحقيقية ففيها ثغرات — عميل تخطّى حقل "العمر"، حسّاس أسقط قراءة، سؤال استبيان تُرك فارغاً. تمثّل pandas القيمة المفقودة بـ**NaN** ("ليست رقماً")، والتعامل الجيد معها من أشيع المهام في الوظيفة.
+
+pandas يمنحك ثلاث حركات رئيسية:
+
+\`\`\`python
+df.isna()               # شبكة True/False: أين الثغرات؟
+df["age"].isna().sum()  # كم عمراً مفقوداً؟
+df.dropna()             # احذف أي صف فيه قيمة مفقودة
+df.fillna(0)            # املأ الثغرات بقيمة محدّدة
+df["age"].fillna(df["age"].mean(), inplace=True)  # املأ بمتوسط العمود
+\`\`\`
+
+**لماذا لا يمكنك تجاهل NaN فحسب:** إذا حسبت \`df["age"].mean()\` فإن pandas يتخطّى الصفوف المفقودة بصمت من أجلك — مريح، لكنه خطير إن لم تدرك أن ثلث بياناتك استُبعد بصمت. وإن تسرّبت NaN إلى نموذج تعلّم آلة لاحقاً، فمعظم النماذج ستتعطل ببساطة.
+
+**اختيار الاستراتيجية مهم:**
+- **حذف الصفوف** — مناسب إن كانت البيانات المفقودة نادرة وعشوائية.
+- **الملء بالمتوسط/الوسيط** — معقول للأعمدة الرقمية حين تريد الاحتفاظ بكل صف.
+- **الملء بقيمة بديلة** (مثل \`"unknown"\`) — غالباً الأفضل للأعمدة الفئوية/النصية، كي لا تتظاهر بمعرفة ما لا تعرفه.
+
+لا يوجد خيار "صحيح" عالمياً — الخيار الصحيح يعتمد على *لماذا* البيانات مفقودة، وعالِم البيانات الجيد يسأل هذا السؤال دائماً قبل كتابة \`.fillna()\`.`,
+      },
+    },
+    {
       type: "exercise",
       lang: "python",
       prompt: {
@@ -127,6 +176,66 @@ print(average_age_by_city(data))  # {'Riyadh': 25.0, 'Jeddah': 25.0}`,
       ],
     },
     {
+      type: "exercise",
+      lang: "python",
+      prompt: {
+        en: `Simulate \`fillna\` with the column mean, in plain Python. Write \`fill_missing_with_mean(values)\` where \`values\` is a list that may contain \`None\` for missing entries. Replace every \`None\` with the mean of the **non-missing** values (keep the original numbers unchanged).
+
+Example: \`[10, None, 20, None, 30]\` → mean of \`[10,20,30]\` is \`20\` → result \`[10, 20, 20, 20, 30]\``,
+        ar: `حاكِ \`fillna\` بمتوسط العمود، ببايثون عادي. اكتب \`fill_missing_with_mean(values)\` حيث \`values\` قائمة قد تحتوي \`None\` للمدخلات المفقودة. استبدل كل \`None\` بمتوسط القيم **غير المفقودة** (اترك الأرقام الأصلية دون تغيير).
+
+مثال: \`[10, None, 20, None, 30]\` ← متوسط \`[10,20,30]\` هو \`20\` ← النتيجة \`[10, 20, 20, 20, 30]\``,
+      },
+      starterCode: `def fill_missing_with_mean(values):
+    known = [v for v in values if v is not None]
+    mean_value = sum(known) / len(known)
+    # return a new list where every None becomes mean_value
+    result = []
+    return result
+
+print(fill_missing_with_mean([10, None, 20, None, 30]))  # [10, 20, 20, 20, 30]`,
+      solution: `def fill_missing_with_mean(values):
+    known = [v for v in values if v is not None]
+    mean_value = sum(known) / len(known)
+    result = []
+    for v in values:
+        if v is None:
+            result.append(mean_value)
+        else:
+            result.append(v)
+    return result
+
+print(fill_missing_with_mean([10, None, 20, None, 30]))  # [10, 20, 20, 20, 30]`,
+      hints: [
+        { en: `First compute mean_value from the entries that are not None.`, ar: `احسب أولاً mean_value من المدخلات التي ليست None.` },
+        { en: `Then loop through the original list: keep real numbers, replace None with mean_value.`, ar: `ثم كرّر عبر القائمة الأصلية: أبقِ الأرقام الحقيقية، واستبدل None بـ mean_value.` },
+      ],
+      tests: [
+        { name: { en: "Fills gaps with the mean of known values", ar: "يملأ الثغرات بمتوسط القيم المعروفة" }, check: `assert fill_missing_with_mean([10, None, 20, None, 30]) == [10, 20, 20, 20, 30]` },
+        { name: { en: "No missing values leaves list unchanged", ar: "بلا قيم مفقودة تبقى القائمة كما هي" }, check: `assert fill_missing_with_mean([1,2,3]) == [1,2,3]` },
+        { name: { en: "Single known value fills all gaps with it", ar: "قيمة معروفة واحدة تملأ كل الثغرات بها" }, check: `assert fill_missing_with_mean([None, 5, None]) == [5, 5, 5]` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the WHO and messy country data 🔍
+
+International health and economic organizations like the **World Health Organization** and the **World Bank** publish datasets covering nearly every country on Earth — life expectancy, GDP, vaccination rates, and more. These are some of the most widely used real-world datasets in data science courses and tools like \`gapminder\`.
+
+They're also a masterclass in messy data: some countries report every year without fail, others have huge gaps during wars, transitions, or simply lack of infrastructure to collect the numbers. Country names change or are spelled inconsistently ("Ivory Coast" vs "Côte d'Ivoire"), and older data is sometimes estimated rather than measured.
+
+Any analyst who naively calls \`.mean()\` on this data without first checking **how much is missing, and for whom**, risks a badly misleading conclusion — for example, silently underrepresenting the poorest countries, which tend to have the most gaps. This is exactly why the "check first, then decide a strategy" habit from this lesson matters: real, high-stakes datasets are never clean by default, and the missing values themselves often carry meaning.`,
+        ar: `## دراسة حالة واقعية: منظمة الصحة العالمية وبيانات الدول الفوضوية 🔍
+
+تنشر منظمات صحية واقتصادية دولية مثل **منظمة الصحة العالمية** و**البنك الدولي** بيانات تغطي تقريباً كل دولة على الأرض — متوسط العمر المتوقع، الناتج المحلي، معدلات التطعيم، وغيرها. هذه من أكثر بيانات الواقع استخداماً في دورات علم البيانات وأدوات مثل \`gapminder\`.
+
+وهي أيضاً درس رئيسي في فوضى البيانات: بعض الدول تُبلّغ كل سنة دون كلل، وأخرى فيها ثغرات هائلة خلال الحروب أو التحولات أو لمجرد نقص البنية لجمع الأرقام. أسماء الدول تتغيّر أو تُكتب بشكل غير متسق ("ساحل العاج" مقابل "Côte d'Ivoire")، والبيانات القديمة أحياناً تقديرية لا مقاسة.
+
+أي محلّل يستدعي \`.mean()\` بسذاجة على هذه البيانات دون التحقق أولاً من **كمية المفقود ولمن**، يخاطر باستنتاج مُضلِّل بشدة — مثلاً، تمثيل ناقص بصمت لأفقر الدول، التي تميل لامتلاك أكثر الثغرات. لهذا بالضبط تهمّ عادة "تحقّق أولاً، ثم قرّر استراتيجية" من هذا الدرس: البيانات الحقيقية عالية المخاطر ليست نظيفة افتراضياً أبداً، والقيم المفقودة نفسها غالباً تحمل معنى.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -168,6 +277,32 @@ print(average_age_by_city(data))  # {'Riyadh': 25.0, 'Jeddah': 25.0}`,
             ar: "القاعدة الشهيرة: ~80% من علم البيانات تنظيف وتهيئة. وpandas أداة ذلك بالضبط.",
           },
         },
+        {
+          q: { en: "What does pandas call a missing value?", ar: "بماذا تسمّي pandas القيمة المفقودة؟" },
+          choices: [
+            { en: "NaN (Not a Number)", ar: "NaN (ليست رقماً)" },
+            { en: "NULL only", ar: "NULL فقط" },
+            { en: "It has no special representation", ar: "لا تمثيل خاص لها" },
+          ],
+          answer: 0,
+          explain: {
+            en: "pandas uses NaN to mark missing entries. Left unhandled, it can silently skew means or crash a downstream ML model.",
+            ar: "تستخدم pandas NaN لتمييز المدخلات المفقودة. إن تُركت دون معالجة، قد تحرّف المتوسطات بصمت أو تُعطّل نموذج تعلّم آلة لاحقاً.",
+          },
+        },
+        {
+          q: { en: "Why is checking missing data before analysis important, per the WHO/World Bank example?", ar: "لماذا التحقق من البيانات المفقودة قبل التحليل مهم، وفق مثال منظمة الصحة/البنك الدولي؟" },
+          choices: [
+            { en: "Missing data is often not random — it can quietly underrepresent specific groups", ar: "البيانات المفقودة غالباً ليست عشوائية — قد تُمثّل مجموعات معينة تمثيلاً ناقصاً بصمت" },
+            { en: "Missing data never affects results", ar: "البيانات المفقودة لا تؤثر على النتائج أبداً" },
+            { en: "Every country reports data identically", ar: "كل دولة تُبلّغ بياناتها بنفس الطريقة" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Poorer or unstable countries tend to have more gaps, so naive averaging can silently bias conclusions toward better-documented places.",
+            ar: "الدول الأفقر أو غير المستقرة تميل لامتلاك ثغرات أكثر، فحساب المتوسط بسذاجة قد يُحيّز الاستنتاجات بصمت نحو الأماكن الموثّقة بشكل أفضل.",
+          },
+        },
       ],
     },
     {
@@ -178,7 +313,9 @@ print(average_age_by_city(data))  # {'Riyadh': 25.0, 'Jeddah': 25.0}`,
 - pandas = programmable Excel; the DataFrame is its core table
 - Daily loop: select → filter → group → aggregate → sort
 - ~80% of the job is cleaning and exploring data
-- You implemented group-and-average from scratch
+- Missing values (NaN) need a deliberate strategy: drop, fill with mean/median, or fill with a placeholder
+- You implemented group-and-average and a fill-missing-with-mean function from scratch
+- The WHO/World Bank case study shows missing data is rarely random — check it before trusting any average
 
 **Practice:** \`pip install pandas\`, load any CSV with \`pd.read_csv\`, and explore it. **Next:** SQL for Data — querying databases, the other half of a data scientist's toolkit.`,
         ar: `## الخلاصة
@@ -186,7 +323,9 @@ print(average_age_by_city(data))  # {'Riyadh': 25.0, 'Jeddah': 25.0}`,
 - pandas = Excel قابل للبرمجة؛ والـ DataFrame جدوله الأساسي
 - الحلقة اليومية: اختر ← صفِّ ← جمّع ← لخّص ← رتّب
 - ~80% من العمل تنظيف واستكشاف البيانات
-- نفّذت التجميع-والمتوسط من الصفر
+- القيم المفقودة (NaN) تحتاج استراتيجية مقصودة: حذف، أو ملء بالمتوسط/الوسيط، أو ملء بقيمة بديلة
+- نفّذت التجميع-والمتوسط ودالة ملء-المفقود-بالمتوسط من الصفر
+- دراسة حالة منظمة الصحة/البنك الدولي تُظهر أن البيانات المفقودة نادراً ما تكون عشوائية — تحقّق منها قبل الثقة بأي متوسط
 
 **تدرّب:** \`pip install pandas\`، حمّل أي CSV بـ \`pd.read_csv\`، واستكشفه. **التالي:** SQL للبيانات — استعلام قواعد البيانات، النصف الآخر من عدّة عالِم البيانات.`,
       },

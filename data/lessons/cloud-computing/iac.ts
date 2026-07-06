@@ -86,6 +86,29 @@ resource "aws_instance" "web" {
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## State files and drift: keeping the blueprint honest 📋
+
+Terraform's declarative model has a subtle requirement: to know what to *change*, it needs to know what it *already built*. That record is the **state file** — Terraform's memory of every resource it created, matched to the config that describes it.
+
+Every time you run \`terraform apply\`, Terraform does three things: reads your config (desired state), reads the state file (what it believes exists), and compares them to compute the minimal set of changes needed. This is why deleting a block and applying removes exactly that resource — Terraform diffs desired vs. remembered state, not desired vs. "everything in the cloud."
+
+This creates a real risk called **drift**: when someone manually changes a resource outside of Terraform — clicking in the AWS console to resize a server "just this once" — the actual cloud no longer matches the state file. Terraform doesn't know about the change until you run it again, at which point it may try to "fix" your manual tweak back to what the code says, silently undoing work, or the reverse: you assume the code describes reality when it no longer does.
+
+The discipline that avoids drift is simple but strict: **all changes go through code, always** — no manual console clicks on Terraform-managed resources, ever. Teams also run scheduled \`terraform plan\` checks specifically to catch drift early, before it causes an incident. This is the same discipline as "the code is the documentation" from earlier in this lesson — the moment reality diverges from the code, that promise is broken.`,
+        ar: `## ملفات الحالة والانحراف: إبقاء المخطط صادقاً 📋
+
+نموذج Terraform التصريحي له متطلب دقيق: لمعرفة ما *يغيّره*، يحتاج معرفة ما *بناه بالفعل*. ذلك السجل هو **ملف الحالة (state file)** — ذاكرة Terraform لكل مورد أنشأه، مطابقاً للإعداد الذي يصفه.
+
+في كل مرة تنفّذ \`terraform apply\`، يفعل Terraform ثلاثة أشياء: يقرأ إعدادك (الحالة المرغوبة)، يقرأ ملف الحالة (ما يعتقد أنه موجود)، ويقارنهما لحساب أقل مجموعة تغييرات لازمة. لهذا حذف كتلة وتطبيقها يزيل ذلك المورد بالضبط — Terraform يقارن المرغوب بالمحفوظ، لا المرغوب بـ"كل شيء في السحابة".
+
+هذا يخلق خطراً حقيقياً يُسمى **الانحراف (drift)**: حين يغيّر أحدهم مورداً يدوياً خارج Terraform — بالنقر في واجهة AWS لتغيير حجم خادم "لمرة واحدة فقط" — لم تعد السحابة الفعلية تطابق ملف الحالة. لا يعرف Terraform بالتغيير حتى تشغّله مجدداً، وعندها قد يحاول "إصلاح" تعديلك اليدوي وإعادته لما يقوله الكود، فيُبطل العمل بصمت، أو العكس: تفترض أن الكود يصف الواقع بينما لم يعد كذلك.
+
+الانضباط الذي يتجنّب الانحراف بسيط لكنه صارم: **كل التغييرات تمرّ عبر الكود، دائماً** — بلا نقرات يدوية في الواجهة على موارد يديرها Terraform، أبداً. الفرق أيضاً تشغّل فحوصات \`terraform plan\` مجدولة تحديداً لالتقاط الانحراف مبكراً، قبل أن يسبب حادثة. هذا نفس انضباط "الكود هو التوثيق" من سابقاً في هذا الدرس — لحظة تباعد الواقع عن الكود، ينكسر ذلك الوعد.`,
+      },
+    },
+    {
       type: "exercise",
       lang: "js",
       prompt: {
@@ -120,6 +143,52 @@ console.log(summarize([
         { name: { en: "Handles a single resource", ar: "يتعامل مع مورد واحد" }, check: `summarize([{type:"t",name:"a"}]) === "1 resources: a (t)"` },
         { name: { en: "Counts correctly", ar: "يعدّ بشكل صحيح" }, check: `summarize([{type:"x",name:"a"},{type:"y",name:"b"},{type:"z",name:"c"}]).startsWith("3 resources:")` },
       ],
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: "**Build a drift detector.** Write `findDrift(stateValues, actualValues)` — both are objects mapping resource name to a value (e.g. instance type). Return an array of resource names where `actualValues[name]` does not equal `stateValues[name]` — these are the resources that drifted from what Terraform's state file expects. Return names in the order they appear in `stateValues`.",
+        ar: "**ابنِ كاشف انحراف.** اكتب `findDrift(stateValues, actualValues)` — كلاهما كائنات تربط اسم المورد بقيمة (مثل نوع النسخة). أعِد مصفوفة أسماء الموارد حيث `actualValues[name]` لا تساوي `stateValues[name]` — هذه هي الموارد التي انحرفت عمّا يتوقعه ملف حالة Terraform. أعِد الأسماء بترتيب ظهورها في `stateValues`.",
+      },
+      starterCode: `function findDrift(stateValues, actualValues) {
+  // TODO: return names where actualValues[name] !== stateValues[name]
+}
+`,
+      solution: `function findDrift(stateValues, actualValues) {
+  return Object.keys(stateValues).filter(
+    (name) => actualValues[name] !== stateValues[name]
+  );
+}
+`,
+      hints: [
+        { en: "Object.keys(stateValues) gives you the resource names to check, in order.", ar: "Object.keys(stateValues) يعطيك أسماء الموارد للفحص، بالترتيب." },
+        { en: "Filter to names where the two objects disagree: actualValues[name] !== stateValues[name].", ar: "رشّح للأسماء حيث يختلف الكائنان: actualValues[name] !== stateValues[name]." },
+      ],
+      tests: [
+        { name: { en: "No drift returns empty array", ar: "بلا انحراف تعيد مصفوفة فارغة" }, check: `JSON.stringify(findDrift({web:"t2.micro"},{web:"t2.micro"})) === "[]"` },
+        { name: { en: "Detects one drifted resource", ar: "يكتشف مورداً واحداً منحرفاً" }, check: `JSON.stringify(findDrift({web:"t2.micro",db:"db.small"},{web:"t2.large",db:"db.small"})) === '["web"]'` },
+        { name: { en: "Detects multiple drifted resources", ar: "يكتشف عدة موارد منحرفة" }, check: `JSON.stringify(findDrift({a:"1",b:"2"},{a:"9",b:"9"})) === '["a","b"]'` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: HashiCorp and the rise of IaC 🔍
+
+Terraform was first released in 2014 by HashiCorp, at a time when most companies still configured cloud servers by hand or with ad-hoc scripts. Its core bet — that infrastructure should be described declaratively in a cloud-agnostic language and version-controlled like application code — was unproven at the scale it eventually reached.
+
+A decade later, Terraform had become the de facto standard for IaC across the industry, used by a large share of companies running production workloads on AWS, Azure, and Google Cloud, specifically because it solved the "nobody knows how production is configured" problem described at the start of this lesson at massive scale. Large enterprises with thousands of cloud resources now manage them from version-controlled repositories of Terraform files, with changes reviewed like any other code change before they touch production.
+
+The broader lesson mirrors this lesson's theme directly: the industry converged on Terraform not because clicking in a console was impossible, but because at any real scale, undocumented manual infrastructure becomes unmanageable risk — while code that describes infrastructure is reviewable, testable, and recoverable. IaC went from a nice-to-have to the baseline expectation for any serious cloud operation.`,
+        ar: `## دراسة حالة واقعية: HashiCorp وصعود IaC 🔍
+
+أُطلق Terraform لأول مرة عام 2014 من HashiCorp، في وقت كانت فيه معظم الشركات ما زالت تعدّ خوادم السحابة يدوياً أو بسكربتات مرتجلة. رهانه الجوهري — أن البنية التحتية يجب أن تُوصف تصريحياً بلغة محايدة عن السحابة ومحفوظة بالإصدارات كأي كود تطبيق — لم يكن مثبتاً بالمقياس الذي وصله لاحقاً.
+
+بعد عقد، أصبح Terraform المعيار الفعلي لـ IaC في الصناعة، تستخدمه حصة كبيرة من الشركات التي تشغّل أحمال إنتاج على AWS وAzure وGoogle Cloud، تحديداً لأنه حلّ مشكلة "لا أحد يعرف كيف أُعدّ الإنتاج" الموصوفة في بداية هذا الدرس، على نطاق هائل. مؤسسات كبرى بآلاف موارد السحابة تديرها الآن من مستودعات ملفات Terraform محفوظة بالإصدارات، وتُراجع التغييرات كأي تغيير كود آخر قبل أن تلمس الإنتاج.
+
+الدرس الأوسع يعكس موضوع هذا الدرس مباشرة: التقت الصناعة على Terraform ليس لأن النقر في الواجهة كان مستحيلاً، بل لأنه على أي مقياس حقيقي، تصبح البنية التحتية اليدوية غير الموثّقة خطراً لا يمكن إدارته — بينما الكود الذي يصف البنية قابل للمراجعة والاختبار والاستعادة. تحوّل IaC من ميزة إضافية إلى التوقّع الأساسي لأي عملية سحابية جادة.`,
+      },
     },
     {
       type: "quiz",
@@ -163,6 +232,32 @@ console.log(summarize([
             ar: "كل تغيير commit قابل للمراجعة والتراجع، ويمكنك إعادة إنشاء بيئات متطابقة عند الطلب. بلا إعدادات غامضة.",
           },
         },
+        {
+          q: { en: "What is a Terraform 'state file' for?", ar: "لأجل ماذا 'ملف الحالة' في Terraform؟" },
+          choices: [
+            { en: "It records what Terraform has already built, so it can compute the minimal changes needed", ar: "يسجّل ما بناه Terraform بالفعل، ليحسب أقل تغييرات لازمة" },
+            { en: "It stores your AWS password", ar: "يخزّن كلمة مرور AWS الخاصة بك" },
+            { en: "It's just a backup copy of the config file", ar: "مجرد نسخة احتياطية من ملف الإعداد" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Terraform compares your config (desired state) against the state file (remembered state) to figure out exactly what to create, change, or delete.",
+            ar: "يقارن Terraform إعدادك (الحالة المرغوبة) بملف الحالة (الحالة المحفوظة) ليحدد بالضبط ما يُنشئ أو يغيّر أو يحذف.",
+          },
+        },
+        {
+          q: { en: "What is 'drift' in Infrastructure as Code?", ar: "ما هو 'الانحراف' في البنية التحتية ككود؟" },
+          choices: [
+            { en: "When a manual change outside the IaC tool makes real infrastructure no longer match the code", ar: "حين يجعل تغيير يدوي خارج أداة IaC البنيةَ الفعلية لا تطابق الكود" },
+            { en: "A server physically moving to another data center", ar: "خادم ينتقل فيزيائياً لمركز بيانات آخر" },
+            { en: "A normal, harmless part of every terraform apply", ar: "جزء طبيعي غير ضار من كل terraform apply" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Manual console changes desync reality from the state file. The fix is discipline: all changes go through code, with scheduled checks to catch drift early.",
+            ar: "التغييرات اليدوية في الواجهة تُخرج الواقع عن التزامن مع ملف الحالة. الحل انضباط: كل التغييرات عبر الكود، مع فحوصات مجدولة لالتقاط الانحراف مبكراً.",
+          },
+        },
       ],
     },
     {
@@ -173,7 +268,9 @@ console.log(summarize([
 - IaC defines infrastructure in text files instead of manual clicking
 - Terraform is the popular declarative tool: describe what you want, it builds it
 - Benefits: reproducible, version-controlled, documented, safe
-- You parsed a mini resource config
+- The state file tracks what's built, and drift happens when manual changes desync it from reality
+- You parsed a mini resource config and wrote a drift detector
+- Terraform's rise shows how IaC became the baseline expectation for serious cloud operations
 
 **Next:** Cloud Security — protecting all this infrastructure (IAM, encryption, the shared responsibility model).`,
         ar: `## الخلاصة
@@ -181,7 +278,9 @@ console.log(summarize([
 - IaC تعرّف البنية في ملفات نصية بدل النقر اليدوي
 - Terraform الأداة التصريحية الشائعة: صِف ما تريد فيبنيه
 - الفوائد: قابلة للتكرار، محفوظة بالإصدارات، موثّقة، آمنة
-- حلّلت إعداد موارد مصغّراً
+- ملف الحالة يتتبّع ما بُني، ويحدث الانحراف حين تُخرج تغييرات يدوية التزامن مع الواقع
+- حلّلت إعداد موارد مصغّراً وكتبت كاشف انحراف
+- صعود Terraform يُظهر كيف أصبح IaC التوقّع الأساسي لأي عملية سحابية جادة
 
 **التالي:** أمن السحابة — حماية كل هذه البنية (IAM، التشفير، نموذج المسؤولية المشتركة).`,
       },

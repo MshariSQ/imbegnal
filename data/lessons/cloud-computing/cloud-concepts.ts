@@ -64,6 +64,81 @@ That shift — from a huge upfront investment in machines you maintain, to a fle
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Multi-cloud and the vendor lock-in trap 🔗
+
+Once a company builds deeply on one provider's unique services, switching becomes painful — this is **vendor lock-in**. It's like renovating your kitchen entirely around one company's proprietary appliances: perfectly fine until you want to switch brands and discover nothing else fits the cabinets.
+
+Lock-in happens gradually: you start using AWS's proprietary Lambda triggers, its specific database quirks, its unique networking setup — each convenient on its own, but together they make your app *only* runnable on AWS. Rewriting all of that to move to Azure could take months and cost a fortune.
+
+Some companies respond with a **multi-cloud** strategy — deliberately spreading workloads across two or more providers (say, AWS *and* Google Cloud). Reasons include:
+- **Avoiding lock-in** — negotiating leverage and a fallback if one provider raises prices or has an outage.
+- **Best-of-breed** — using each provider's strongest service (e.g. one cloud's AI tools, another's database).
+- **Regulatory/geographic requirements** — some countries require certain data to stay with a local or specific provider.
+
+The trade-off is real, though: multi-cloud means your team must learn multiple platforms, duplicate tooling, and manage more complexity — often *increasing* cost and effort rather than reducing it. Most companies deliberately stay single-cloud and manage lock-in risk instead by favoring open standards (containers, Kubernetes, Terraform) that are easier to move between providers than each provider's proprietary services. Multi-cloud is a serious architectural decision, not a free win.`,
+        ar: `## السحابة المتعددة وفخ الارتباط بالمزوّد 🔗
+
+حين تبني شركة بعمق على خدمات فريدة لمزوّد واحد، يصبح التبديل مؤلماً — هذا **الارتباط بالمزوّد (vendor lock-in)**. مثل تجديد مطبخك بالكامل حول أجهزة خاصة بشركة واحدة: يعمل تماماً حتى تريد تبديل العلامة التجارية فتكتشف أن لا شيء آخر يناسب الخزائن.
+
+يحدث الارتباط تدريجياً: تبدأ باستخدام محفّزات Lambda الخاصة بـ AWS، وخصائص قاعدة بياناتها المحددة، وإعداد شبكتها الفريد — كل واحدة مريحة بمفردها، لكنها معاً تجعل تطبيقك يعمل *فقط* على AWS. إعادة كتابة كل ذلك للانتقال إلى Azure قد تستغرق أشهراً وتكلّف ثروة.
+
+بعض الشركات تستجيب باستراتيجية **السحابة المتعددة (multi-cloud)** — توزيع الأحمال عمداً عبر مزوّدين أو أكثر (مثلاً AWS *و*Google Cloud). الأسباب تشمل:
+- **تجنّب الارتباط** — نفوذ تفاوضي وبديل احتياطي إن رفع مزوّد الأسعار أو تعطّل.
+- **الأفضل في كل مجال** — استخدام أقوى خدمة لكل مزوّد (مثلاً أدوات ذكاء اصطناعي لسحابة، وقاعدة بيانات لأخرى).
+- **متطلبات تنظيمية/جغرافية** — بعض الدول تشترط بقاء بيانات معينة مع مزوّد محلي أو محدد.
+
+لكن المقايضة حقيقية: السحابة المتعددة تعني أن فريقك يجب أن يتعلّم منصات متعددة، ويكرّر الأدوات، ويدير تعقيداً أكبر — غالباً *يزيد* التكلفة والجهد بدل تقليلهما. معظم الشركات تبقى عمداً على سحابة واحدة وتدير خطر الارتباط بدلاً من ذلك بتفضيل المعايير المفتوحة (الحاويات، Kubernetes، Terraform) الأسهل نقلاً بين المزوّدين من خدمات كل مزوّد الخاصة. السحابة المتعددة قرار معماري جاد، لا مكسباً مجانياً.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: "**Build a service-model classifier.** Write `classifyModel(managesOS, managesApp)` — both booleans meaning \"does the *customer* manage the OS?\" and \"does the *customer* manage the app deployment?\". Return `\"IaaS\"` if the customer manages both, `\"PaaS\"` if the customer manages only the app (not the OS), and `\"SaaS\"` if the customer manages neither. This is the exact decision tree used to categorize any cloud offering.",
+        ar: "**ابنِ مصنّف نماذج الخدمة.** اكتب `classifyModel(managesOS, managesApp)` — كلاهما قيمتان منطقيتان تعنيان \"هل *العميل* يدير نظام التشغيل؟\" و\"هل *العميل* يدير نشر التطبيق؟\". أعِد `\"IaaS\"` إذا كان العميل يدير كليهما، و`\"PaaS\"` إذا كان يدير التطبيق فقط (لا نظام التشغيل)، و`\"SaaS\"` إذا لم يدر أياً منهما. هذه شجرة القرار بالضبط المستخدمة لتصنيف أي عرض سحابي.",
+      },
+      starterCode: `function classifyModel(managesOS, managesApp) {
+  // TODO: return "IaaS", "PaaS", or "SaaS"
+}
+`,
+      solution: `function classifyModel(managesOS, managesApp) {
+  if (managesOS && managesApp) return "IaaS";
+  if (!managesOS && managesApp) return "PaaS";
+  return "SaaS";
+}
+`,
+      hints: [
+        { en: "If the customer manages the OS, they're always managing the app too — that's IaaS.", ar: "إن كان العميل يدير نظام التشغيل، فهو يدير التطبيق أيضاً دائماً — هذا IaaS." },
+        { en: "PaaS = app managed by customer but not the OS. SaaS = neither is managed by the customer.", ar: "PaaS = العميل يدير التطبيق لا نظام التشغيل. SaaS = لا يدير العميل أياً منهما." },
+      ],
+      tests: [
+        { name: { en: "Managing both is IaaS", ar: "إدارة الاثنين IaaS" }, check: `classifyModel(true, true) === "IaaS"` },
+        { name: { en: "App only, no OS, is PaaS", ar: "التطبيق فقط بلا نظام تشغيل PaaS" }, check: `classifyModel(false, true) === "PaaS"` },
+        { name: { en: "Managing neither is SaaS", ar: "عدم إدارة أي منهما SaaS" }, check: `classifyModel(false, false) === "SaaS"` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: Netflix's move to AWS 🔍
+
+In 2008, a database corruption incident in Netflix's own data center halted DVD shipments for three days. That outage pushed Netflix to rethink owning its infrastructure entirely, and it began an eight-year migration of its whole streaming service to AWS — running on IaaS building blocks like EC2 and S3, the same services you learned about in this course.
+
+By January 2016, Netflix had shut down its last owned data centers and moved 100% of its streaming infrastructure to the cloud. The payoff: Netflix can now automatically scale to handle enormous, unpredictable demand spikes (a new season dropping, a regional event) across 190+ countries, without ever buying a single physical server itself.
+
+Netflix's story is often cited as the definitive proof that the cloud's elasticity and managed services can outperform even a tech giant's own data centers — while also illustrating vendor lock-in in practice: Netflix's architecture is now deeply built around AWS-specific services, a trade-off it accepted deliberately for the operational simplicity gained.`,
+        ar: `## دراسة حالة واقعية: انتقال Netflix إلى AWS 🔍
+
+في 2008، أوقف حادث تلف قاعدة بيانات في مركز بيانات Netflix الخاص شحن أقراص DVD لثلاثة أيام. دفعت تلك الحادثة Netflix لإعادة التفكير في امتلاك بنيتها التحتية كلياً، فبدأت هجرة استغرقت ثماني سنوات لخدمة البث كاملة إلى AWS — تعمل على لبنات IaaS مثل EC2 وS3، نفس الخدمات التي تعلمتها في هذه الدورة.
+
+بحلول يناير 2016، أغلقت Netflix آخر مراكز بياناتها المملوكة ونقلت 100% من بنية البث التحتية إلى السحابة. المكسب: تستطيع Netflix الآن التوسّع تلقائياً للتعامل مع موجات طلب هائلة غير متوقعة (صدور موسم جديد، حدث إقليمي) عبر أكثر من 190 دولة، دون شراء خادم فيزيائي واحد بنفسها.
+
+غالباً ما تُستشهد قصة Netflix كبرهان حاسم على أن مرونة السحابة وخدماتها المُدارة يمكن أن تتفوّق حتى على مراكز بيانات عملاق تقني خاصة به — بينما تُظهر أيضاً الارتباط بالمزوّد عملياً: معمارية Netflix الآن مبنية بعمق حول خدمات خاصة بـ AWS، مقايضة قبلتها عمداً مقابل البساطة التشغيلية المكتسبة.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -116,6 +191,45 @@ That shift — from a huge upfront investment in machines you maintain, to a fle
           explain: {
             en: "Rent by the second like a utility. Startups launch cheaply and only pay more as they actually grow.",
             ar: "استأجر بالثانية كمرفق. الشركات الناشئة تنطلق بثمن رخيص وتدفع أكثر فقط مع نموّها الفعلي.",
+          },
+        },
+        {
+          q: { en: "What is 'vendor lock-in'?", ar: "ما هو 'الارتباط بالمزوّد' (vendor lock-in)؟" },
+          choices: [
+            { en: "Being so dependent on one provider's specific services that switching becomes very costly", ar: "الاعتماد الشديد على خدمات مزوّد واحد بحيث يصبح التبديل مكلفاً جداً" },
+            { en: "A provider physically locking your office door", ar: "مزوّد يقفل باب مكتبك فيزيائياً" },
+            { en: "A type of encryption", ar: "نوع من التشفير" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Deep use of a provider's proprietary services makes migrating to another provider slow and expensive — a key architectural risk.",
+            ar: "الاستخدام العميق لخدمات مزوّد خاصة يجعل الانتقال إلى مزوّد آخر بطيئاً ومكلفاً — خطر معماري رئيسي.",
+          },
+        },
+        {
+          q: { en: "A cloud offering where the customer manages the app but NOT the OS is…", ar: "عرض سحابي يدير فيه العميل التطبيق لكن ليس نظام التشغيل هو…" },
+          choices: [
+            { en: "PaaS", ar: "PaaS" },
+            { en: "IaaS", ar: "IaaS" },
+            { en: "On-premises", ar: "في الموقع" },
+          ],
+          answer: 0,
+          explain: {
+            en: "PaaS hands you a platform to deploy code on — the provider manages the OS and servers underneath.",
+            ar: "PaaS يمنحك منصة لنشر الكود عليها — والمزوّد يدير نظام التشغيل والخوادم تحتها.",
+          },
+        },
+        {
+          q: { en: "Why did Netflix migrate fully to AWS by 2016?", ar: "لماذا هاجرت Netflix بالكامل إلى AWS بحلول 2016؟" },
+          choices: [
+            { en: "To gain the cloud's elasticity for unpredictable global demand, after an outage exposed the risk of owning its infrastructure", ar: "لكسب مرونة السحابة أمام الطلب العالمي غير المتوقع، بعد أن كشف انقطاع عن خطر امتلاك بنيتها التحتية" },
+            { en: "Because AWS was the only company offering internet access", ar: "لأن AWS كانت الشركة الوحيدة التي تقدّم وصولاً للإنترنت" },
+            { en: "It was legally required to do so", ar: "كان ذلك مطلوباً قانونياً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A 2008 data-center outage pushed Netflix toward the cloud; by 2016 it had shut its own data centers and ran fully on AWS's elastic infrastructure.",
+            ar: "دفع انقطاع مركز بيانات عام 2008 Netflix نحو السحابة؛ وبحلول 2016 أغلقت مراكز بياناتها الخاصة وعملت بالكامل على بنية AWS المرنة.",
           },
         },
       ],

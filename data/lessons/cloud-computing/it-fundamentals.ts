@@ -62,6 +62,78 @@ Understanding cloud starts with this: it's not magic, it's *someone else's compu
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Virtualization: one machine pretending to be many 🧩
+
+Here's the trick that made the entire cloud industry possible: **virtualization**. A single physical server has one CPU, one pool of RAM, one set of disks. But a piece of software called a **hypervisor** sits on top of that hardware and slices it into several independent **virtual machines (VMs)**, each believing it has its own private computer.
+
+Think of a hypervisor like a landlord who converts one big house into several separate apartments. Each tenant (VM) gets their own locked door, their own furniture (operating system), and their own utilities bill (allocated CPU/RAM) — but they're all sharing the same building's foundation, walls, and plumbing (the physical hardware).
+
+There are two main types of hypervisor:
+- **Type 1 ("bare-metal")** — runs directly on the hardware, with no host OS underneath. Used in data centers because it's fast and efficient. Examples: VMware ESXi, Microsoft Hyper-V, Xen (which AWS used for years).
+- **Type 2 ("hosted")** — runs as an app on top of a normal OS, like VirtualBox on your Windows laptop. Great for personal testing, too slow and wasteful for a data center serving thousands of customers.
+
+Why this matters for the cloud: when you launch an EC2 instance, AWS isn't handing you a whole physical machine — it's carving out a VM from a much bigger physical server, alongside potentially dozens of other customers' VMs on that same hardware. That's *exactly* how a cloud provider can rent you "a fraction of a computer" cheaply, safely isolated from your neighbors, and how they pack thousands of customers onto a comparatively small number of physical machines. Virtualization is the invisible foundation everything else in this course is built on top of.`,
+        ar: `## المحاكاة الافتراضية: جهاز واحد يتظاهر بأنه عدة أجهزة 🧩
+
+هذه هي الحيلة التي جعلت صناعة السحابة كلها ممكنة: **المحاكاة الافتراضية (Virtualization)**. الخادم الفيزيائي الواحد لديه معالج واحد، وذاكرة واحدة، ومجموعة أقراص واحدة. لكن برنامجاً يُسمّى **المُراقِب (hypervisor)** يجلس فوق ذلك العتاد ويقطّعه إلى عدة **أجهزة افتراضية (VMs)** مستقلة، كل واحد منها يظن أن له حاسوبه الخاص.
+
+فكّر في المُراقِب كمالك عقار يحوّل بيتاً كبيراً إلى عدة شقق منفصلة. كل مستأجر (جهاز افتراضي) يحصل على بابه المقفل الخاص، وأثاثه الخاص (نظام التشغيل)، وفاتورة مرافقه الخاصة (معالج/ذاكرة مخصّصة) — لكنهم جميعاً يتشاركون أساس المبنى وجدرانه وأنابيبه (العتاد الفيزيائي).
+
+هناك نوعان رئيسيان من المُراقِبات:
+- **النوع 1 ("المعدني الخام")** — يعمل مباشرة على العتاد، بلا نظام تشغيل مضيف تحته. يُستخدم في مراكز البيانات لأنه سريع وفعّال. أمثلة: VMware ESXi، وMicrosoft Hyper-V، وXen (الذي استخدمته AWS لسنوات).
+- **النوع 2 ("المُستضاف")** — يعمل كتطبيق فوق نظام تشغيل عادي، كـ VirtualBox على حاسوبك المحمول بويندوز. رائع للاختبار الشخصي، لكنه بطيء ومُهدر جداً لمركز بيانات يخدم آلاف العملاء.
+
+لماذا يهم هذا للسحابة: حين تُطلق نسخة EC2، لا تمنحك AWS جهازاً فيزيائياً كاملاً — بل تقتطع جهازاً افتراضياً من خادم فيزيائي أكبر بكثير، بجانب عشرات الأجهزة الافتراضية المحتملة لعملاء آخرين على نفس العتاد. هذا بالضبط كيف يستطيع مزوّد السحابة تأجيرك "جزءاً من حاسوب" بثمن رخيص، معزولاً بأمان عن جيرانك، وكيف يحشرون آلاف العملاء على عدد صغير نسبياً من الأجهزة الفيزيائية. المحاكاة الافتراضية هي الأساس غير المرئي الذي يُبنى فوقه كل شيء آخر في هذه الدورة.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: "**Build a VM resource allocator.** A hypervisor must reject a new VM request if it would exceed the physical host's capacity. Write `canAllocate(hostFreeRAM, requestedRAM)` that returns `true` if `requestedRAM` is less than or equal to `hostFreeRAM`, and `false` otherwise. This is the exact yes/no check a hypervisor performs before carving out a new virtual machine.",
+        ar: "**ابنِ مخصِّص موارد لجهاز افتراضي.** يجب أن يرفض المُراقِب طلب جهاز افتراضي جديد إذا كان سيتجاوز سعة المضيف الفيزيائي. اكتب `canAllocate(hostFreeRAM, requestedRAM)` تُعيد `true` إذا كانت `requestedRAM` أقل من أو تساوي `hostFreeRAM`، و`false` غير ذلك. هذا بالضبط فحص نعم/لا الذي يجريه المُراقِب قبل اقتطاع جهاز افتراضي جديد.",
+      },
+      starterCode: `function canAllocate(hostFreeRAM, requestedRAM) {
+  // TODO: return true if requestedRAM fits in hostFreeRAM
+}
+`,
+      solution: `function canAllocate(hostFreeRAM, requestedRAM) {
+  return requestedRAM <= hostFreeRAM;
+}
+`,
+      hints: [
+        { en: "This is a single comparison — no loops or extra logic needed.", ar: "هذه مقارنة واحدة فقط — لا حاجة لحلقات أو منطق إضافي." },
+        { en: "Return the boolean result of requestedRAM <= hostFreeRAM directly.", ar: "أعِد نتيجة المقارنة requestedRAM <= hostFreeRAM مباشرة كقيمة منطقية." },
+      ],
+      tests: [
+        { name: { en: "8GB fits in 16GB free", ar: "8GB تناسب 16GB حرة" }, check: `canAllocate(16, 8) === true` },
+        { name: { en: "Exact fit is allowed", ar: "التطابق التام مسموح" }, check: `canAllocate(8, 8) === true` },
+        { name: { en: "32GB does not fit in 16GB free", ar: "32GB لا تناسب 16GB حرة" }, check: `canAllocate(16, 32) === false` },
+        { name: { en: "Zero request always fits", ar: "طلب صفري يناسب دائماً" }, check: `canAllocate(4, 0) === true` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: the launch of AWS EC2 (2006) 🔍
+
+Before 2006, if a startup wanted a server, it bought or leased physical hardware — a slow process involving vendors, shipping, and racking machines in a data center, often taking weeks. Amazon had built massive virtualized data centers to handle its own retail traffic spikes (like the holiday shopping season) and realized most of that capacity sat idle the rest of the year.
+
+In August 2006, Amazon launched **EC2 (Elastic Compute Cloud)**, letting anyone rent a virtual machine by the hour with a credit card and no contract. This was only possible because of mature hypervisor technology (AWS used a modified version of the Xen hypervisor): Amazon could safely slice its physical servers into isolated VMs and rent them to thousands of unrelated customers side-by-side.
+
+EC2's launch is widely regarded as the beginning of modern cloud computing as an industry. It turned infrastructure from a slow, capital-intensive purchase into an instant, pay-as-you-go rental — exactly the shift from "owning" to "renting" this lesson opened with, made real by virtualization.`,
+        ar: `## دراسة حالة واقعية: إطلاق AWS EC2 (2006) 🔍
+
+قبل 2006، إذا أرادت شركة ناشئة خادماً، كانت تشتري أو تستأجر عتاداً فيزيائياً — عملية بطيئة تشمل موردين وشحناً وتركيب أجهزة في مركز بيانات، وتستغرق أسابيع غالباً. كانت أمازون قد بنت مراكز بيانات افتراضية ضخمة للتعامل مع موجات ضغط تجارتها بالتجزئة (كموسم تسوق الأعياد)، وأدركت أن معظم تلك السعة تبقى خاملة بقية العام.
+
+في أغسطس 2006، أطلقت أمازون **EC2 (سحابة الحوسبة المرنة)**، لتتيح لأي شخص استئجار جهاز افتراضي بالساعة ببطاقة ائتمان وبلا عقد. لم يكن هذا ممكناً إلا بفضل تقنية المُراقِب الناضجة (استخدمت AWS نسخة معدّلة من مُراقِب Xen): استطاعت أمازون تقطيع خوادمها الفيزيائية بأمان إلى أجهزة افتراضية معزولة وتأجيرها لآلاف العملاء غير المرتبطين جنباً إلى جنب.
+
+يُعدّ إطلاق EC2 على نطاق واسع بداية الحوسبة السحابية الحديثة كصناعة. حوّل البنية التحتية من شراء بطيء كثيف رأس المال إلى استئجار فوري بالدفع حسب الاستخدام — بالضبط التحوّل من "الامتلاك" إلى "الاستئجار" الذي افتتح به هذا الدرس، وجعلته المحاكاة الافتراضية حقيقة واقعة.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -103,6 +175,32 @@ Understanding cloud starts with this: it's not magic, it's *someone else's compu
             ar: "لينكس يهيمن على الخوادم: مستقر، مجاني، وقابل للبرمجة — بالضبط لماذا هو محوري في عمل السحابة والأمن.",
           },
         },
+        {
+          q: { en: "What does a hypervisor do?", ar: "ماذا يفعل المُراقِب (hypervisor)؟" },
+          choices: [
+            { en: "Slices one physical server into several isolated virtual machines", ar: "يقطّع خادماً فيزيائياً واحداً إلى عدة أجهزة افتراضية معزولة" },
+            { en: "Physically connects two data centers with a cable", ar: "يوصل مركزي بيانات فيزيائياً بكابل" },
+            { en: "Deletes unused files to save space", ar: "يحذف الملفات غير المستخدمة لتوفير المساحة" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A hypervisor is the software layer that carves one physical machine into multiple independent VMs, each with its own OS.",
+            ar: "المُراقِب طبقة برمجية تقطّع جهازاً فيزيائياً واحداً إلى عدة أجهزة افتراضية مستقلة، لكل منها نظام تشغيله الخاص.",
+          },
+        },
+        {
+          q: { en: "Why was AWS EC2's 2006 launch so significant?", ar: "لماذا كان إطلاق AWS EC2 عام 2006 مهماً جداً؟" },
+          choices: [
+            { en: "It let anyone rent a virtual machine by the hour, starting the modern cloud industry", ar: "أتاح لأي شخص استئجار جهاز افتراضي بالساعة، وبدأ صناعة السحابة الحديثة" },
+            { en: "It was the first website ever created", ar: "كان أول موقع ويب يُنشأ إطلاقاً" },
+            { en: "It replaced the need for the internet", ar: "ألغى الحاجة إلى الإنترنت" },
+          ],
+          answer: 0,
+          explain: {
+            en: "EC2 turned buying physical hardware into instant, pay-as-you-go virtual machine rental, made possible by mature hypervisor technology.",
+            ar: "حوّل EC2 شراء العتاد الفيزيائي إلى استئجار فوري لأجهزة افتراضية بالدفع حسب الاستخدام، بفضل تقنية المُراقِب الناضجة.",
+          },
+        },
       ],
     },
     {
@@ -114,6 +212,9 @@ Understanding cloud starts with this: it's not magic, it's *someone else's compu
 - Pieces: CPU/RAM, storage, OS (usually Linux), network
 - Data centers house thousands of servers; the cloud rents you a slice
 - On-prem = own; cloud = rent
+- Virtualization (hypervisors) slices one physical server into many isolated VMs — the invisible foundation of the cloud
+- You built a VM resource allocator that checks if a request fits the host's free capacity
+- AWS EC2's 2006 launch turned that virtualization technology into the modern, pay-as-you-go cloud industry
 
 **Next:** Cloud Concepts — the models (IaaS/PaaS/SaaS) and why the cloud took over.`,
         ar: `## الخلاصة
@@ -122,6 +223,9 @@ Understanding cloud starts with this: it's not magic, it's *someone else's compu
 - الأجزاء: المعالج/الذاكرة، التخزين، نظام التشغيل (لينكس عادة)، الشبكة
 - مراكز البيانات تضم آلاف الخوادم؛ والسحابة تؤجّرك شريحة
 - في الموقع = امتلاك؛ السحابة = استئجار
+- المحاكاة الافتراضية (المُراقِبات) تقطّع خادماً فيزيائياً واحداً إلى أجهزة افتراضية معزولة كثيرة — الأساس غير المرئي للسحابة
+- بنيت مخصِّص موارد لجهاز افتراضي يتحقق من ملاءمة طلب لسعة المضيف الحرة
+- إطلاق AWS EC2 عام 2006 حوّل تقنية المحاكاة الافتراضية تلك إلى صناعة السحابة الحديثة بالدفع حسب الاستخدام
 
 **التالي:** مفاهيم السحابة — النماذج (IaaS/PaaS/SaaS) ولماذا اجتاحت السحابة كل شيء.`,
       },

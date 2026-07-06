@@ -60,6 +60,37 @@ These aren't abstract: every chart you'll build and every model you'll train res
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Correlation is not causation 🔗
+
+Once you can summarize one variable (mean, median, spread), the next question is almost always: **do two variables move together?** That's **correlation** — a number from **-1 to 1** describing how closely two variables track each other.
+
+- **+1** — perfect positive: as one goes up, the other always goes up too (e.g. height and shoe size).
+- **-1** — perfect negative: as one goes up, the other always goes down (e.g. price and quantity sold, roughly).
+- **0** — no relationship at all.
+
+In Python, \`df["ice_cream_sales"].corr(df["temperature"])\` might return something like \`0.85\` — a strong positive correlation. Tempting conclusion: "heat makes people buy ice cream!" That one's probably true — but the general trap is real: **correlation only tells you two things move together, never that one causes the other.**
+
+The classic teaching example: ice cream sales and drowning deaths are strongly correlated across the year. Does ice cream cause drowning? No — a **hidden third variable** (hot summer weather) drives both: more people swim *and* more people buy ice cream. This hidden driver is called a **confounding variable**, and hunting for it is one of the most important habits a data scientist builds. Every time you see "X correlates with Y" in a headline, ask: *could something else be causing both?*
+
+This is why real experiments (like A/B tests, covered elsewhere) exist — they're the main tool that lets you go from "these move together" to "this actually causes that."`,
+        ar: `## الارتباط ليس سببية 🔗
+
+بعد أن تستطيع تلخيص متغير واحد (متوسط، وسيط، تشتت)، يكون السؤال التالي غالباً: **هل يتحرّك متغيران معاً؟** هذا هو **الارتباط (correlation)** — رقم من **-1 إلى 1** يصف مدى تتبّع متغيرين لبعضهما.
+
+- **+1** — ارتباط موجب تام: كلما ارتفع أحدهما ارتفع الآخر دائماً (مثل الطول ومقاس الحذاء).
+- **-1** — ارتباط سالب تام: كلما ارتفع أحدهما انخفض الآخر (مثل السعر والكمية المُباعة، تقريباً).
+- **0** — لا علاقة إطلاقاً.
+
+في بايثون، \`df["ice_cream_sales"].corr(df["temperature"])\` قد تُعيد شيئاً كـ\`0.85\` — ارتباط موجب قوي. الاستنتاج المُغري: "الحر يجعل الناس يشترون الآيس كريم!" هذا على الأرجح صحيح — لكن الفخ العام حقيقي: **الارتباط يخبرك فقط أن متغيرين يتحركان معاً، أبداً أن أحدهما يسبب الآخر.**
+
+المثال التعليمي الكلاسيكي: مبيعات الآيس كريم وحالات الغرق مرتبطة بقوة عبر العام. هل يسبب الآيس كريم الغرق؟ لا — **متغير ثالث خفي** (حرارة الصيف) يقود كليهما: مزيد من الناس يسبحون *و*مزيد منهم يشتري آيس كريم. هذا المحرّك الخفي يُسمّى **متغيراً مُربكاً (confounding variable)**، والبحث عنه من أهم العادات التي يبنيها عالِم البيانات. في كل مرة ترى "X يرتبط بـY" في عنوان خبر، اسأل: *هل قد يكون شيء آخر يسبب كليهما؟*
+
+لهذا توجد التجارب الحقيقية (مثل اختبارات A/B، مذكورة في مكان آخر) — إنها الأداة الرئيسية التي تنقلك من "هذان يتحركان معاً" إلى "هذا يسبب ذاك فعلاً".`,
+      },
+    },
+    {
       type: "exercise",
       lang: "python",
       prompt: {
@@ -112,6 +143,65 @@ print(median([1, 2, 3, 4]))   # 2.5`,
       ],
     },
     {
+      type: "exercise",
+      lang: "python",
+      prompt: {
+        en: `Write \`same_direction_count(xs, ys)\` — a tiny taste of correlation without any library. Given two equal-length lists, count how many **consecutive pairs** move in the "same direction": both increase, or both decrease, from one index to the next.
+
+Example: \`xs=[1,2,3,4]\`, \`ys=[5,6,5,8]\` → steps: xs always rises; ys rises, falls, rises → matches at steps 0 and 2 → \`2\`. This is the intuition behind correlation: do two series tend to move together?`,
+        ar: `اكتب \`same_direction_count(xs, ys)\` — لمحة صغيرة عن الارتباط دون أي مكتبة. بمعطى قائمتين متساويتي الطول، عُدّ كم **زوجاً متتالياً** يتحرك في "نفس الاتجاه": كلاهما يزيد، أو كلاهما ينقص، من فهرس للذي يليه.
+
+مثال: \`xs=[1,2,3,4]\`، \`ys=[5,6,5,8]\` ← الخطوات: xs يرتفع دائماً؛ ys يرتفع ثم ينخفض ثم يرتفع ← تطابق في الخطوتين 0 و2 ← \`2\`. هذه هي الحدس وراء الارتباط: هل تميل سلسلتان للتحرك معاً؟`,
+      },
+      starterCode: `def same_direction_count(xs, ys):
+    count = 0
+    # for each consecutive pair of indices i, i+1:
+    #   x_up = xs[i+1] > xs[i]
+    #   y_up = ys[i+1] > ys[i]
+    #   if x_up == y_up: count += 1
+    return count
+
+print(same_direction_count([1,2,3,4], [5,6,5,8]))  # 2`,
+      solution: `def same_direction_count(xs, ys):
+    count = 0
+    for i in range(len(xs) - 1):
+        x_up = xs[i+1] > xs[i]
+        y_up = ys[i+1] > ys[i]
+        if x_up == y_up:
+            count += 1
+    return count
+
+print(same_direction_count([1,2,3,4], [5,6,5,8]))  # 2`,
+      hints: [
+        { en: `Loop over range(len(xs) - 1) so you always have an i+1 to compare against.`, ar: `كرّر عبر range(len(xs) - 1) كي يكون لديك دائماً i+1 للمقارنة معه.` },
+        { en: `x_up = xs[i+1] > xs[i]; y_up = ys[i+1] > ys[i]; count when they're equal (both True or both False).`, ar: `x_up = xs[i+1] > xs[i]؛ y_up = ys[i+1] > ys[i]؛ عُدّ حين يتساويان (كلاهما True أو كلاهما False).` },
+      ],
+      tests: [
+        { name: { en: "Example gives 2", ar: "المثال يعطي 2" }, check: `assert same_direction_count([1,2,3,4],[5,6,5,8]) == 2` },
+        { name: { en: "Perfectly matching direction", ar: "اتجاه متطابق تماماً" }, check: `assert same_direction_count([1,2,3],[10,20,30]) == 2` },
+        { name: { en: "Perfectly opposite direction", ar: "اتجاه معاكس تماماً" }, check: `assert same_direction_count([1,2,3],[30,20,10]) == 0` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: Anscombe's Quartet 🔍
+
+In 1973, statistician Francis Anscombe built four small datasets — now called **Anscombe's Quartet** — that each have nearly **identical** mean, variance, and correlation. If you only looked at the summary numbers, you'd think all four datasets were the same.
+
+They aren't. When plotted, the four look completely different: one is a clean straight-line relationship, one is a clear curve that a straight-line summary misrepresents, one is a perfect line wrecked by a single outlier, and one is a vertical cluster driven entirely by one extreme point. Same statistics, four totally different stories.
+
+Anscombe built this specifically to warn statisticians against trusting summary numbers alone. It's the direct ancestor of the advice in this lesson and the next one on visualization: **always plot your data.** A mean, a median, and a correlation coefficient are useful shorthand — but they can hide a shape your eyes would catch in half a second.`,
+        ar: `## دراسة حالة واقعية: رباعية أنسكومب 🔍
+
+في 1973، بنى الإحصائي فرانسيس أنسكومب أربع مجموعات بيانات صغيرة — تُعرف الآن بـ**رباعية أنسكومب (Anscombe's Quartet)** — لكل منها متوسط وتباين وارتباط **شبه متطابق**. لو نظرت فقط إلى الأرقام الملخِّصة، لظننت أن المجموعات الأربع متماثلة.
+
+لكنها ليست كذلك. عند رسمها، تبدو الأربع مختلفة تماماً: واحدة علاقة خطية نظيفة، وأخرى منحنى واضح يسيء الملخّص الخطي تمثيله، وثالثة خط تام دمّرته قيمة شاذة واحدة، ورابعة تجمّع عمودي يقوده بالكامل نقطة واحدة متطرفة. نفس الإحصاءات، أربع قصص مختلفة تماماً.
+
+بنى أنسكومب هذا خصيصاً ليحذّر الإحصائيين من الثقة بالأرقام الملخِّصة وحدها. إنه السلف المباشر للنصيحة في هذا الدرس والدرس التالي عن التصوير المرئي: **ارسم بياناتك دائماً.** المتوسط والوسيط ومعامل الارتباط اختصارات مفيدة — لكنها قد تخفي شكلاً كانت عيناك ستلتقطانه خلال نصف ثانية.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -153,6 +243,32 @@ print(median([1, 2, 3, 4]))   # 2.5`,
             ar: "الاحتمال من 0 (أبداً) إلى 1 (مؤكد). و0.92 = مرجّح جداً — كثقة مرشّح البريد أن رسالة مزعجة.",
           },
         },
+        {
+          q: { en: "Ice cream sales and drowning deaths correlate strongly. Why?", ar: "مبيعات الآيس كريم وحالات الغرق مرتبطة بقوة. لماذا؟" },
+          choices: [
+            { en: "Ice cream directly causes drowning", ar: "الآيس كريم يسبب الغرق مباشرة" },
+            { en: "A confounding variable (hot weather) drives both", ar: "متغيّر مُربك (الطقس الحار) يقود كليهما" },
+            { en: "Correlation numbers are always wrong", ar: "أرقام الارتباط خاطئة دائماً" },
+          ],
+          answer: 1,
+          explain: {
+            en: "Hot weather makes people swim more AND buy more ice cream. Correlation ≠ causation — always hunt for a hidden driver.",
+            ar: "الطقس الحار يجعل الناس يسبحون أكثر ويشترون آيس كريماً أكثر. الارتباط لا يعني السببية — ابحث دائماً عن محرّك خفي.",
+          },
+        },
+        {
+          q: { en: "What did Anscombe's Quartet prove?", ar: "ماذا أثبتت رباعية أنسكومب؟" },
+          choices: [
+            { en: "Datasets with nearly identical statistics can look completely different when plotted", ar: "مجموعات بيانات بإحصاءات شبه متطابقة يمكن أن تبدو مختلفة تماماً عند رسمها" },
+            { en: "The mean is always more honest than the median", ar: "المتوسط دائماً أصدق من الوسيط" },
+            { en: "Correlation coefficients are never useful", ar: "معاملات الارتباط ليست مفيدة أبداً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Same mean, variance, and correlation — four totally different shapes. The lesson: always plot your data, don't trust summaries alone.",
+            ar: "نفس المتوسط والتباين والارتباط — أربعة أشكال مختلفة تماماً. الدرس: ارسم بياناتك دائماً، لا تثق بالملخّصات وحدها.",
+          },
+        },
       ],
     },
     {
@@ -163,7 +279,9 @@ print(median([1, 2, 3, 4]))   # 2.5`,
 - Mean vs median vs mode — outliers wreck the mean, median stays honest
 - Spread (standard deviation) is as important as the average
 - Probability (0–1) underlies all prediction
-- You coded mean and median from scratch
+- Correlation (-1 to 1) shows two variables move together — but never proves one causes the other; watch for confounding variables
+- You coded mean, median, and a same-direction correlation check from scratch
+- Anscombe's Quartet shows why you must plot data, not just summarize it
 
 **Next:** Python for Data — pandas, the tool that makes real-world data analysis fast.`,
         ar: `## الخلاصة
@@ -171,6 +289,9 @@ print(median([1, 2, 3, 4]))   # 2.5`,
 - المتوسط مقابل الوسيط مقابل المنوال — القيم الشاذة تدمّر المتوسط، والوسيط يبقى صادقاً
 - التشتت (الانحراف المعياري) لا يقل أهمية عن المتوسط
 - الاحتمال (0–1) يقوم عليه كل تنبؤ
+- الارتباط (-1 إلى 1) يُظهر أن متغيرين يتحركان معاً — لكنه لا يثبت أبداً أن أحدهما يسبب الآخر؛ انتبه للمتغيرات المُربكة
+- برمجت المتوسط والوسيط وفحص تطابق الاتجاه من الصفر
+- رباعية أنسكومب تُظهر لماذا يجب رسم البيانات لا تلخيصها فقط
 - برمجت المتوسط والوسيط من الصفر
 
 **التالي:** بايثون للبيانات — pandas، الأداة التي تجعل تحليل بيانات الواقع سريعاً.`,

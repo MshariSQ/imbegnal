@@ -13,12 +13,14 @@ export const lesson: Lesson = {
 - The idea that took over frontend: **utility classes**
 - Reading Tailwind code (every modern codebase has it)
 - Build your own mini-Tailwind to *truly* understand it
+- **Responsive prefixes** (\`sm:\`, \`md:\`, \`lg:\`) — one class list, every screen size
 - How to add the real Tailwind to a project`,
         ar: `## ماذا ستتعلم
 
 - الفكرة التي اجتاحت عالم الواجهات: **كلاسات الأدوات (utility classes)**
 - قراءة كود Tailwind (كل مشروع حديث يحتوي عليه)
 - بناء Tailwind مصغّر بنفسك *لتفهمه* حقاً
+- **بادئات الاستجابة** (\`sm:\`، \`md:\`، \`lg:\`) — قائمة كلاسات واحدة، لكل حجم شاشة
 - كيف تضيف Tailwind الحقيقي إلى مشروعك`,
       },
     },
@@ -177,6 +179,119 @@ The HTML already uses them — define the classes and watch both cards light up 
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Responsive design — one class list, every screen 📱💻
+
+A phone screen is ~375px wide; a laptop is often 1440px+. Tailwind bakes responsiveness right into the class names using **breakpoint prefixes**:
+
+\`\`\`html
+<div class="p-4 md:p-8 lg:p-12">
+  <!-- padding: 16px on phones, 32px on tablets, 48px on desktops -->
+</div>
+\`\`\`
+
+The default breakpoints (memorize \`md\` and \`lg\` — you'll use them constantly):
+
+- *(no prefix)* — applies to **all** sizes (mobile-first default)
+- \`sm:\` — 640px and up
+- \`md:\` — 768px and up (tablets)
+- \`lg:\` — 1024px and up (small laptops)
+- \`xl:\` — 1280px and up (desktops)
+
+Read \`md:flex\` as "apply \`display: flex\`, but only on screens 768px and wider." Stack them to build a fully responsive layout without writing a single \`@media\` query by hand — e.g. \`hidden md:flex\` means "hidden on mobile, shown as flex from tablet up," the exact pattern behind "hide this menu on phones, show it on desktop."`,
+        ar: `## التصميم المتجاوب — قائمة كلاسات واحدة، لكل شاشة 📱💻
+
+شاشة الهاتف ~375px عرضاً؛ والحاسوب المحمول غالباً 1440px+. يدمج Tailwind الاستجابة مباشرة في أسماء الكلاسات عبر **بادئات نقاط الكسر (breakpoints)**:
+
+\`\`\`html
+<div class="p-4 md:p-8 lg:p-12">
+  <!-- padding: 16px على الهواتف، 32px على الأجهزة اللوحية، 48px على الحواسيب -->
+</div>
+\`\`\`
+
+نقاط الكسر الافتراضية (احفظ \`md\` و\`lg\` — ستستخدمهما باستمرار):
+
+- *(بلا بادئة)* — تُطبَّق على **كل** الأحجام (افتراضي يبدأ من الجوال)
+- \`sm:\` — 640px فأكثر
+- \`md:\` — 768px فأكثر (الأجهزة اللوحية)
+- \`lg:\` — 1024px فأكثر (حواسيب محمولة صغيرة)
+- \`xl:\` — 1280px فأكثر (حواسيب مكتبية)
+
+اقرأ \`md:flex\` كـ"طبّق \`display: flex\`، لكن فقط على شاشات 768px فأعرض." كدّسها لبناء تخطيط متجاوب كامل دون كتابة استعلام \`@media\` واحد يدوياً — مثلاً \`hidden md:flex\` تعني "مخفي على الجوال، معروض كـflex من الجهاز اللوحي فأكبر،" بالضبط النمط خلف "أخفِ هذه القائمة على الهواتف، أظهرها على الحاسوب."`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "web",
+      prompt: {
+        en: `**Add two more utilities to your mini-Tailwind.** In the \`<style>\` block, define:
+1. \`.text-xl\` → \`font-size: 20px\`
+2. \`.flex-row\` → \`display: flex\` and \`gap: 12px\`
+
+The HTML below already uses both classes on a row of two badges.`,
+        ar: `**أضف أداتين أخريين لـ Tailwind المصغّر خاصتك.** في كتلة \`<style>\`، عرّف:
+1. \`.text-xl\` ← \`font-size: 20px\`
+2. \`.flex-row\` ← \`display: flex\` و \`gap: 12px\`
+
+الـ HTML أدناه يستخدم الكلاسين على صف من شارتين.`,
+      },
+      starterCode: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { background: #e2e8f0; font-family: sans-serif; padding: 20px; }
+
+      /* define .text-xl and .flex-row here */
+
+    </style>
+  </head>
+  <body>
+    <div class="flex-row">
+      <span class="text-xl">🔥</span>
+      <span class="text-xl">⭐</span>
+    </div>
+  </body>
+</html>`,
+      solution: `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { background: #e2e8f0; font-family: sans-serif; padding: 20px; }
+
+      .text-xl { font-size: 20px; }
+      .flex-row { display: flex; gap: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="flex-row">
+      <span class="text-xl">🔥</span>
+      <span class="text-xl">⭐</span>
+    </div>
+  </body>
+</html>`,
+      hints: [
+        { en: `.text-xl { font-size: 20px; }`, ar: `.text-xl { font-size: 20px; }` },
+        { en: `.flex-row { display: flex; gap: 12px; }`, ar: `.flex-row { display: flex; gap: 12px; }` },
+      ],
+      tests: [
+        { name: { en: ".text-xl sets font-size to 20px", ar: ".text-xl يضبط font-size على 20px" }, check: `parseFloat(getComputedStyle(document.querySelector(".text-xl")).fontSize) === 20` },
+        { name: { en: ".flex-row is a flex container", ar: ".flex-row حاوية flex" }, check: `getComputedStyle(document.querySelector(".flex-row")).display === "flex"` },
+        { name: { en: ".flex-row has a 12px gap", ar: ".flex-row لها فجوة 12px" }, check: `parseFloat(getComputedStyle(document.querySelector(".flex-row")).gap) === 12` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: this site's own buttons 🔍
+
+Look at any green button throughout this platform's lessons — its class list is real Tailwind you can now read completely: \`bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl px-4 py-2\`. Translated: emerald background, slightly lighter emerald on hover, black text, extra-large rounded corners, and specific horizontal/vertical padding. Not a single custom CSS file was touched to make that button — it's utilities, composed. That's the entire craft of utility-first CSS.`,
+        ar: `## دراسة حالة واقعية: أزرار هذا الموقع نفسها 🔍
+
+انظر لأي زر أخضر عبر دروس هذه المنصة — قائمة كلاساته Tailwind حقيقي تستطيع الآن قراءتها كاملة: \`bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl px-4 py-2\`. مترجمة: خلفية زمردية، أفتح قليلاً عند التمرير، نص أسود، زوايا دائرية كبيرة جداً، وحشو أفقي/رأسي محدد. لم يُلمس ملف CSS مخصص واحد لصنع ذلك الزر — إنها أدوات، مُركَّبة. هذه هي حرفة CSS بأسلوب الأدوات كلها.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -218,6 +333,32 @@ The HTML already uses them — define the classes and watch both cards light up 
             ar: "التنسيقات تعيش مع وسومها، فالتغييرات محلية وآمنة. ولا — ما زلت تحتاج فهم CSS الحقيقي؛ Tailwind اختصار لـ CSS وليس بديلاً عنه.",
           },
         },
+        {
+          q: { en: "What does md:flex mean?", ar: "ماذا تعني md:flex؟" },
+          choices: [
+            { en: "Apply display: flex only on screens 768px and wider", ar: "طبّق display: flex فقط على شاشات 768px فأعرض" },
+            { en: "Apply flex only on mobile phones", ar: "طبّق flex على الهواتف فقط" },
+            { en: "Make the text medium-sized", ar: "اجعل النص متوسط الحجم" },
+          ],
+          answer: 0,
+          explain: {
+            en: "md: is a responsive breakpoint prefix (768px+) — the class only takes effect at that screen width and above.",
+            ar: "md: بادئة نقطة كسر متجاوبة (768px فأكثر) — يسري الكلاس فقط عند ذلك العرض فأكثر.",
+          },
+        },
+        {
+          q: { en: "What does hidden md:flex achieve?", ar: "ماذا يحقق hidden md:flex؟" },
+          choices: [
+            { en: "Hidden on mobile, shown as flex from tablet screens up", ar: "مخفي على الجوال، معروض كـflex من شاشات الأجهزة اللوحية فأكبر" },
+            { en: "Always hidden, on every screen", ar: "مخفي دائماً، على كل شاشة" },
+            { en: "Flex on mobile only", ar: "flex على الجوال فقط" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Combining a base utility (hidden) with a breakpoint-prefixed one (md:flex) is exactly how a 'desktop-only nav, hidden on phones' is built without any @media query.",
+            ar: "دمج أداة أساسية (hidden) مع أخرى ببادئة نقطة كسر (md:flex) هو بالضبط كيف يُبنى 'تنقّل للحاسوب فقط، مخفي على الهواتف' بلا أي استعلام @media.",
+          },
+        },
       ],
     },
     {
@@ -233,7 +374,7 @@ npm install tailwindcss @tailwindcss/vite
 
 …then follow the 2-minute framework guide at **tailwindcss.com/docs/installation** (each framework has an exact recipe).
 
-**Practice plan:** rebuild your HTML & CSS lesson card using only Tailwind classes, then browse a real project (this site's source on GitHub!) and read its class lists — you'll understand every one now.`,
+**Practice plan:** rebuild your HTML & CSS lesson card using only Tailwind classes, add \`md:\` and \`lg:\` variants so it resizes gracefully, then browse a real project (this site's source on GitHub!) and read its class lists — you'll understand every one now.`,
         ar: `## أضف Tailwind الحقيقي
 
 في مشروع Vite/Next:
@@ -244,7 +385,7 @@ npm install tailwindcss @tailwindcss/vite
 
 …ثم اتبع دليل الدقيقتين لإطارك على **tailwindcss.com/docs/installation** (لكل إطار وصفة دقيقة).
 
-**خطة التدريب:** أعد بناء بطاقة درس HTML و CSS باستخدام كلاسات Tailwind فقط، ثم تصفح مشروعاً حقيقياً (كود هذا الموقع على GitHub!) واقرأ قوائم الكلاسات — ستفهم كل واحدة الآن.`,
+**خطة التدريب:** أعد بناء بطاقة درس HTML و CSS باستخدام كلاسات Tailwind فقط، أضف صيغتي \`md:\` و\`lg:\` لتتحجّم بسلاسة، ثم تصفح مشروعاً حقيقياً (كود هذا الموقع على GitHub!) واقرأ قوائم الكلاسات — ستفهم كل واحدة الآن.`,
       },
     },
   ],

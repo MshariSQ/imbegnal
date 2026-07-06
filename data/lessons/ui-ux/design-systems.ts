@@ -134,6 +134,79 @@ Both \`.btn\` buttons already reference \`var(--color-primary)\` and \`var(--rad
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Component states: the part beginners skip 🧩
+
+A beginner designs one version of a button: the happy, default look. A real design system designs the button's **entire life cycle** — every state it can be in:
+
+- **Default** — the normal resting look.
+- **Hover** — a subtle change (darker shade, slight lift) when a mouse pointer is over it, telling sighted mouse users "this is clickable."
+- **Focus** — the visible ring/outline when reached by keyboard (you met this in the accessibility lesson) — non-negotiable for a real system.
+- **Active/pressed** — a brief visual change the instant it's clicked, giving immediate feedback that the click registered.
+- **Disabled** — greyed out and un-clickable, with a lower-emphasis look, so people don't waste time clicking something inactive.
+- **Loading** — a spinner or pulsing state while waiting on a server response, so a click doesn't feel ignored.
+
+Design systems like Material Design and Polaris document all of these for every component, not just the button. Skipping states is exactly how you get an app where a disabled button looks clickable, or a click gives no feedback and people click it five times, or keyboard users can't tell what's focused. **A component isn't "done" until its states are, too** — this is the difference between a design system that merely looks good in a static mockup and one that survives real, messy use.`,
+        ar: `## حالات المكوّن: الجزء الذي يتخطّاه المبتدئون 🧩
+
+يصمّم المبتدئ نسخة واحدة من الزر: المظهر الافتراضي السعيد. أما نظام التصميم الحقيقي فيصمّم **دورة حياة الزر كاملة** — كل حالة يمكن أن يكون فيها:
+
+- **الافتراضي (Default)** — المظهر العادي في السكون.
+- **التمرير (Hover)** — تغيير خفيف (درجة أغمق، ارتفاع طفيف) حين يمرّ مؤشر الفأرة فوقه، مخبراً مستخدمي الفأرة المبصرين "هذا قابل للنقر."
+- **التركيز (Focus)** — الحلقة/الإطار المرئي عند الوصول إليه بلوحة المفاتيح (قابلته في درس إمكانية الوصول) — غير قابل للتفاوض في نظام حقيقي.
+- **النشط/المضغوط (Active)** — تغيير بصري لحظي فور النقر، يمنح تغذية راجعة فورية بأن النقرة سُجّلت.
+- **المعطّل (Disabled)** — رمادي وغير قابل للنقر، بمظهر أقل بروزاً، حتى لا يهدر الناس وقتهم بالنقر على شيء غير نشط.
+- **التحميل (Loading)** — مؤشر دوّار أو حالة نابضة أثناء انتظار استجابة الخادم، حتى لا تشعر النقرة بالتجاهل.
+
+أنظمة تصميم مثل Material Design وPolaris توثّق كل هذه لكل مكوّن، لا الزر فقط. تخطّي الحالات هو بالضبط كيف تحصل على تطبيق فيه زر معطّل يبدو قابلاً للنقر، أو نقرة بلا تغذية راجعة فينقر الناس خمس مرات، أو مستخدمو لوحة مفاتيح لا يعرفون ما هو مُركَّز عليه. **المكوّن لا يكون "جاهزاً" حتى تجهز حالاته أيضاً** — هذا الفرق بين نظام تصميم يبدو جيداً في نموذج ساكن فقط، وآخر يصمد أمام الاستخدام الحقيقي الفوضوي.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Try it yourself: audit a real app's system 🔍
+
+Open any well-built app you use daily (Gmail, a banking app, this very site) and go hunting for its design system, piece by piece:
+
+1. **Find 3 buttons** that look different (a primary action, a secondary/outline button, a destructive "delete" button in red). Notice how each communicates its importance through color alone — that's tokens at work.
+2. **Click and hold** a button — do you see an active/pressed state? Tab to it with your keyboard — is there a visible focus ring?
+3. **Find the spacing rhythm.** Look at the padding around cards or list items — does it feel like the same handful of measurements repeating (8px, 16px, 24px), or does it feel random? Consistent spacing is a token, even if you never see the number.
+4. **Try to break consistency:** can you find one screen where a button or heading looks *slightly* off from the rest? Big products occasionally have these gaps too — spotting them is exactly the skill this lesson teaches.
+
+This 10-minute audit habit — done on apps you admire — trains your eye to see the invisible system holding a good interface together, faster than any tutorial.`,
+        ar: `## جرّب بنفسك: دقّق نظام تطبيق حقيقي 🔍
+
+افتح أي تطبيق جيد البناء تستخدمه يومياً (Gmail، تطبيق بنكي، هذا الموقع نفسه) واذهب تصطاد نظام تصميمه، قطعة بقطعة:
+
+1. **ابحث عن 3 أزرار** تبدو مختلفة (إجراء أساسي، زر ثانوي/محاط بخط، زر "حذف" مدمّر بالأحمر). لاحظ كيف يوصل كلٌّ أهميته بالون وحده — تلك هي الرموز تعمل.
+2. **انقر واستمر بالضغط** على زر — هل ترى حالة نشط/مضغوط؟ انتقل إليه بلوحة المفاتيح — هل توجد حلقة تركيز مرئية؟
+3. **ابحث عن إيقاع المسافات.** انظر للحشو حول البطاقات أو عناصر القوائم — هل يبدو نفس حفنة القياسات تتكرر (8px، 16px، 24px)، أم يبدو عشوائياً؟ المسافة المتسقة رمز، حتى لو لم ترَ الرقم أبداً.
+4. **حاول كسر الاتساق:** هل تجد شاشة فيها زر أو عنوان يبدو *مختلفاً قليلاً* عن البقية؟ المنتجات الكبرى فيها أحياناً هذه الفجوات أيضاً — اكتشافها بالضبط المهارة التي يعلّمها هذا الدرس.
+
+عادة التدقيق هذه لعشر دقائق — على تطبيقات تعجبك — تدرّب عينك على رؤية النظام الخفي الذي يُبقي واجهة جيدة متماسكة، أسرع من أي درس.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: Google's Material Design 🔍
+
+In the early 2010s, Google's products famously looked inconsistent — Gmail, Android, and Search each had their own visual language, built by different teams making independent decisions. In 2014, Google introduced **Material Design**: a single, comprehensive design system with shared components, a spacing/elevation model, motion rules, and color guidelines, applied across virtually all of Google's products and offered publicly for any developer to use.
+
+The impact was twofold. Internally, it let far-flung teams building Android, Gmail, Docs, and dozens of other products all "speak the same visual language" without needing to invent their own button or card from scratch — exactly the speed and consistency benefit from this lesson, at the scale of one of the largest companies on Earth. Externally, Material Design became one of the most widely adopted open design systems in the industry, used by countless third-party apps that wanted a professional, cohesive look without building a system from zero.
+
+Material Design also keeps evolving (it has gone through several major revisions since), which illustrates another benefit of tokens: because the whole system was built on named, shared values rather than one-off decisions, Google could evolve its entire visual identity in stages across every product, instead of manually re-skinning each app one at a time.`,
+        ar: `## دراسة حالة واقعية: Material Design من قوقل 🔍
+
+في أوائل 2010، بدت منتجات قوقل غير متسقة بشكل مشهور — Gmail وAndroid والبحث لكل منها لغة بصرية خاصة، بناها فرق مختلفة تتّخذ قرارات مستقلة. في 2014، قدّمت قوقل **Material Design**: نظام تصميم شامل واحد بمكوّنات مشتركة، ونموذج مسافات/ارتفاع، وقواعد حركة، وإرشادات ألوان، طُبِّق عبر كل منتجات قوقل تقريباً وأُتيح علناً لأي مطوّر ليستخدمه.
+
+كان الأثر مزدوجاً. داخلياً، أتاح لفرق متباعدة تبني Android وGmail وDocs وعشرات المنتجات الأخرى أن "تتحدث نفس اللغة البصرية" دون الحاجة لاختراع زرها أو بطاقتها من الصفر — بالضبط فائدة السرعة والاتساق من هذا الدرس، على نطاق إحدى أكبر الشركات على الأرض. خارجياً، صار Material Design من أكثر أنظمة التصميم المفتوحة اعتماداً في الصناعة، تستخدمه تطبيقات لا حصر لها أرادت مظهراً احترافياً متماسكاً دون بناء نظام من الصفر.
+
+يستمر Material Design أيضاً بالتطوّر (مرّ بعدة مراجعات كبرى منذ ذلك الحين)، ما يوضّح فائدة أخرى للرموز: لأن النظام كله بُني على قيم مسمّاة مشتركة لا قرارات فردية، استطاعت قوقل تطوير هويتها البصرية كاملة على مراحل عبر كل منتج، بدل إعادة تلبيس كل تطبيق يدوياً واحداً تلو الآخر.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -175,6 +248,32 @@ Both \`.btn\` buttons already reference \`var(--color-primary)\` and \`var(--rad
             ar: "إنه الخيط الناظم للمنصة كلها: تعريف واحد، معاد ومحدّث في مكان واحد. أنظمة التصميم تطبّقه على المرئيات.",
           },
         },
+        {
+          q: { en: "Why must a component's disabled and focus states be designed, not just its default look?", ar: "لماذا يجب تصميم حالتَي المكوّن المعطّل والمُركَّز، لا مظهره الافتراضي فقط؟" },
+          choices: [
+            { en: "Skipping states causes real problems: unclear disabled buttons, invisible focus for keyboard users, no click feedback", ar: "تخطّي الحالات يسبب مشاكل حقيقية: أزرار معطّلة غير واضحة، تركيز غير مرئي لمستخدمي لوحة المفاتيح، بلا تغذية راجعة للنقر" },
+            { en: "It's purely decorative and optional", ar: "إنه زخرفي بحت واختياري" },
+            { en: "Only the hover state actually matters", ar: "فقط حالة التمرير هي المهمة فعلاً" },
+          ],
+          answer: 0,
+          explain: {
+            en: "A component isn't done until its whole lifecycle — hover, focus, active, disabled, loading — is designed and consistent.",
+            ar: "المكوّن لا يكتمل حتى تُصمَّم دورة حياته كاملة — تمرير، تركيز، نشط، معطّل، تحميل — بشكل متسق.",
+          },
+        },
+        {
+          q: { en: "What made Google's Material Design so impactful?", ar: "ما الذي جعل Material Design من قوقل مؤثراً جداً؟" },
+          choices: [
+            { en: "It unified visually inconsistent products under one shared system, used internally and adopted industry-wide", ar: "وحّد منتجات غير متسقة بصرياً تحت نظام مشترك واحد، استُخدم داخلياً واعتُمد في الصناعة كلها" },
+            { en: "It was the first design tool ever made", ar: "كان أول أداة تصميم على الإطلاق" },
+            { en: "It replaced the need for developers", ar: "استغنى عن الحاجة للمطوّرين" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Before it, Google's own products looked inconsistent across teams. Material Design gave them (and the industry) one shared visual language.",
+            ar: "قبله، بدت منتجات قوقل نفسها غير متسقة عبر الفرق. Material Design منحها (والصناعة) لغة بصرية مشتركة واحدة.",
+          },
+        },
       ],
     },
     {
@@ -185,6 +284,8 @@ Both \`.btn\` buttons already reference \`var(--color-primary)\` and \`var(--rad
 - A design system is a shared library of reusable components + tokens
 - Design tokens (color, spacing, radius) are defined once and reused
 - Benefits: consistency, speed, collaboration, easy rebranding
+- A component isn't done until all its states (hover, focus, disabled, loading) are designed too
+- Material Design shows how one shared system can unify products at massive scale
 - You built real design tokens with CSS variables
 
 **Next:** Accessibility — making sure your beautiful, consistent designs work for *everyone*.`,
@@ -193,6 +294,8 @@ Both \`.btn\` buttons already reference \`var(--color-primary)\` and \`var(--rad
 - نظام التصميم مكتبة مشتركة من مكوّنات + رموز معاد استخدامها
 - رموز التصميم (لون، مسافة، نصف قطر) تُعرّف مرة وتُعاد
 - الفوائد: الاتساق، السرعة، التعاون، إعادة العلامة السهلة
+- المكوّن لا يكتمل حتى تُصمَّم كل حالاته (تمرير، تركيز، معطّل، تحميل) أيضاً
+- Material Design يُظهر كيف يوحّد نظام مشترك واحد منتجات على نطاق هائل
 - بنيت رموز تصميم حقيقية بمتغيرات CSS
 
 **التالي:** إمكانية الوصول — التأكد من أن تصاميمك الجميلة المتسقة تعمل لـ*الجميع*.`,

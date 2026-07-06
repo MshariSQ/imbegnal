@@ -13,13 +13,17 @@ export const lesson: Lesson = {
 - Why every server and security tool runs on Linux
 - The command line: talking to the computer with **text**
 - The essential commands you'll type forever
-- File permissions — the heart of Linux security`,
+- File permissions — the heart of Linux security
+- **sudo** and root — the most dangerous, most necessary command
+- Chaining commands together with pipes`,
         ar: `## ماذا ستتعلم
 
 - لماذا يعمل كل خادم وأداة أمن على لينكس
 - سطر الأوامر: مخاطبة الحاسوب بـ**النص**
 - الأوامر الأساسية التي ستكتبها للأبد
-- صلاحيات الملفات — قلب أمن لينكس`,
+- صلاحيات الملفات — قلب أمن لينكس
+- **sudo** والمستخدم الجذر — أخطر أمر وأكثره ضرورة
+- ربط الأوامر معاً بالأنابيب`,
       },
     },
     {
@@ -127,6 +131,50 @@ print(error_count)  # 2`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## sudo and root — the master key 🔑
+
+Every Linux system has a **root** user who can do *anything* — read any file, delete any file, install anything, break anything. Your everyday account is deliberately weaker, to protect you from your own mistakes (and from malware acting as you).
+
+\`sudo\` ("superuser do") temporarily borrows root's power for one command:
+
+\`\`\`bash
+cat /etc/shadow        # Permission denied — this file holds password hashes
+sudo cat /etc/shadow   # Works — you've temporarily borrowed root's power
+\`\`\`
+
+**Why this matters for security specifically:** a huge share of real attacks aren't about breaking in — they're about **privilege escalation**: an attacker gets a foothold as a low-privilege user, then hunts for a misconfigured \`sudo\` rule, a world-writable script that root runs, or a leaked root password to become root and own the entire machine. Defensively, the rule is **least privilege** (you met this idea before): give accounts only the \`sudo\` rights they truly need, never share the root password, and audit who can \`sudo\` regularly.`,
+        ar: `## sudo والمستخدم الجذر — المفتاح الرئيسي 🔑
+
+كل نظام لينكس فيه مستخدم **جذر (root)** يستطيع فعل *أي شيء* — قراءة أي ملف، حذف أي ملف، تثبيت أي شيء، كسر أي شيء. حسابك اليومي أضعف عمداً، ليحميك من أخطائك أنت (ومن برمجية خبيثة تتصرف بصفتك).
+
+\`sudo\` ("superuser do") يستعير مؤقتاً قوة الجذر لأمر واحد:
+
+\`\`\`bash
+cat /etc/shadow        # رُفض الإذن — هذا الملف يحمل تجزئات كلمات المرور
+sudo cat /etc/shadow   # يعمل — استعرت مؤقتاً قوة الجذر
+\`\`\`
+
+**لماذا يهم هذا للأمن تحديداً:** حصة هائلة من الهجمات الحقيقية ليست عن الاقتحام — بل عن **تصعيد الصلاحيات (privilege escalation)**: يحصل المهاجم على موطئ قدم كمستخدم منخفض الصلاحية، ثم يبحث عن قاعدة \`sudo\` سيئة الإعداد، أو سكربت قابل للكتابة من الجميع يشغّله الجذر، أو كلمة مرور جذر مسرّبة ليصبح جذراً ويملك الجهاز كاملاً. دفاعياً، القاعدة هي **أقل صلاحية** (قابلت هذه الفكرة سابقاً): امنح الحسابات فقط صلاحيات \`sudo\` التي تحتاجها فعلاً، لا تشارك كلمة مرور الجذر أبداً، وراجع من يستطيع \`sudo\` بانتظام.`,
+      },
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: chmod 777 🔍
+
+One of the most common real-world misconfigurations security scanners find is a file or folder set to \`chmod 777\` — permissions \`rwxrwxrwx\`, meaning *everyone* on the system can read, write, **and execute** it. Developers do this under deadline pressure when a permission error blocks them and \`777\` "just makes the error go away."
+
+The problem: if that folder is reachable from the internet (a web upload directory, for example), an attacker who uploads *any* file can now also **execute** it — turning a simple file upload feature into full control of the server. The fix is always the same principle from this lesson: grant the *minimum* permission that works (usually \`755\` for folders, \`644\` for regular files — owner can write, everyone else can only read), never \`777\` as a "fix."`,
+        ar: `## دراسة حالة واقعية: chmod 777 🔍
+
+من أشيع سوء الإعدادات الواقعية التي تجدها ماسحات الأمن ملف أو مجلد مضبوط على \`chmod 777\` — صلاحيات \`rwxrwxrwx\`، أي أن *الجميع* على النظام يستطيع القراءة والكتابة **والتنفيذ**. يفعل المطورون هذا تحت ضغط الموعد النهائي حين يمنعهم خطأ صلاحية، و\`777\` "يُزيل الخطأ فقط."
+
+المشكلة: إن كان ذلك المجلد قابلاً للوصول من الإنترنت (مجلد رفع ملفات على موقع، مثلاً)، يستطيع مهاجم يرفع *أي* ملف الآن أيضاً **تنفيذه** — محوّلاً ميزة رفع ملف بسيطة إلى تحكّم كامل بالخادم. الحل دائماً نفس مبدأ هذا الدرس: امنح *الحد الأدنى* من الصلاحية التي تعمل (عادة \`755\` للمجلدات، \`644\` للملفات العادية — المالك يكتب، والبقية يقرؤون فقط)، لا \`777\` أبداً كـ"حل."`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -168,6 +216,32 @@ print(error_count)  # 2`,
             ar: "الخوادم والسحابة والأدوات لينكس أولاً، وسطر الأوامر يتيح الأتمتة والعمل عن بُعد — جوهر المهنة.",
           },
         },
+        {
+          q: { en: "What is privilege escalation?", ar: "ما هو تصعيد الصلاحيات؟" },
+          choices: [
+            { en: "An attacker turning low-level access into root/admin access", ar: "مهاجم يحوّل وصولاً منخفض المستوى إلى وصول جذر/مدير" },
+            { en: "A normal system update", ar: "تحديث نظام عادي" },
+            { en: "Deleting a user account", ar: "حذف حساب مستخدم" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Attackers rarely start as root — they get a small foothold, then hunt for a misconfiguration to escalate to full control.",
+            ar: "نادراً ما يبدأ المهاجمون كجذر — يحصلون على موطئ قدم صغير، ثم يبحثون عن سوء إعداد للتصعيد إلى تحكّم كامل.",
+          },
+        },
+        {
+          q: { en: "What is wrong with chmod 777 on an internet-facing folder?", ar: "ما الخطأ في chmod 777 على مجلد متصل بالإنترنت؟" },
+          choices: [
+            { en: "Anyone can write AND execute files there — an uploaded file could run as code", ar: "يستطيع الجميع كتابة وتنفيذ الملفات هناك — قد يعمل ملف مرفوع ككود" },
+            { en: "Nothing — 777 is always the safest setting", ar: "لا شيء — 777 دائماً الإعداد الأكثر أماناً" },
+            { en: "It only affects file size", ar: "يؤثر فقط على حجم الملف" },
+          ],
+          answer: 0,
+          explain: {
+            en: "777 grants read+write+execute to everyone — on a reachable folder that turns a file upload feature into a way to run attacker code.",
+            ar: "777 يمنح القراءة+الكتابة+التنفيذ للجميع — على مجلد متاح، هذا يحوّل ميزة رفع ملفات إلى طريقة لتشغيل كود المهاجم.",
+          },
+        },
       ],
     },
     {
@@ -178,6 +252,8 @@ print(error_count)  # 2`,
 - Linux = the OS of servers and security; you drive it by typing in the terminal
 - Core commands: \`pwd\`, \`ls -la\`, \`cd\`, \`cat\`, \`grep\`
 - Permissions (rwx for owner/group/others) are Linux's built-in defense
+- \`sudo\`/root and privilege escalation — why least privilege matters even more here
+- \`chmod 777\` is a classic, real-world misconfiguration attackers actively scan for
 
 **Do this:** install Ubuntu in a free virtual machine (VirtualBox) or use WSL on Windows, and practice the commands above on real files. **Next:** Python, to automate all of this.`,
         ar: `## الخلاصة
@@ -185,6 +261,8 @@ print(error_count)  # 2`,
 - لينكس = نظام الخوادم والأمن؛ تقوده بالكتابة في الطرفية
 - الأوامر الأساسية: \`pwd\`، \`ls -la\`، \`cd\`، \`cat\`، \`grep\`
 - الصلاحيات (rwx للمالك/المجموعة/البقية) دفاع لينكس المدمج
+- \`sudo\`/الجذر وتصعيد الصلاحيات — لماذا أقل صلاحية يهم هنا أكثر
+- \`chmod 777\` سوء إعداد واقعي كلاسيكي يبحث عنه المهاجمون فعلياً
 
 **افعل هذا:** ثبّت أوبونتو في جهاز افتراضي مجاني (VirtualBox) أو استخدم WSL على ويندوز، وتدرّب على الأوامر أعلاه على ملفات حقيقية. **التالي:** بايثون، لأتمتة كل هذا.`,
       },

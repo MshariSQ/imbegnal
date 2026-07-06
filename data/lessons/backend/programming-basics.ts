@@ -185,6 +185,116 @@ console.log(fizzbuzz(7));  // 7`,
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## Recursion — a function that calls itself 🔁
+
+Loops repeat by going *around*; **recursion** repeats by going *inward* — a function that calls a smaller copy of itself until it reaches a simple case it can answer directly.
+
+Think of Russian nesting dolls: to know how many dolls are in the set, you open the outer doll and ask the same question about the doll inside it — smaller and smaller — until you reach the tiny solid doll that can't open. That smallest doll is the **base case**: the point where the function stops calling itself and just returns an answer.
+
+\`\`\`js
+function countdown(n) {
+  if (n <= 0) {              // base case — stop here
+    console.log("Liftoff!");
+    return;
+  }
+  console.log(n);
+  countdown(n - 1);           // recursive case — a smaller version of the same problem
+}
+\`\`\`
+
+Every recursive function needs exactly these two parts:
+1. **Base case** — the simplest input, answered directly, with no further call (without this, it calls itself forever and crashes with a "stack overflow").
+2. **Recursive case** — the function calls itself with an input that is *closer* to the base case.
+
+Recursion isn't always the fastest choice, but for problems that are naturally "a small version of the same problem" — like walking nested folders, or summing a list — it's often the clearest way to express the idea. Any loop can be rewritten as recursion, and vice versa; it's a second lens for the same skill you just learned: decomposition.`,
+        ar: `## العودية (Recursion) — دالة تستدعي نفسها 🔁
+
+الحلقات تكرّر بالدوران *حول* المشكلة؛ أما **العودية (recursion)** فتكرّر بالتوغّل *داخل* المشكلة — دالة تستدعي نسخة أصغر من نفسها حتى تصل إلى حالة بسيطة تستطيع الإجابة عنها مباشرة.
+
+تخيّل الدمى الروسية المتداخلة: لتعرف كم دمية في المجموعة، تفتح الدمية الخارجية وتسأل نفس السؤال عن الدمية بداخلها — أصغر فأصغر — حتى تصل إلى الدمية الصغيرة الصلبة التي لا تُفتح. تلك الدمية الأصغر هي **الحالة الأساس (base case)**: النقطة التي تتوقف عندها الدالة عن استدعاء نفسها وتُعيد إجابة مباشرة.
+
+\`\`\`js
+function countdown(n) {
+  if (n <= 0) {              // الحالة الأساس — توقف هنا
+    console.log("Liftoff!");
+    return;
+  }
+  console.log(n);
+  countdown(n - 1);           // الحالة العودية — نسخة أصغر من نفس المشكلة
+}
+\`\`\`
+
+كل دالة عودية تحتاج بالضبط هذين الجزأين:
+1. **الحالة الأساس** — أبسط مدخل، تُجاب مباشرة، بلا أي استدعاء إضافي (بدونها تستدعي الدالة نفسها إلى الأبد وتنهار بخطأ "stack overflow").
+2. **الحالة العودية** — تستدعي الدالة نفسها بمدخل *أقرب* إلى الحالة الأساس.
+
+العودية ليست دائماً الخيار الأسرع، لكن للمشكلات التي هي طبيعياً "نسخة أصغر من نفس المشكلة" — كالتجوّل في مجلدات متداخلة، أو جمع عناصر قائمة — غالباً ما تكون أوضح طريقة للتعبير عن الفكرة. أي حلقة يمكن إعادة كتابتها كعودية، والعكس صحيح؛ إنها عدسة ثانية لنفس المهارة التي تعلّمتها للتو: التفكيك.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `Write \`sumRange(n)\` **recursively** (no loops!) that returns the sum of all whole numbers from \`1\` to \`n\`.
+
+Example: \`sumRange(3)\` → \`6\` (1 + 2 + 3). Think: what's the base case (smallest n)? What's the recursive case (sumRange(n) in terms of sumRange(n-1))?`,
+        ar: `اكتب \`sumRange(n)\` **بشكل عودي** (بلا حلقات!) تعيد مجموع كل الأعداد الصحيحة من \`1\` إلى \`n\`.
+
+مثال: \`sumRange(3)\` ← \`6\` (1 + 2 + 3). فكّر: ما الحالة الأساس (أصغر n)؟ وما الحالة العودية (sumRange(n) بدلالة sumRange(n-1))؟`,
+      },
+      starterCode: `function sumRange(n) {
+  // base case: if n is 0 (or less), the sum is 0
+  // recursive case: n + sumRange(n - 1)
+}
+
+console.log(sumRange(3)); // 6
+console.log(sumRange(1)); // 1
+console.log(sumRange(0)); // 0`,
+      solution: `function sumRange(n) {
+  if (n <= 0) return 0;
+  return n + sumRange(n - 1);
+}
+
+console.log(sumRange(3)); // 6
+console.log(sumRange(1)); // 1
+console.log(sumRange(0)); // 0`,
+      hints: [
+        { en: `Base case first: if (n <= 0) return 0;`, ar: `الحالة الأساس أولاً: if (n <= 0) return 0;` },
+        { en: `Recursive case: return n + sumRange(n - 1); — each call handles one number and hands off the rest.`, ar: `الحالة العودية: return n + sumRange(n - 1); — كل استدعاء يعالج رقماً واحداً ويسلّم الباقي.` },
+      ],
+      tests: [
+        { name: { en: "sumRange(3) is 6", ar: "sumRange(3) يساوي 6" }, check: `sumRange(3) === 6` },
+        { name: { en: "sumRange(1) is 1", ar: "sumRange(1) يساوي 1" }, check: `sumRange(1) === 1` },
+        { name: { en: "sumRange(0) is 0", ar: "sumRange(0) يساوي 0" }, check: `sumRange(0) === 0` },
+        { name: { en: "sumRange(5) is 15", ar: "sumRange(5) يساوي 15" }, check: `sumRange(5) === 15` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: FizzBuzz as an industry filter 🔍
+
+The exercise you just solved earlier in this lesson isn't a toy invented for this course — **FizzBuzz** is a real, widely-used technical-interview screening question, popularized around 2007 by programmer Imran Ghory and later written about extensively by Jeff Atwood (co-founder of Stack Overflow).
+
+The backstory is blunt: hiring managers at real companies found that a large share of candidates who listed years of "programming experience" on their résumés **could not** write a program that prints numbers 1 to 100, substituting "Fizz" for multiples of 3 and "Buzz" for multiples of 5. Not because the logic is hard — it's a handful of conditions and a loop — but because some candidates had never truly practiced turning a plain-English rule into working, ordered code (exactly the decomposition skill from this lesson).
+
+FizzBuzz became a standard early-round filter at many companies precisely because it separates "can talk about code" from "can actually write code that runs correctly." It's still used today, sometimes as a live-coding warm-up before a harder problem.
+
+The lesson: the basics in this file — variables, conditions, loops, functions, and decomposing a problem step by step — aren't "beginner filler" to rush past. They are, quite literally, the bar that real companies use to filter candidates before anything else.`,
+        ar: `## دراسة حالة واقعية: FizzBuzz كفلتر صناعي 🔍
+
+التمرين الذي حللته سابقاً في هذا الدرس ليس لعبة اخترعناها لهذه الدورة — **FizzBuzz** سؤال حقيقي وواسع الانتشار في فرز مقابلات العمل التقنية، اشتهر حوالي عام 2007 بفضل المبرمج Imran Ghory، وكتب عنه لاحقاً باستفاضة Jeff Atwood (أحد مؤسسي Stack Overflow).
+
+القصة صريحة: اكتشف مدراء التوظيف في شركات حقيقية أن نسبة كبيرة من المرشحين الذين يذكرون سنوات "خبرة برمجية" في سيرهم الذاتية **لم يستطيعوا** كتابة برنامج يطبع الأرقام من 1 إلى 100، مستبدلاً "Fizz" بمضاعفات 3 و"Buzz" بمضاعفات 5. ليس لأن المنطق صعب — فهو بضعة شروط وحلقة — بل لأن بعض المرشحين لم يتدرّبوا فعلياً على تحويل قاعدة بلغة عادية إلى كود عامل ومرتّب (بالضبط مهارة التفكيك في هذا الدرس).
+
+أصبح FizzBuzz فلتراً معيارياً في الجولة الأولى لدى شركات كثيرة تحديداً لأنه يفصل "يستطيع الحديث عن الكود" عن "يستطيع فعلاً كتابة كود يعمل بشكل صحيح". ولا يزال يُستخدم اليوم، أحياناً كإحماء برمجي مباشر قبل مسألة أصعب.
+
+الدرس: أساسيات هذا الملف — المتغيرات والشروط والحلقات والدوال وتفكيك المشكلة خطوة بخطوة — ليست "حشواً للمبتدئين" يجب تجاوزه بسرعة. إنها، حرفياً، المعيار الذي تستخدمه شركات حقيقية لفرز المرشحين قبل أي شيء آخر.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -226,6 +336,45 @@ console.log(fizzbuzz(7));  // 7`,
             ar: "15 يقبل القسمة على 3، فلو فحصنا Fizz أولاً لعاد مبكراً. الشرط الأكثر تحديداً يجب أن يأتي أولاً.",
           },
         },
+        {
+          q: { en: "Every recursive function must have a…", ar: "كل دالة عودية يجب أن تملك…" },
+          choices: [
+            { en: "For loop inside it", ar: "حلقة for بداخلها" },
+            { en: "Base case that stops the calls", ar: "حالة أساس توقف الاستدعاءات" },
+            { en: "Global variable", ar: "متغيراً عاماً" },
+          ],
+          answer: 1,
+          explain: {
+            en: "Without a base case, a recursive function calls itself forever and crashes with a stack overflow.",
+            ar: "بلا حالة أساس، تستدعي الدالة العودية نفسها إلى الأبد وتنهار بخطأ stack overflow.",
+          },
+        },
+        {
+          q: { en: "In sumRange(n) = n + sumRange(n - 1), what is the recursive case doing?", ar: "في sumRange(n) = n + sumRange(n - 1)، ماذا تفعل الحالة العودية؟" },
+          choices: [
+            { en: "Solving the whole problem at once", ar: "تحل المشكلة كاملة دفعة واحدة" },
+            { en: "Handling one piece and delegating a smaller version of the problem to itself", ar: "تعالج جزءاً واحداً وتفوّض نسخة أصغر من المشكلة لنفسها" },
+            { en: "Deleting the input", ar: "تحذف المدخل" },
+          ],
+          answer: 1,
+          explain: {
+            en: "Each call adds n, then hands off sumRange(n - 1) — a smaller version of the same problem — until n reaches the base case.",
+            ar: "كل استدعاء يضيف n، ثم يسلّم sumRange(n - 1) — نسخة أصغر من نفس المشكلة — حتى يصل n إلى الحالة الأساس.",
+          },
+        },
+        {
+          q: { en: "Why is FizzBuzz used as a real hiring filter?", ar: "لماذا يُستخدم FizzBuzz كفلتر توظيف حقيقي؟" },
+          choices: [
+            { en: "It separates candidates who can actually write working code from those who can't", ar: "يفصل المرشحين القادرين فعلاً على كتابة كود عامل عن غيرهم" },
+            { en: "It tests knowledge of a rare framework", ar: "يختبر معرفة إطار عمل نادر" },
+            { en: "It measures typing speed only", ar: "يقيس سرعة الطباعة فقط" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Many candidates could describe programming concepts but not translate a simple rule into ordered, working code — exactly what FizzBuzz exposes.",
+            ar: "كثير من المرشحين استطاعوا وصف مفاهيم برمجية لكن دون ترجمة قاعدة بسيطة إلى كود مرتّب وعامل — وهذا بالضبط ما يكشفه FizzBuzz.",
+          },
+        },
       ],
     },
     {
@@ -236,6 +385,8 @@ console.log(fizzbuzz(7));  // 7`,
 - Every language shares 4 blocks: variables, conditions, loops, functions
 - The real skill is decomposition — turning problems into ordered steps
 - You solved cart-total and FizzBuzz, a genuine interview classic
+- **Recursion** solves problems by calling a smaller version of themselves, with a base case to stop — you wrote a recursive \`sumRange\`
+- FizzBuzz's real history shows why these fundamentals are an actual hiring filter, not "beginner filler"
 
 **Next:** Databases & SQL — where backend applications store everything permanently.`,
         ar: `## الخلاصة
@@ -243,6 +394,8 @@ console.log(fizzbuzz(7));  // 7`,
 - كل لغة تشترك في 4 لبنات: المتغيرات، الشروط، الحلقات، الدوال
 - المهارة الحقيقية هي التفكيك — تحويل المشكلات إلى خطوات مرتّبة
 - حللت إجمالي السلة وFizzBuzz، كلاسيكيّة مقابلات حقيقية
+- **العودية (Recursion)** تحل المشكلات باستدعاء نسخة أصغر من نفسها، مع حالة أساس للتوقف — كتبت \`sumRange\` عودية
+- تاريخ FizzBuzz الحقيقي يُظهر لماذا هذه الأساسيات فلتر توظيف فعلي، لا "حشو للمبتدئين"
 
 **التالي:** قواعد البيانات وSQL — حيث تخزّن تطبيقات الخلفية كل شيء بشكل دائم.`,
       },

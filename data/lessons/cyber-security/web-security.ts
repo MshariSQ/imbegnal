@@ -11,17 +11,21 @@ export const lesson: Lesson = {
         en: `## What you'll learn
 
 - The two most famous web attacks: **SQL Injection** and **XSS**
+- **CSRF** — tricking a logged-in user's own browser into acting against them
 - Why they happen: mixing *data* with *code*
 - How to detect and prevent them
-- You'll write a real input-sanitizer
+- A real breach caused entirely by SQL injection
+- You'll write a real input-sanitizer and a CSRF-token checker
 
 ⚠️ **Ethics first:** these techniques are for defending systems and testing *your own* (or authorized) applications. Attacking systems you don't own is a crime.`,
         ar: `## ماذا ستتعلم
 
 - أشهر هجومين على الويب: **حقن SQL** و**XSS**
+- **CSRF** — خداع متصفح مستخدم مسجّل الدخول ليتصرف ضد مصلحته
 - لماذا يحدثان: خلط *البيانات* بـ*الكود*
 - كيف تكتشفهما وتمنعهما
-- ستكتب مُنقّي مدخلات حقيقياً
+- اختراق حقيقي سببه حقن SQL بالكامل
+- ستكتب مُنقّي مدخلات حقيقياً وفاحص رمز CSRF
 
 ⚠️ **الأخلاق أولاً:** هذه التقنيات للدفاع عن الأنظمة واختبار تطبيقاتك *أنت* (أو المصرّح لك بها). مهاجمة أنظمة لا تملكها جريمة.`,
       },
@@ -127,6 +131,84 @@ print(escape_html("<script>alert(1)</script>"))
       ],
     },
     {
+      type: "text",
+      body: {
+        en: `## CSRF — hijacking your browser's trust 🎯
+
+SQLi and XSS trick a *server* or exploit *trust in user input*. **CSRF (Cross-Site Request Forgery)** is different: it tricks the **victim's own browser**, using a trust the server has in that browser's cookies.
+
+Here's the attack: you're logged into \`yourbank.com\` (your browser holds a valid session cookie). You then visit a malicious page that contains:
+
+\`\`\`html
+<img src="https://yourbank.com/transfer?to=attacker&amount=1000">
+\`\`\`
+
+Your browser automatically attaches your \`yourbank.com\` cookies to *any* request to that domain — including this sneaky one hidden in an \`<img>\` tag. If the bank's server only checks "does this request have a valid session cookie?", it can't tell the difference between you clicking "transfer" on purpose and your browser being tricked into firing the same request on a stranger's page. This is called the **"confused deputy" problem** — your browser (the deputy) is confused into misusing its own authority.
+
+**The fix: CSRF tokens.** The server embeds a random, secret, one-time token in its own forms. A real request from the bank's own page includes that token; a forged request from an attacker's page has no way to know it. The server rejects any request missing a valid, matching token.`,
+        ar: `## CSRF — اختطاف ثقة متصفحك 🎯
+
+حقن SQL وXSS يخدعان *الخادم* أو يستغلان *الثقة بمدخل المستخدم*. أما **CSRF (تزوير الطلب عبر المواقع)** فمختلف: يخدع **متصفح الضحية نفسه**، مستغلاً ثقة الخادم بكوكيز ذلك المتصفح.
+
+إليك الهجوم: أنت مسجّل الدخول في \`yourbank.com\` (متصفحك يحمل كوكي جلسة صالحاً). ثم تزور صفحة خبيثة تحتوي:
+
+\`\`\`html
+<img src="https://yourbank.com/transfer?to=attacker&amount=1000">
+\`\`\`
+
+متصفحك يرفق تلقائياً كوكيز \`yourbank.com\` بـ*أي* طلب لذلك النطاق — بما فيه هذا الطلب الخبيث المخفي داخل وسم \`<img>\`. إن كان خادم البنك يفحص فقط "هل لهذا الطلب كوكي جلسة صالح؟"، فلا يستطيع التمييز بين ضغطك "تحويل" عمداً وخداع متصفحك ليطلق نفس الطلب على صفحة غريب. يسمى هذا **مشكلة "النائب المخدوع" (confused deputy)** — متصفحك (النائب) خُدع فأساء استخدام سلطته الخاصة.
+
+**الحل: رموز CSRF.** يُضمّن الخادم رمزاً عشوائياً سرياً لمرة واحدة في نماذجه الخاصة. الطلب الحقيقي من صفحة البنك نفسه يتضمن ذلك الرمز؛ والطلب المُزوَّر من صفحة مهاجم لا طريقة له لمعرفته. يرفض الخادم أي طلب بلا رمز صالح مطابق.`,
+      },
+    },
+    {
+      type: "exercise",
+      lang: "js",
+      prompt: {
+        en: `**Simulate CSRF-token validation.** Write \`isValidRequest(sessionToken, submittedToken)\` that returns \`true\` only if the two tokens match **exactly** — modeling how a server rejects a forged request with a missing or wrong token.`,
+        ar: `**حاكِ التحقق من رمز CSRF.** اكتب \`isValidRequest(sessionToken, submittedToken)\` تعيد \`true\` فقط إذا تطابق الرمزان **تماماً** — محاكياً كيف يرفض الخادم طلباً مزوّراً برمز ناقص أو خاطئ.`,
+      },
+      starterCode: `function isValidRequest(sessionToken, submittedToken) {
+  // return true only if they match exactly
+
+}
+
+console.log(isValidRequest("abc123", "abc123"));  // true
+console.log(isValidRequest("abc123", "wrong"));   // false
+console.log(isValidRequest("abc123", undefined)); // false (forged request, no token)`,
+      solution: `function isValidRequest(sessionToken, submittedToken) {
+  return sessionToken === submittedToken;
+}
+
+console.log(isValidRequest("abc123", "abc123"));  // true
+console.log(isValidRequest("abc123", "wrong"));   // false
+console.log(isValidRequest("abc123", undefined)); // false`,
+      hints: [
+        { en: `A single === comparison is the whole function.`, ar: `مقارنة === واحدة هي الدالة كاملة.` },
+        { en: `return sessionToken === submittedToken;`, ar: `return sessionToken === submittedToken;` },
+      ],
+      tests: [
+        { name: { en: "Matching tokens are valid", ar: "الرموز المتطابقة صالحة" }, check: `isValidRequest("abc123", "abc123") === true` },
+        { name: { en: "Wrong token is rejected", ar: "الرمز الخاطئ يُرفض" }, check: `isValidRequest("abc123", "wrong") === false` },
+        { name: { en: "Missing token is rejected", ar: "الرمز المفقود يُرفض" }, check: `isValidRequest("abc123", undefined) === false` },
+      ],
+    },
+    {
+      type: "text",
+      body: {
+        en: `## Real-world case study: TalkTalk (2015) 🔍
+
+In 2015, UK telecom provider **TalkTalk** suffered a breach exposing the personal data of nearly 157,000 customers — names, addresses, bank details for some — after attackers used **SQL injection** against a legacy webpage the company had reportedly forgotten was still running. The vulnerability was in code that, by some reports, was over a decade old.
+
+The cost wasn't just technical: TalkTalk was fined £400,000 by the UK's data protection regulator (the largest such fine at the time) and reportedly lost tens of thousands of customers. The root cause was exactly the pattern from this lesson: user-controllable input reaching a database query, unguarded by parameterized queries — the same class of bug you just learned to prevent.`,
+        ar: `## دراسة حالة واقعية: TalkTalk (2015) 🔍
+
+في 2015، تعرّضت شركة الاتصالات البريطانية **TalkTalk** لاختراق كشف بيانات نحو 157,000 عميل — أسماء، عناوين، وتفاصيل بنكية لبعضهم — بعد أن استخدم المهاجمون **حقن SQL** ضد صفحة ويب قديمة كانت الشركة، بحسب تقارير، قد نسيت أنها ما زالت تعمل. كانت الثغرة في كود يعود، بحسب بعض التقارير، لأكثر من عقد.
+
+لم تكن التكلفة تقنية فقط: غُرّمت TalkTalk 400,000 جنيه إسترليني من جهة حماية البيانات البريطانية (أكبر غرامة من نوعها حينها)، وخسرت بحسب التقارير عشرات آلاف العملاء. السبب الجذري كان بالضبط نمط هذا الدرس: مدخل يتحكم به المستخدم يصل استعلام قاعدة بيانات، غير محمي باستعلامات مُعامَلة — نفس فئة الخطأ الذي تعلّمت للتو منعه.`,
+      },
+    },
+    {
       type: "quiz",
       questions: [
         {
@@ -181,6 +263,45 @@ print(escape_html("<script>alert(1)</script>"))
             ar: "تحقّق، هرّب، وافصل البيانات عن الكود. كل مدخل مذنب حتى تثبت سلامته.",
           },
         },
+        {
+          q: { en: "What makes CSRF different from XSS?", ar: "ما الذي يميّز CSRF عن XSS؟" },
+          choices: [
+            { en: "CSRF abuses the victim's own browser and its trusted session cookies, not injected script", ar: "CSRF يستغل متصفح الضحية نفسه وكوكيز جلسته الموثوقة، لا سكربتاً مُحقناً" },
+            { en: "They are exactly the same attack", ar: "نفس الهجوم تماماً" },
+            { en: "CSRF only affects mobile apps", ar: "CSRF يؤثر فقط على تطبيقات الجوال" },
+          ],
+          answer: 0,
+          explain: {
+            en: "CSRF tricks the browser into sending a request it's already trusted to send (via cookies) — no script injection required, unlike XSS.",
+            ar: "CSRF يخدع المتصفح ليرسل طلباً هو أصلاً موثوق بإرساله (عبر الكوكيز) — بلا حاجة لحقن سكربت، خلافاً لـXSS.",
+          },
+        },
+        {
+          q: { en: "How do CSRF tokens stop a forged request?", ar: "كيف توقف رموز CSRF طلباً مزوّراً؟" },
+          choices: [
+            { en: "A forged request from another site has no way to know the secret token", ar: "الطلب المزوّر من موقع آخر لا طريقة له لمعرفة الرمز السري" },
+            { en: "They encrypt the entire website", ar: "تشفّر الموقع كاملاً" },
+            { en: "They block all cookies", ar: "تحجب كل الكوكيز" },
+          ],
+          answer: 0,
+          explain: {
+            en: "The token must come from the bank's own page, which an attacker's page can't read or guess — so the server can reject requests without it.",
+            ar: "يجب أن يأتي الرمز من صفحة البنك نفسها، التي لا يستطيع المهاجم قراءتها أو تخمينها — فيرفض الخادم الطلبات بدونه.",
+          },
+        },
+        {
+          q: { en: "What actually caused the 2015 TalkTalk breach?", ar: "ما الذي سبب اختراق TalkTalk عام 2015 فعلياً؟" },
+          choices: [
+            { en: "SQL injection against an old, forgotten webpage", ar: "حقن SQL ضد صفحة ويب قديمة منسية" },
+            { en: "A stolen employee laptop", ar: "سرقة حاسوب موظف محمول" },
+            { en: "A power outage", ar: "انقطاع كهرباء" },
+          ],
+          answer: 0,
+          explain: {
+            en: "Exactly the pattern from this lesson: unvalidated input reaching a database query, with a huge real-world cost (fines + lost customers).",
+            ar: "بالضبط نمط هذا الدرس: مدخل غير مُتحقَّق منه يصل استعلام قاعدة بيانات، بتكلفة واقعية هائلة (غرامات + فقدان عملاء).",
+          },
+        },
       ],
     },
     {
@@ -189,16 +310,20 @@ print(escape_html("<script>alert(1)</script>"))
         en: `## Summary
 
 - SQLi and XSS both come from mixing untrusted **data** with **code**
-- Fix SQLi with parameterized queries; fix XSS by escaping output
-- You built a real \`escape_html\` sanitizer
+- CSRF abuses the victim's own trusted browser session — fixed with unpredictable tokens
+- Fix SQLi with parameterized queries; fix XSS by escaping output; fix CSRF with tokens
+- You built a real \`escape_html\` sanitizer and a CSRF-token validator
+- TalkTalk (2015) shows the real financial cost of an unpatched SQL injection flaw
 - Study the **OWASP Top 10** (Resources tab) — the industry checklist of web risks
 
 **Next:** SOC Analysis — monitoring and responding to attacks in a real security team.`,
         ar: `## الخلاصة
 
 - حقن SQL وXSS كلاهما من خلط **بيانات** غير موثوقة بـ**كود**
-- عالِج حقن SQL بالاستعلامات المُعامَلة؛ وعالِج XSS بتهريب المخرجات
-- بنيت مُنقّي \`escape_html\` حقيقياً
+- CSRF يستغل جلسة متصفح الضحية الموثوقة نفسها — يُعالَج برموز لا يمكن التنبؤ بها
+- عالِج حقن SQL بالاستعلامات المُعامَلة؛ وXSS بتهريب المخرجات؛ وCSRF بالرموز
+- بنيت مُنقّي \`escape_html\` حقيقياً وفاحص رمز CSRF
+- TalkTalk (2015) تُظهر التكلفة المالية الحقيقية لثغرة حقن SQL غير مُصلَحة
 - ادرس **OWASP Top 10** (تبويب المصادر) — قائمة الصناعة لمخاطر الويب
 
 **التالي:** تحليل SOC — مراقبة الهجمات والاستجابة لها في فريق أمن حقيقي.`,

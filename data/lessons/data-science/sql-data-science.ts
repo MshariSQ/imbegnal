@@ -84,6 +84,55 @@ ORDER BY avg_age DESC;
       },
     },
     {
+      type: "text",
+      body: {
+        en: `## Combining tables: JOIN 🔗
+
+Real databases split data across many tables to avoid repetition — an \`orders\` table doesn't repeat a customer's full name and email on every row; it just stores a \`customer_id\` and points to a separate \`customers\` table. To answer a real question, you usually need to **combine** them. That's what **JOIN** does.
+
+\`\`\`sql
+SELECT   orders.id, customers.name, orders.amount
+FROM     orders
+JOIN     customers ON orders.customer_id = customers.id;
+\`\`\`
+
+This says: "for every order, look up the matching customer (where the ids line up) and pull their name alongside the order." The most common type is an **INNER JOIN** (what plain \`JOIN\` means by default) — it only keeps rows that have a match in *both* tables. If an order references a customer_id that doesn't exist in \`customers\`, that order is silently dropped from the result.
+
+That's often not what you want. A **LEFT JOIN** keeps *every* row from the first (left) table, filling in \`NULL\` for any customer fields it couldn't find a match for:
+
+\`\`\`sql
+SELECT   orders.id, customers.name
+FROM     orders
+LEFT JOIN customers ON orders.customer_id = customers.id;
+-- every order appears, even ones with a missing/deleted customer
+\`\`\`
+
+**Why this matters for a data scientist:** choosing INNER vs LEFT JOIN silently changes *how many rows* end up in your analysis. Picking the wrong one is one of the most common, hardest-to-notice bugs in a data pipeline — your row count can shrink and nobody notices until a total looks wrong.`,
+        ar: `## دمج الجداول: JOIN 🔗
+
+قواعد البيانات الحقيقية تقسّم البيانات عبر جداول كثيرة لتجنّب التكرار — جدول \`orders\` لا يكرّر اسم العميل الكامل وبريده في كل صف؛ بل يخزّن فقط \`customer_id\` ويشير لجدول \`customers\` منفصل. للإجابة على سؤال حقيقي، تحتاج عادة **دمج** الجداول. هذا ما يفعله **JOIN**.
+
+\`\`\`sql
+SELECT   orders.id, customers.name, orders.amount
+FROM     orders
+JOIN     customers ON orders.customer_id = customers.id;
+\`\`\`
+
+هذا يقول: "لكل طلب، ابحث عن العميل المطابق (حيث تتطابق المعرّفات) واجلب اسمه بجانب الطلب." النوع الأشيع **INNER JOIN** (ما تعنيه \`JOIN\` وحدها افتراضياً) — يبقي فقط الصفوف التي لها تطابق في *كلا* الجدولين. إن أشار طلب إلى customer_id غير موجود في \`customers\`، يُحذف ذلك الطلب بصمت من النتيجة.
+
+هذا غالباً ليس ما تريده. \`LEFT JOIN\` يبقي *كل* صف من الجدول الأول (الأيسر)، ويملأ \`NULL\` لأي حقول عميل لم يجد لها تطابقاً:
+
+\`\`\`sql
+SELECT   orders.id, customers.name
+FROM     orders
+LEFT JOIN customers ON orders.customer_id = customers.id;
+-- كل طلب يظهر، حتى ما كان عميله مفقوداً/محذوفاً
+\`\`\`
+
+**لماذا يهم هذا عالِم البيانات:** اختيار INNER مقابل LEFT JOIN يغيّر بصمت *كم صفاً* ينتهي به المطاف في تحليلك. اختيار النوع الخاطئ من أشيع الأخطاء وأصعبها ملاحظة في خط بيانات — عدد صفوفك قد يتقلّص ولا يلاحظ أحد حتى يبدو المجموع خاطئاً.`,
+      },
+    },
+    {
       type: "exercise",
       lang: "python",
       prompt: {
