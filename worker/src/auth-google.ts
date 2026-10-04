@@ -39,7 +39,7 @@ export async function handleGoogleCallback(req: Request, env: Env): Promise<Resp
     console.error(`google callback failed: ${reason}`);
     return new Response(null, {
       status: 302,
-      headers: { Location: `${env.FRONTEND_URL}/login/?error=auth_failed`, "Set-Cookie": clearState, "Cache-Control": "no-store" },
+      headers: { Location: `${env.FRONTEND_URL}/auth/callback/?error=auth_failed`, "Set-Cookie": clearState, "Cache-Control": "no-store" },
     });
   };
 

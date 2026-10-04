@@ -1,4 +1,4 @@
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8787";
+import { API_URL as API } from "./site";
 
 async function apiFetch(path: string, options?: RequestInit, token?: string) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };

@@ -36,24 +36,37 @@ Browser (static Next.js export on GitHub Pages)        Cloudflare Worker + D1
 
 Merging to `main` runs `.github/workflows/deploy.yml`, in this order:
 
-1. **API** — `wrangler d1 migrations apply --remote` (only migrations not yet applied, tracked in D1's `d1_migrations` table), then `wrangler deploy`.
-2. **Site** — static export built and published to GitHub Pages, only if step 1 succeeded.
+1. **Verify** — lint, type-check and build the site (no external effects; a broken frontend stops here).
+2. **API** — `wrangler d1 migrations apply --remote` (only migrations not yet applied, tracked in D1's `d1_migrations` table), then `wrangler deploy`. Main branch only.
+3. **Site** — the build from step 1 is published to GitHub Pages, only if step 2 succeeded.
+
+The site is also built by Cloudflare's Git integration (Workers Builds, project `imbegnal`) using the root
+`wrangler.jsonc` (`npm run build` → `npx wrangler deploy` publishes `./out` as static assets, with `public/_headers`
+for long-lived caching). That path is independent of the workflow above, so on merge the frontend can go live a
+minute or two before the API deploy finishes; the old and new API/frontend are compatible in both directions
+(new site + old API: email sign-up, sync and tutor show an error until the API is deployed; everything else works).
+`NEXT_PUBLIC_API_URL` defaults to the live Worker in production builds, so a build without env vars cannot ship a localhost URL.
 
 ### One-time setup (no credentials are ever shared in chat or committed)
 
-1. **Cloudflare API token** — dash.cloudflare.com → My Profile → API Tokens → Create Token →
-   template **"Edit Cloudflare Workers"** → add permission **Account › D1 › Edit** → Account Resources: your account → Create.
+1. **Cloudflare API token** — dash.cloudflare.com → My Profile → API Tokens → Create Token → **Create Custom Token** with exactly:
+   **Account › Workers Scripts › Edit** and **Account › D1 › Edit**; Account Resources: your account only; **no Zone permissions**
+   (the "Edit Cloudflare Workers" template also grants route access on every domain in the account, which CI does not need).
 2. **Account ID** — Cloudflare dashboard → Workers & Pages → *Account ID* (right sidebar).
 3. **GitHub** → repo Settings → Secrets and variables → Actions → New repository secret:
    `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 4. **Worker secrets** (encrypted, set once in Cloudflare → Workers & Pages → `skillforge-api` → Settings → Variables and Secrets, type *Secret*):
    `ANTHROPIC_API_KEY` (a console.anthropic.com key, starts with `sk-ant-`), optionally `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
    (redirect URI `<WORKER_URL>/api/auth/google/callback`; then set repo **variable** `GOOGLE_AUTH=1`).
-   `JWT_SECRET` and `GITHUB_CLIENT_SECRET` already exist. Deploys never overwrite secrets, and `keep_vars = true`
-   keeps plain variables you edit in the dashboard (e.g. `AI_MODEL`, `AI_DAILY_LIMIT_GLOBAL`).
+   `JWT_SECRET` and `GITHUB_CLIENT_SECRET` already exist. With `keep_vars = true`, secrets and variables that exist
+   **only in the dashboard** survive deploys. Variables listed in `wrangler.toml [vars]` (`GITHUB_CLIENT_ID`, `FRONTEND_URL`,
+   `WORKER_URL`) are re-applied from the file on every deploy, so edit those in the file, not the dashboard.
 
 Without the two GitHub secrets the API job fails with a clear message and **nothing** is deployed (the live site stays as it was).
 
+> **Rollbacks:** do not roll the Worker back to a version older than the email-accounts release once anyone has signed up
+> with email: the old `/api/auth/me` returned every column (including `password_hash`). Roll forward with a fix instead.
+>
 > If you ever ran the old `schema-v3.sql` by hand against production, tell a maintainer before the first automated deploy:
 > migration `0002` adds the same columns and would fail on a database that already has them.
 
@@ -63,7 +76,7 @@ Local dev against a database created by hand from the old `schema*.sql` files: d
 Local dev: secrets in `worker/.dev.vars` (git-ignored), then in `worker/`:
 `npx wrangler d1 migrations apply skillforge-db --local && npx wrangler dev`, and `npm run dev` at the root.
 
-### AI tutor cost controls (worker vars in `wrangler.toml` `[vars]` or the dashboard)
+### AI tutor cost controls (set these in the Cloudflare dashboard only — Worker → Settings → Variables; do not add them to `wrangler.toml [vars]`, a deploy would reset them)
 
 | Var | Default | Purpose |
 |---|---|---|

@@ -3,7 +3,7 @@
  * id (no account, no IP stored, no cookies) so we can measure the funnel:
  * visit → lesson_start → lesson_done → return. Respects Do Not Track.
  */
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8787";
+import { API_URL as API } from "./site";
 const KEY = "imb-anon";
 
 export type EventName = "lesson_start" | "lesson_done" | "ai_question" | "auth" | "pricing_view" | "pro_click";

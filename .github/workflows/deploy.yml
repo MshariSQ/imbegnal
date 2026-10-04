@@ -17,13 +17,50 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 1) API first: database migrations, then the Cloudflare Worker. The site is
-  #    only built after this succeeds, so the frontend never ships ahead of the
-  #    API it calls. Needs repo secrets CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID.
+  # 1) Verify + build the site. No external effects, so a broken frontend stops
+  #    the pipeline BEFORE the production database or API are touched.
+  build:
+    name: Lint, type-check and build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Lint
+        run: npx eslint . --ignore-pattern worker
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.WORKER_URL }}
+          NEXT_PUBLIC_GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          # Set the repo variable GOOGLE_AUTH=1 once Google OAuth secrets exist on the worker.
+          NEXT_PUBLIC_GOOGLE_AUTH: ${{ vars.GOOGLE_AUTH }}
+          # Served from the root of imbegnal.com — no basePath prefix.
+          NEXT_PUBLIC_BASE_PATH: ""
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  # 2) API: database migrations, then the Cloudflare Worker. Runs only after the
+  #    site verified/built, and BEFORE the site is published, so the frontend
+  #    never ships ahead of the API it calls. Needs repo secrets
+  #    CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID.
   #    Production only: a manual run from another branch skips this job (and so
-  #    the site jobs) instead of migrating the production database.
+  #    the publish job) instead of migrating the production database.
   worker:
     name: Deploy API (Cloudflare Worker + D1)
+    needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     defaults:
@@ -67,42 +104,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
 
-  # 2) Site: static export to GitHub Pages
-  build:
-    needs: worker
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - run: npm ci
-
-      - name: Lint
-        run: npx eslint . --ignore-pattern worker
-
-      - name: Type-check
-        run: npx tsc --noEmit
-
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.WORKER_URL }}
-          NEXT_PUBLIC_GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
-          # Set the repo variable GOOGLE_AUTH=1 once Google OAuth secrets exist on the worker.
-          NEXT_PUBLIC_GOOGLE_AUTH: ${{ vars.GOOGLE_AUTH }}
-          # Served from the root of imbegnal.com — no basePath prefix.
-          NEXT_PUBLIC_BASE_PATH: ""
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: out
-
+  # 3) Publish the site (GitHub Pages)
   deploy:
-    needs: build
+    needs: [build, worker]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
