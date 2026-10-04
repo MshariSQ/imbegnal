@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
-import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
+import { githubDark, githubLightInit } from "@uiw/codemirror-theme-github";
+import { tags as t } from "@lezer/highlight";
 import { html } from "@codemirror/lang-html";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -14,6 +15,9 @@ import { useLang } from "@/lib/lang-context";
 import { useTheme } from "@/lib/theme";
 
 const WATCHDOG_MS = 5_000;
+
+// GitHub light colors atoms/booleans #e36209 (3.5:1 on white); darken to pass WCAG AA (5:1).
+const githubLightAA = githubLightInit({ styles: [{ tag: [t.atom, t.bool, t.special(t.variableName)], color: "#bc4c00" }] });
 
 function extensionsFor(lang: RunnerLang) {
   if (lang === "web") return [html()];
@@ -40,7 +44,7 @@ export default function CodeRunner({
   const { tx } = useLang();
   const L = tx.lesson;
   const extensions = useMemo(
-    () => [...extensionsFor(lang), EditorView.contentAttributes.of({ "aria-label": L.codeEditor })],
+    () => [...extensionsFor(lang), EditorView.contentAttributes.of({ "aria-label": L.codeEditor, tabindex: "0" })],
     [lang, L.codeEditor]
   );
 
@@ -167,7 +171,7 @@ export default function CodeRunner({
           value={value}
           onChange={onChange}
           extensions={extensions}
-          theme={theme === "dark" ? githubDark : githubLight}
+          theme={theme === "dark" ? githubDark : githubLightAA}
           height={editorHeight}
           basicSetup={{ lineNumbers: true, foldGutter: false, highlightActiveLine: true }}
         />
