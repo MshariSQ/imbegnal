@@ -46,6 +46,8 @@ for long-lived caching). That path is independent of the workflow above, so on m
 minute or two before the API deploy finishes; the old and new API/frontend are compatible in both directions
 (new site + old API: email sign-up, sync and tutor show an error until the API is deployed; everything else works).
 `NEXT_PUBLIC_API_URL` defaults to the live Worker in production builds, so a build without env vars cannot ship a localhost URL.
+Cloudflare project settings that match the repo: root directory `/`, build command `npm run build` (optional — `wrangler.jsonc`
+builds `./out` itself when it is missing), deploy command `npx wrangler deploy`, Node version from `.node-version` (22).
 
 ### One-time setup (no credentials are ever shared in chat or committed)
 
