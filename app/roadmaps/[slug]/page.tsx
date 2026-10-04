@@ -37,10 +37,10 @@ export default async function RoadmapPage({ params }: { params: Promise<{ slug: 
 
   if (nodeData.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex-1 flex items-center justify-center min-h-screen text-fg-subtle">
         <div className="text-center">
           <div className="text-5xl mb-4">{roadmap.icon}</div>
-          <p className="text-lg font-semibold text-white mb-2">{roadmap.title} roadmap coming soon</p>
+          <p className="text-lg font-semibold text-fg mb-2">{roadmap.title} roadmap coming soon</p>
           <p className="text-sm">We&apos;re building this one. Check back soon!</p>
         </div>
       </div>

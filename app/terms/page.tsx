@@ -14,22 +14,22 @@ export default function TermsPage() {
           <FileText size={16} /><span>{t.eyebrow}</span>
         </div>
         <h1 className="text-4xl font-black mb-3">{t.title}</h1>
-        <p className="text-gray-500 text-sm">{t.lastUpdated}</p>
+        <p className="text-fg-subtle text-sm">{t.lastUpdated}</p>
       </div>
 
       <div className="space-y-8">
         {t.sections.map((s) => (
-          <div key={s.title} className="bg-[#161B22] border border-[#21262d] rounded-2xl p-6">
-            <h2 className="font-bold text-white mb-3">{s.title}</h2>
-            <p className="text-gray-400 text-sm leading-relaxed">{s.body}</p>
+          <div key={s.title} className="bg-surface border border-line rounded-2xl p-6">
+            <h2 className="font-bold text-fg mb-3">{s.title}</h2>
+            <p className="text-fg-muted text-sm leading-relaxed">{s.body}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-12 bg-[#161B22] border border-[#21262d] rounded-2xl p-6 text-center">
-        <p className="text-gray-500 text-sm">
+      <div className="mt-12 bg-surface border border-line rounded-2xl p-6 text-center">
+        <p className="text-fg-subtle text-sm">
           {t.contactNote}{" "}
-          <a href="https://github.com/MshariSQ/skillforge/issues" target="_blank" rel="noopener noreferrer"
+          <a href="https://github.com/MshariSQ/imbegnal/issues" target="_blank" rel="noopener noreferrer"
             className="text-emerald-400 hover:underline">{t.contactLink}</a>.
         </p>
       </div>

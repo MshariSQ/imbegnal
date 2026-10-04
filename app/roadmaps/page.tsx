@@ -24,17 +24,17 @@ export default function RoadmapsPage() {
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {items.map((r) => (
         <a key={r.id} href={`${BASE}/roadmaps/${r.id}/`}
-          className="group relative bg-[#161B22] border border-[#21262d] hover:border-[#30363d] rounded-2xl p-6 transition-all hover:-translate-y-1 overflow-hidden">
+          className="group relative bg-surface border border-line hover:border-line-strong rounded-2xl p-6 transition-all hover:-translate-y-1 overflow-hidden">
           <div className={`absolute inset-0 bg-gradient-to-br ${r.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
           <div className="relative">
             <div className="text-3xl mb-4">{r.icon}</div>
-            <h3 className="font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">{r.title}</h3>
-            <p className="text-sm text-gray-500 mb-4 leading-relaxed">{r.description}</p>
+            <h3 className="font-bold text-fg mb-2 group-hover:text-emerald-400 transition-colors">{r.title}</h3>
+            <p className="text-sm text-fg-subtle mb-4 leading-relaxed">{r.description}</p>
             <div className="flex items-center justify-between mb-3">
               <span className={`text-xs px-2 py-0.5 rounded-full border ${levelColors[r.level]}`}>{r.level}</span>
-              <span className="text-xs text-gray-600 flex items-center gap-1"><Users size={11} />{r.learners}</span>
+              <span className="text-xs text-fg-faint flex items-center gap-1"><Users size={11} />{r.learners}</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-600 mb-3">
+            <div className="flex items-center gap-1 text-xs text-fg-faint mb-3">
               <Clock size={11} /><span>{r.duration}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-emerald-400 group-hover:gap-2 transition-all">
@@ -53,7 +53,7 @@ export default function RoadmapsPage() {
           <TrendingUp size={16} /><span>{s.eyebrow}</span>
         </div>
         <h1 className="text-4xl md:text-5xl font-black mb-4">{s.title}</h1>
-        <p className="text-gray-400 max-w-2xl">{s.subtitle}</p>
+        <p className="text-fg-muted max-w-2xl">{s.subtitle}</p>
       </div>
 
       {tech.length > 0 && (

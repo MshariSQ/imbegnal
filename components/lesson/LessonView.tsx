@@ -81,11 +81,11 @@ export default function LessonView({
     <div className="max-w-3xl">
       {/* Lesson header */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <span className="flex items-center gap-1.5 text-xs text-gray-500">
+        <span className="flex items-center gap-1.5 text-xs text-fg-subtle">
           <Clock size={12} /> {lesson.estMinutes} {L.estMinutes}
         </span>
         {totalGates > 0 && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-fg-subtle">
             {L.lessonProgress}: <span className="text-emerald-400 font-semibold">{passedGates}/{totalGates}</span>
           </span>
         )}

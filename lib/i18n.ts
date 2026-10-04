@@ -1,3 +1,5 @@
+import { platformEn, platformAr } from "./i18n-platform";
+
 export type Lang = "en" | "ar";
 
 export const translations = {
@@ -12,6 +14,14 @@ export const translations = {
       getStarted: "Get Started",
       signOut: "Sign out",
       profile: "Profile",
+      learn: "Courses",
+      dashboard: "Dashboard",
+      pricing: "Pricing",
+      resources: "Resources",
+      login: "Log in",
+      startFree: "Start free",
+      toggleTheme: "Toggle dark mode",
+      menu: "Menu",
     },
     footer: {
       tagline: "Free and open-source platform for learning roadmaps, certifications, and career guidance.",
@@ -178,7 +188,7 @@ export const translations = {
         { title: "7. Disclaimer of Warranties", body: `The Platform is provided "as is" without warranty of any kind, express or implied. IMBEGNAL does not warrant that the service will be uninterrupted, error-free, or that course/certification information is always current. Always verify pricing and availability directly with the certification provider.` },
         { title: "8. Limitation of Liability", body: "To the maximum extent permitted by law, IMBEGNAL and its contributors shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Platform." },
         { title: "9. Changes to Terms", body: `We reserve the right to update these Terms of Service at any time. Changes will be reflected by updating the "Last Updated" date below. Continued use of the Platform after changes constitutes acceptance of the new terms.` },
-        { title: "10. Open Source", body: "IMBEGNAL is open source. You can view, fork, and contribute to the code at github.com/MshariSQ/skillforge under the MIT License. Community contributions are welcome and encouraged." },
+        { title: "10. Open Source", body: "IMBEGNAL is open source. You can view, fork, and contribute to the code at github.com/MshariSQ/imbegnal under the MIT License. Community contributions are welcome and encouraged." },
       ],
     },
     privacyPage: {
@@ -201,6 +211,7 @@ export const translations = {
         { title: "Changes to This Policy", body: `We may update this Privacy Policy from time to time. Changes are reflected by the "Last Updated" date. Significant changes will be communicated via the GitHub repository.` },
       ],
     },
+    ...platformEn,
   },
 
   ar: {
@@ -214,6 +225,14 @@ export const translations = {
       getStarted: "ابدأ الآن",
       signOut: "تسجيل الخروج",
       profile: "الملف الشخصي",
+      learn: "الدورات",
+      dashboard: "لوحتي",
+      pricing: "الأسعار",
+      resources: "الموارد",
+      login: "تسجيل الدخول",
+      startFree: "ابدأ مجاناً",
+      toggleTheme: "تبديل الوضع الداكن",
+      menu: "القائمة",
     },
     footer: {
       tagline: "منصة مجانية ومفتوحة المصدر لخرائط التعلم والشهادات والتوجيه المهني.",
@@ -380,7 +399,7 @@ export const translations = {
         { title: "٧. إخلاء مسؤولية الضمانات", body: "تُقدَّم المنصة 'كما هي' دون أي ضمان من أي نوع، صريح أو ضمني. لا تضمن IMBEGNAL أن الخدمة ستكون غير منقطعة أو خالية من الأخطاء، أو أن معلومات الدورات/الشهادات محدّثة دائماً. تحقق دائماً من الأسعار والتوفر مباشرة مع مزود الشهادة." },
         { title: "٨. تحديد المسؤولية", body: "إلى الحد الأقصى الذي يسمح به القانون، لن تكون IMBEGNAL ومساهموها مسؤولين عن أي أضرار غير مباشرة أو عرضية أو خاصة أو تبعية ناجمة عن استخدامك للمنصة." },
         { title: "٩. التغييرات في الشروط", body: "نحتفظ بالحق في تحديث شروط الخدمة هذه في أي وقت. ستنعكس التغييرات بتحديث تاريخ 'آخر تحديث' أدناه. استمرار استخدام المنصة بعد التغييرات يُعدّ قبولاً للشروط الجديدة." },
-        { title: "١٠. المصدر المفتوح", body: "IMBEGNAL مفتوح المصدر. يمكنك عرض الكود ونسخه والمساهمة فيه على github.com/MshariSQ/skillforge بموجب رخصة MIT. مساهمات المجتمع مرحب بها ومشجعة." },
+        { title: "١٠. المصدر المفتوح", body: "IMBEGNAL مفتوح المصدر. يمكنك عرض الكود ونسخه والمساهمة فيه على github.com/MshariSQ/imbegnal بموجب رخصة MIT. مساهمات المجتمع مرحب بها ومشجعة." },
       ],
     },
     privacyPage: {
@@ -403,6 +422,7 @@ export const translations = {
         { title: "التغييرات في هذه السياسة", body: "قد نحدّث سياسة الخصوصية هذه من وقت لآخر. تنعكس التغييرات في تاريخ 'آخر تحديث'. ستُبلَّغ التغييرات الجوهرية عبر مستودع GitHub." },
       ],
     },
+    ...platformAr,
   },
 } as const;
 

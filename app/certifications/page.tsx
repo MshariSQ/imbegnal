@@ -34,7 +34,7 @@ export default function CertificationsPage() {
           <Award size={16} /><span>Certifications</span>
         </div>
         <h1 className="text-4xl md:text-5xl font-black mb-4">All Certifications</h1>
-        <p className="text-gray-400 max-w-2xl">
+        <p className="text-fg-muted max-w-2xl">
           {certifications.length} industry-recognized certifications — from entry-level to expert. Click any card to visit the official certification page.
         </p>
       </div>
@@ -42,12 +42,12 @@ export default function CertificationsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search certifications..."
-            className="w-full bg-[#161B22] border border-[#30363d] rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-emerald-500/50 placeholder-gray-600 transition-all"
+            className="w-full bg-surface border border-line-strong rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-emerald-500/50 placeholder:text-fg-faint transition-all"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -57,8 +57,8 @@ export default function CertificationsPage() {
               onClick={() => setField(f)}
               className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
                 field === f
-                  ? "bg-emerald-500 border-emerald-500 text-black font-medium"
-                  : "border-[#30363d] text-gray-400 hover:text-white hover:border-gray-500"
+                  ? "bg-emerald-500 border-emerald-500 text-brand-fg font-medium"
+                  : "border-line-strong text-fg-muted hover:text-fg hover:border-fg-faint"
               }`}
             >
               {f}
@@ -69,7 +69,7 @@ export default function CertificationsPage() {
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="text-center py-24 text-gray-500">No certifications found.</div>
+        <div className="text-center py-24 text-fg-subtle">No certifications found.</div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((cert) => (
@@ -78,14 +78,14 @@ export default function CertificationsPage() {
               href={cert.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group bg-[#161B22] border border-[#21262d] hover:border-emerald-500/30 rounded-2xl p-6 card-hover flex flex-col transition-all"
+              className="group bg-surface border border-line hover:border-emerald-500/30 rounded-2xl p-6 card-hover flex flex-col transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="text-3xl">{cert.providerLogo}</div>
                   <div>
-                    <div className="text-xs text-gray-500">{cert.provider}</div>
-                    <h3 className="font-bold text-white text-sm mt-0.5 group-hover:text-emerald-400 transition-colors">{cert.name}</h3>
+                    <div className="text-xs text-fg-subtle">{cert.provider}</div>
+                    <h3 className="font-bold text-fg text-sm mt-0.5 group-hover:text-emerald-400 transition-colors">{cert.name}</h3>
                   </div>
                 </div>
                 {cert.popular && (
@@ -95,27 +95,27 @@ export default function CertificationsPage() {
                 )}
               </div>
 
-              <p className="text-sm text-gray-500 mb-4 leading-relaxed flex-1">{cert.description}</p>
+              <p className="text-sm text-fg-subtle mb-4 leading-relaxed flex-1">{cert.description}</p>
 
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className={`text-xs px-2 py-0.5 rounded-full border ${difficultyColors[cert.difficulty]}`}>{cert.difficulty}</span>
                 {cert.tags.slice(0, 2).map((tag) => (
-                  <span key={tag} className="text-xs px-2 py-0.5 bg-white/5 border border-white/5 rounded-md text-gray-400">{tag}</span>
+                  <span key={tag} className="text-xs px-2 py-0.5 bg-fg/5 border border-fg/5 rounded-md text-fg-muted">{tag}</span>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-[#21262d]">
+              <div className="flex items-center justify-between pt-4 border-t border-line">
                 <div className="flex items-center gap-4">
                   <div>
-                    <div className="text-xs text-gray-600">Price</div>
-                    <div className="text-sm font-semibold text-white">{cert.price}</div>
+                    <div className="text-xs text-fg-faint">Price</div>
+                    <div className="text-sm font-semibold text-fg">{cert.price}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-600">Prep Time</div>
-                    <div className="text-sm text-gray-300">{cert.duration}</div>
+                    <div className="text-xs text-fg-faint">Prep Time</div>
+                    <div className="text-sm text-fg-soft">{cert.duration}</div>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-gray-600 group-hover:text-emerald-400 transition-colors" />
+                <ChevronRight size={18} className="text-fg-faint group-hover:text-emerald-400 transition-colors" />
               </div>
             </a>
           ))}

@@ -10,6 +10,7 @@ import type { ExerciseTest, RunnerLang } from "@/data/lessons/types";
 import { buildSrcdoc, type ConsoleEntry, type TestResult } from "@/lib/runner/web-sandbox";
 import { runPython } from "@/lib/runner/python-client";
 import { useLang } from "@/lib/lang-context";
+import { useTheme } from "@/lib/theme";
 
 const WATCHDOG_MS = 5_000;
 
@@ -34,6 +35,7 @@ export default function CodeRunner({
   onCheck?: (allPassed: boolean, results: TestResult[]) => void;
   editorHeight?: string;
 }) {
+  const [theme] = useTheme();
   const { tx } = useLang();
   const L = tx.lesson;
 
@@ -127,13 +129,13 @@ export default function CodeRunner({
   const showPreview = lang === "web";
 
   return (
-    <div className="border border-[#21262d] rounded-xl overflow-hidden bg-[#0D1117]">
+    <div className="border border-line rounded-xl overflow-hidden bg-bg">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-[#161B22] border-b border-[#21262d]">
+      <div className="flex items-center gap-2 px-3 py-2 bg-surface border-b border-line">
         <button
           onClick={() => execute(false)}
           disabled={running}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-black transition-all disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand hover:bg-brand-strong text-brand-fg transition-all disabled:opacity-50"
         >
           {running ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
           {running ? L.running : L.run}
@@ -160,7 +162,7 @@ export default function CodeRunner({
           value={value}
           onChange={onChange}
           extensions={extensionsFor(lang)}
-          theme="dark"
+          theme={theme}
           height={editorHeight}
           basicSetup={{ lineNumbers: true, foldGutter: false, highlightActiveLine: true }}
         />
@@ -168,8 +170,8 @@ export default function CodeRunner({
 
       {/* Preview (web only) */}
       {showPreview && (
-        <div className="border-t border-[#21262d]">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-600 bg-[#161B22]">
+        <div className="border-t border-line">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-fg-faint bg-surface">
             <Eye size={11} /> {L.preview}
           </div>
           <div dir="ltr" className="bg-white min-h-[120px] max-h-[300px] overflow-auto">
@@ -199,14 +201,14 @@ export default function CodeRunner({
       )}
 
       {/* Console */}
-      <div className="border-t border-[#21262d]">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-600 bg-[#161B22]">
+      <div className="border-t border-line">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-fg-faint bg-surface">
           <Terminal size={11} /> {L.console}
         </div>
         <div dir="ltr" className="px-3 py-2 font-mono text-xs min-h-[44px] max-h-[180px] overflow-auto space-y-0.5">
           {timedOut && <div className="text-amber-400">{L.timeout}</div>}
           {!timedOut && consoleEntries.length === 0 && (
-            <div className="text-gray-600">{L.consoleEmpty}</div>
+            <div className="text-fg-faint">{L.consoleEmpty}</div>
           )}
           {consoleEntries.map((c, i) => (
             <div
@@ -214,7 +216,7 @@ export default function CodeRunner({
               className={
                 c.level === "error" ? "text-red-400 whitespace-pre-wrap" :
                 c.level === "warn" ? "text-amber-400 whitespace-pre-wrap" :
-                "text-gray-300 whitespace-pre-wrap"
+                "text-fg-soft whitespace-pre-wrap"
               }
             >
               {c.text}

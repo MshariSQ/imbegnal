@@ -1,33 +1,63 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Tajawal } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { LangProvider } from "@/lib/lang-context";
+import { PRE_PAINT_SCRIPT } from "@/lib/theme";
+import { SITE_URL } from "@/lib/site";
 import ClientLayout from "./ClientLayout";
 
 const geist = Geist({
   variable: "--font-geist",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const tajawal = Tajawal({
   variable: "--font-tajawal",
   subsets: ["arabic"],
-  weight: ["400", "500", "700", "800", "900"],
+  weight: ["400", "500", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "IMBEGNAL — Learn Smarter, Build Your Career",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "IMBEGNAL — Learn tech skills by doing",
+    template: "%s · IMBEGNAL",
+  },
   description:
-    "Free and open-source platform for learning roadmaps, certifications, courses, and career guidance. Everything you need in one place.",
-  keywords: ["roadmap", "certifications", "courses", "career", "learning", "tech"],
+    "Free bilingual (English/Arabic) study platform: structured courses, interactive lessons, in-browser coding exercises, quizzes, notes and an AI tutor — plus roadmaps and certification guides.",
+  keywords: ["learn to code", "courses", "roadmap", "certifications", "cyber security", "AI", "Arabic", "تعلم البرمجة", "دورات"],
+  applicationName: "IMBEGNAL",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "IMBEGNAL",
+    url: SITE_URL,
+    title: "IMBEGNAL — Learn tech skills by doing",
+    description: "Interactive bilingual courses, quizzes and an AI tutor. Free to start.",
+    locale: "en_US",
+    alternateLocale: ["ar_SA"],
+  },
+  twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0c10" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f8fa" },
+  ],
+  width: "device-width",
+  initialScale: 1,
 };
 
 // Best-effort CSP via meta tag (GitHub Pages cannot set response headers).
-// 'unsafe-inline'/'unsafe-eval' are required by Next hydration, the exercise
-// test harness (new Function) and Pyodide (wasm). Production only — in dev it
-// would block the local worker on localhost:8787.
+// 'unsafe-inline'/'unsafe-eval' are required by Next hydration, the pre-paint
+// theme script, the exercise test harness (new Function) and Pyodide (wasm).
+// Production only — in dev it would block the local worker on localhost:8787.
 const CSP =
   "default-src 'self'; " +
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
@@ -41,13 +71,20 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" dir="ltr" className={`${geist.variable} ${tajawal.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      dir="ltr"
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${geist.variable} ${tajawal.variable} h-full antialiased`}
+    >
       <head>
         {process.env.NODE_ENV === "production" && (
           <meta httpEquiv="Content-Security-Policy" content={CSP} />
         )}
+        <script dangerouslySetInnerHTML={{ __html: PRE_PAINT_SCRIPT }} />
       </head>
-      <body className="min-h-full flex flex-col bg-[#0D1117] text-[#e6edf3]">
+      <body className="min-h-full flex flex-col bg-bg text-fg">
         <LangProvider>
           <ClientLayout>
             <Navbar />

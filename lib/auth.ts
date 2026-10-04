@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+
 export interface AuthUser {
   sub: string;
   username: string;
@@ -10,6 +12,7 @@ const TOKEN_KEY = "sf_token";
 
 export function saveToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
+  notifyAuthChange();
 }
 
 export function getToken(): string | null {
@@ -19,6 +22,7 @@ export function getToken(): string | null {
 
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
+  notifyAuthChange();
 }
 
 export function parseToken(token: string): AuthUser | null {
@@ -26,10 +30,8 @@ export function parseToken(token: string): AuthUser | null {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) as AuthUser;
-    if (payload.exp && Date.now() / 1000 > payload.exp) {
-      removeToken();
-      return null;
-    }
+    // Pure check (no side effects) — it also runs during React render.
+    if (payload.exp && Date.now() / 1000 > payload.exp) return null;
     return payload;
   } catch {
     return null;
@@ -46,4 +48,30 @@ export function signOut(): void {
   removeToken();
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   window.location.href = `${base}/`;
+}
+
+// ── React binding ─────────────────────────────────────────────────────────────
+// A tiny external store so every component re-renders on sign-in/out without a
+// context provider. Snapshot is the raw token string (stable between reads).
+
+const authListeners = new Set<() => void>();
+
+export function notifyAuthChange(): void {
+  authListeners.forEach((l) => l());
+}
+
+function subscribeAuth(cb: () => void) {
+  authListeners.add(cb);
+  const onStorage = (e: StorageEvent) => e.key === TOKEN_KEY && cb();
+  window.addEventListener("storage", onStorage);
+  return () => {
+    authListeners.delete(cb);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+/** Current signed-in user (null for guests and during prerender). */
+export function useAuthUser(): AuthUser | null {
+  const token = useSyncExternalStore(subscribeAuth, getToken, () => null);
+  return token ? parseToken(token) : null;
 }

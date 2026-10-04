@@ -37,12 +37,12 @@ function CallbackHandler() {
 
 function Spinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0D1117]">
+    <div className="min-h-screen flex items-center justify-center bg-bg">
       <div className="text-center">
         <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4 animate-pulse">
           <Zap size={24} className="text-emerald-400" />
         </div>
-        <p className="text-gray-400">Signing you in…</p>
+        <p className="text-fg-muted">Signing you in…</p>
       </div>
     </div>
   );

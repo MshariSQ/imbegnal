@@ -34,10 +34,10 @@ export default function QuizBlock({
   }
 
   return (
-    <div className={`my-8 border rounded-2xl overflow-hidden ${allCorrect ? "border-emerald-500/40" : "border-[#30363d]"}`}>
-      <div className={`px-5 py-3 flex items-center gap-2.5 ${allCorrect ? "bg-emerald-500/10" : "bg-[#161B22]"}`}>
+    <div className={`my-8 border rounded-2xl overflow-hidden ${allCorrect ? "border-emerald-500/40" : "border-line-strong"}`}>
+      <div className={`px-5 py-3 flex items-center gap-2.5 ${allCorrect ? "bg-emerald-500/10" : "bg-surface"}`}>
         <HelpCircle size={15} className={allCorrect ? "text-emerald-400" : "text-purple-400"} />
-        <span className="text-sm font-bold text-white flex-1">{L.quizTitle}</span>
+        <span className="text-sm font-bold text-fg flex-1">{L.quizTitle}</span>
         {allCorrect && <span className="text-xs font-semibold text-emerald-400">{L.quizDone}</span>}
       </div>
 
@@ -46,10 +46,10 @@ export default function QuizBlock({
           const state = passed ? "correct" : answered[qi];
           return (
             <div key={qi}>
-              <p className="text-sm text-gray-500 mb-1.5">
+              <p className="text-sm text-fg-subtle mb-1.5">
                 {L.questionOf.replace("{i}", String(qi + 1)).replace("{n}", String(section.questions.length))}
               </p>
-              <p className="text-[15px] font-semibold text-white mb-3">{q.q[lang]}</p>
+              <p className="text-[15px] font-semibold text-fg mb-3">{q.q[lang]}</p>
               <div className="space-y-2">
                 {q.choices.map((c, ci) => {
                   const isSel = selected[qi] === ci;
@@ -75,8 +75,8 @@ export default function QuizBlock({
                           : showWrong
                           ? "border-red-500 bg-red-500/10 text-red-300"
                           : isSel
-                          ? "border-emerald-500/60 bg-emerald-500/5 text-white"
-                          : "border-[#30363d] text-gray-400 hover:border-gray-500 hover:text-gray-200"
+                          ? "border-emerald-500/60 bg-emerald-500/5 text-fg"
+                          : "border-line-strong text-fg-muted hover:border-fg-faint hover:text-fg-soft"
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export default function QuizBlock({
                 <button
                   onClick={() => submit(qi)}
                   disabled={selected[qi] === null}
-                  className="mt-3 px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-black transition-all disabled:opacity-40"
+                  className="mt-3 px-4 py-2 rounded-lg text-xs font-semibold bg-brand hover:bg-brand-strong text-brand-fg transition-all disabled:opacity-40"
                 >
                   {L.quizCheck}
                 </button>
@@ -102,8 +102,8 @@ export default function QuizBlock({
               {state === "correct" && (
                 <div className="mt-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-4 py-3 text-sm">
                   <p className="text-emerald-400 font-semibold mb-1">{L.quizCorrect}</p>
-                  <p className="text-gray-300">
-                    <strong className="text-gray-200">{L.quizExplain}</strong> {q.explain[lang]}
+                  <p className="text-fg-soft">
+                    <strong className="text-fg-soft">{L.quizExplain}</strong> {q.explain[lang]}
                   </p>
                 </div>
               )}
