@@ -7,8 +7,9 @@ import { ArrowUp, Bot, RotateCcw, Square, Sparkles, LogIn } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 import { getToken, useAuthUser } from "@/lib/auth";
 import { ApiError, streamTutor, type TutorMessage } from "@/lib/api";
+import { track as trackEvent } from "@/lib/track";
 
-const MAX_TURNS = 19; // the API accepts up to 20 messages (odd count, ending with the student)
+const MAX_TURNS = 9; // last few turns only (odd count, ending with the student) — keeps requests small and cheap
 
 /** Chat with the AI tutor, grounded in the current lesson. */
 export default function AiTutor({
@@ -55,6 +56,7 @@ export default function AiTutor({
     while (history.length > MAX_TURNS) history = history.slice(2);
     setMessages([...history, { role: "assistant", content: "" }]);
     setBusy(true);
+    trackEvent("ai_question", `${track}/${lesson}`);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -74,7 +76,12 @@ export default function AiTutor({
         // user pressed stop — keep the partial answer
       } else {
         const status = e instanceof ApiError ? e.status : 0;
-        setError(status === 401 ? tx.ai.signInRequired : status === 429 ? tx.ai.limitReached : tx.ai.unavailable);
+        const code = e instanceof ApiError ? e.code : "";
+        setError(
+          status === 401 ? tx.ai.signInRequired
+            : status === 429 ? (code === "capacity" ? tx.ai.capacity : tx.ai.limitReached)
+            : tx.ai.unavailable
+        );
       }
     } finally {
       if (!answer) setMessages(history.slice(0, -1)); // drop the empty turn so history stays valid

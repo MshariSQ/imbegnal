@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Flame, NotebookPen, PlayCircle, Sparkles, Target, Trophy, Cloud } from "lucide-react";
 import type { L10n } from "@/data/lessons/types";
 import { useLang } from "@/lib/lang-context";
-import { useAuthUser } from "@/lib/auth";
+import { getToken, removeToken, useAuthUser } from "@/lib/auth";
+import { deleteAccountRemote } from "@/lib/api";
 import { completedCount, levelInfo, streak, today, totalXp, useStudy } from "@/lib/study-store";
 import ProgressRing from "@/components/ui/ProgressRing";
 import ProgressBar from "@/components/ui/ProgressBar";
@@ -60,6 +61,17 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
   const days = streak(study);
   const doneToday = study.days.includes(today());
   const done = completedCount(study);
+
+  async function deleteAccount() {
+    const token = getToken();
+    if (!token || !window.confirm(d.deleteConfirm)) return;
+    try {
+      await deleteAccountRemote(token);
+      removeToken(); // signs out; progress saved on this device is kept
+    } catch {
+      window.alert(tx.auth.errorGeneric);
+    }
+  }
 
   const lessonIndex = new Map<string, { course: DashboardCourse; lesson: DashboardCourse["lessons"][number] }>(
     courses.flatMap((c) => c.lessons.map((l) => [`${c.id}/${l.id}`, { course: c, lesson: l }] as [string, { course: DashboardCourse; lesson: DashboardCourse["lessons"][number] }]))
@@ -204,7 +216,14 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
           <section className="card p-5 flex items-start gap-3">
             {user ? <Cloud size={18} className="text-emerald-400 mt-0.5 shrink-0" /> : <Trophy size={18} className="text-amber-400 mt-0.5 shrink-0" />}
             <div className="text-sm text-fg-muted">
-              {user ? d.syncOn : (<>{d.syncGuest} <Link href="/login/" className="text-emerald-400 font-semibold hover:underline">{tx.auth.signIn}</Link></>)}
+              {user ? (
+                <>
+                  {d.syncOn}
+                  <button onClick={deleteAccount} className="block mt-2 text-xs text-fg-subtle hover:text-red-400 underline underline-offset-2">
+                    {d.deleteAccount}
+                  </button>
+                </>
+              ) : (<>{d.syncGuest} <Link href="/login/" className="text-emerald-400 font-semibold hover:underline">{tx.auth.signIn}</Link></>)}
             </div>
           </section>
         </aside>

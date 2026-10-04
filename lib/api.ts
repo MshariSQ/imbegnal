@@ -125,3 +125,6 @@ export async function streamTutor(
     }
   }
 }
+
+// ── Account deletion (removes the user and all synced data) ───────────────────
+export const deleteAccountRemote = (token: string) => apiFetch("/api/account", { method: "DELETE" }, token);

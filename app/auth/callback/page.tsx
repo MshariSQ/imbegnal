@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveToken, parseToken } from "@/lib/auth";
+import { track } from "@/lib/track";
 import { Zap } from "lucide-react";
 
 function CallbackHandler() {
@@ -27,6 +28,7 @@ function CallbackHandler() {
     }
 
     saveToken(token);
+    track("auth");
     // Wipe the token from the address bar / history before navigating on.
     window.history.replaceState(null, "", window.location.pathname);
     router.replace("/dashboard/");

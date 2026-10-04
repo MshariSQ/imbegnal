@@ -12,8 +12,10 @@ export interface Env {
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
-  AI_DAILY_LIMIT_FREE?: string;
-  AI_DAILY_LIMIT_PRO?: string;
+  AI_MODEL?: string; // default claude-opus-5-5; claude-sonnet-5-5 / claude-haiku-4-5 are cheaper
+  AI_DAILY_LIMIT_FREE?: string; // per user per day (default 20)
+  AI_DAILY_LIMIT_PRO?: string; // (default 200)
+  AI_DAILY_LIMIT_GLOBAL?: string; // all users combined per day (default 600) — spend kill switch
 }
 
 export interface TokenUser {

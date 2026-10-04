@@ -26,8 +26,10 @@ export async function handleStatePut(req: Request, env: Env, origin: string): Pr
   if (!data || typeof data !== "object" || data.v !== 1) return json({ error: "invalid_state" }, 400, origin);
   const text = JSON.stringify(data);
   if (text.length > MAX_BYTES) return json({ error: "state_too_large" }, 413, origin);
+  // Only for accounts that still exist, so a stale token can't re-create deleted data
   await env.DB.prepare(
-    `INSERT INTO user_state (github_id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+    `INSERT INTO user_state (github_id, data, updated_at)
+     SELECT ?1, ?2, CURRENT_TIMESTAMP WHERE EXISTS (SELECT 1 FROM users WHERE github_id = ?1)
      ON CONFLICT(github_id) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP`
   ).bind(user.sub, text).run();
   return json({ ok: true }, 200, origin, NO_STORE);

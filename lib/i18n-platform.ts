@@ -67,6 +67,7 @@ export const platformEn = {
     errorRateLimited: "Too many attempts — wait a minute and try again.",
     errorAuthFailed: "Sign-in was cancelled or failed. Please try again.",
     guestNote: "You can also keep learning without an account — progress is saved on this device.",
+    noResetNote: "No password reset yet — choose a password you'll remember, or continue with GitHub.",
     perks: ["Sync progress across devices", "Daily streaks & XP", "AI tutor on every lesson"],
   },
   dashboard: {
@@ -91,6 +92,8 @@ export const platformEn = {
     goalDone: "Goal reached today — great work! 🔥",
     syncGuest: "Sign in to back up your progress and use the AI tutor.",
     syncOn: "Progress synced to your account",
+    deleteAccount: "Delete account",
+    deleteConfirm: "Delete your account and all synced data? This can't be undone. Progress saved on this device is kept.",
     viewAll: "View all",
   },
   learn: {
@@ -146,7 +149,8 @@ export const platformEn = {
     clear: "New chat",
     suggestions: ["Explain this lesson like I'm 10", "Give me a real-world example", "Quiz me with 3 questions", "What are common mistakes here?"],
     signInRequired: "Sign in to use the AI tutor — it's free for 20 questions a day.",
-    limitReached: "You've reached today's free AI limit. Upgrade to Pro for more.",
+    limitReached: "You've used today's free AI questions — they reset at 3:00 AM Riyadh time. Pro (coming soon) will raise the limit.",
+    capacity: "The AI tutor has reached today's shared capacity. It resets at 3:00 AM Riyadh time — please try again then.",
     unavailable: "The AI tutor is unavailable right now. Please try again later.",
     disclaimer: "AI can make mistakes. Double-check important facts.",
     you: "You",
@@ -285,6 +289,7 @@ export const platformAr: PlatformTx = {
     errorRateLimited: "محاولات كثيرة — انتظر دقيقة ثم حاول مجدداً.",
     errorAuthFailed: "أُلغي تسجيل الدخول أو فشل. حاول مرة أخرى.",
     guestNote: "يمكنك أيضاً متابعة التعلم بدون حساب — يُحفظ تقدمك على هذا الجهاز.",
+    noResetNote: "لا يوجد استرجاع لكلمة المرور بعد — اختر كلمة مرور تتذكرها، أو تابع عبر GitHub.",
     perks: ["مزامنة التقدم عبر الأجهزة", "سلسلة أيام ونقاط خبرة", "مدرّس ذكي في كل درس"],
   },
   dashboard: {
@@ -309,6 +314,8 @@ export const platformAr: PlatformTx = {
     goalDone: "حققت هدف اليوم — عمل رائع! 🔥",
     syncGuest: "سجّل الدخول لحفظ تقدمك احتياطياً واستخدام المدرّس الذكي.",
     syncOn: "تقدمك متزامن مع حسابك",
+    deleteAccount: "حذف الحساب",
+    deleteConfirm: "هل تريد حذف حسابك وكل بياناتك المتزامنة؟ لا يمكن التراجع عن ذلك. يبقى التقدم المحفوظ على هذا الجهاز.",
     viewAll: "عرض الكل",
   },
   learn: {
@@ -364,7 +371,8 @@ export const platformAr: PlatformTx = {
     clear: "محادثة جديدة",
     suggestions: ["اشرح الدرس كأنني في العاشرة", "أعطني مثالاً من الواقع", "اختبرني بثلاثة أسئلة", "ما الأخطاء الشائعة هنا؟"],
     signInRequired: "سجّل الدخول لاستخدام المدرّس الذكي — مجاني حتى 20 سؤالاً يومياً.",
-    limitReached: "وصلت إلى الحد اليومي المجاني. رقِّ إلى برو للمزيد.",
+    limitReached: "استخدمت أسئلة اليوم المجانية — تُعاد الساعة 3:00 صباحاً بتوقيت الرياض. ستزيد باقة برو (قريباً) الحد.",
+    capacity: "وصل المدرّس الذكي إلى سعته اليومية المشتركة. يُعاد التعيين الساعة 3:00 صباحاً بتوقيت الرياض — حاول حينها.",
     unavailable: "المدرّس الذكي غير متاح حالياً. حاول لاحقاً.",
     disclaimer: "قد يخطئ الذكاء الاصطناعي. تحقّق من المعلومات المهمة.",
     you: "أنت",

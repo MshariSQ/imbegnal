@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 import PageHeader from "@/components/ui/PageHeader";
 import { GITHUB_REPO } from "@/lib/site";
+import { track } from "@/lib/track";
 
 export default function PricingClient() {
   const { tx } = useLang();
   const p = tx.pricing;
   const [yearly, setYearly] = useState(true);
+  useEffect(() => track("pricing_view"), []);
   const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
   return (
@@ -56,7 +58,7 @@ export default function PricingClient() {
                 ))}
               </ul>
               {plan.id === "free" && <Link href="/dashboard/" className="h-11 grid place-items-center rounded-xl border border-line-strong text-fg font-semibold hover:bg-fg/5">{p.getStarted}</Link>}
-              {plan.id === "pro" && <a href={`${GITHUB_REPO}/issues`} target="_blank" rel="noopener noreferrer" className="h-11 grid place-items-center rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-semibold">{p.upgrade}</a>}
+              {plan.id === "pro" && <a href={`${GITHUB_REPO}/issues`} onClick={() => track("pro_click")} target="_blank" rel="noopener noreferrer" className="h-11 grid place-items-center rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-semibold">{p.upgrade}</a>}
               {plan.id === "teams" && <a href={`${GITHUB_REPO}/issues`} target="_blank" rel="noopener noreferrer" className="h-11 grid place-items-center rounded-xl border border-line-strong text-fg font-semibold hover:bg-fg/5">{p.teams}</a>}
             </section>
           );

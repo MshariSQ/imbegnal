@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, Zap } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 import { saveToken } from "@/lib/auth";
+import { track } from "@/lib/track";
 import { ApiError, getGoogleLoginUrl, getLoginUrl, loginWithEmail, registerWithEmail } from "@/lib/api";
 
 const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";
@@ -49,6 +50,7 @@ function AuthForm() {
     try {
       const { token } = mode === "login" ? await loginWithEmail(email, password) : await registerWithEmail(name, email, password);
       saveToken(token);
+      track("auth");
       router.replace(next);
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
@@ -110,7 +112,11 @@ function AuthForm() {
             autoComplete={mode === "login" ? "current-password" : "new-password"}
             dir="ltr"
           />
-          {mode === "register" && <span className="text-xs font-normal text-fg-subtle">{a.passwordHint}</span>}
+          {mode === "register" && (
+            <span className="text-xs font-normal text-fg-subtle">
+              {a.passwordHint}. {a.noResetNote}
+            </span>
+          )}
         </label>
 
         {error && <p role="alert" className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}

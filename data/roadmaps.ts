@@ -9,7 +9,6 @@ export interface Roadmap {
   color: string;
   accent: string;
   category: "tech" | "business";
-  learners: string;
 }
 
 export const roadmaps: Roadmap[] = [
@@ -24,7 +23,6 @@ export const roadmaps: Roadmap[] = [
     color: "from-red-500/10 to-transparent",
     accent: "#ef4444",
     category: "tech",
-    learners: "12.4k",
   },
   {
     id: "artificial-intelligence",
@@ -37,7 +35,6 @@ export const roadmaps: Roadmap[] = [
     color: "from-purple-500/10 to-transparent",
     accent: "#a855f7",
     category: "tech",
-    learners: "18.2k",
   },
   {
     id: "data-science",
@@ -50,7 +47,6 @@ export const roadmaps: Roadmap[] = [
     color: "from-blue-500/10 to-transparent",
     accent: "#3b82f6",
     category: "tech",
-    learners: "21.7k",
   },
   {
     id: "cloud-computing",
@@ -63,7 +59,6 @@ export const roadmaps: Roadmap[] = [
     color: "from-cyan-500/10 to-transparent",
     accent: "#06b6d4",
     category: "tech",
-    learners: "9.8k",
   },
   {
     id: "devops",
@@ -76,7 +71,6 @@ export const roadmaps: Roadmap[] = [
     color: "from-orange-500/10 to-transparent",
     accent: "#f97316",
     category: "tech",
-    learners: "8.3k",
   },
   {
     id: "frontend",
@@ -89,7 +83,6 @@ export const roadmaps: Roadmap[] = [
     color: "from-pink-500/10 to-transparent",
     accent: "#ec4899",
     category: "tech",
-    learners: "34.5k",
   },
   {
     id: "backend",
@@ -102,7 +95,6 @@ export const roadmaps: Roadmap[] = [
     color: "from-green-500/10 to-transparent",
     accent: "#22c55e",
     category: "tech",
-    learners: "27.1k",
   },
   {
     id: "ui-ux",
@@ -115,6 +107,5 @@ export const roadmaps: Roadmap[] = [
     color: "from-violet-500/10 to-transparent",
     accent: "#8b5cf6",
     category: "tech",
-    learners: "15.9k",
   },
 ];

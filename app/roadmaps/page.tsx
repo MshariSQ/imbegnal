@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { roadmaps } from "@/data/roadmaps";
-import { Clock, Users, ArrowRight, TrendingUp } from "lucide-react";
+import { Clock, ArrowRight, TrendingUp } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 
 const levelColors: Record<string, string> = {
@@ -27,7 +27,6 @@ function RoadmapGrid({ items }: { items: typeof roadmaps }) {
             <p className="text-sm text-fg-subtle mb-4 leading-relaxed">{r.description}</p>
             <div className="flex items-center justify-between mb-3">
               <span className={`text-xs px-2 py-0.5 rounded-full border ${levelColors[r.level]}`}>{r.level}</span>
-              <span className="text-xs text-fg-faint flex items-center gap-1"><Users size={11} />{r.learners}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-fg-faint mb-3">
               <Clock size={11} /><span>{r.duration}</span>

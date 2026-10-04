@@ -18,6 +18,7 @@ import { lessonContext, lessonOutline, lessonSummary } from "@/lib/lesson-utils"
 import LessonView, { sectionId } from "@/components/lesson/LessonView";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { toast } from "@/components/ui/Toast";
+import { track } from "@/lib/track";
 import Drawer from "./Drawer";
 import NotesPanel from "./NotesPanel";
 import AiTutor from "./AiTutor";
@@ -72,11 +73,15 @@ export default function LessonPlayer({
 
   useEffect(() => {
     visitLesson(key);
+    track("lesson_start", key);
   }, [key]);
 
   const finish = useCallback(() => {
     const xp = completeLesson(key);
-    if (xp) toast(`${tx.player.done} · ${tx.player.xpGained.replace("{n}", String(xp))}`);
+    if (xp) {
+      toast(`${tx.player.done} · ${tx.player.xpGained.replace("{n}", String(xp))}`);
+      track("lesson_done", key);
+    }
     const token = getToken();
     if (token) markNodeDone(trackId, lesson.nodeId, token).catch(() => {});
   }, [key, trackId, lesson.nodeId, tx]);

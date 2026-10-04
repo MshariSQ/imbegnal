@@ -6,6 +6,7 @@ import { handleLogin, handleRegister } from "./auth-email";
 import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
 import { handleStateGet, handleStatePut } from "./state";
 import { handleTutor } from "./ai";
+import { handleAccountDelete, handleEvent } from "./account";
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // Best-effort per-isolate sliding window. Not global (each Worker isolate has
@@ -312,6 +313,8 @@ export default {
     }
 
     if (pathname === "/api/ai/chat" && req.method === "POST") return handleTutor(req, env, origin, ctx);
+    if (pathname === "/api/event" && req.method === "POST") return handleEvent(req, env, origin);
+    if (pathname === "/api/account" && req.method === "DELETE") return handleAccountDelete(req, env, origin);
 
     if (pathname === "/api/progress") {
       if (req.method === "GET") return handleProgressGet(req, env, origin);
