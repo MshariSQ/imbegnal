@@ -66,7 +66,7 @@ export default function Home({ courses, totals }: { courses: HomeCourse[]; total
       <section className="relative overflow-hidden pt-32 sm:pt-40 pb-20 px-4 sm:px-6 text-center">
         <div aria-hidden className="absolute inset-0 bg-grid opacity-60" />
         <div aria-hidden className="absolute -top-40 start-1/2 -translate-x-1/2 w-[48rem] h-[48rem] rounded-full blur-3xl opacity-20 bg-brand" />
-        <div className="relative max-w-4xl mx-auto animate-fade-up">
+        <div className="relative max-w-4xl mx-auto">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-brand/30 bg-brand/10 text-xs font-semibold text-emerald-400 mb-7">
             <Sparkles size={13} /> {t.badge}
           </span>

@@ -5,7 +5,7 @@ import { Dumbbell, Lightbulb, Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loc
 import type { ExerciseSection } from "@/data/lessons/types";
 import type { TestResult } from "@/lib/runner/web-sandbox";
 import { useLang } from "@/lib/lang-context";
-import CodeRunner from "./CodeRunner";
+import CodeRunner from "./CodeRunnerLazy";
 import TextBlock from "./TextBlock";
 
 export default function ExerciseBlock({

@@ -100,7 +100,7 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-28 pb-16">
-      <header className="mb-8 animate-fade-up">
+      <header className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-fg">
           {user ? `${d.greeting}, ${(user.name || user.username).split(" ")[0]}` : d.greetingGuest}
         </h1>
@@ -108,7 +108,7 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
       </header>
 
       {/* Continue learning */}
-      <section className="card relative overflow-hidden p-6 sm:p-8 mb-6 animate-fade-up">
+      <section className="card relative overflow-hidden p-6 sm:p-8 mb-6">
         <div aria-hidden className="absolute -top-24 -end-24 w-72 h-72 rounded-full blur-3xl opacity-20 bg-brand" />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
           {resume ? (

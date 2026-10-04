@@ -56,7 +56,7 @@ export default function CertificationsPage() {
               onClick={() => setField(f)}
               className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
                 field === f
-                  ? "bg-emerald-500 border-emerald-500 text-brand-fg font-medium"
+                  ? "bg-brand border-brand text-brand-fg font-medium"
                   : "border-line-strong text-fg-muted hover:text-fg hover:border-fg-faint"
               }`}
             >

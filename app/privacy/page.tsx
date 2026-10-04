@@ -36,7 +36,7 @@ export default function PrivacyPage() {
         <p className="text-fg-subtle text-sm">
           {p.contactNote}{" "}
           <a href="https://github.com/MshariSQ/imbegnal/issues" target="_blank" rel="noopener noreferrer"
-            className="text-emerald-400 hover:underline">{p.contactLink}</a>.
+            className="text-emerald-400 underline underline-offset-2">{p.contactLink}</a>.
         </p>
       </div>
     </main>

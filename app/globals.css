@@ -48,8 +48,8 @@
   --fg: #eef0f4;
   --fg-soft: #cfd4de;
   --fg-muted: #9aa3b2;
-  --fg-subtle: #737d8e;
-  --fg-faint: #535c6b;
+  --fg-subtle: #8c95a5; /* ≥ 4.5:1 on every dark surface (WCAG AA) */
+  --fg-faint: #7f8898;
   --brand: #10b981;
   --brand-strong: #34d399;
   --brand-fg: #03140d;
@@ -67,10 +67,10 @@
   --fg: #0e1420;
   --fg-soft: #2a3342;
   --fg-muted: #4f5a6b;
-  --fg-subtle: #6a7586;
-  --fg-faint: #94a0b1;
-  --brand: #059669;
-  --brand-strong: #047857;
+  --fg-subtle: #5c6676; /* ≥ 4.5:1 on every light surface (WCAG AA) */
+  --fg-faint: #626c7d;
+  --brand: #047857; /* white text on brand ≥ 5.4:1 */
+  --brand-strong: #065f46;
   --brand-fg: #ffffff;
   --card-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 8px 24px -12px rgb(16 24 40 / 0.12);
   --glow: rgb(5 150 105 / 0.12);
@@ -79,7 +79,7 @@
      on white. Remap them to their darker siblings so every existing
      `text-emerald-400`, `text-blue-400`… stays readable (WCAG AA). */
   --color-emerald-300: oklch(50.8% 0.118 165.612);
-  --color-emerald-400: oklch(52.7% 0.154 150.069);
+  --color-emerald-400: oklch(50.8% 0.118 165.612);
   --color-blue-300: oklch(48.8% 0.243 264.376);
   --color-blue-400: oklch(48.8% 0.243 264.376);
   --color-purple-300: oklch(49.6% 0.265 301.924);

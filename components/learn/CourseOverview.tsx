@@ -47,7 +47,7 @@ export default function CourseOverview({
         <div aria-hidden className="absolute inset-0 bg-grid opacity-60" />
         <div aria-hidden className="absolute -top-32 start-1/3 w-[36rem] h-[36rem] rounded-full blur-3xl opacity-15" style={{ background: course.accent }} />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid lg:grid-cols-[1fr_320px] gap-10 items-start">
-          <div className="animate-fade-up">
+          <div>
             <Link href="/learn/" className="text-sm text-fg-subtle hover:text-fg">{tx.learn.eyebrow}</Link>
             <div className="flex items-center gap-3 mt-4 mb-3">
               <span className="text-4xl">{course.icon}</span>

@@ -30,7 +30,7 @@ export default function TermsPage() {
         <p className="text-fg-subtle text-sm">
           {t.contactNote}{" "}
           <a href="https://github.com/MshariSQ/imbegnal/issues" target="_blank" rel="noopener noreferrer"
-            className="text-emerald-400 hover:underline">{t.contactLink}</a>.
+            className="text-emerald-400 underline underline-offset-2">{t.contactLink}</a>.
         </p>
       </div>
     </main>

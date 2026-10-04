@@ -250,7 +250,7 @@ export default function RoadmapClient({
                           : "text-fg-subtle border-transparent hover:bg-fg/5 hover:text-fg-soft"
                       }`}>
                       <div className={`w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center text-[9px] font-bold transition-all ${
-                        done ? "bg-emerald-500 border-emerald-500 text-brand-fg"
+                        done ? "bg-brand border-brand text-brand-fg"
                           : active ? "border-emerald-500" : "border-line-strong"
                       }`}>
                         {done && "✓"}

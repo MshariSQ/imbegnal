@@ -257,7 +257,7 @@ export default function LessonPlayer({
         {/* Lesson */}
         <main ref={articleRef} onMouseUp={onMouseUp} className="min-w-0 px-4 sm:px-8 lg:px-12 py-8 sm:py-10">
           <article className="max-w-3xl mx-auto">
-            <header className="mb-8 animate-fade-up">
+            <header className="mb-8">
               <div className="text-xs font-semibold text-emerald-400 mb-2">
                 {tx.modules[outline[index]?.module ?? "required"]} · {tx.common.lesson} {index + 1}/{outline.length}
               </div>

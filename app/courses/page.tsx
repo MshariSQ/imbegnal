@@ -55,7 +55,7 @@ export default function CoursesPage() {
         <div className="flex flex-wrap gap-2">
           {PRICES.map((p) => (
             <button key={p} onClick={() => setPrice(p)}
-              className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${price === p ? "bg-emerald-500 border-emerald-500 text-brand-fg font-medium" : "border-line-strong text-fg-muted hover:text-fg hover:border-fg-faint"}`}>
+              className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${price === p ? "bg-brand border-brand text-brand-fg font-medium" : "border-line-strong text-fg-muted hover:text-fg hover:border-fg-faint"}`}>
               {p}
             </button>
           ))}

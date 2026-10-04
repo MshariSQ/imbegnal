@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import CodeMirror from "@uiw/react-codemirror";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import CodeMirror, { EditorView } from "@uiw/react-codemirror";
+import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
 import { html } from "@codemirror/lang-html";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -38,6 +39,10 @@ export default function CodeRunner({
   const [theme] = useTheme();
   const { tx } = useLang();
   const L = tx.lesson;
+  const extensions = useMemo(
+    () => [...extensionsFor(lang), EditorView.contentAttributes.of({ "aria-label": L.codeEditor })],
+    [lang, L.codeEditor]
+  );
 
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
   const [running, setRunning] = useState(false);
@@ -161,8 +166,8 @@ export default function CodeRunner({
         <CodeMirror
           value={value}
           onChange={onChange}
-          extensions={extensionsFor(lang)}
-          theme={theme}
+          extensions={extensions}
+          theme={theme === "dark" ? githubDark : githubLight}
           height={editorHeight}
           basicSetup={{ lineNumbers: true, foldGutter: false, highlightActiveLine: true }}
         />

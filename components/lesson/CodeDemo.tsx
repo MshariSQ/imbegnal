@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FlaskConical } from "lucide-react";
 import type { CodeDemoSection } from "@/data/lessons/types";
 import { useLang } from "@/lib/lang-context";
-import CodeRunner from "./CodeRunner";
+import CodeRunner from "./CodeRunnerLazy";
 import TextBlock from "./TextBlock";
 
 export default function CodeDemo({ section }: { section: CodeDemoSection }) {

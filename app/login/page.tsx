@@ -70,7 +70,7 @@ function AuthForm() {
   const input = "w-full h-11 px-3.5 rounded-xl bg-surface border border-line-strong focus:border-brand/60 outline-none text-fg placeholder:text-fg-faint transition-colors";
 
   return (
-    <div className="card p-6 sm:p-8 animate-fade-up">
+    <div className="card p-6 sm:p-8">
       <h1 className="text-2xl font-black tracking-tight text-fg">{mode === "login" ? a.loginTitle : a.registerTitle}</h1>
       <p className="text-sm text-fg-muted mt-1.5 mb-6">{mode === "login" ? a.loginSubtitle : a.registerSubtitle}</p>
 
