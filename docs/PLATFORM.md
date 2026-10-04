@@ -58,6 +58,8 @@ Without the two GitHub secrets the API job fails with a clear message and **noth
 > migration `0002` adds the same columns and would fail on a database that already has them.
 
 Database changes go in `worker/migrations/NNNN_name.sql` (never edit an applied migration).
+Local dev against a database created by hand from the old `schema*.sql` files: delete `worker/.wrangler/state` first
+(migrations would otherwise fail with "duplicate column"), then re-run the commands below.
 Local dev: secrets in `worker/.dev.vars` (git-ignored), then in `worker/`:
 `npx wrangler d1 migrations apply skillforge-db --local && npx wrangler dev`, and `npm run dev` at the root.
 
