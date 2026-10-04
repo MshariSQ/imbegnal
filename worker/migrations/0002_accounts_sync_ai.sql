@@ -1,5 +1,4 @@
--- v3: email/Google accounts, plans, study-state sync, AI tutor quotas.
--- Run with: npx wrangler d1 execute skillforge-db --remote --file schema-v3.sql
+-- 0002: email/Google accounts, plans, study-state sync, AI tutor quotas.
 --
 -- Note: `users.github_id` is the stable account subject for every provider
 -- ("<numeric id>" for GitHub, "email:<uuid>", "google:<sub>"). The column name

@@ -1,5 +1,4 @@
--- v4: anonymous product analytics (run after schema-v3.sql).
--- npx wrangler d1 execute skillforge-db --remote --file schema-v4.sql
+-- 0003: anonymous product analytics events.
 CREATE TABLE IF NOT EXISTS events (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   day         TEXT NOT NULL,          -- UTC date
