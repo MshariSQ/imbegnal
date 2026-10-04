@@ -10,16 +10,27 @@ import CodeDemo from "./CodeDemo";
 import ExerciseBlock from "./ExerciseBlock";
 import QuizBlock from "./QuizBlock";
 
+/** DOM id of a lesson section — used by the "On this page" outline. */
+export const sectionId = (i: number) => `sec-${i}`;
+
 // NOTE: rendered with key={nodeId} so the whole view (and its state) remounts
 // per lesson — progress can therefore be initialized lazily from localStorage.
 export default function LessonView({
   lesson,
   roadmapId,
   onLessonComplete,
+  onSectionPassed,
+  onQuizScore,
+  hideHeader = false,
 }: {
   lesson: Lesson;
   roadmapId: string;
   onLessonComplete: () => void;
+  /** Fired once per exercise/quiz the first time it is passed (for XP). */
+  onSectionPassed?: (kind: "ex" | "quiz") => void;
+  /** First-try accuracy (0..1) each time a quiz is completed. */
+  onQuizScore?: (accuracy: number) => void;
+  hideHeader?: boolean;
 }) {
   const { tx } = useLang();
   const L = tx.lesson;
@@ -60,15 +71,11 @@ export default function LessonView({
     }
   }
 
-  function handleExercisePass(sectionIndex: number) {
-    const p = markSectionPassed(roadmapId, lesson.nodeId, "ex", sectionIndex);
+  function handlePass(kind: "ex" | "quiz", sectionIndex: number) {
+    const firstTime = !getLessonProgress(roadmapId, lesson.nodeId)[kind].includes(sectionIndex);
+    const p = markSectionPassed(roadmapId, lesson.nodeId, kind, sectionIndex);
     setProgress(p);
-    checkCompletion(p);
-  }
-
-  function handleQuizPass(sectionIndex: number) {
-    const p = markSectionPassed(roadmapId, lesson.nodeId, "quiz", sectionIndex);
-    setProgress(p);
+    if (firstTime) onSectionPassed?.(kind);
     checkCompletion(p);
   }
 
@@ -78,50 +85,63 @@ export default function LessonView({
     gateIndexes.quiz.filter((i) => progress.quiz.includes(i)).length;
 
   return (
-    <div className="max-w-3xl">
-      {/* Lesson header */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <span className="flex items-center gap-1.5 text-xs text-fg-subtle">
-          <Clock size={12} /> {lesson.estMinutes} {L.estMinutes}
-        </span>
-        {totalGates > 0 && (
-          <span className="text-xs text-fg-subtle">
-            {L.lessonProgress}: <span className="text-emerald-400 font-semibold">{passedGates}/{totalGates}</span>
+    <div>
+      {!hideHeader && (
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <span className="flex items-center gap-1.5 text-xs text-fg-subtle">
+            <Clock size={12} /> {lesson.estMinutes} {L.estMinutes}
           </span>
-        )}
-      </div>
+          {totalGates > 0 && (
+            <span className="text-xs text-fg-subtle">
+              {L.lessonProgress}: <span className="text-emerald-400 font-semibold">{passedGates}/{totalGates}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {justCompleted && (
-        <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 mb-6">
+        <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 mb-6 animate-fade-up">
           <PartyPopper size={20} className="text-emerald-400 shrink-0" />
           <p className="text-sm text-emerald-300 font-semibold">{L.lessonComplete}</p>
         </div>
       )}
 
       {lesson.sections.map((section, i) => {
+        const id = sectionId(i);
         switch (section.type) {
           case "text":
-            return <TextBlock key={i} body={section.body} />;
+            return (
+              <div key={i} id={id} className="scroll-mt-32">
+                <TextBlock body={section.body} />
+              </div>
+            );
           case "code-demo":
-            return <CodeDemo key={i} section={section} />;
+            return (
+              <div key={i} id={id} className="scroll-mt-32">
+                <CodeDemo section={section} />
+              </div>
+            );
           case "exercise":
             return (
-              <ExerciseBlock
-                key={i}
-                section={section}
-                index={exerciseNumbers.get(i) ?? 1}
-                passed={progress.ex.includes(i)}
-                onPass={() => handleExercisePass(i)}
-              />
+              <div key={i} id={id} className="scroll-mt-32">
+                <ExerciseBlock
+                  section={section}
+                  index={exerciseNumbers.get(i) ?? 1}
+                  passed={progress.ex.includes(i)}
+                  onPass={() => handlePass("ex", i)}
+                />
+              </div>
             );
           case "quiz":
             return (
-              <QuizBlock
-                key={i}
-                section={section}
-                passed={progress.quiz.includes(i)}
-                onPass={() => handleQuizPass(i)}
-              />
+              <div key={i} id={id} className="scroll-mt-32">
+                <QuizBlock
+                  section={section}
+                  passed={progress.quiz.includes(i)}
+                  onPass={() => handlePass("quiz", i)}
+                  onScore={onQuizScore}
+                />
+              </div>
             );
         }
       })}

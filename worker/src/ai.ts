@@ -8,7 +8,7 @@ import { type Env, NO_STORE, corsHeaders, getUser, isValidId, json, readJson } f
 const MODEL = "claude-opus-5-5";
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_CHARS = 4000;
-const MAX_CONTEXT_CHARS = 30_000;
+const MAX_CONTEXT_CHARS = 40_000; // comfortably above the largest lesson (~25k chars per language)
 
 const TUTOR_INSTRUCTIONS = `You are the IMBEGNAL tutor, helping a student who is studying the lesson provided below.
 

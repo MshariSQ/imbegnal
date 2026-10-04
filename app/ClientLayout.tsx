@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useLang } from "@/lib/lang-context";
 import { useAuthUser } from "@/lib/auth";
 import { startSync } from "@/lib/sync";
+import { Toaster } from "@/components/ui/Toast";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { lang } = useLang();
@@ -23,5 +24,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     if (userId) startSync();
   }, [userId]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <Toaster />
+    </>
+  );
 }

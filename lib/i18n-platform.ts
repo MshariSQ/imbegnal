@@ -13,6 +13,7 @@ export const platformEn = {
     minutes: "min",
     lessons: "lessons",
     lesson: "Lesson",
+    module: "Module",
     modules: "modules",
     free: "Free",
     pro: "Pro",
@@ -122,6 +123,7 @@ export const platformEn = {
     tabSummary: "Summary",
     tools: "Study tools",
     xpGained: "+{n} XP",
+    askAi: "Ask AI",
   },
   notes: {
     placeholder: "Write your notes for this lesson… Markdown supported.",
@@ -187,6 +189,7 @@ export const platformAr: PlatformTx = {
     minutes: "دقيقة",
     lessons: "دروس",
     lesson: "الدرس",
+    module: "الوحدة",
     modules: "وحدات",
     free: "مجاني",
     pro: "برو",
@@ -296,6 +299,7 @@ export const platformAr: PlatformTx = {
     tabSummary: "الملخص",
     tools: "أدوات الدراسة",
     xpGained: "+{n} نقطة",
+    askAi: "اسأل المدرّس",
   },
   notes: {
     placeholder: "اكتب ملاحظاتك لهذا الدرس… يدعم Markdown.",
