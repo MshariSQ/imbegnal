@@ -11,6 +11,7 @@ export default function PricingClient() {
   const { tx } = useLang();
   const p = tx.pricing;
   const [yearly, setYearly] = useState(true);
+  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-16">
@@ -33,15 +34,15 @@ export default function PricingClient() {
           const price = plan.price > 0 && yearly ? +(plan.price * 0.7).toFixed(2) : plan.price;
           return (
             <section key={plan.id} className={`card p-7 flex flex-col relative ${popular ? "border-brand/60 ring-1 ring-brand/30" : ""}`}>
-              {popular && <span className="absolute -top-3 start-7 px-3 py-1 rounded-full bg-brand text-brand-fg text-[11px] font-bold">{p.mostPopular}</span>}
+              {popular && <span className="absolute -top-3 start-7 px-3 py-1 rounded-full bg-brand text-brand-fg text-[11px] font-bold">{p.comingSoon}</span>}
               <h2 className="text-lg font-bold text-fg">{plan.name}</h2>
               <p className="text-sm text-fg-muted mt-1 mb-5">{plan.desc}</p>
-              <div className="mb-6" dir="ltr">
+              <div className="mb-6 min-h-[5.25rem]" dir="ltr">
                 {plan.price < 0 ? (
                   <span className="text-3xl font-black text-fg">Custom</span>
                 ) : (
                   <>
-                    <span className="text-4xl font-black text-fg">${price}</span>
+                    <span className="text-4xl font-black text-fg">${fmt(price)}</span>
                     {plan.price > 0 && <span className="text-fg-subtle text-sm"> {p.perMonth}</span>}
                     {plan.price > 0 && yearly && <div className="text-xs text-fg-subtle mt-1">{p.billedYearly}</div>}
                   </>
@@ -55,7 +56,7 @@ export default function PricingClient() {
                 ))}
               </ul>
               {plan.id === "free" && <Link href="/dashboard/" className="h-11 grid place-items-center rounded-xl border border-line-strong text-fg font-semibold hover:bg-fg/5">{p.getStarted}</Link>}
-              {plan.id === "pro" && <a href={`${GITHUB_REPO}/discussions`} target="_blank" rel="noopener noreferrer" className="h-11 grid place-items-center rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-semibold">{p.upgrade}</a>}
+              {plan.id === "pro" && <a href={`${GITHUB_REPO}/issues`} target="_blank" rel="noopener noreferrer" className="h-11 grid place-items-center rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-semibold">{p.upgrade}</a>}
               {plan.id === "teams" && <a href={`${GITHUB_REPO}/issues`} target="_blank" rel="noopener noreferrer" className="h-11 grid place-items-center rounded-xl border border-line-strong text-fg font-semibold hover:bg-fg/5">{p.teams}</a>}
             </section>
           );

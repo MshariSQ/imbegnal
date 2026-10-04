@@ -153,7 +153,7 @@ export default function RoadmapClient({
 
   async function handleToggle() {
     const token = getToken();
-    if (!token) { window.location.href = `${basePath}/`; return; }
+    if (!token) { window.location.href = `${basePath}/login/?next=${encodeURIComponent(window.location.pathname)}`; return; }
     setBusy(true);
     try {
       if (completed.has(selected.id)) {
@@ -300,7 +300,7 @@ export default function RoadmapClient({
                       {busy ? r.saving : completed.has(selected.id) ? r.completed : r.markComplete}
                     </button>
                   ) : (
-                    <a href={`${basePath}/`}
+                    <a href={`${basePath}/login/`}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-surface border border-line text-fg-muted hover:text-fg transition-all">
                       {r.signInToTrack}
                     </a>

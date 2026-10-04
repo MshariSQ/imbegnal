@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
+import { countLabel } from "@/lib/plural";
 import ProgressBar from "@/components/ui/ProgressBar";
 
 export interface CourseCardData {
@@ -37,7 +38,7 @@ export default function CourseCard({ course, done = 0 }: { course: CourseCardDat
       <p className="text-sm text-fg-muted leading-relaxed line-clamp-2 mb-5">{t?.desc}</p>
       <div className="mt-auto">
         <div className="flex items-center gap-4 text-xs text-fg-subtle mb-3">
-          <span className="flex items-center gap-1.5"><BookOpen size={13} /> {course.lessonCount} {tx.common.lessons}</span>
+          <span className="flex items-center gap-1.5"><BookOpen size={13} /> {countLabel(tx, "lesson", course.lessonCount)}</span>
           <span className="flex items-center gap-1.5"><Clock size={13} /> ~{hours}h</span>
         </div>
         {done > 0 ? (

@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, CheckCircle2, Circle, Clock, Code2, HelpCircle, M
 import type { L10n } from "@/data/lessons/types";
 import { MODULE_ORDER, type ModuleKey } from "@/lib/catalog";
 import { useLang } from "@/lib/lang-context";
+import { countLabel } from "@/lib/plural";
 import { useStudy } from "@/lib/study-store";
 import ProgressRing from "@/components/ui/ProgressRing";
 
@@ -54,7 +55,7 @@ export default function CourseOverview({
             </div>
             <p className="text-lg text-fg-muted leading-relaxed max-w-2xl">{t?.desc}</p>
             <div className="flex flex-wrap gap-x-6 gap-y-2 mt-6 text-sm text-fg-muted">
-              <span className="flex items-center gap-1.5"><BookOpen size={15} /> {outline.length} {tx.common.lessons}</span>
+              <span className="flex items-center gap-1.5"><BookOpen size={15} /> {countLabel(tx, "lesson", outline.length)}</span>
               <span className="flex items-center gap-1.5"><Clock size={15} /> ~{Math.round(totalMin / 60)}h</span>
               <span className="flex items-center gap-1.5"><BarChart3 size={15} /> {course.level}</span>
             </div>
@@ -105,7 +106,7 @@ export default function CourseOverview({
               <div key={m.key} className="card overflow-hidden">
                 <div className="px-5 py-4 border-b border-line flex items-center justify-between bg-surface-2/50">
                   <div>
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-fg-subtle">{tx.common.module} {mi + 1} · {m.lessons.length} {tx.common.lessons}</div>
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-fg-subtle">{tx.common.module} {mi + 1} · {countLabel(tx, "lesson", m.lessons.length)}</div>
                     <div className="font-bold text-fg">{tx.modules[m.key]}</div>
                   </div>
                   <span className="text-xs text-fg-subtle" dir="ltr">
@@ -130,8 +131,8 @@ export default function CourseOverview({
                             {lang === "en" && l.description && <p className="text-sm text-fg-subtle mt-1 line-clamp-2">{l.description}</p>}
                             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-fg-subtle">
                               <span className="flex items-center gap-1"><Clock size={12} /> {l.minutes} {tx.common.minutes}</span>
-                              {l.exercises > 0 && <span className="flex items-center gap-1"><Code2 size={12} /> {l.exercises} {tx.lesson.exercisesLabel}</span>}
-                              {l.quizzes > 0 && <span className="flex items-center gap-1"><HelpCircle size={12} /> {l.quizzes} {tx.lesson.quizzesLabel}</span>}
+                              {l.exercises > 0 && <span className="flex items-center gap-1"><Code2 size={12} /> {countLabel(tx, "exercise", l.exercises)}</span>}
+                              {l.quizzes > 0 && <span className="flex items-center gap-1"><HelpCircle size={12} /> {countLabel(tx, "quiz", l.quizzes)}</span>}
                             </div>
                           </div>
                           <ArrowRight size={16} className="rtl-flip text-fg-faint group-hover:text-emerald-400 mt-1 shrink-0 transition-colors" />

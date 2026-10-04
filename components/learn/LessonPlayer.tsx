@@ -10,6 +10,7 @@ import {
 import type { L10n, Lesson } from "@/data/lessons/types";
 import { MODULE_ORDER, type ModuleKey } from "@/lib/catalog";
 import { useLang } from "@/lib/lang-context";
+import { countLabel } from "@/lib/plural";
 import { getToken } from "@/lib/auth";
 import { markNodeDone } from "@/lib/api";
 import { useStudy, visitLesson, completeLesson, awardXp, recordQuiz, XP } from "@/lib/study-store";
@@ -258,8 +259,8 @@ export default function LessonPlayer({
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-fg leading-tight">{lesson.title[lang]}</h1>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-sm text-fg-subtle">
                 <span className="flex items-center gap-1.5"><Clock size={14} /> {lesson.estMinutes} {tx.common.minutes}</span>
-                {stats.exercises > 0 && <span className="flex items-center gap-1.5"><Code2 size={14} /> {stats.exercises} {tx.lesson.exercisesLabel}</span>}
-                {stats.quizzes > 0 && <span className="flex items-center gap-1.5"><HelpCircle size={14} /> {stats.quizzes} {tx.lesson.quizzesLabel}</span>}
+                {stats.exercises > 0 && <span className="flex items-center gap-1.5"><Code2 size={14} /> {countLabel(tx, "exercise", stats.exercises)}</span>}
+                {stats.quizzes > 0 && <span className="flex items-center gap-1.5"><HelpCircle size={14} /> {countLabel(tx, "quiz", stats.quizzes)}</span>}
                 {done && <span className="flex items-center gap-1.5 text-emerald-400 font-semibold"><CheckCircle2 size={14} /> {tx.player.done}</span>}
               </div>
             </header>

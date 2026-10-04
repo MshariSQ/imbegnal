@@ -15,7 +15,7 @@ export default function Footer() {
       { label: tx.nav.dashboard, href: `${BASE}/dashboard/` },
       { label: fl.roadmaps, href: `${BASE}/roadmaps/` },
       { label: fl.certifications, href: `${BASE}/certifications/` },
-      { label: fl.courses, href: `${BASE}/courses/` },
+      { label: tx.nav.resources, href: `${BASE}/courses/` },
       { label: tx.nav.pricing, href: `${BASE}/pricing/` },
       { label: fl.about, href: `${BASE}/about/` },
     ],
