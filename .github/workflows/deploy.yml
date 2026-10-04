@@ -27,11 +27,19 @@ jobs:
 
       - run: npm ci
 
+      - name: Lint
+        run: npx eslint . --ignore-pattern worker
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
       - name: Build
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.WORKER_URL }}
           NEXT_PUBLIC_GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          # Set the repo variable GOOGLE_AUTH=1 once Google OAuth secrets exist on the worker.
+          NEXT_PUBLIC_GOOGLE_AUTH: ${{ vars.GOOGLE_AUTH }}
           # Served from the root of imbegnal.com — no basePath prefix.
           NEXT_PUBLIC_BASE_PATH: ""
 

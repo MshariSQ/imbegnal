@@ -29,6 +29,7 @@ export default function AiTutor({
 }) {
   const { tx, lang } = useLang();
   const user = useAuthUser();
+  const signedIn = !!user;
   const [messages, setMessages] = useState<TutorMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,14 +84,17 @@ export default function AiTutor({
     }
   }
 
-  // Questions queued from the lesson (e.g. selected text)
+  // Questions queued from the lesson (e.g. selected text). Deferred to a task
+  // so the request starts after mount; cleanup cancels StrictMode's dry run.
   useEffect(() => {
-    if (pendingQuestion && user && !busy) {
+    if (!pendingQuestion || !signedIn) return;
+    const id = setTimeout(() => {
       onPendingConsumed?.();
       void ask(pendingQuestion);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ask is recreated each render; we only react to new questions
-  }, [pendingQuestion, user]);
+    }, 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ask/onPendingConsumed change every render; react only to new questions
+  }, [pendingQuestion, signedIn]);
 
   if (!user) {
     return (

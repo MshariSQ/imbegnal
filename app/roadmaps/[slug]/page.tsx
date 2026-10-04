@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { roadmaps } from "@/data/roadmaps";
-import { NODE_DATA, type RoadmapNodeInfo } from "@/data/roadmap-nodes";
+import { NODE_DATA } from "@/data/roadmap-nodes";
 import RoadmapWrapper from "./RoadmapWrapper";
 
 

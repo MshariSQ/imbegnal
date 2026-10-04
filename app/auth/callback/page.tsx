@@ -16,20 +16,20 @@ function CallbackHandler() {
     const error = params.get("error");
 
     if (error || !token) {
-      router.replace("/?error=auth_failed");
+      router.replace("/login/?error=auth_failed");
       return;
     }
 
     const user = parseToken(token);
     if (!user) {
-      router.replace("/?error=invalid_token");
+      router.replace("/login/?error=invalid_token");
       return;
     }
 
     saveToken(token);
     // Wipe the token from the address bar / history before navigating on.
     window.history.replaceState(null, "", window.location.pathname);
-    router.replace("/");
+    router.replace("/dashboard/");
   }, [params, router]);
 
   return null;

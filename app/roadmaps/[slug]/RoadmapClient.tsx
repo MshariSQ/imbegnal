@@ -341,7 +341,11 @@ export default function RoadmapClient({
               )}
 
               {nodeHasLesson && activeTab === "lesson" ? (
-                <div className="px-10 py-8">
+                <div className="px-4 sm:px-10 py-8">
+                  <a href={`${basePath}/learn/${roadmapId}/${selected.id}/`}
+                    className="inline-flex items-center gap-2 mb-6 text-sm font-semibold text-emerald-400 hover:underline">
+                    <GraduationCap size={15} /> {tx.player.openPlayer}
+                  </a>
                   {currentLesson ? (
                     <LessonView
                       key={selected.id}

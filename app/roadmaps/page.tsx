@@ -1,10 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { roadmaps } from "@/data/roadmaps";
 import { Clock, Users, ArrowRight, TrendingUp } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
-
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const levelColors: Record<string, string> = {
   Beginner: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
@@ -13,17 +12,13 @@ const levelColors: Record<string, string> = {
   "All Levels": "text-purple-400 bg-purple-500/10 border-purple-500/20",
 };
 
-export default function RoadmapsPage() {
+function RoadmapGrid({ items }: { items: typeof roadmaps }) {
   const { tx } = useLang();
   const s = tx.roadmapsPage;
-
-  const tech = roadmaps.filter((r) => r.category === "tech");
-  const business = roadmaps.filter((r) => r.category === "business");
-
-  const RoadmapGrid = ({ items }: { items: typeof roadmaps }) => (
+  return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {items.map((r) => (
-        <a key={r.id} href={`${BASE}/roadmaps/${r.id}/`}
+        <Link key={r.id} href={`/roadmaps/${r.id}/`}
           className="group relative bg-surface border border-line hover:border-line-strong rounded-2xl p-6 transition-all hover:-translate-y-1 overflow-hidden">
           <div className={`absolute inset-0 bg-gradient-to-br ${r.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
           <div className="relative">
@@ -41,10 +36,18 @@ export default function RoadmapsPage() {
               <span>{s.viewRoadmap}</span><ArrowRight size={12} className="rtl-flip" />
             </div>
           </div>
-        </a>
+        </Link>
       ))}
     </div>
   );
+}
+
+export default function RoadmapsPage() {
+  const { tx } = useLang();
+  const s = tx.roadmapsPage;
+
+  const tech = roadmaps.filter((r) => r.category === "tech");
+  const business = roadmaps.filter((r) => r.category === "business");
 
   return (
     <main className="max-w-7xl mx-auto px-6 pt-28 pb-24">

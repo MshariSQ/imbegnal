@@ -48,6 +48,9 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [isMe, setIsMe] = useState(false);
 
+  // The profile is chosen by ?u=… which only exists in the browser (static
+  // export), so it has to be read after mount.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const u = params.get("u");
@@ -65,6 +68,7 @@ export default function ProfilePage() {
     const me = getCurrentUser();
     if (me?.username === u) setIsMe(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (!username) return;
