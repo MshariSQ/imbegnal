@@ -43,3 +43,8 @@ next-env.d.ts
 # legacy files
 /index.html
 /src/
+
+# worker
+node_modules
+.wrangler
+.dev.vars

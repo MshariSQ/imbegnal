@@ -1,26 +1,8 @@
 import { notFound } from "next/navigation";
 import { roadmaps } from "@/data/roadmaps";
-import { cyberSecurityNodes } from "@/data/roadmap-nodes/cyber-security";
-import { frontendNodes } from "@/data/roadmap-nodes/frontend";
-import { backendNodes } from "@/data/roadmap-nodes/backend";
-import { artificialIntelligenceNodes } from "@/data/roadmap-nodes/artificial-intelligence";
-import { dataScienceNodes } from "@/data/roadmap-nodes/data-science";
-import { cloudComputingNodes } from "@/data/roadmap-nodes/cloud-computing";
-import { devopsNodes } from "@/data/roadmap-nodes/devops";
-import { uiUxNodes } from "@/data/roadmap-nodes/ui-ux";
-import type { RoadmapNodeInfo } from "@/data/roadmap-nodes/cyber-security";
+import { NODE_DATA, type RoadmapNodeInfo } from "@/data/roadmap-nodes";
 import RoadmapWrapper from "./RoadmapWrapper";
 
-const NODE_DATA: Record<string, RoadmapNodeInfo[]> = {
-  "cyber-security": cyberSecurityNodes,
-  "frontend": frontendNodes,
-  "backend": backendNodes,
-  "artificial-intelligence": artificialIntelligenceNodes,
-  "data-science": dataScienceNodes,
-  "cloud-computing": cloudComputingNodes,
-  "devops": devopsNodes,
-  "ui-ux": uiUxNodes,
-};
 
 export const dynamicParams = false;
 
