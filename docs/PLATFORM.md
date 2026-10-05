@@ -64,7 +64,12 @@ builds `./out` itself when it is missing), deploy command `npx wrangler deploy`,
    **only in the dashboard** survive deploys. Variables listed in `wrangler.toml [vars]` (`GITHUB_CLIENT_ID`, `FRONTEND_URL`,
    `WORKER_URL`) are re-applied from the file on every deploy, so edit those in the file, not the dashboard.
 
-Without the two GitHub secrets the API job fails with a clear message and **nothing** is deployed (the live site stays as it was).
+**Without the two GitHub secrets** the API job passes with a warning and deploys **nothing** (API and database untouched); the site still
+publishes — *frontend-only mode*. Against the previous API the new site keeps working for GitHub sign-in, progress and bookmarks, and
+all learning happens locally (courses, lessons, quizzes, notes, dashboard). Email sign-up, Google sign-in, cross-device sync, the AI
+tutor, account deletion and analytics need the new API and show friendly errors until it is deployed. Once the secrets exist, the next
+run (or "Re-run all jobs") applies migrations, deploys the worker, then publishes the site. If the secrets exist but a step fails, the
+pipeline stops and the site is **not** published.
 
 > **Rollbacks:** do not roll the Worker back to a version older than the email-accounts release once anyone has signed up
 > with email: the old `/api/auth/me` returned every column (including `password_hash`). Roll forward with a fix instead.
