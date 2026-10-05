@@ -136,6 +136,8 @@ export default function LessonView({
                 />
               </div>
             );
+          case "lab":
+            return null; // rendered by the curriculum workstream (LabExerciseBlock)
           case "quiz":
             return (
               <div key={i} id={id} className="scroll-mt-32">
