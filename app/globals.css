@@ -1,76 +1,233 @@
 @import "tailwindcss";
 
+/*
+ * ── IMBEGNAL design system ──────────────────────────────────────────────────
+ * Every surface/text/border color is a semantic token that flips with the
+ * theme. Components use `bg-surface`, `text-fg-muted`, `border-line`… and
+ * never raw hex values, so light/dark mode is a single attribute switch:
+ *   <html data-theme="dark|light">
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-arabic: var(--font-tajawal), var(--font-geist), "Segoe UI", sans-serif;
+
+  /* Semantic tokens — values come from the theme blocks below */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-soft: var(--fg-soft);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-faint: var(--fg-faint);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-fg: var(--brand-fg);
+
+  --radius-card: 1rem;
+  --shadow-card: var(--card-shadow);
+
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.3s ease-out both;
+}
+
+/* Dark is the default theme (the server renders it; an inline script in the
+   root layout swaps to the saved/system preference before first paint). */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0c10;
+  --surface: #11141a;
+  --surface-2: #181c24;
+  --line: #222733;
+  --line-strong: #2e3442;
+  --fg: #eef0f4;
+  --fg-soft: #cfd4de;
+  --fg-muted: #9aa3b2;
+  --fg-subtle: #8c95a5; /* ≥ 4.5:1 on every dark surface (WCAG AA) */
+  --fg-faint: #7f8898;
+  --brand: #10b981;
+  --brand-strong: #34d399;
+  --brand-fg: #03140d;
+  --card-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --glow: rgb(16 185 129 / 0.16);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --line: #e5e8ee;
+  --line-strong: #d3d8e0;
+  --fg: #0e1420;
+  --fg-soft: #2a3342;
+  --fg-muted: #4f5a6b;
+  --fg-subtle: #5c6676; /* ≥ 4.5:1 on every light surface (WCAG AA) */
+  --fg-faint: #626c7d;
+  --brand: #047857; /* white text on brand ≥ 5.4:1 */
+  --brand-strong: #065f46;
+  --brand-fg: #ffffff;
+  --card-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 8px 24px -12px rgb(16 24 40 / 0.12);
+  --glow: rgb(5 150 105 / 0.12);
+
+  /* Accent text shades tuned for dark backgrounds (…-300/400) are too light
+     on white. Remap them to their darker siblings so every existing
+     `text-emerald-400`, `text-blue-400`… stays readable (WCAG AA). */
+  --color-emerald-300: oklch(50.8% 0.118 165.612);
+  --color-emerald-400: oklch(50.8% 0.118 165.612);
+  --color-blue-300: oklch(48.8% 0.243 264.376);
+  --color-blue-400: oklch(48.8% 0.243 264.376);
+  --color-purple-300: oklch(49.6% 0.265 301.924);
+  --color-purple-400: oklch(49.6% 0.265 301.924);
+  --color-red-300: oklch(50.5% 0.213 27.518);
+  --color-red-400: oklch(50.5% 0.213 27.518);
+  --color-amber-300: oklch(55.5% 0.163 48.998);
+  --color-amber-400: oklch(55.5% 0.163 48.998);
+  --color-teal-400: oklch(51.1% 0.096 186.391);
+  --color-rose-400: oklch(51.4% 0.222 16.935);
+  --color-yellow-400: oklch(55.4% 0.135 66.442);
+  --color-orange-400: oklch(55.3% 0.195 38.402);
+  --color-sky-400: oklch(50% 0.134 242.749);
+  --color-indigo-400: oklch(45.7% 0.24 277.023);
+  --color-pink-400: oklch(52.5% 0.223 3.958);
+  --color-cyan-400: oklch(52% 0.105 223.128);
+  --color-violet-400: oklch(49.1% 0.27 292.581);
+}
+
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: #0D1117;
-  color: #e6edf3;
-  font-family: var(--font-geist), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
 html.font-arabic body {
-  font-family: var(--font-tajawal), "Segoe UI", sans-serif;
+  font-family: var(--font-arabic);
   font-size: 1.03rem;
   line-height: 1.75;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--brand) 30%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 [dir="rtl"] .rtl-flip {
   transform: scaleX(-1);
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0D1117;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 3px;
+  background: var(--line-strong);
+  border-radius: 8px;
+  border: 2px solid var(--bg);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #10b981;
+  background: var(--brand);
 }
 
+/* ── Motion ─────────────────────────────────────────────────────────────── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
 }
-
 @keyframes glow-pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.8; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Reusable surfaces (component layer, so utilities can override) ──── */
+@layer components {
 .glow-emerald {
-  box-shadow: 0 0 40px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 40px var(--glow);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--card-shadow);
 }
 
 .card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s, border-color 0.25s;
 }
 .card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.35);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #10b981, #3b82f6);
+  background: linear-gradient(135deg, var(--brand), #3b82f6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+.bg-grid {
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
 .noise-bg {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* Hide scrollbars on horizontal chip rows while keeping them scrollable */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 }

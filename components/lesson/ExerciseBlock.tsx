@@ -5,7 +5,7 @@ import { Dumbbell, Lightbulb, Eye, EyeOff, RotateCcw, CheckCircle2, XCircle, Loc
 import type { ExerciseSection } from "@/data/lessons/types";
 import type { TestResult } from "@/lib/runner/web-sandbox";
 import { useLang } from "@/lib/lang-context";
-import CodeRunner from "./CodeRunner";
+import CodeRunner from "./CodeRunnerLazy";
 import TextBlock from "./TextBlock";
 
 export default function ExerciseBlock({
@@ -41,10 +41,10 @@ export default function ExerciseBlock({
   }
 
   return (
-    <div className={`my-8 border rounded-2xl overflow-hidden ${allPassed ? "border-emerald-500/40" : "border-[#30363d]"}`}>
-      <div className={`px-5 py-3 flex items-center gap-2.5 ${allPassed ? "bg-emerald-500/10" : "bg-[#161B22]"}`}>
+    <div className={`my-8 border rounded-2xl overflow-hidden ${allPassed ? "border-emerald-500/40" : "border-line-strong"}`}>
+      <div className={`px-5 py-3 flex items-center gap-2.5 ${allPassed ? "bg-emerald-500/10" : "bg-surface"}`}>
         <Dumbbell size={15} className={allPassed ? "text-emerald-400" : "text-blue-400"} />
-        <span className="text-sm font-bold text-white flex-1">
+        <span className="text-sm font-bold text-fg flex-1">
           {lang === "ar" ? `تمرين ${index}` : `Exercise ${index}`}
         </span>
         {allPassed && (
@@ -68,7 +68,7 @@ export default function ExerciseBlock({
         {/* Test checklist */}
         {results !== null && (
           <div className="mt-4 space-y-1.5">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">{L.tests}</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-fg-faint mb-2">{L.tests}</div>
             {section.tests.map((t, i) => {
               const r = results.find((x) => x.i === i);
               const pass = r?.pass ?? false;
@@ -79,10 +79,10 @@ export default function ExerciseBlock({
                   ) : (
                     <XCircle size={15} className="text-red-400 mt-0.5 shrink-0" />
                   )}
-                  <span className={pass ? "text-gray-300" : "text-red-300"}>
+                  <span className={pass ? "text-fg-soft" : "text-red-300"}>
                     {t.name[lang]}
                     {r?.error && r.error !== "timeout" && (
-                      <span dir="ltr" className="text-gray-600 text-xs ms-2 font-mono">({r.error})</span>
+                      <span dir="ltr" className="text-fg-faint text-xs ms-2 font-mono">({r.error})</span>
                     )}
                   </span>
                 </div>
@@ -109,7 +109,7 @@ export default function ExerciseBlock({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
               solutionUnlocked
                 ? "border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-                : "border-[#30363d] text-gray-600 cursor-not-allowed"
+                : "border-line-strong text-fg-faint cursor-not-allowed"
             }`}
           >
             {solutionUnlocked ? (solutionOpen ? <EyeOff size={12} /> : <Eye size={12} />) : <Lock size={12} />}
@@ -117,7 +117,7 @@ export default function ExerciseBlock({
           </button>
           <button
             onClick={() => { setCode(section.starterCode); setResults(null); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#30363d] text-gray-500 hover:text-gray-300 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-line-strong text-fg-subtle hover:text-fg-soft transition-all"
           >
             <RotateCcw size={12} /> {L.resetCode}
           </button>
@@ -137,8 +137,8 @@ export default function ExerciseBlock({
         {solutionOpen && solutionUnlocked && (
           <div className="mt-3">
             <div className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-2">{L.solution}</div>
-            <pre dir="ltr" className="bg-[#161B22] border border-purple-500/20 rounded-xl p-4 overflow-x-auto text-start">
-              <code className="font-mono text-[13px] text-gray-200 whitespace-pre">{section.solution}</code>
+            <pre dir="ltr" className="bg-surface border border-purple-500/20 rounded-xl p-4 overflow-x-auto text-start">
+              <code className="font-mono text-[13px] text-fg-soft whitespace-pre">{section.solution}</code>
             </pre>
           </div>
         )}

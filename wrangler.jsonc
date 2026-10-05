@@ -1,0 +1,16 @@
+{
+  // The website: a static export (`npm run build` -> ./out) served by Cloudflare
+  // Workers Static Assets. Used by Cloudflare's Git integration (Workers Builds,
+  // deploy command `npx wrangler deploy`). The API Worker lives in ./worker.
+  "name": "imbegnal",
+  "compatibility_date": "2025-07-01",
+  // Make `wrangler deploy` self-sufficient: build the site if ./out is missing
+  // (skipped when the dashboard's build step already produced it).
+  "build": {
+    "command": "test -d out || { test -d node_modules || npm ci; npm run build; }"
+  },
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page"
+  }
+}

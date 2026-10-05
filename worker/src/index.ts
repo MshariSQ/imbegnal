@@ -1,51 +1,12 @@
-interface Env {
-  DB: D1Database;
-  GITHUB_CLIENT_ID: string;
-  GITHUB_CLIENT_SECRET: string;
-  JWT_SECRET: string;
-  FRONTEND_URL: string;
-  WORKER_URL: string;
-}
-
-function b64url(input: string): string {
-  return btoa(input).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-}
-function b64urlDecode(str: string): string {
-  str = str.replace(/-/g, "+").replace(/_/g, "/");
-  while (str.length % 4) str += "=";
-  return atob(str);
-}
-
-async function signJWT(payload: Record<string, unknown>, secret: string): Promise<string> {
-  const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body = b64url(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000) }));
-  const data = `${header}.${body}`;
-  const key = await crypto.subtle.importKey(
-    "raw", new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
-  return `${data}.${b64url(String.fromCharCode(...new Uint8Array(sig)))}`;
-}
-
-async function verifyJWT(token: string, secret: string): Promise<Record<string, unknown> | null> {
-  try {
-    const [header, body, sig] = token.split(".");
-    if (!header || !body || !sig) return null;
-    const key = await crypto.subtle.importKey(
-      "raw", new TextEncoder().encode(secret),
-      { name: "HMAC", hash: "SHA-256" }, false, ["verify"]
-    );
-    const sigBytes = Uint8Array.from(atob(sig.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
-    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(`${header}.${body}`));
-    if (!valid) return null;
-    const p = JSON.parse(b64urlDecode(body));
-    // Tokens without an expiry would verify forever — reject them outright.
-    if (typeof p.exp !== "number") return null;
-    if (Date.now() / 1000 > p.exp) return null;
-    return p;
-  } catch { return null; }
-}
+// IMBEGNAL API — Cloudflare Worker + D1.
+// Routes: auth (GitHub, Google, email), profile, roadmap progress, bookmarks,
+// study-state sync and the AI tutor. Shared helpers live in util.ts.
+import { type Env, NO_STORE, corsHeaders, getCookie, getUser, isValidId, json, readJson, redirectWithToken } from "./util";
+import { handleLogin, handleRegister } from "./auth-email";
+import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
+import { handleStateGet, handleStatePut } from "./state";
+import { handleTutor } from "./ai";
+import { handleAccountDelete, handleEvent } from "./account";
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // Best-effort per-isolate sliding window. Not global (each Worker isolate has
@@ -64,51 +25,6 @@ function rateLimited(ip: string, isAuth: boolean): boolean {
   hits.push(now);
   rateBuckets.set(key, hits);
   return false;
-}
-
-// ── Input validation ──────────────────────────────────────────────────────────
-const ID_RE = /^[a-z0-9-]{1,64}$/;
-const isValidId = (v: unknown): v is string => typeof v === "string" && ID_RE.test(v);
-
-async function readJson(req: Request): Promise<Record<string, unknown> | null> {
-  try { return await req.json() as Record<string, unknown>; } catch { return null; }
-}
-
-function corsHeaders(origin: string): Record<string, string> {
-  const allowed = ["https://imbegnal.com", "https://www.imbegnal.com", "https://msharisq.github.io", "http://localhost:3000", "http://localhost:3001"];
-  return {
-    "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : allowed[0],
-    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Credentials": "true",
-  };
-}
-
-function json(data: unknown, status = 200, origin = "", extraHeaders: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Content-Type-Options": "nosniff",
-      ...corsHeaders(origin),
-      ...extraHeaders,
-    },
-  });
-}
-
-const NO_STORE = { "Cache-Control": "no-store" };
-
-async function getUser(req: Request, env: Env) {
-  const auth = req.headers.get("Authorization");
-  if (!auth?.startsWith("Bearer ")) return null;
-  return verifyJWT(auth.slice(7), env.JWT_SECRET);
-}
-
-function getCookie(req: Request, name: string): string | null {
-  const cookie = req.headers.get("Cookie");
-  if (!cookie) return null;
-  const m = cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return m ? m[1] : null;
 }
 
 // ── GET /api/health ───────────────────────────────────────────────────────────
@@ -192,7 +108,7 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
     return new Response(null, {
       status: 302,
       headers: {
-        Location: `${env.FRONTEND_URL}?error=auth_failed`,
+        Location: `${env.FRONTEND_URL}/auth/callback/?error=auth_failed`,
         "Set-Cookie": clearState,
         "Cache-Control": "no-store",
       },
@@ -230,24 +146,11 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
     `).bind(String(ghUser.id), ghUser.login, ghUser.name || ghUser.login,
       ghUser.avatar_url, ghUser.email || "", ghUser.bio || "").run();
 
-    const token = await signJWT({
-      sub: String(ghUser.id),
-      username: ghUser.login,
-      name: ghUser.name || ghUser.login,
-      avatar: ghUser.avatar_url,
-      exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-    }, env.JWT_SECRET);
-
-    // Token travels in the URL FRAGMENT: fragments are never sent to servers,
-    // never logged by proxies, and never leak via the Referer header.
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: `${env.FRONTEND_URL}/auth/callback/#token=${token}`,
-        "Set-Cookie": clearState,
-        "Cache-Control": "no-store",
-      },
-    });
+    return redirectWithToken(
+      { sub: String(ghUser.id), username: ghUser.login, name: ghUser.name || ghUser.login, avatar: ghUser.avatar_url },
+      env,
+      { "Set-Cookie": clearState }
+    );
   } catch (e) {
     return fail(e instanceof Error ? e.message : String(e));
   }
@@ -257,7 +160,7 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
 async function handleMe(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
   if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
-  const row = await env.DB.prepare("SELECT * FROM users WHERE github_id = ?").bind(user.sub).first();
+  const row = await env.DB.prepare("SELECT github_id, username, name, avatar_url, email, bio, provider, plan, created_at FROM users WHERE github_id = ?").bind(user.sub).first();
   return json(row, 200, origin, NO_STORE);
 }
 
@@ -381,7 +284,7 @@ async function handleBookmarksDelete(req: Request, env: Env, origin: string): Pr
 
 // ── Router ────────────────────────────────────────────────────────────────────
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const { pathname } = new URL(req.url);
     const origin = req.headers.get("Origin") ?? "";
 
@@ -399,6 +302,19 @@ export default {
     if (pathname === "/api/auth/github") return handleAuthGitHub(env);
     if (pathname === "/api/auth/callback") return handleAuthCallback(req, env);
     if (pathname === "/api/auth/me") return handleMe(req, env, origin);
+    if (pathname === "/api/auth/google") return handleGoogleStart(env, origin);
+    if (pathname === "/api/auth/google/callback") return handleGoogleCallback(req, env);
+    if (pathname === "/api/auth/register" && req.method === "POST") return handleRegister(req, env, origin);
+    if (pathname === "/api/auth/login" && req.method === "POST") return handleLogin(req, env, origin);
+
+    if (pathname === "/api/state") {
+      if (req.method === "GET") return handleStateGet(req, env, origin);
+      if (req.method === "PUT") return handleStatePut(req, env, origin);
+    }
+
+    if (pathname === "/api/ai/chat" && req.method === "POST") return handleTutor(req, env, origin, ctx);
+    if (pathname === "/api/event" && req.method === "POST") return handleEvent(req, env, origin);
+    if (pathname === "/api/account" && req.method === "DELETE") return handleAccountDelete(req, env, origin);
 
     if (pathname === "/api/progress") {
       if (req.method === "GET") return handleProgressGet(req, env, origin);

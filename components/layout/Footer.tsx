@@ -11,9 +11,12 @@ export default function Footer() {
 
   const footerLinks = {
     [tx.footer.sections.Platform]: [
+      { label: tx.nav.learn, href: `${BASE}/learn/` },
+      { label: tx.nav.dashboard, href: `${BASE}/dashboard/` },
       { label: fl.roadmaps, href: `${BASE}/roadmaps/` },
       { label: fl.certifications, href: `${BASE}/certifications/` },
-      { label: fl.courses, href: `${BASE}/courses/` },
+      { label: tx.nav.resources, href: `${BASE}/courses/` },
+      { label: tx.nav.pricing, href: `${BASE}/pricing/` },
       { label: fl.about, href: `${BASE}/about/` },
     ],
     [tx.footer.sections.Fields]: [
@@ -25,10 +28,10 @@ export default function Footer() {
       { label: fl.frontend, href: `${BASE}/roadmaps/frontend/` },
     ],
     [tx.footer.sections.Resources]: [
-      { label: fl.github, href: "https://github.com/MshariSQ/skillforge", external: true },
-      { label: fl.openSource, href: "https://github.com/MshariSQ/skillforge/blob/main/LICENSE", external: true },
-      { label: fl.contribute, href: "https://github.com/MshariSQ/skillforge/blob/main/CONTRIBUTING.md", external: true },
-      { label: fl.reportBug, href: "https://github.com/MshariSQ/skillforge/issues", external: true },
+      { label: fl.github, href: "https://github.com/MshariSQ/imbegnal", external: true },
+      { label: fl.openSource, href: "https://github.com/MshariSQ/imbegnal/blob/main/LICENSE", external: true },
+      { label: fl.contribute, href: "https://github.com/MshariSQ/imbegnal/blob/main/CONTRIBUTING.md", external: true },
+      { label: fl.reportBug, href: "https://github.com/MshariSQ/imbegnal/issues", external: true },
     ],
     [tx.footer.sections.Legal]: [
       { label: fl.privacy, href: `${BASE}/privacy/` },
@@ -38,7 +41,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="border-t border-[#21262d] bg-[#0D1117] mt-32">
+    <footer className="border-t border-line bg-surface/40 mt-24">
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           {/* Brand */}
@@ -47,16 +50,16 @@ export default function Footer() {
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                 <Zap size={16} className="text-emerald-400" />
               </div>
-              <span className="text-lg font-black tracking-wide text-white">
+              <span className="text-lg font-black tracking-wide text-fg">
                 IMBEGNAL
               </span>
             </a>
-            <p className="text-gray-500 text-sm leading-relaxed mb-4">{tx.footer.tagline}</p>
+            <p className="text-fg-subtle text-sm leading-relaxed mb-4">{tx.footer.tagline}</p>
             <a
-              href="https://github.com/MshariSQ/skillforge"
+              href="https://github.com/MshariSQ/imbegnal"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white border border-[#21262d] hover:border-gray-600 rounded-lg transition-all"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-fg-muted hover:text-fg border border-line hover:border-fg-faint rounded-lg transition-all"
             >
               <ExternalLink size={14} /> {tx.footer.viewOnGitHub}
             </a>
@@ -65,17 +68,17 @@ export default function Footer() {
           {/* Link columns */}
           {Object.entries(footerLinks).map(([section, links]) => (
             <div key={section}>
-              <h4 className="text-sm font-semibold text-white mb-3">{section}</h4>
+              <h2 className="text-sm font-semibold text-fg mb-3">{section}</h2>
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.label}>
                     {"external" in link && link.external ? (
                       <a href={link.href} target="_blank" rel="noopener noreferrer"
-                        className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                        className="text-sm text-fg-subtle hover:text-fg-soft transition-colors">
                         {link.label}
                       </a>
                     ) : (
-                      <a href={link.href} className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                      <a href={link.href} className="text-sm text-fg-subtle hover:text-fg-soft transition-colors">
                         {link.label}
                       </a>
                     )}
@@ -86,16 +89,16 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="pt-6 border-t border-[#21262d] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-600">
+        <div className="pt-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-fg-faint">
             © {new Date().getFullYear()} IMBEGNAL. {tx.footer.copyrightPrefix}{" "}
-            <a href="https://github.com/MshariSQ/skillforge/blob/main/LICENSE"
+            <a href="https://github.com/MshariSQ/imbegnal/blob/main/LICENSE"
               target="_blank" rel="noopener noreferrer"
-              className="hover:text-gray-400 underline underline-offset-2">
+              className="hover:text-fg-muted underline underline-offset-2">
               {tx.footer.mitLicense}
             </a>.
           </p>
-          <p className="text-sm text-gray-600">{tx.footer.builtWith}</p>
+          <p className="text-sm text-fg-faint">{tx.footer.builtWith}</p>
         </div>
       </div>
     </footer>
