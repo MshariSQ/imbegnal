@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     // Separate packages with their own toolchains
     "worker/**",
     "runner/**",
+    ".claude/**",
     "tests/e2e/artifacts/**",
   ]),
 ]);
