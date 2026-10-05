@@ -36,6 +36,19 @@ export function b64urlDecode(str: string): string {
   return atob(str);
 }
 
+/** base64url of UTF-8 bytes — btoa(string) alone throws on non-Latin-1 text such as Arabic names. */
+export function b64urlUtf8(input: string): string {
+  const bytes = new TextEncoder().encode(input);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+export function b64urlDecodeUtf8(str: string): string {
+  const bin = b64urlDecode(str);
+  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+}
+
 export function bytesToB64(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes));
 }
@@ -51,7 +64,7 @@ async function hmacKey(secret: string, usage: ("sign" | "verify")[]) {
 
 export async function signJWT(payload: Record<string, unknown>, secret: string): Promise<string> {
   const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body = b64url(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000) }));
+  const body = b64urlUtf8(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000) }));
   const data = `${header}.${body}`;
   const sig = await crypto.subtle.sign("HMAC", await hmacKey(secret, ["sign"]), new TextEncoder().encode(data));
   return `${data}.${b64url(String.fromCharCode(...new Uint8Array(sig)))}`;
@@ -64,7 +77,7 @@ export async function verifyJWT(token: string, secret: string): Promise<Record<s
     const sigBytes = b64ToBytes(sig.replace(/-/g, "+").replace(/_/g, "/"));
     const valid = await crypto.subtle.verify("HMAC", await hmacKey(secret, ["verify"]), sigBytes, new TextEncoder().encode(`${header}.${body}`));
     if (!valid) return null;
-    const p = JSON.parse(b64urlDecode(body));
+    const p = JSON.parse(b64urlDecodeUtf8(body));
     // Tokens without an expiry would verify forever — reject them outright.
     if (typeof p.exp !== "number") return null;
     if (Date.now() / 1000 > p.exp) return null;

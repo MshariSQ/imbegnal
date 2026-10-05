@@ -29,7 +29,9 @@ export function parseToken(token: string): AuthUser | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) as AuthUser;
+    // The payload is UTF-8 (display names may be Arabic); atob alone yields Latin-1 bytes.
+    const bin = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)))) as AuthUser;
     // Pure check (no side effects) — it also runs during React render.
     if (payload.exp && Date.now() / 1000 > payload.exp) return null;
     return payload;

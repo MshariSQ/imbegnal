@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Flame, NotebookPen, PlayCircle, Sparkles, Target, Trophy, Cloud } from "lucide-react";
 import type { L10n } from "@/data/lessons/types";
 import { useLang } from "@/lib/lang-context";
 import { getToken, removeToken, useAuthUser } from "@/lib/auth";
 import { deleteAccountRemote } from "@/lib/api";
+import { probeApi, useApiLevel } from "@/lib/capabilities";
+import { GITHUB_REPO } from "@/lib/site";
 import { completedCount, levelInfo, streak, today, totalXp, useStudy, useToday } from "@/lib/study-store";
 import ProgressRing from "@/components/ui/ProgressRing";
 import ProgressBar from "@/components/ui/ProgressBar";
@@ -57,6 +60,9 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
   const d = tx.dashboard;
   const user = useAuthUser();
   const study = useStudy();
+  const apiLevel = useApiLevel();
+  useEffect(() => { probeApi(); }, []);
+  const legacyApi = apiLevel === "legacy"; // site published before the new API: no sync, no account deletion
 
   const xp = totalXp(study);
   const lvl = levelInfo(xp);
@@ -149,7 +155,7 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
           <ProgressRing value={lvl.progress} size={64}><span dir="ltr">{lvl.level}</span></ProgressRing>
           <div>
             <div className="text-sm font-semibold text-fg">{d.statLevel} {lvl.level}</div>
-            <div className="text-xs text-fg-subtle" dir="ltr">{lvl.toNext} XP →</div>
+            <div className="text-xs text-fg-subtle"><bdi dir="ltr">{lvl.toNext} XP</bdi> <span className="inline-block rtl-flip">→</span></div>
           </div>
         </div>
       </section>
@@ -218,7 +224,17 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
           <section className="card p-5 flex items-start gap-3">
             {user ? <Cloud size={18} className="text-emerald-400 mt-0.5 shrink-0" /> : <Trophy size={18} className="text-amber-400 mt-0.5 shrink-0" />}
             <div className="text-sm text-fg-muted">
-              {user ? (
+              {legacyApi ? (
+                <>
+                  {user ? d.syncLocal : d.syncGuestLocal}
+                  {user && (
+                    <span className="block mt-2 text-xs text-fg-subtle">
+                      {d.deleteLegacy}{" "}
+                      <a href={`${GITHUB_REPO}/issues/new`} target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline underline-offset-2">{d.deleteLegacyLink}</a>.
+                    </span>
+                  )}
+                </>
+              ) : user ? (
                 <>
                   {d.syncOn}
                   <button onClick={deleteAccount} className="block mt-2 text-xs text-fg-subtle hover:text-red-400 underline underline-offset-2">

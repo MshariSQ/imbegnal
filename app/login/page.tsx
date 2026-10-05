@@ -41,7 +41,7 @@ function AuthForm() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(params.get("error") ? a.errorAuthFailed : null);
-  const next = params.get("next")?.startsWith("/") ? params.get("next")! : "/dashboard/";
+  const nextParam = params.get("next");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +51,7 @@ function AuthForm() {
       const { token } = mode === "login" ? await loginWithEmail(email, password) : await registerWithEmail(name, email, password);
       saveToken(token);
       track("auth");
-      router.replace(next);
+      router.replace(safeNext(nextParam));
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
       const status = err instanceof ApiError ? err.status : 0;
@@ -135,6 +135,18 @@ function AuthForm() {
       </p>
     </div>
   );
+}
+
+/** Only same-origin paths: blocks "//evil.com", "/\\evil.com" and tab/newline tricks. */
+function safeNext(raw: string | null): string {
+  const fallback = "/dashboard/";
+  if (!raw) return fallback;
+  try {
+    const u = new URL(raw, window.location.origin);
+    return u.origin === window.location.origin ? u.pathname + u.search + u.hash : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export default function LoginPage() {

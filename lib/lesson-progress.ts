@@ -7,6 +7,9 @@ export interface LessonProgress {
 const key = (roadmapId: string, nodeId: string) => `sf-lesson:${roadmapId}:${nodeId}`;
 
 const listeners = new Set<() => void>();
+// Latest progress per lesson when localStorage rejects writes (full / blocked),
+// so the UI still reflects what the student just passed in this session.
+const memory = new Map<string, string>();
 
 /** For useSyncExternalStore — re-renders subscribers whenever progress is saved. */
 export function subscribeLessonProgress(cb: () => void): () => void {
@@ -17,8 +20,11 @@ export function subscribeLessonProgress(cb: () => void): () => void {
 /** Raw stored string ("" when none) — a stable primitive snapshot. */
 export function readLessonProgressRaw(roadmapId: string, nodeId: string): string {
   if (typeof window === "undefined") return "";
+  const k = key(roadmapId, nodeId);
+  const pending = memory.get(k);
+  if (pending !== undefined) return pending;
   try {
-    return localStorage.getItem(key(roadmapId, nodeId)) ?? "";
+    return localStorage.getItem(k) ?? "";
   } catch {
     return "";
   }
@@ -39,10 +45,13 @@ export function getLessonProgress(roadmapId: string, nodeId: string): LessonProg
 }
 
 export function saveLessonProgress(roadmapId: string, nodeId: string, p: LessonProgress): void {
+  const k = key(roadmapId, nodeId);
+  const raw = JSON.stringify(p);
   try {
-    localStorage.setItem(key(roadmapId, nodeId), JSON.stringify(p));
+    localStorage.setItem(k, raw);
+    memory.delete(k);
   } catch {
-    // storage full or blocked — progress just won't persist
+    memory.set(k, raw); // storage full or blocked — keep it for this session only
   }
   listeners.forEach((l) => l());
 }

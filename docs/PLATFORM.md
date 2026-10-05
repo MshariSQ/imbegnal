@@ -38,13 +38,13 @@ Merging to `main` runs `.github/workflows/deploy.yml`, in this order:
 
 1. **Verify** — lint, type-check and build the site (no external effects; a broken frontend stops here).
 2. **API** — `wrangler d1 migrations apply --remote` (only migrations not yet applied, tracked in D1's `d1_migrations` table), then `wrangler deploy`. Main branch only.
-3. **Site** — the build from step 1 is published to GitHub Pages, only if step 2 succeeded.
+3. **Site** — the build from step 1 is published to GitHub Pages, only if step 2 succeeded (or was skipped because the Cloudflare secrets are not set — see *frontend-only mode* below).
 
 The site is also built by Cloudflare's Git integration (Workers Builds, project `imbegnal`) using the root
 `wrangler.jsonc` (`npm run build` → `npx wrangler deploy` publishes `./out` as static assets, with `public/_headers`
 for long-lived caching). That path is independent of the workflow above, so on merge the frontend can go live a
 minute or two before the API deploy finishes; the old and new API/frontend are compatible in both directions
-(new site + old API: email sign-up, sync and tutor show an error until the API is deployed; everything else works).
+(new site + old API = frontend-only mode, below: the dashboard says progress is saved on this device, and features that need the new API show friendly errors).
 `NEXT_PUBLIC_API_URL` defaults to the live Worker in production builds, so a build without env vars cannot ship a localhost URL.
 Cloudflare project settings that match the repo: root directory `/`, build command `npm run build` (optional — `wrangler.jsonc`
 builds `./out` itself when it is missing), deploy command `npx wrangler deploy`, Node version from `.node-version` (22).
@@ -65,11 +65,11 @@ builds `./out` itself when it is missing), deploy command `npx wrangler deploy`,
    `WORKER_URL`) are re-applied from the file on every deploy, so edit those in the file, not the dashboard.
 
 **Without the two GitHub secrets** the API job passes with a warning and deploys **nothing** (API and database untouched); the site still
-publishes — *frontend-only mode*. Against the previous API the new site keeps working for GitHub sign-in, progress and bookmarks, and
-all learning happens locally (courses, lessons, quizzes, notes, dashboard). Email sign-up, Google sign-in, cross-device sync, the AI
-tutor, account deletion and analytics need the new API and show friendly errors until it is deployed. Once the secrets exist, the next
-run (or "Re-run all jobs") applies migrations, deploys the worker, then publishes the site. If the secrets exist but a step fails, the
-pipeline stops and the site is **not** published.
+publishes — *frontend-only mode*. In this mode GitHub sign-in, lessons, quizzes, notes and progress (saved on this device) keep working; email sign-up, Google sign-in, cloud sync, the AI tutor and account deletion need the new API.
+The dashboard detects the old API (`GET /api/state` answers 404; the new Worker answers 401) and says so instead of claiming sync; it
+points to a GitHub request for data deletion. Once the secrets exist, the next run (or "Re-run all jobs") applies migrations, deploys
+the Worker, then publishes the site. If the secrets exist but a step fails, the pipeline stops and the site is **not** published.
+Deleting or rotating the secrets later silently returns the pipeline to frontend-only mode (watch for the warning annotation).
 
 > **Rollbacks:** do not roll the Worker back to a version older than the email-accounts release once anyone has signed up
 > with email: the old `/api/auth/me` returned every column (including `password_hash`). Roll forward with a fix instead.

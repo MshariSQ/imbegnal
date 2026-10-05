@@ -57,12 +57,9 @@ jobs:
   #    present the frontend never ships ahead of the API it calls. Needs repo
   #    secrets CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID.
   #    Without them this job passes with a warning and deploys NOTHING, so the
-  #    site still publishes ("frontend-only"). The new frontend degrades
-  #    gracefully against the previous API: GitHub sign-in, progress and
-  #    bookmarks keep working; email sign-up, Google sign-in, cross-device sync
-  #    and the AI tutor need the new API and show friendly errors until it is
-  #    deployed. If the secrets exist but a step FAILS, the pipeline stops and
-  #    the site is not published.
+  #    site still publishes ("frontend-only"). Then: GitHub sign-in, lessons, quizzes, notes and progress (saved on this device) keep working; email sign-up, Google sign-in, cloud sync, the AI tutor and account deletion need the new API
+  #    (friendly errors until it is deployed). If the secrets exist but a step
+  #    FAILS, the pipeline stops and the site is not published.
   #    Production only: a manual run from another branch skips this job (and so
   #    the publish job) instead of migrating the production database.
   worker:
@@ -91,13 +88,16 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+          missing=""
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && missing="CLOUDFLARE_API_TOKEN"
+          [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && missing="${missing:+$missing, }CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=API not deployed::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID are not set, so the API and database were NOT touched. The site still publishes (frontend-only): email sign-up, Google sign-in, sync and the AI tutor need the new API. See docs/PLATFORM.md."
+            echo "::warning title=API not deployed::Missing repository secret(s): $missing. The API and database were NOT touched; the site will be published without them (frontend-only). See docs/PLATFORM.md."
             {
               echo "### API not deployed"
-              echo "Repository secrets \`CLOUDFLARE_API_TOKEN\` and \`CLOUDFLARE_ACCOUNT_ID\` are missing, so this run published the **site only**."
-              echo "Add them (see docs/PLATFORM.md) and re-run to deploy the API and database migrations."
+              echo "Missing repository secret(s): \`$missing\`. The API and database were not touched, and the site is published without them (frontend-only)."
+              echo "Add the secret(s) (see docs/PLATFORM.md) and re-run to deploy the API and database migrations."
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
