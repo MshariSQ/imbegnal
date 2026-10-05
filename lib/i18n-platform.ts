@@ -10,6 +10,8 @@ type Widen<T> = T extends string ? string : T extends readonly (infer U)[] ? rea
 export const platformEn = {
   common: {
     levels: { Beginner: "Beginner", Intermediate: "Intermediate", Advanced: "Advanced", "All Levels": "All levels" },
+    approxHours: "~{n}h",
+    approxHoursOne: "~{n}h",
     loading: "Loading…",
     minutes: "min",
     lessons: "lessons",
@@ -233,6 +235,8 @@ export type PlatformTx = Widen<typeof platformEn>;
 export const platformAr: PlatformTx = {
   common: {
     levels: { Beginner: "مبتدئ", Intermediate: "متوسط", Advanced: "متقدم", "All Levels": "كل المستويات" },
+    approxHours: "حوالي {n} ساعات",
+    approxHoursOne: "حوالي ساعة",
     loading: "جارٍ التحميل…",
     minutes: "دقيقة",
     lessons: "دروس",

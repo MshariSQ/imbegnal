@@ -23,7 +23,7 @@ function Stat({ icon, label, value, tint }: { icon: React.ReactNode; label: stri
   return (
     <div className="card p-4 sm:p-5">
       <span className={`w-9 h-9 rounded-xl grid place-items-center mb-3 ${tint}`}>{icon}</span>
-      <div className="text-2xl sm:text-3xl font-black text-fg tabular-nums" dir="ltr">{value}</div>
+      <div className="text-2xl sm:text-3xl font-black text-fg tabular-nums"><bdi dir="ltr">{value}</bdi></div>
       <div className="text-xs text-fg-subtle mt-0.5">{label}</div>
     </div>
   );
