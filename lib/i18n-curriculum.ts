@@ -1,0 +1,21 @@
+/**
+ * curriculum strings (English + Arabic). `curriculumAr` is type-checked against
+ * `curriculumEn`, so a missing Arabic key is a compile error. Merged into
+ * `translations` in i18n.ts. Keep keys flat-ish and add, never rename, so
+ * parallel work does not collide.
+ */
+import type { Widen } from "./i18n-types";
+
+export const curriculumEn = {
+  curriculum: {
+    title: "Curriculum",
+  },
+};
+
+export type CurriculumTx = Widen<typeof curriculumEn>;
+
+export const curriculumAr: CurriculumTx = {
+  curriculum: {
+    title: "المنهج",
+  },
+};

@@ -5,7 +5,7 @@
  * is a compile error.
  */
 
-type Widen<T> = T extends string ? string : T extends readonly (infer U)[] ? readonly Widen<U>[] : { [K in keyof T]: Widen<T[K]> };
+import type { Widen } from "./i18n-types";
 
 export const platformEn = {
   common: {
