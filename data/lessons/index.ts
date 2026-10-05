@@ -1,6 +1,11 @@
 import type { Lesson } from "./types";
+import { networkingLessons } from "./networking";
+import { operatingSystemsLessons } from "./operating-systems";
+import { dataStructuresAlgorithmsLessons } from "./data-structures-algorithms";
+import { databasesLessons } from "./databases";
+import { reverseEngineeringLessons } from "./reverse-engineering";
 
-const registry: Record<string, () => Promise<{ lesson: Lesson }>> = {
+const baseRegistry: Record<string, () => Promise<{ lesson: Lesson }>> = {
   "frontend/html-css": () => import("./frontend/html-css"),
   "frontend/javascript": () => import("./frontend/javascript"),
   "frontend/git": () => import("./frontend/git"),
@@ -75,6 +80,15 @@ const registry: Record<string, () => Promise<{ lesson: Lesson }>> = {
   "ui-ux/prototyping": () => import("./ui-ux/prototyping"),
   "ui-ux/design-systems": () => import("./ui-ux/design-systems"),
   "ui-ux/accessibility": () => import("./ui-ux/accessibility"),
+};
+
+const registry: Record<string, () => Promise<{ lesson: Lesson }>> = {
+  ...baseRegistry,
+  ...networkingLessons,
+  ...operatingSystemsLessons,
+  ...dataStructuresAlgorithmsLessons,
+  ...databasesLessons,
+  ...reverseEngineeringLessons,
 };
 
 export function hasLesson(roadmapId: string, nodeId: string): boolean {

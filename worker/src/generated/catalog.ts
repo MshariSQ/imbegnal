@@ -118,6 +118,31 @@ export const catalog: Catalog = {
         "design-systems",
         "accessibility"
       ]
+    },
+    {
+      "id": "networking",
+      "title": "Networking",
+      "lessons": []
+    },
+    {
+      "id": "operating-systems",
+      "title": "Operating Systems",
+      "lessons": []
+    },
+    {
+      "id": "data-structures-algorithms",
+      "title": "Data Structures & Algorithms",
+      "lessons": []
+    },
+    {
+      "id": "databases",
+      "title": "Databases",
+      "lessons": []
+    },
+    {
+      "id": "reverse-engineering",
+      "title": "Reverse Engineering",
+      "lessons": []
     }
   ],
   "labs": []
