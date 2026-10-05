@@ -6,12 +6,29 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:catalog": "node --import tsx scripts/gen-catalog.mts",
+    "check:catalog": "node --import tsx scripts/gen-catalog.mts --check",
+    "test:unit": "node --import tsx --test \"tests/unit/**/*.test.ts\"",
+    "test:worker": "node --import tsx --test \"worker/tests/**/*.test.ts\"",
+    "test:runner": "node --import tsx --test --test-concurrency=1 \"runner/tests/**/*.test.ts\"",
+    "test:e2e": "node tests/e2e/run.mjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker && tsc --noEmit -p runner"
   },
   "dependencies": {
+    "@codemirror/lang-cpp": "^6.0.3",
+    "@codemirror/lang-go": "^6.0.1",
     "@codemirror/lang-html": "^6.4.11",
+    "@codemirror/lang-java": "^6.0.2",
     "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-php": "^6.0.2",
     "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/lang-rust": "^6.0.2",
+    "@codemirror/lang-sql": "^6.10.0",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/legacy-modes": "^6.5.4",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
     "@lezer/highlight": "^1.2.5",
     "@uiw/codemirror-theme-github": "^4.25.12",
     "@uiw/react-codemirror": "^4.25.10",
@@ -31,7 +48,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "playwright": "^1.63.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
