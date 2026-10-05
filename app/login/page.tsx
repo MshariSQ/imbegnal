@@ -142,7 +142,7 @@ export default function LoginPage() {
   return (
     <main className="relative min-h-[100dvh] pt-24 pb-16 px-4 overflow-hidden">
       <div aria-hidden className="absolute inset-0 bg-grid opacity-70" />
-      <div aria-hidden className="absolute -top-40 start-1/2 -translate-x-1/2 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-brand" />
+      <div aria-hidden className="absolute -top-40 left-1/2 -translate-x-1/2 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-brand" />
       <div className="relative max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
         <section className="hidden lg:block">
           <span className="w-12 h-12 rounded-2xl bg-brand/15 border border-brand/30 grid place-items-center mb-6">
