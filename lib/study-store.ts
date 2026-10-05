@@ -120,6 +120,14 @@ export function today(d = new Date()): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+const noopSubscribe = () => () => {};
+
+/** Today's local date key. Empty during SSR/hydration so prerendered HTML never
+ *  bakes in the build-time date (avoids hydration mismatches). */
+export function useToday(): string {
+  return useSyncExternalStore(noopSubscribe, () => today(), () => "");
+}
+
 function addDay(days: string[]): string[] {
   const t = today();
   if (days[days.length - 1] === t) return days;

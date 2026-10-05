@@ -91,7 +91,7 @@ export default function Footer() {
 
         <div className="pt-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-fg-faint">
-            © {new Date().getFullYear()} IMBEGNAL. {tx.footer.copyrightPrefix}{" "}
+            © <span suppressHydrationWarning>{new Date().getFullYear()}</span> IMBEGNAL. {tx.footer.copyrightPrefix}{" "}
             <a href="https://github.com/MshariSQ/imbegnal/blob/main/LICENSE"
               target="_blank" rel="noopener noreferrer"
               className="hover:text-fg-muted underline underline-offset-2">

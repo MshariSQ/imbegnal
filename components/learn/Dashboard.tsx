@@ -6,7 +6,7 @@ import type { L10n } from "@/data/lessons/types";
 import { useLang } from "@/lib/lang-context";
 import { getToken, removeToken, useAuthUser } from "@/lib/auth";
 import { deleteAccountRemote } from "@/lib/api";
-import { completedCount, levelInfo, streak, today, totalXp, useStudy } from "@/lib/study-store";
+import { completedCount, levelInfo, streak, today, totalXp, useStudy, useToday } from "@/lib/study-store";
 import ProgressRing from "@/components/ui/ProgressRing";
 import ProgressBar from "@/components/ui/ProgressBar";
 import CourseCard from "./CourseCard";
@@ -33,9 +33,11 @@ function Stat({ icon, label, value, tint }: { icon: React.ReactNode; label: stri
 function WeekStrip({ days }: { days: string[] }) {
   const { lang } = useLang();
   const set = new Set(days);
+  const todayKey = useToday(); // "" until mounted — placeholder cells keep SSR and hydration identical
   const cells = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
+    if (!todayKey) return { key: `p${i}`, label: "", active: false };
+    const [y, m, day] = todayKey.split("-").map(Number);
+    const d = new Date(y, m - 1, day - (6 - i));
     return { key: today(d), label: d.toLocaleDateString(lang === "ar" ? "ar" : "en", { weekday: "narrow" }), active: set.has(today(d)) };
   });
   return (
@@ -43,7 +45,7 @@ function WeekStrip({ days }: { days: string[] }) {
       {cells.map((c, i) => (
         <div key={c.key} className="flex-1 flex flex-col items-center gap-1.5">
           <div className={`w-full rounded-md transition-all ${c.active ? "h-9 bg-brand" : "h-3 bg-surface-2"} ${i === 6 ? "ring-1 ring-brand/40" : ""}`} />
-          <span className="text-[10px] text-fg-subtle">{c.label}</span>
+          <span className="text-[10px] text-fg-subtle min-h-[1em]">{c.label}</span>
         </div>
       ))}
     </div>

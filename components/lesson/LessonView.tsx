@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useSyncExternalStore } from "react";
 import { Clock, PartyPopper } from "lucide-react";
 import type { Lesson } from "@/data/lessons/types";
-import { getLessonProgress, markSectionPassed, markLessonDone, type LessonProgress } from "@/lib/lesson-progress";
+import { getLessonProgress, markSectionPassed, markLessonDone, parseLessonProgress, readLessonProgressRaw, subscribeLessonProgress, type LessonProgress } from "@/lib/lesson-progress";
 import { useLang } from "@/lib/lang-context";
 import TextBlock from "./TextBlock";
 import CodeDemo from "./CodeDemo";
@@ -14,7 +14,8 @@ import QuizBlock from "./QuizBlock";
 export const sectionId = (i: number) => `sec-${i}`;
 
 // NOTE: rendered with key={nodeId} so the whole view (and its state) remounts
-// per lesson — progress can therefore be initialized lazily from localStorage.
+// per lesson. Progress lives in localStorage and is read through
+// useSyncExternalStore: empty during SSR/hydration, then the stored value.
 export default function LessonView({
   lesson,
   roadmapId,
@@ -35,11 +36,14 @@ export default function LessonView({
   const { tx } = useLang();
   const L = tx.lesson;
 
-  const [progress, setProgress] = useState<LessonProgress>(() =>
-    getLessonProgress(roadmapId, lesson.nodeId)
+  const rawProgress = useSyncExternalStore(
+    subscribeLessonProgress,
+    () => readLessonProgressRaw(roadmapId, lesson.nodeId),
+    () => ""
   );
+  const progress = useMemo(() => parseLessonProgress(rawProgress), [rawProgress]);
   const [justCompleted, setJustCompleted] = useState(false);
-  const completeFiredRef = useRef(!!progress.done);
+  const completeFiredRef = useRef(false);
 
   const gateIndexes = useMemo(() => {
     const ex: number[] = [];
@@ -65,6 +69,7 @@ export default function LessonView({
     const allQuiz = gateIndexes.quiz.every((i) => p.quiz.includes(i));
     if (allEx && allQuiz && !completeFiredRef.current) {
       completeFiredRef.current = true;
+      if (getLessonProgress(roadmapId, lesson.nodeId).done) return; // finished in an earlier visit
       markLessonDone(roadmapId, lesson.nodeId);
       setJustCompleted(true);
       onLessonComplete();
@@ -74,7 +79,6 @@ export default function LessonView({
   function handlePass(kind: "ex" | "quiz", sectionIndex: number) {
     const firstTime = !getLessonProgress(roadmapId, lesson.nodeId)[kind].includes(sectionIndex);
     const p = markSectionPassed(roadmapId, lesson.nodeId, kind, sectionIndex);
-    setProgress(p);
     if (firstTime) onSectionPassed?.(kind);
     checkCompletion(p);
   }

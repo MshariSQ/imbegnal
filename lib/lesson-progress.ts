@@ -6,16 +6,36 @@ export interface LessonProgress {
 
 const key = (roadmapId: string, nodeId: string) => `sf-lesson:${roadmapId}:${nodeId}`;
 
-export function getLessonProgress(roadmapId: string, nodeId: string): LessonProgress {
-  if (typeof window === "undefined") return { ex: [], quiz: [] };
+const listeners = new Set<() => void>();
+
+/** For useSyncExternalStore — re-renders subscribers whenever progress is saved. */
+export function subscribeLessonProgress(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+/** Raw stored string ("" when none) — a stable primitive snapshot. */
+export function readLessonProgressRaw(roadmapId: string, nodeId: string): string {
+  if (typeof window === "undefined") return "";
   try {
-    const raw = localStorage.getItem(key(roadmapId, nodeId));
-    if (!raw) return { ex: [], quiz: [] };
+    return localStorage.getItem(key(roadmapId, nodeId)) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function parseLessonProgress(raw: string): LessonProgress {
+  if (!raw) return { ex: [], quiz: [] };
+  try {
     const p = JSON.parse(raw) as LessonProgress;
     return { ex: p.ex ?? [], quiz: p.quiz ?? [], done: p.done };
   } catch {
     return { ex: [], quiz: [] };
   }
+}
+
+export function getLessonProgress(roadmapId: string, nodeId: string): LessonProgress {
+  return parseLessonProgress(readLessonProgressRaw(roadmapId, nodeId));
 }
 
 export function saveLessonProgress(roadmapId: string, nodeId: string, p: LessonProgress): void {
@@ -24,6 +44,7 @@ export function saveLessonProgress(roadmapId: string, nodeId: string, p: LessonP
   } catch {
     // storage full or blocked — progress just won't persist
   }
+  listeners.forEach((l) => l());
 }
 
 export function markSectionPassed(
