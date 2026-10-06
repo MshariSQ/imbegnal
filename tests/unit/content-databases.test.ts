@@ -21,10 +21,10 @@ const LESSON_IDS = [
   "data-modeling-normalization",
   "joins-aggregation",
   "indexes-performance",
-  "transactions-acid",
 ];
 const NODE_IDS = [
   ...LESSON_IDS,
+  "transactions-acid",
   "nosql-models",
   "backup-replication",
   "db-security",
@@ -101,7 +101,7 @@ test("roadmap nodes: ids, order, status and descriptions", () => {
     }
   }
   const required = databasesNodes.filter((n) => n.status === "required").map((n) => n.id);
-  assert.deepEqual(required, LESSON_IDS);
+  assert.deepEqual(required, [...LESSON_IDS, "transactions-acid"]);
 });
 
 test("registry fragment: keys are databases/<node-id> and match the planned lessons", () => {
