@@ -145,12 +145,18 @@ export function assertNoProblems(problems: string[]) {
 export async function axeSeriousViolations(page: Page): Promise<string[]> {
   await page.addScriptTag({ path: join(ROOT, "node_modules/axe-core/axe.min.js") });
   const violations = await page.evaluate(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- axe is injected as a global
+    interface AxeViolation {
+      id: string;
+      impact?: string | null;
+      nodes: { target: unknown[] }[];
+    }
+    const axe = (window as unknown as { axe: { run: (ctx: object, opts: object) => Promise<{ violations: AxeViolation[] }> } }).axe;
     // `.cm-activeLine`: CodeMirror's GitHub-light theme paints the active line's tokens below 4.5:1
     // (components/lesson/CodeRunner.tsx, not part of this workstream; reported in the hand-off notes).
-    const result = await (window as any).axe.run({ exclude: [[".cm-activeLine"]] }, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return result.violations.filter((v: any) => v.impact === "serious" || v.impact === "critical").map((v: any) => `${v.impact} ${v.id}: ${v.nodes.slice(0, 3).map((n: any) => n.target.join(" ")).join(" | ")}`);
+    const result = await axe.run({ exclude: [[".cm-activeLine"]] }, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
+    return result.violations
+      .filter((v) => v.impact === "serious" || v.impact === "critical")
+      .map((v) => `${v.impact} ${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`);
   });
   return violations;
 }

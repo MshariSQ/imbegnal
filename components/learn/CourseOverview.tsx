@@ -197,7 +197,7 @@ export default function CourseOverview({ trackId, curriculum: cur, lessons, chal
                               <div className="min-w-0 flex-1">
                                 <Link href={lessonHref(trackId, l.lessonId)} className="group inline-flex items-start gap-2 rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
                                   <span className="text-[15px] font-semibold text-fg group-hover:text-emerald-400 transition-colors">
-                                    <span className="text-fg-subtle font-medium me-1.5" dir="ltr">{n}.</span>
+                                    <span className="text-fg-subtle font-medium me-2" dir="ltr">{lang === "en" ? `${n}.` : n}</span>
                                     {l.title[lang]}
                                   </span>
                                   <ArrowRight size={15} className="rtl-flip text-fg-faint group-hover:text-emerald-400 mt-1 shrink-0 transition-colors" aria-hidden />
