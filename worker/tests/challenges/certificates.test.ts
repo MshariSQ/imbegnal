@@ -68,7 +68,6 @@ function assertValidCertificatePdf(bytes: Uint8Array): ParsedPdf {
   // Only printable ASCII in the body (the header's binary comment is the single exception).
   const raw = Buffer.from(bytes).toString("latin1");
   const afterHeader = raw.slice(raw.indexOf("\n", raw.indexOf("\n") + 1));
-  // eslint-disable-next-line no-control-regex -- checking for stray control/binary bytes is the point
   assert.ok(!/[^\x09\x0a\x0d\x20-\x7e]/.test(afterHeader), "no binary or control bytes outside the header comment");
   return pdf;
 }

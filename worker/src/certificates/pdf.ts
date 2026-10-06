@@ -41,7 +41,6 @@ export function isWinAnsiRepresentable(text: string): boolean {
  * Control characters and surrounding whitespace never reach the page.
  */
 export function pdfSafeName(name: string | null | undefined, username: string | null | undefined): string {
-  // eslint-disable-next-line no-control-regex -- stripping control characters is the point
   const clean = (s: string | null | undefined) => (s ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
   const n = clean(name);
   if (n && isWinAnsiRepresentable(n)) return n;

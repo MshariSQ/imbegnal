@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { ChallengesApiResponse, SubmitResponse } from "../../../shared/api";
-import type { ChallengeHintResponse, ChallengeOpenResponse } from "../../../shared/challenges";
+import type { ChallengeHintResponse, ChallengeMine, ChallengeOpenResponse } from "../../../shared/challenges";
 import { FLAG, makeWorld, seedSolve, type World } from "./helpers/world";
 
 const flag = (w: World, id: string, token: string | null, value: string = FLAG) => w.api<SubmitResponse>(`/api/challenges/${id}/submit`, { method: "POST", token, body: { flag: value } });
@@ -228,7 +228,7 @@ test("list: opened-but-unsolved progress shows attempts and revealed hints", asy
   assert.equal(mine?.solved, false);
   assert.equal(mine?.attempts, 1);
   assert.equal(mine?.hintsUsed, 1);
-  assert.equal(mine?.hintMask, 2);
+  assert.equal((mine as ChallengeMine | undefined)?.hintMask, 2);
 });
 
 test("emails never appear in any challenge response", async () => {
