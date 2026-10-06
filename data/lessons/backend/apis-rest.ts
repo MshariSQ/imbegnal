@@ -251,6 +251,94 @@ GET /api/me   (مع الترويسة: Authorization: Bearer <token>)
       },
     },
     {
+      type: "lab",
+      id: "validate-user",
+      lang: "javascript",
+      prompt: {
+        en: `**Validate before you trust.** A \`POST /users\` endpoint must reject bad input with \`400\` and a precise reason. Each line of standard input is one request body (JSON text). For each line print one result:
+
+- \`400 body\` when the text is not valid JSON or is not a JSON object
+- otherwise check the fields **in this order** and report the first problem as \`400 <field>\`:
+  1. \`name\` must be a non-empty string after trimming
+  2. \`email\` must be a string with exactly one \`@\`, text on both sides, and a \`.\` in the part after the \`@\`
+  3. \`age\` is optional, but when present it must be an integer from 13 to 120
+- \`201\` when everything is valid
+
+Blank lines are skipped.`,
+        ar: `**تحقّق قبل أن تثق.** يجب أن ترفض نقطة النهاية \`POST /users\` الدخل الخاطئ بالرمز \`400\` وسبب دقيق. كل سطر من الدخل القياسي هو جسم طلب واحد (نص JSON). اطبع نتيجة واحدة لكل سطر:
+
+- \`400 body\` حين لا يكون النص JSON صالحاً أو لا يكون كائن JSON
+- وإلا افحص الحقول **بهذا الترتيب** وأبلغ عن أول مشكلة بالصيغة \`400 <field>\`:
+  1. يجب أن يكون \`name\` نصاً غير فارغ بعد إزالة الفراغات من طرفيه
+  2. يجب أن يكون \`email\` نصاً فيه \`@\` واحدة بالضبط ونص على جانبيها ونقطة \`.\` في الجزء الذي بعد \`@\`
+  3. الحقل \`age\` اختياري، لكن إن وُجد فيجب أن يكون عدداً صحيحاً من 13 إلى 120
+- \`201\` حين يكون كل شيء صالحاً
+
+تُتخطى الأسطر الفارغة.`,
+      },
+      starterCode: `const fs = require("fs");
+
+function validate(line) {
+  let body;
+  try {
+    body = JSON.parse(line);
+  } catch {
+    return "400 body";
+  }
+  // TODO 1: return "400 body" unless body is a plain object (not null, not an array)
+  // TODO 2: name: non-empty string after trim()   -> "400 name"
+  // TODO 3: email: string, exactly one "@", text on both sides, a "." after the "@"  -> "400 email"
+  // TODO 4: age (optional): Number.isInteger and between 13 and 120  -> "400 age"
+  return "201";
+}
+
+for (const line of fs.readFileSync(0, "utf8").split("\\n")) {
+  if (line.trim() === "") continue;
+  console.log(validate(line));
+}
+`,
+      solution: `const fs = require("fs");
+
+function validate(line) {
+  let body;
+  try {
+    body = JSON.parse(line);
+  } catch {
+    return "400 body";
+  }
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return "400 body";
+
+  if (typeof body.name !== "string" || body.name.trim() === "") return "400 name";
+
+  const email = body.email;
+  if (typeof email !== "string") return "400 email";
+  const parts = email.split("@");
+  if (parts.length !== 2 || parts[0] === "" || parts[1] === "" || !parts[1].includes(".")) return "400 email";
+
+  if ("age" in body) {
+    if (!Number.isInteger(body.age) || body.age < 13 || body.age > 120) return "400 age";
+  }
+  return "201";
+}
+
+for (const line of fs.readFileSync(0, "utf8").split("\\n")) {
+  if (line.trim() === "") continue;
+  console.log(validate(line));
+}
+`,
+      hints: [
+        { en: "Check the type first (`typeof`), then the content: calling `.trim()` on a number would crash.", ar: "افحص النوع أولاً (`typeof`) ثم المحتوى: استدعاء `.trim()` على رقم سيتسبب بخطأ." },
+        { en: "`email.split(\"@\")` must give exactly two non-empty parts, and the second must contain a dot.", ar: "يجب أن يعطي `email.split(\"@\")` جزأين غير فارغين بالضبط، ويجب أن يحتوي الثاني نقطة." },
+        { en: "`Number.isInteger(25.0)` is true but `Number.isInteger(\"25\")` and `Number.isInteger(25.5)` are false: exactly what age needs.", ar: "تعيد `Number.isInteger(25.0)` صحيحاً أما `Number.isInteger(\"25\")` و`Number.isInteger(25.5)` فخطأ: هذا ما يحتاجه حقل العمر." },
+      ],
+      tests: [
+        { name: { en: "A valid request and a missing name", ar: "طلب صالح وطلب بلا اسم" }, stdin: "{\"name\":\"Amal\",\"email\":\"amal@example.com\",\"age\":30}\n{\"email\":\"a@b.co\"}\n", expected: "201\n400 name" },
+        { name: { en: "Reports the first failing field in order", ar: "يُبلغ عن أول حقل فاشل بالترتيب" }, stdin: "{\"name\":\"  \",\"email\":\"bad\"}\n{\"name\":\"Sam\",\"email\":\"sam@nodot\"}\n{\"name\":\"Sam\",\"email\":\"@example.com\"}\n{\"name\":\"Sam\",\"email\":\"a@@b.co\"}\n", expected: "400 name\n400 email\n400 email\n400 email" },
+        { name: { en: "Age is optional but strict", ar: "العمر اختياري لكنه صارم" }, stdin: "{\"name\":\"Kid\",\"email\":\"k@x.io\",\"age\":12}\n{\"name\":\"Old\",\"email\":\"o@x.io\",\"age\":121}\n{\"name\":\"Str\",\"email\":\"s@x.io\",\"age\":\"30\"}\n{\"name\":\"Flt\",\"email\":\"f@x.io\",\"age\":30.5}\n{\"name\":\"Ok\",\"email\":\"ok@x.io\",\"age\":13}\n", expected: "400 age\n400 age\n400 age\n400 age\n201" },
+        { name: { en: "Not JSON, not an object", ar: "ليس JSON وليس كائناً" }, stdin: "not json\n[1,2,3]\nnull\n\"text\"\n", expected: "400 body\n400 body\n400 body\n400 body" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

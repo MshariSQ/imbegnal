@@ -236,6 +236,67 @@ Any analyst who naively calls \`.mean()\` on this data without first checking **
       },
     },
     {
+      type: "lab",
+      id: "group-totals",
+      lang: "python",
+      prompt: {
+        en: `**Total by group.** Every analyst's first move: group rows and aggregate them.
+
+Standard input holds rows \`category,amount\` (amount may have decimals). Print one line per category in **alphabetical order**: \`category: total count\` where \`total\` has exactly 2 decimals and \`count\` is how many rows the category had, e.g. \`food: 12.50 2\`.
+
+If the input has no rows, print \`no data\`. Do not use pandas: a dictionary is enough.`,
+        ar: `**الإجمالي حسب المجموعة.** أول خطوة لكل محلل: جمع الصفوف وتجميعها.
+
+يحتوي الدخل القياسي صفوفاً بالصيغة \`category,amount\` (قد يحتوي المبلغ كسوراً). اطبع سطراً لكل فئة بـ**الترتيب الأبجدي**: \`category: total count\` حيث \`total\` بخانتين عشريتين بالضبط و\`count\` عدد صفوف الفئة، مثل \`food: 12.50 2\`.
+
+إن لم يكن في الدخل صفوف فاطبع \`no data\`. لا تستخدم pandas: يكفي قاموس.`,
+      },
+      starterCode: `import sys
+
+totals = {}
+counts = {}
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    # TODO 1: split the row into category and amount (float)
+    # TODO 2: add the amount to totals[category] and increase counts[category]
+
+# TODO 3: print "category: total count" in alphabetical order (total with 2 decimals),
+#         or "no data" when there were no rows
+`,
+      solution: `import sys
+
+totals = {}
+counts = {}
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    category, amount = line.split(",")
+    totals[category] = totals.get(category, 0.0) + float(amount)
+    counts[category] = counts.get(category, 0) + 1
+
+if not totals:
+    print("no data")
+for category in sorted(totals):
+    print(f"{category}: {totals[category]:.2f} {counts[category]}")
+`,
+      hints: [
+        { en: "`category, amount = line.split(\",\")` unpacks the two fields.", ar: "يفكّ `category, amount = line.split(\",\")` الحقلين." },
+        { en: "`totals.get(category, 0.0) + float(amount)` works even the first time a category appears.", ar: "يعمل `totals.get(category, 0.0) + float(amount)` حتى أول مرة تظهر فيها الفئة." },
+        { en: "Loop `for category in sorted(totals):` and format with `{value:.2f}`.", ar: "كرّر `for category in sorted(totals):` ونسّق بـ `{value:.2f}`." },
+      ],
+      tests: [
+        { name: { en: "Groups and totals", ar: "يجمّع ويحسب الإجمالي" }, stdin: "food,5.25\ntransport,12\nfood,7.25\n", expected: "food: 12.50 2\ntransport: 12.00 1" },
+        { name: { en: "Alphabetical output with many groups", ar: "ترتيب أبجدي مع مجموعات كثيرة" }, stdin: "rent,900\nfood,80.5\nfun,20\nfood,19.5\nbooks,35.99\nbooks,4.01\n", expected: "books: 40.00 2\nfood: 100.00 2\nfun: 20.00 1\nrent: 900.00 1" },
+        { name: { en: "Single row", ar: "صف واحد" }, stdin: "misc,0.5\n", expected: "misc: 0.50 1" },
+        { name: { en: "Empty input", ar: "دخل فارغ" }, expected: "no data" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {
