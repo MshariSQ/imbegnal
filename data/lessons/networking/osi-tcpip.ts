@@ -493,7 +493,7 @@ ffffffffffff 525400123456 0806 0001080006040001...
 dst MAC      src MAC      type  payload (here an ARP request)
 \`\`\`
 
-Everything after the 14th byte is the payload. Time to write the parser that Wireshark has built in: for a hex string, print the MAC addresses, name the EtherType, and handle bad input. It is written in **Go**, a popular language for network tools.`,
+Everything after the 14th byte is the payload. Time to write the parser that Wireshark has built in: for a hex string, print the MAC addresses, name the EtherType, and handle bad input. It is written in **Rust**, a systems language that is increasingly used for network tools.`,
         ar: `## قراءة إطار Ethernet خام
 
 يعرض لك Wireshark وأداة \`tcpdump\` الإطارات كبايتات بالنظام الست عشري. كل رقمين ست عشريين يساويان بايتاً واحداً. أول 14 بايتاً هي دائماً ترويسة Ethernet، فيمكنك قراءتها بالعين:
@@ -503,13 +503,13 @@ ffffffffffff 525400123456 0806 0001080006040001...
 dst MAC      src MAC      type  payload (here an ARP request)
 \`\`\`
 
-وكل ما بعد البايت الرابع عشر هو الحمولة. حان وقت كتابة المحلّل الذي يوفره Wireshark جاهزاً: بمعطى سلسلة ست عشرية، اطبع عناوين MAC، وسمِّ قيمة EtherType، وتعامل مع المدخلات الخاطئة. الكود مكتوب بلغة **Go**، وهي لغة شائعة في أدوات الشبكات.`,
+وكل ما بعد البايت الرابع عشر هو الحمولة. حان وقت كتابة المحلّل الذي يوفره Wireshark جاهزاً: بمعطى سلسلة ست عشرية، اطبع عناوين MAC، وسمِّ قيمة EtherType، وتعامل مع المدخلات الخاطئة. الكود مكتوب بلغة **Rust**، وهي لغة أنظمة تُستخدم أكثر فأكثر في أدوات الشبكات.`,
       },
     },
     {
       type: "lab",
       id: "ethernet-header",
-      lang: "go",
+      lang: "rust",
       prompt: {
         en: `Parse an **Ethernet II frame**. The input is one line of hexadecimal digits (no spaces, upper or lower case) containing a whole frame. Print:
 
@@ -566,105 +566,111 @@ type=IPv4 (0x0800)
 payload=20 bytes
 \`\`\``,
       },
-      starterCode: String.raw`package main
+      starterCode: String.raw`#![allow(dead_code, unused_variables)]
 
-import (
-	"bufio"
-	"encoding/hex"
-	"fmt"
-	"os"
-	"strings"
-)
+use std::io;
 
-// formatMAC turns 6 bytes into "aa:bb:cc:dd:ee:ff".
-func formatMAC(b []byte) string {
-	// TODO: format every byte as two lowercase hex digits and join with ":"
-	return ""
+/// Turns 6 bytes into "aa:bb:cc:dd:ee:ff".
+fn format_mac(bytes: &[u8]) -> String {
+    // TODO: format every byte as two lowercase hex digits ({:02x}) and join them with ":"
+    String::new()
 }
 
-// etherTypeName names the EtherType value.
-func etherTypeName(t uint16) string {
-	// TODO: 0x0800 IPv4, 0x0806 ARP, 0x86dd IPv6, otherwise "unknown"
-	return "unknown"
+/// Names the EtherType value.
+fn ether_type_name(t: u16) -> &'static str {
+    // TODO: 0x0800 IPv4, 0x0806 ARP, 0x86dd IPv6, anything else "unknown"
+    "unknown"
 }
 
-func main() {
-	reader := bufio.NewReader(os.Stdin)
-	line, _ := reader.ReadString('\n')
-	frame, err := hex.DecodeString(strings.TrimSpace(line))
-	if err != nil {
-		fmt.Println("error: invalid hex")
-		return
-	}
-	// TODO: reject frames shorter than 14 bytes, then print dst, src, type and payload
-	_ = frame
+/// Decodes a hex string into bytes; None if the length is odd or a character is not a hex digit.
+fn decode_hex(text: &str) -> Option<Vec<u8>> {
+    if text.len() % 2 != 0 || !text.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    (0..text.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&text[i..i + 2], 16).ok())
+        .collect()
+}
+
+fn main() {
+    let mut line = String::new();
+    io::stdin().read_line(&mut line).expect("failed to read stdin");
+    let frame = match decode_hex(line.trim()) {
+        Some(bytes) => bytes,
+        None => {
+            println!("error: invalid hex");
+            return;
+        }
+    };
+    // TODO: reject frames shorter than 14 bytes ("error: frame too short"),
+    // then print dst (with broadcast / multicast), src, type and payload
 }
 `,
-      solution: String.raw`package main
+      solution: String.raw`use std::io;
 
-import (
-	"bufio"
-	"encoding/hex"
-	"fmt"
-	"os"
-	"strings"
-)
-
-// formatMAC turns 6 bytes into "aa:bb:cc:dd:ee:ff".
-func formatMAC(b []byte) string {
-	parts := make([]string, len(b))
-	for i, v := range b {
-		parts[i] = fmt.Sprintf("%02x", v)
-	}
-	return strings.Join(parts, ":")
+/// Turns 6 bytes into "aa:bb:cc:dd:ee:ff".
+fn format_mac(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{:02x}", b)).collect::<Vec<_>>().join(":")
 }
 
-// etherTypeName names the EtherType value.
-func etherTypeName(t uint16) string {
-	switch t {
-	case 0x0800:
-		return "IPv4"
-	case 0x0806:
-		return "ARP"
-	case 0x86dd:
-		return "IPv6"
-	}
-	return "unknown"
+/// Names the EtherType value.
+fn ether_type_name(t: u16) -> &'static str {
+    match t {
+        0x0800 => "IPv4",
+        0x0806 => "ARP",
+        0x86dd => "IPv6",
+        _ => "unknown",
+    }
 }
 
-func main() {
-	reader := bufio.NewReader(os.Stdin)
-	line, _ := reader.ReadString('\n')
-	frame, err := hex.DecodeString(strings.TrimSpace(line))
-	if err != nil {
-		fmt.Println("error: invalid hex")
-		return
-	}
-	if len(frame) < 14 {
-		fmt.Println("error: frame too short")
-		return
-	}
+/// Decodes a hex string into bytes; None if the length is odd or a character is not a hex digit.
+fn decode_hex(text: &str) -> Option<Vec<u8>> {
+    if text.len() % 2 != 0 || !text.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    (0..text.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&text[i..i + 2], 16).ok())
+        .collect()
+}
 
-	dst, src := frame[0:6], frame[6:12]
-	etherType := uint16(frame[12])<<8 | uint16(frame[13]) // big-endian ("network order")
+fn main() {
+    let mut line = String::new();
+    io::stdin().read_line(&mut line).expect("failed to read stdin");
+    let frame = match decode_hex(line.trim()) {
+        Some(bytes) => bytes,
+        None => {
+            println!("error: invalid hex");
+            return;
+        }
+    };
+    if frame.len() < 14 {
+        println!("error: frame too short");
+        return;
+    }
 
-	dstText := formatMAC(dst)
-	if dstText == "ff:ff:ff:ff:ff:ff" {
-		dstText += " (broadcast)"
-	} else if dst[0]&1 == 1 {
-		dstText += " (multicast)"
-	}
+    let dst = &frame[0..6];
+    let src = &frame[6..12];
+    let ether_type = u16::from_be_bytes([frame[12], frame[13]]); // big-endian ("network order")
 
-	fmt.Println("dst=" + dstText)
-	fmt.Println("src=" + formatMAC(src))
-	fmt.Printf("type=%s (0x%04x)\n", etherTypeName(etherType), etherType)
-	fmt.Printf("payload=%d bytes\n", len(frame)-14)
+    let mut dst_text = format_mac(dst);
+    if dst_text == "ff:ff:ff:ff:ff:ff" {
+        dst_text.push_str(" (broadcast)");
+    } else if dst[0] & 1 == 1 {
+        dst_text.push_str(" (multicast)");
+    }
+
+    println!("dst={}", dst_text);
+    println!("src={}", format_mac(src));
+    println!("type={} (0x{:04x})", ether_type_name(ether_type), ether_type);
+    println!("payload={} bytes", frame.len() - 14);
 }
 `,
       hints: [
-        { en: "The destination MAC is bytes 0-5, the source is bytes 6-11, the EtherType is bytes 12-13. Combine two bytes into one number with `uint16(frame[12])<<8 | uint16(frame[13])`: network protocols are big-endian.", ar: "عنوان MAC للوجهة هو البايتات 0-5، والمصدر 6-11، وEtherType هو البايتان 12-13. ادمج بايتين في رقم واحد بـ `uint16(frame[12])<<8 | uint16(frame[13])`: بروتوكولات الشبكة تستخدم ترتيب big-endian." },
-        { en: "`fmt.Sprintf(\"%02x\", v)` prints a byte as two lowercase hex digits. Collect them in a `[]string` and use `strings.Join(parts, \":\")`.", ar: "الدالة `fmt.Sprintf(\"%02x\", v)` تطبع البايت برقمين ست عشريين صغيرين. اجمعها في `[]string` واستخدم `strings.Join(parts, \":\")`." },
-        { en: "Multicast test: `dst[0]&1 == 1` (lowest bit of the first byte). Check broadcast first, because broadcast also has that bit set. Print the type with `fmt.Printf(\"type=%s (0x%04x)\\n\", name, etherType)`.", ar: "اختبار multicast: `dst[0]&1 == 1` (أدنى بت في البايت الأول). افحص broadcast أولاً لأنه يحمل هذا البت أيضاً. اطبع النوع بـ `fmt.Printf(\"type=%s (0x%04x)\\n\", name, etherType)`." },
+        { en: "The destination MAC is bytes 0-5, the source is bytes 6-11, the EtherType is bytes 12-13. Combine the last two with `u16::from_be_bytes([frame[12], frame[13]])`: network protocols are big-endian.", ar: "عنوان MAC للوجهة هو البايتات 0-5، والمصدر 6-11، وEtherType هو البايتان 12-13. ادمج الأخيرين بـ `u16::from_be_bytes([frame[12], frame[13]])`: بروتوكولات الشبكة تستخدم ترتيب big-endian." },
+        { en: "`format!(\"{:02x}\", b)` prints a byte as two lowercase hex digits. Map over `bytes.iter()`, `collect::<Vec<_>>()` and call `.join(\":\")`.", ar: "الماكرو `format!(\"{:02x}\", b)` يطبع البايت برقمين ست عشريين صغيرين. طبّق `map` على `bytes.iter()` ثم `collect::<Vec<_>>()` ثم استدعِ `.join(\":\")`." },
+        { en: "Multicast test: `dst[0] & 1 == 1` (lowest bit of the first byte). Check broadcast first, because broadcast also has that bit set. Print the type with `println!(\"type={} (0x{:04x})\", name, ether_type)`.", ar: "اختبار multicast: `dst[0] & 1 == 1` (أدنى بت في البايت الأول). افحص broadcast أولاً لأنه يحمل هذا البت أيضاً. اطبع النوع بـ `println!(\"type={} (0x{:04x})\", name, ether_type)`." },
       ],
       tests: [
         { name: { en: "IPv4 frame to a unicast address", ar: "إطار IPv4 إلى عنوان unicast" }, stdin: "0a00000000025254001234560800450000341c46400040060000c0000232cb007150\n", expected: "dst=0a:00:00:00:00:02\nsrc=52:54:00:12:34:56\ntype=IPv4 (0x0800)\npayload=20 bytes\n" },
