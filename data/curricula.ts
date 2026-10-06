@@ -17,12 +17,14 @@ import type { RoadmapNodeInfo } from "./roadmap-nodes";
 
 export type ModuleKey = RoadmapNodeInfo["status"];
 
-/** Lucide icon used by a badge (mapped to components in components/learn/CourseBadges). */
-export type BadgeIcon =
-  | "award" | "shield" | "flame" | "flask" | "trophy" | "rocket" | "target" | "graduation"
-  | "brain" | "terminal" | "network" | "database" | "cpu" | "code" | "palette" | "cloud"
-  | "server" | "bug" | "lock" | "search" | "layers" | "git-branch" | "container" | "chart"
-  | "pen-tool" | "binary" | "eye" | "puzzle" | "globe" | "hard-drive";
+/** Lucide icon used by a badge (mapped to components in app/learn/[track]/_components/CourseBadges). */
+export const BADGE_ICONS = [
+  "award", "shield", "flame", "flask", "trophy", "rocket", "target", "graduation",
+  "brain", "terminal", "network", "database", "cpu", "code", "palette", "cloud",
+  "server", "bug", "lock", "search", "layers", "git-branch", "container", "chart",
+  "pen-tool", "binary", "eye", "puzzle", "globe", "hard-drive",
+] as const;
+export type BadgeIcon = (typeof BADGE_ICONS)[number];
 
 /**
  * Deterministic badge rules, evaluated from local progress only (study store +
@@ -339,7 +341,7 @@ print("median", st.median(salaries))
 print("outliers above", round(limit, 1), "->", outliers)
 `,
       caption: l("One extreme salary drags the mean far above the median: the first thing a statistician checks. Remove the 140 and compare.", "راتب واحد متطرّف يسحب المتوسط بعيداً فوق الوسيط: أول ما يفحصه الإحصائي. احذف القيمة 140 وقارن."),
-      output: "mean   58.9\nmedian 50.5\noutliers above 69.0 -> [140]\n",
+      output: "mean   58.9\nmedian 50.5\noutliers above 69.6 -> [140]\n",
     },
   },
 
@@ -408,7 +410,7 @@ console.log("two AZs :", pct(twoAz));
 console.log("downtime/yr:", Math.round((1 - twoAz) * 525600), "minutes");
 `,
       caption: l("Why architects add a second Availability Zone: redundancy multiplies the failure probabilities. Notice the database is now the weakest link.", "لماذا يضيف المعماريون منطقة توافر ثانية: التكرار يضاعف احتمالات الفشل. لاحظ أن قاعدة البيانات أصبحت الحلقة الأضعف."),
-      output: "one AZ  : 99.401%\ntwo AZs : 99.900%\ndowntime/yr: 526 minutes\n",
+      output: "one AZ  : 99.401%\ntwo AZs : 99.898%\ndowntime/yr: 539 minutes\n",
     },
     lessonLinks: {
       "networking-cloud": { lang: "python" },
@@ -461,7 +463,7 @@ console.log("downtime/yr:", Math.round((1 - twoAz) * 525600), "minutes");
       { id: "first-pipeline", icon: "git-branch", title: l("First Commit", "أول إيداع"), criteria: l("Finish your first lesson.", "أنهِ درسك الأول."), rule: { kind: "lessons", count: 1 } },
       { id: "toolchain-ready", icon: "container", title: l("Toolchain Ready", "السلسلة جاهزة"), criteria: l("Complete every toolchain lesson.", "أكمل كل دروس سلسلة الأدوات."), rule: { kind: "module", module: "required" } },
       { id: "shell-scripter", icon: "terminal", title: l("Shell Scripter", "كاتب سكربتات"), criteria: l("Pass a graded lab exercise.", "اجتز تمريناً مصحَّحاً في المختبر."), rule: { kind: "labs", count: 1 } },
-      { id: "reliability-minded", icon: "gauge-ph" as never, title: l("Reliability-Minded", "عقلية الموثوقية"), criteria: l("Score 80% or more on the first try in 4 lesson quizzes.", "احصل على 80% أو أكثر من المحاولة الأولى في 4 اختبارات دروس."), rule: { kind: "quizzes", min: 0.8, count: 4 } },
+      { id: "reliability-minded", icon: "chart", title: l("Reliability-Minded", "عقلية الموثوقية"), criteria: l("Score 80% or more on the first try in 4 lesson quizzes.", "احصل على 80% أو أكثر من المحاولة الأولى في 4 اختبارات دروس."), rule: { kind: "quizzes", min: 0.8, count: 4 } },
       { id: "devops-engineer", icon: "graduation", title: l("DevOps Engineer", "مهندس DevOps"), criteria: l("Complete every lesson in the track.", "أكمل كل دروس المسار."), rule: { kind: "course" } },
     ],
     primaryLang: "bash",
@@ -691,7 +693,7 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
 }
 `,
       caption: l("Light grey text looks elegant and fails millions of readers. Swap in your brand colours and check them before they ship.", "النص الرمادي الفاتح يبدو أنيقاً لكنه يخذل ملايين القرّاء. ضع ألوان علامتك وافحصها قبل الإطلاق."),
-      output: "#767676 on #ffffff -> 4.54:1 passes AA\n#949494 on #ffffff -> 3.03:1 fails AA\n#ffffff on #0b57d0 -> 6.89:1 passes AA\n",
+      output: "#767676 on #ffffff -> 4.54:1 passes AA\n#949494 on #ffffff -> 3.03:1 fails AA\n#ffffff on #0b57d0 -> 6.39:1 passes AA\n",
     },
     lessonLinks: {
       figma: { lab: false },
@@ -921,7 +923,7 @@ def shortest_path(grid):
 print("shortest path:", shortest_path(grid), "steps")
 `,
       caption: l("Breadth-first search explores in rings, so the first time it reaches the exit is a shortest path. Add a wall to block the exit and watch it return -1.", "يستكشف البحث بالعرض أولاً على شكل حلقات، فأول وصول للمخرج هو أقصر مسار. أضف جداراً يسدّ المخرج وراقبه يعيد -1."),
-      output: "shortest path: 11 steps\n",
+      output: "shortest path: 15 steps\n",
     },
   },
 
