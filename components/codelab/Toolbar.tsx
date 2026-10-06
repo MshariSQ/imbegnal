@@ -4,7 +4,7 @@ import { Clock, Globe, HelpCircle, Minus, Play, Plus, RotateCcw, Server, Setting
 import { useLang } from "@/lib/lang-context";
 import { FONT_MAX, FONT_MIN, type LabPrefs } from "@/lib/codelab/storage";
 import type { LabLanguage } from "@/lib/codelab/langs";
-import { Popover, btnGhost, btnPrimary, focusRing, iconBtn } from "./ui";
+import { Popover, btnGhost, btnPrimary, focusRing, iconBtn, toolBtn } from "./ui";
 import type { ReactNode } from "react";
 
 export function RunButton({ busy, disabled, onRun, onStop, className = "" }: { busy: boolean; disabled: boolean; onRun: () => void; onStop: () => void; className?: string }) {
@@ -167,13 +167,13 @@ export default function Toolbar({
       {readOnly && <span className="rounded-md border border-line px-2 py-1 text-xs text-fg-muted">{tx.codelab.editor.readOnly}</span>}
       <div className="ms-auto flex items-center gap-1">
         {onHistory && (
-          <button type="button" onClick={onHistory} className={`${iconBtn} sm:w-auto sm:gap-2 sm:px-3 sm:text-sm sm:font-medium`} aria-label={t.history} title={t.history} data-testid="history-button">
+          <button type="button" onClick={onHistory} className={toolBtn} aria-label={t.history} title={t.history} data-testid="history-button">
             <Clock size={18} aria-hidden="true" />
             <span className="hidden sm:inline">{t.history}</span>
           </button>
         )}
         {onShare && (
-          <button type="button" onClick={onShare} className={`${iconBtn} sm:w-auto sm:gap-2 sm:px-3 sm:text-sm sm:font-medium`} aria-label={t.share} title={t.share} data-testid="share-button">
+          <button type="button" onClick={onShare} className={toolBtn} aria-label={t.share} title={t.share} data-testid="share-button">
             <Share2 size={18} aria-hidden="true" />
             <span className="hidden sm:inline">{t.share}</span>
           </button>

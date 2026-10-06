@@ -10,6 +10,8 @@ export const btnBase =
   "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-10 px-3.5";
 export const btnPrimary = `${btnBase} bg-brand text-brand-fg hover:bg-brand-strong ${focusRing}`;
 export const btnGhost = `${btnBase} border border-line text-fg-soft hover:bg-fg/5 hover:text-fg ${focusRing}`;
+/** Toolbar button: icon only on phones, icon + label from `sm` up. */
+export const toolBtn = `inline-flex items-center justify-center gap-2 h-10 min-w-10 px-2.5 sm:px-3 rounded-lg text-sm font-medium text-fg-muted hover:bg-fg/5 hover:text-fg ${focusRing}`;
 export const iconBtn = `inline-grid place-items-center size-10 rounded-lg text-fg-muted hover:bg-fg/5 hover:text-fg ${focusRing} disabled:opacity-50`;
 
 /** Copy-to-clipboard button with a transient "copied" state announced politely. */
