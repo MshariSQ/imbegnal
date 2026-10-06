@@ -4,4 +4,5 @@ import type { Lesson } from "../types";
 export const operatingSystemsLessons: Record<string, () => Promise<{ lesson: Lesson }>> = {
   "operating-systems/processes-threads": () => import("./processes-threads"),
   "operating-systems/cpu-scheduling": () => import("./cpu-scheduling"),
+  "operating-systems/memory-management": () => import("./memory-management"),
 };
