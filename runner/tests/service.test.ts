@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { after, describe, test } from "node:test";
+import { JOB_PATH } from "../src/docker";
 import { RUNNER_PATHS, type LanguagesResponse, type RunResult } from "../../shared/protocol";
 import { LANG_IDS, getLanguage, type LangId } from "../../shared/languages";
 import { SKIP, TEST_IMAGE, ownedContainers, run, signedFetch, sleep, startServer, type TestServer } from "./helpers";
@@ -178,7 +179,7 @@ describe("language availability", { skip: SKIP }, () => {
   function missingLang(): LangId | null {
     for (const id of ["swift", "kotlin", "csharp", "rust", "go", "ruby", "php"] as const) {
       const bin = { swift: "swiftc", kotlin: "kotlinc", csharp: "mcs", rust: "rustc", go: "go", ruby: "ruby", php: "php" }[id];
-      const r = spawnSync("docker", ["run", "--rm", "--network", "none", "--entrypoint", "sh", TEST_IMAGE, "-c", `command -v ${bin}`], { encoding: "utf8" });
+      const r = spawnSync("docker", ["run", "--rm", "--network", "none", "-e", `PATH=${JOB_PATH}`, "--entrypoint", "sh", TEST_IMAGE, "-c", `command -v ${bin}`], { encoding: "utf8" });
       if (r.status !== 0) return id;
     }
     return null;

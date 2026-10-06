@@ -155,6 +155,19 @@ COPY --from=fetch /out/ts /opt/ts
 COPY --from=fetch /out/kotlinc /opt/kotlinc
 COPY --from=fetch /out/swift /opt/swift
 COPY image/ruby-sync.rb /opt/runner/ruby-sync.rb
+COPY image/gowarm.go /tmp/gowarm/main.go
+
+# Go: pre-build the standard library into a cache the runner seeds each job with (the Go toolchain
+# has no precompiled std; building it per run would take ~25 s). The environment must match the
+# one in runner/src/languages.ts or the cache is not hit. Skipped when Go is not installed.
+RUN set -eux; \
+    if command -v go >/dev/null 2>&1; then \
+      cd /tmp/gowarm; \
+      GOCACHE=/opt/gocache GOPATH=/tmp/gowarm/gopath GOENV=off CGO_ENABLED=0 GOFLAGS=-mod=mod GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local \
+        go build -o /dev/null main.go; \
+      chmod -R a+rX /opt/gocache; \
+    fi; \
+    rm -rf /tmp/gowarm
 
 RUN set -eux; \
     ln -s /opt/ts/node_modules/typescript/bin/tsc /usr/local/bin/tsc; \

@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { after, before, describe, test } from "node:test";
 import { LANGUAGES, type LangId } from "../../shared/languages";
+import { JOB_PATH } from "../src/docker";
 import { getRecipe } from "../src/languages";
 import { SKIP, TEST_IMAGE, run, startServer, type TestServer } from "./helpers";
 
@@ -15,7 +16,7 @@ function installedLanguages(): Set<LangId> {
   const probes = LANGUAGES.map((l) => `${l.id}:${getRecipe(l.id).versionArgv[0]}`);
   // Fixed script, values come from our own recipes (never from a user).
   const script = `for p in ${probes.join(" ")}; do b="\${p#*:}"; command -v "$b" >/dev/null 2>&1 && echo "\${p%%:*}"; done`;
-  const r = spawnSync("docker", ["run", "--rm", "--network", "none", "--entrypoint", "sh", TEST_IMAGE, "-c", script], { encoding: "utf8", timeout: 60_000 });
+  const r = spawnSync("docker", ["run", "--rm", "--network", "none", "-e", `PATH=${JOB_PATH}`, "--entrypoint", "sh", TEST_IMAGE, "-c", script], { encoding: "utf8", timeout: 60_000 });
   const found = new Set<LangId>();
   for (const line of r.stdout.split("\n")) if (line.trim()) found.add(line.trim() as LangId);
   return found;

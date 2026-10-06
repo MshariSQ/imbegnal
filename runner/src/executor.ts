@@ -172,6 +172,12 @@ export class JobExecutor {
 
     const result: RunResult = { ...base, status: "ok" };
 
+    // Optional cache seeding (Go's pre-built standard library); never fatal.
+    if (plan.prepare) {
+      const p = await step(plan.prepare.argv, HOUSEKEEPING_TIMEOUT_MS, { env: plan.prepare.env });
+      if (p.aborted) return cancelled();
+    }
+
     // 2. Compile (separate wall-clock limit).
     if (plan.compile) {
       const c = await step(plan.compile.argv, limits.compileTimeoutMs, { env: plan.compile.env });

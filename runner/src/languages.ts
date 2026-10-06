@@ -44,6 +44,8 @@ export interface Command {
 export interface Plan {
   /** File written into /work (fixed name; for Java a validated `<Class>.java`). */
   filename: string;
+  /** Best-effort setup before compiling (a failure is ignored): seeds caches that make the compile fast. */
+  prepare?: Command;
   /** null for languages that run straight from source. */
   compile: Command | null;
   /** Keep the compile step's output when it succeeds (warnings) or discard it (pure syntax checks). */
@@ -382,6 +384,8 @@ const RECIPES: Record<LangId, Recipe> = {
     parseVersion: (r) => match1(r, /go version go(\d+\.\d+(?:\.\d+)?)/, "Go"),
     plan: (_c, l) => ({
       filename: file("go"),
+      // The image ships a build cache with the standard library already compiled (see Dockerfile).
+      prepare: { argv: ["cp", "-r", "/opt/gocache", "/work/tmp/gocache"] },
       compile: {
         argv: ["go", "build", "-o", "main", file("go")],
         env: {
