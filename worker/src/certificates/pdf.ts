@@ -102,9 +102,11 @@ export function textWidth(text: string, font: FontKey, size: number): number {
 function fit(text: string, font: FontKey, max: number, min: number, width: number): { text: string; size: number } {
   let size = max;
   while (size > min && textWidth(text, font, size) > width) size -= 1;
-  let t = text;
-  while (t.length > 1 && textWidth(t, font, size) > width) t = `${t.slice(0, -2).trimEnd()}...`;
-  return { text: t, size };
+  if (textWidth(text, font, size) <= width) return { text, size };
+  // Cut whole code points until the text plus an ellipsis fits.
+  const chars = Array.from(text);
+  while (chars.length > 1 && textWidth(`${chars.join("").trimEnd()}...`, font, size) > width) chars.pop();
+  return { text: `${chars.join("").trimEnd()}...`, size };
 }
 
 // ── Certificate ───────────────────────────────────────────────────────────────
