@@ -8,6 +8,7 @@ import { handleStateGet, handleStatePut } from "./state";
 import { handleTutor } from "./ai";
 import { handleAccountDelete, handleEvent } from "./account";
 import { handleLab } from "./lab/handlers";
+import { handleChallengesApi } from "./challenges";
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // Best-effort per-isolate sliding window. Not global (each Worker isolate has
@@ -332,6 +333,12 @@ export default {
     // ── Code Lab (run, quota, history, snippets, progress, languages) ──────────
     if (pathname.startsWith("/api/lab/")) return handleLab(req, env, origin, pathname);
     // ── end Code Lab ───────────────────────────────────────────────────────────
+    // ── Challenges (CTF), leaderboard, certificates, instructor analytics, admin audit ──
+    // /api/challenges[/:id/(open|hint|submit)], /api/leaderboard, /api/certificates/*,
+    // /api/instructor/analytics, /api/admin/audit — see worker/src/challenges/routes.ts
+    const challengesResponse = await handleChallengesApi(req, env, origin);
+    if (challengesResponse) return challengesResponse;
+    // ── end Challenges block ──
 
     const profileMatch = pathname.match(/^\/api\/users\/([^/]+)$/);
     if (profileMatch) return handleProfile(profileMatch[1], env, origin);
