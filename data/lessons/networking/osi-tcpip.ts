@@ -3,7 +3,7 @@ import type { Lesson } from "../types";
 export const lesson: Lesson = {
   nodeId: "osi-tcpip",
   title: { en: "The OSI & TCP/IP Models — How Data Travels", ar: "نموذجا OSI وTCP/IP — كيف تنتقل البيانات" },
-  estMinutes: 42,
+  estMinutes: 40,
   sections: [
     {
       type: "text",

@@ -19,9 +19,11 @@ import { LANG_IDS, type LangId } from "../../shared/languages";
 import { localSupports, runLocal } from "../helpers/exec-local";
 
 const LAB_LANGS: readonly LangId[] = ["python", "javascript", "typescript", "java", "c", "cpp", "go", "rust", "ruby", "php", "bash"];
-const EXPECTED_LESSONS = ["osi-tcpip"];
+const EXPECTED_LESSONS = ["osi-tcpip", "ip-subnetting"];
 const ARABIC = /[؀-ۿ]/;
 const LATIN = /[A-Za-z]/;
+/** Numbers, IP/MAC/hex notation: identical in both languages by design. */
+const DATA_ONLY = /^[0-9a-f:.\/\-\s]+$/i;
 
 async function loadAll(): Promise<{ key: string; lesson: Lesson }[]> {
   const out: { key: string; lesson: Lesson }[] = [];
@@ -139,6 +141,11 @@ describe("networking lessons: structure", async () => {
         for (const { path, value } of collectL10n(lesson)) {
           assert.ok(typeof value.en === "string" && value.en.trim().length > 0, `${path}.en is empty`);
           assert.ok(typeof value.ar === "string" && value.ar.trim().length > 0, `${path}.ar is empty`);
+          // Pure data (a number, an address, a hex string) is shown identically in both languages.
+          if (DATA_ONLY.test(value.en.trim())) {
+            assert.equal(value.ar, value.en, `${path}: data-only text must be identical in both languages`);
+            continue;
+          }
           assert.match(value.en, LATIN, `${path}.en has no Latin letters`);
           assert.match(value.ar, ARABIC, `${path}.ar has no Arabic letters`);
           assert.notEqual(value.en, value.ar, `${path}: ar equals en`);
