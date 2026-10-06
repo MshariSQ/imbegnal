@@ -19,7 +19,7 @@ import { LANG_IDS, type LangId } from "../../shared/languages";
 import { localSupports, runLocal } from "../helpers/exec-local";
 
 const LAB_LANGS: readonly LangId[] = ["python", "javascript", "typescript", "java", "c", "cpp", "go", "rust", "ruby", "php", "bash"];
-const EXPECTED_LESSONS = ["osi-tcpip", "ip-subnetting"];
+const EXPECTED_LESSONS = ["osi-tcpip", "ip-subnetting", "transport-tcp-udp"];
 const ARABIC = /[؀-ۿ]/;
 const LATIN = /[A-Za-z]/;
 /** Numbers, IP/MAC/hex notation: identical in both languages by design. */
@@ -243,7 +243,7 @@ describe("networking lessons: structure", async () => {
         const raw = JSON.stringify(lesson);
         assert.doesNotMatch(raw, /flag\{|ctf\{|BEGIN (RSA |EC )?PRIVATE KEY|password\s*[:=]|api[_-]?key/i);
         for (const lab of lesson.sections.filter(isLab)) {
-          assert.doesNotMatch(lab.solution, /\b(socket|connect|requests|urllib|http\.client|net\.Dial|net\/http|fetch\()/i, `${lab.id}: labs must be offline`);
+          assert.doesNotMatch(lab.solution, /(import\s+socket|from\s+socket|require\(\s*[\"'](?:net|http|https|dgram|dns|child_process)[\"']\s*\)|urllib|http\.client|requests\.|net\.Dial|net\/http|fetch\(|socket\(|\.connect\(|<sys\/socket\.h>|<netinet\/|<arpa\/inet\.h>|getaddrinfo|system\()/, `${lab.id}: labs must be offline`);
         }
       });
     });

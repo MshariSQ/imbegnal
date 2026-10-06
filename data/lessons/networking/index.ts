@@ -4,4 +4,5 @@ import type { Lesson } from "../types";
 export const networkingLessons: Record<string, () => Promise<{ lesson: Lesson }>> = {
   "networking/osi-tcpip": () => import("./osi-tcpip"),
   "networking/ip-subnetting": () => import("./ip-subnetting"),
+  "networking/transport-tcp-udp": () => import("./transport-tcp-udp"),
 };
