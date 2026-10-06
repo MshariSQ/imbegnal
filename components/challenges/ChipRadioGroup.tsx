@@ -35,7 +35,7 @@ export default function ChipRadioGroup<V extends string>({
       <legend className={hideLegend ? "sr-only" : "mb-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle"}>{legend}</legend>
       <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-1 md:flex-wrap md:overflow-visible">
         {options.map((o) => (
-          <label key={o.value} className="shrink-0 cursor-pointer">
+          <label key={o.value} className="relative shrink-0 cursor-pointer">
             <input
               type="radio"
               name={name}

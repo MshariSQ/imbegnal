@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { Flag, Loader2, Send, Terminal } from "lucide-react";
+import { ChevronDown, Flag, Loader2, Send, Terminal } from "lucide-react";
 import { LANGUAGES, LANG_IDS, type LangId } from "@/shared/languages";
 import type { ChallengeMeta } from "@/shared/challenges";
 import { codeLabHref } from "@/shared/links";
@@ -198,8 +198,11 @@ function CodeSubmit({
         {t.openCodeLab}
       </Link>
 
-      <details className="mt-5 border-t border-line pt-4">
-        <summary className="inline-flex min-h-10 cursor-pointer items-center text-sm font-semibold text-fg-soft">{t.quickTitle}</summary>
+      <details className="group mt-5 border-t border-line pt-4">
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-fg-soft [&::-webkit-details-marker]:hidden">
+          {t.quickTitle}
+          <ChevronDown size={16} aria-hidden className="transition-transform group-open:rotate-180" />
+        </summary>
         <p className="mb-3 mt-1 text-sm text-fg-muted">{t.quickBody}</p>
         <form
           onSubmit={(e) => {

@@ -46,9 +46,9 @@ function Section({ id, title, intro, children }: { id: string; title: string; in
 
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 py-2">
-      <dt className="text-sm text-fg-muted">{label}</dt>
-      <dd className="min-w-0 text-end text-sm font-semibold text-fg">{children}</dd>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2">
+      <dt className="shrink-0 text-sm text-fg-muted">{label}</dt>
+      <dd className="ms-auto min-w-0 max-w-full text-end text-sm font-semibold text-fg">{children}</dd>
     </div>
   );
 }
@@ -202,7 +202,7 @@ export default function ChallengeDetail({
             ) : (
               <dl className="divide-y divide-line" aria-busy={stats.status === "loading" && !stat}>
                 <Stat label={t.solveStats.solves}>{stat ? formatNumber(stat.solves) : "—"}</Stat>
-                <Stat label={t.solveStats.firstBlood}>{stat?.firstBlood ? <FirstBlood firstBlood={stat.firstBlood} className="justify-end" /> : stat ? t.solveStats.nobody : "—"}</Stat>
+                <Stat label={t.solveStats.firstBlood}>{stat?.firstBlood ? <FirstBlood firstBlood={stat.firstBlood} className="justify-end text-start" wrap /> : stat ? t.solveStats.nobody : "—"}</Stat>
                 <Stat label={t.solveStats.median}>
                   {stat?.medianSolveMinutes !== undefined ? formatDuration(stat.medianSolveMinutes, t.units) : stat ? <span className="font-normal text-fg-subtle">{t.solveStats.medianNone}</span> : "—"}
                 </Stat>

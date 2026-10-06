@@ -67,15 +67,16 @@ export function TrackChip({ id, track }: { id: string; track?: TrackInfo }) {
  * the first paint shows the absolute UTC date and the relative text replaces
  * it right after hydration.
  */
-export function FirstBlood({ firstBlood, className = "" }: { firstBlood: NonNullable<ChallengeStat["firstBlood"]>; className?: string }) {
+export function FirstBlood({ firstBlood, className = "", wrap = false }: { firstBlood: NonNullable<ChallengeStat["firstBlood"]>; className?: string; wrap?: boolean }) {
   const { tx, lang } = useLang();
   const now = useNow();
   const when = now === null ? absoluteDate(firstBlood.at) : relativeTime(firstBlood.at, now, lang);
-  const text = fmt(tx.ctf.card.firstBloodBy, { name: firstBlood.name, when });
+  // U+2068/U+2069 isolate the solver's name so an Arabic name inside English text (or the reverse) keeps its own direction.
+  const text = fmt(tx.ctf.card.firstBloodBy, { name: `\u2068${firstBlood.name}\u2069`, when });
   return (
     <span title={text} className={`inline-flex min-w-0 items-center gap-1.5 text-xs font-medium text-red-400 ${className}`}>
       <Droplet size={13} aria-hidden className="shrink-0 fill-current" />
-      <span className="truncate">{text}</span>
+      <span className={wrap ? undefined : "truncate"}>{text}</span>
     </span>
   );
 }
