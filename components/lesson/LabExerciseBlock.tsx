@@ -65,7 +65,7 @@ export default function LabExerciseBlock({
         <div className="grid md:grid-cols-2 gap-5 mt-5">
           <div>
             <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-fg-subtle mb-2">
-              <ListChecks size={13} aria-hidden /> {T.labTests} · {fmt(T.labTestsCount, { n: section.tests.length })}
+              <ListChecks size={13} aria-hidden /> {T.labTests} <span dir="ltr">({section.tests.length})</span>
             </div>
             <ul className="space-y-1.5 text-sm text-fg-soft">
               {section.tests.map((t, i) => (
