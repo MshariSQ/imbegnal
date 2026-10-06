@@ -93,6 +93,11 @@ export interface LessonLink {
 }
 
 export interface Curriculum {
+  /**
+   * Arabic name and description of the track. roadmaps[] is English-only; the English
+   * title is never copied here, so renaming a roadmap still renames it everywhere.
+   */
+  arabic: { title: string; description: string };
   /** 4–8 verb-first, measurable outcomes. */
   objectives: L10n[];
   audience: L10n;
@@ -128,6 +133,7 @@ const passing = (quizAccuracy: number, labs: number, challenges: number, lessons
 export const curricula: Record<string, Curriculum> = {
   // ───────────────────────────────────────────────────────────────────────────
   "cyber-security": {
+    arabic: { title: "الأمن السيبراني", description: "من أساسيات الشبكات إلى اختبار الاختراق ومراكز العمليات الأمنية وهندسة الأمن" },
     objectives: [
       l("Explain the CIA triad and map a real incident (phishing, ransomware, a leaked key) to the control that would have stopped it.", "اشرح ثلاثية CIA واربط حادثة حقيقية (تصيّد، فدية، مفتاح مسرَّب) بالضابط الأمني الذي كان سيوقفها."),
       l("Build an isolated home lab with a Linux VM and snapshots so every later experiment is safe and repeatable.", "ابنِ مختبراً منزلياً معزولاً بجهاز لينكس افتراضي ولقطات استرجاع ليكون كل اختبار لاحق آمناً وقابلاً للتكرار."),
@@ -201,6 +207,7 @@ for ip, count in failures.most_common():
 
   // ───────────────────────────────────────────────────────────────────────────
   "artificial-intelligence": {
+    arabic: { title: "الذكاء الاصطناعي", description: "تعلم الآلة والتعلم العميق ومعالجة اللغات الطبيعية وتطبيقات حقيقية" },
     objectives: [
       l("Set up a reproducible notebook environment and run a model end to end for the first time.", "جهّز بيئة دفاتر قابلة لإعادة الإنتاج وشغّل نموذجاً من البداية إلى النهاية لأول مرة."),
       l("Prepare numeric data in Python and compute the maths ML relies on: vectors, dot products, derivatives and gradient steps.", "حضّر بيانات رقمية ببايثون واحسب الرياضيات التي يعتمد عليها تعلم الآلة: المتجهات والضرب النقطي والمشتقات وخطوات الانحدار."),
@@ -271,6 +278,7 @@ print("prediction for x=10:", round(w * 10 + b, 1))
 
   // ───────────────────────────────────────────────────────────────────────────
   "data-science": {
+    arabic: { title: "علم البيانات", description: "الإحصاء وبايثون وSQL والتصوير البياني وذكاء الأعمال" },
     objectives: [
       l("Summarize a dataset with mean, median and spread, and flag outliers with the IQR rule.", "لخّص مجموعة بيانات بالمتوسط والوسيط والتشتت، وأشِّر إلى القيم الشاذة بقاعدة IQR."),
       l("Interpret confidence intervals and p-values correctly, and say what an A/B test can and cannot prove.", "فسّر فترات الثقة وقيم p بشكل صحيح، وقل ما يستطيع اختبار A/B إثباته وما لا يستطيع."),
@@ -337,6 +345,7 @@ print("outliers above", round(limit, 1), "->", outliers)
 
   // ───────────────────────────────────────────────────────────────────────────
   "cloud-computing": {
+    arabic: { title: "الحوسبة السحابية", description: "AWS وAzure وGCP — المعمارية والنشر والخدمات السحابية" },
     objectives: [
       l("Explain IaaS, PaaS and SaaS and the shared-responsibility model with a concrete example of each.", "اشرح IaaS وPaaS وSaaS ونموذج المسؤولية المشتركة بمثال ملموس لكل منها."),
       l("Choose compute, storage and database services for a workload and justify the trade-off.", "اختر خدمات الحوسبة والتخزين وقواعد البيانات لحِمل عمل ما وبرّر المفاضلة."),
@@ -409,6 +418,7 @@ console.log("downtime/yr:", Math.round((1 - twoAz) * 525600), "minutes");
 
   // ───────────────────────────────────────────────────────────────────────────
   devops: {
+    arabic: { title: "DevOps", description: "التكامل والنشر المستمر والحاويات وKubernetes والبنية كرمز والمراقبة" },
     objectives: [
       l("Automate repetitive tasks with Bash scripts, pipes and exit codes.", "أتمت المهام المتكررة بسكربتات Bash والأنابيب ورموز الخروج."),
       l("Use Git branching and pull requests, and resolve a merge conflict without losing work.", "استخدم تفرّعات Git وطلبات الدمج، وحُلّ تعارض دمج دون ضياع العمل."),
@@ -475,6 +485,7 @@ for (const slo of [99, 99.9, 99.99]) {
 
   // ───────────────────────────────────────────────────────────────────────────
   frontend: {
+    arabic: { title: "تطوير الواجهات الأمامية", description: "HTML وCSS وJavaScript وReact وتطوير الويب الحديث" },
     objectives: [
       l("Build semantic, accessible HTML pages that work with a keyboard and a screen reader.", "ابنِ صفحات HTML دلالية وسهلة الوصول تعمل بلوحة المفاتيح وقارئ الشاشة."),
       l("Lay out responsive pages with Flexbox, Grid and media queries from 360px up.", "نسّق صفحات متجاوبة بـ Flexbox وGrid واستعلامات الوسائط ابتداءً من عرض 360px."),
@@ -542,6 +553,7 @@ console.log(html);
 
   // ───────────────────────────────────────────────────────────────────────────
   backend: {
+    arabic: { title: "تطوير الخلفيات", description: "واجهات API وقواعد البيانات والمصادقة ومعمارية الخوادم القابلة للتوسع" },
     objectives: [
       l("Write functions with control flow and data structures to solve problems and cover edge cases.", "اكتب دوالاً بتدفق تحكم وهياكل بيانات لحلّ المسائل وتغطية الحالات الحدّية."),
       l("Model data relationally and write SQL for create, read, update, delete and joins.", "نمذج البيانات علائقياً واكتب SQL لعمليات الإنشاء والقراءة والتحديث والحذف والربط."),
@@ -615,6 +627,7 @@ for (const t of arrivals) console.log("t=" + t + "s", allow(t) ? "200 OK" : "429
 
   // ───────────────────────────────────────────────────────────────────────────
   "ui-ux": {
+    arabic: { title: "تصميم UI/UX", description: "أبحاث المستخدم والإطارات الشبكية والنماذج الأولية وأنظمة التصميم" },
     objectives: [
       l("Critique a screen using hierarchy, contrast, alignment and proximity, and propose specific fixes.", "انتقد شاشة باستخدام التسلسل الهرمي والتباين والمحاذاة والتقارب واقترح إصلاحات محددة."),
       l("Build a type scale and a colour palette whose text meets WCAG AA contrast (4.5:1).", "ابنِ سلّماً للخطوط ولوحة ألوان يحقق نصها تباين WCAG AA (4.5:1)."),
@@ -690,6 +703,7 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
 
   // ───────────────────────────────────────────────────────────────────────────
   networking: {
+    arabic: { title: "الشبكات", description: "كيف تنتقل البيانات: نموذجا OSI وTCP/IP وعنونة IP وتقسيم الشبكات والتوجيه وDNS وHTTP وTLS واستكشاف الأعطال" },
     objectives: [
       l("Explain what each OSI and TCP/IP layer does and place protocols (Ethernet, IP, TCP, HTTP) on the right layer.", "اشرح وظيفة كل طبقة في OSI وTCP/IP وضع البروتوكولات (Ethernet وIP وTCP وHTTP) في الطبقة الصحيحة."),
       l("Convert between binary and dotted-decimal and compute the network, broadcast and usable host range of any IPv4 CIDR block.", "حوّل بين الثنائي والعشري المنقّط واحسب عنوان الشبكة والبث ونطاق المضيفين المتاح لأي كتلة IPv4 بـ CIDR."),
@@ -754,6 +768,7 @@ print("same subnet as .62?", ipaddress.ip_address("192.168.10.62") in net)
 
   // ───────────────────────────────────────────────────────────────────────────
   "operating-systems": {
+    arabic: { title: "أنظمة التشغيل", description: "العمليات والذاكرة وأنظمة الملفات والجدولة والتزامن، إضافة إلى سطر أوامر لينكس، من الداخل" },
     objectives: [
       l("Describe the process lifecycle and what a context switch costs.", "صف دورة حياة العملية وتكلفة تبديل السياق."),
       l("Use the Linux command line to inspect processes, files, permissions and system calls.", "استخدم سطر أوامر لينكس لفحص العمليات والملفات والصلاحيات واستدعاءات النظام."),
@@ -831,6 +846,7 @@ print("average wait:", round(sum(finish[p] - jobs[p] for p in jobs) / len(jobs),
 
   // ───────────────────────────────────────────────────────────────────────────
   "data-structures-algorithms": {
+    arabic: { title: "هياكل البيانات والخوارزميات", description: "من المصفوفات إلى الرسوم البيانية، والفرز والبحث والاستدعاء الذاتي والبرمجة الديناميكية وBig-O: أساس كل مقابلة تقنية" },
     objectives: [
       l("Analyse running time with Big-O for loops and recursion and compare two solutions on paper.", "حلّل زمن التشغيل بـ Big-O للحلقات والاستدعاء الذاتي وقارن حلّين على الورق."),
       l("Choose between array, linked list, stack, queue, hash map and heap by the cost of the operations you need.", "اختر بين المصفوفة والقائمة المرتبطة والمكدّس والطابور وجدول التجزئة والكومة بحسب تكلفة العمليات المطلوبة."),
@@ -911,6 +927,7 @@ print("shortest path:", shortest_path(grid), "steps")
 
   // ───────────────────────────────────────────────────────────────────────────
   databases: {
+    arabic: { title: "قواعد البيانات", description: "النمذجة العلائقية وSQL والفهرسة والمعاملات ومتى تلجأ إلى NoSQL" },
     objectives: [
       l("Model entities as normalized tables (1NF to 3NF) with primary and foreign keys.", "نمذج الكيانات في جداول مطبَّعة (من 1NF إلى 3NF) بمفاتيح أساسية وأجنبية."),
       l("Write SELECT queries with joins, aggregates, subqueries and window functions.", "اكتب استعلامات SELECT بالربط والتجميع والاستعلامات الفرعية ودوال النافذة."),
@@ -985,6 +1002,7 @@ print("index lookup comparisons:", lookup)
 
   // ───────────────────────────────────────────────────────────────────────────
   "reverse-engineering": {
+    arabic: { title: "الهندسة العكسية", description: "اقرأ الكود الآلي وبايت كود: التجميع والملفات الثنائية والتصحيح وفك التعمية وأساسيات تحليل البرمجيات الخبيثة (بشكل قانوني وأخلاقي)" },
     objectives: [
       l("Describe how source code becomes a binary: compile, assemble, link, load.", "صف كيف يتحول الكود المصدري إلى ملف ثنائي: ترجمة وتجميع وربط وتحميل."),
       l("Read basic x86-64 assembly (mov, add, cmp, jmp, call) and map it back to C constructs.", "اقرأ تجميع x86-64 الأساسي (mov وadd وcmp وjmp وcall) واربطه بعناصر C."),
@@ -1035,7 +1053,7 @@ print("index lookup comparisons:", lookup)
     sampleCode: {
       lang: "python",
       code: `# A classic first obfuscation: every byte XORed with one key. Recover the key and the message.
-blob = bytes.fromhex("3b363d3a2d313a3b6b6b")      # found in a binary's data section
+blob = bytes.fromhex("3b3f213c2b20683c27683c202d682a292b233d38683b2d3a3e2d3a")      # found in a binary's data section
 known_start = b"s"                                  # we guess the message starts with "s"
 key = blob[0] ^ known_start[0]
 
@@ -1044,7 +1062,7 @@ print("key     :", hex(key))
 print("decoded :", message.decode())
 `,
       caption: l("XOR is its own inverse, so one known plaintext byte gives you the whole key. Practice on the labs, then try a two-byte key.", "XOR معكوس نفسه، فبايت واحد معروف من النص الأصلي يعطيك المفتاح كاملاً. تمرّن في المختبرات ثم جرّب مفتاحاً من بايتين."),
-      output: "key     : 0x48\ndecoded : switchyy00\n",
+      output: "key     : 0x48\ndecoded : switch to the backup server\n",
     },
   },
 };
