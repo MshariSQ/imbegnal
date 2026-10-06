@@ -27,7 +27,7 @@ export const codelabEn = {
       runTitle: "Run (Ctrl/⌘ + Enter)",
       history: "History",
       share: "Share",
-      settings: "Editor settings",
+      settings: "Settings",
       shortcuts: "Keyboard shortcuts",
       resetCode: "Reset to template",
       resetTitle: "Reset the editor to the starter code",
@@ -98,6 +98,7 @@ export const codelabEn = {
       console: "Console",
       regionLabel: "Run results",
       wait: "Waiting for the runner…",
+      errorLine: "Error on line {n}",
     },
     status: {
       idle: "Ready",
@@ -342,7 +343,7 @@ export const codelabAr: CodelabTx = {
       runTitle: "تشغيل (Ctrl/⌘ + Enter)",
       history: "السجل",
       share: "مشاركة",
-      settings: "إعدادات المحرر",
+      settings: "الإعدادات",
       shortcuts: "اختصارات لوحة المفاتيح",
       resetCode: "إعادة إلى القالب",
       resetTitle: "إعادة المحرر إلى الكود الابتدائي",
@@ -413,6 +414,7 @@ export const codelabAr: CodelabTx = {
       console: "وحدة التحكم",
       regionLabel: "نتائج التشغيل",
       wait: "بانتظار المشغّل…",
+      errorLine: "خطأ في السطر {n}",
     },
     status: {
       idle: "جاهز",
