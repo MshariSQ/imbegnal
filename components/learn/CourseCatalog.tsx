@@ -4,17 +4,16 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, PlayCircle } from "lucide-react";
 import type { L10n } from "@/data/lessons/types";
+import { trackMeta, trackTitle } from "@/lib/catalog";
 import { useLang } from "@/lib/lang-context";
 import { useStudy, completedCount } from "@/lib/study-store";
 import PageHeader from "@/components/ui/PageHeader";
 import CourseCard from "./CourseCard";
 
 export interface CatalogCourse {
+  /** Roadmap id: names, icons and accents come from roadmaps[] (lib/catalog). */
   id: string;
-  icon: string;
-  accent: string;
   level: string;
-  duration: string;
   minutes: number;
   lessons: { id: string; title: L10n; minutes: number }[];
 }
@@ -30,10 +29,10 @@ export default function CourseCatalog({ courses }: { courses: CatalogCourse[] })
     if (needle.length < 2) return null;
     return courses.flatMap((c) =>
       c.lessons
-        .filter((l) => l.title.en.toLowerCase().includes(needle) || l.title.ar.includes(needle) || (tx.tracks[c.id]?.title ?? "").toLowerCase().includes(needle))
+        .filter((l) => l.title.en.toLowerCase().includes(needle) || l.title.ar.includes(needle) || trackTitle(c.id, "en").toLowerCase().includes(needle) || trackTitle(c.id, "ar").includes(needle))
         .map((l) => ({ course: c, lesson: l }))
     );
-  }, [q, courses, tx]);
+  }, [q, courses]);
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-28 pb-16">
@@ -59,10 +58,10 @@ export default function CourseCatalog({ courses }: { courses: CatalogCourse[] })
               href={`/learn/${course.id}/${lesson.id}/`}
               className="flex items-center gap-4 px-5 py-4 hover:bg-fg/5 transition-colors"
             >
-              <span className="text-xl">{course.icon}</span>
+              <span className="text-xl" aria-hidden>{trackMeta(course.id)?.icon}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-fg truncate">{lesson.title[lang]}</div>
-                <div className="text-xs text-fg-subtle">{tx.tracks[course.id]?.title} · {lesson.minutes} {tx.common.minutes}</div>
+                <div className="text-xs text-fg-subtle">{trackTitle(course.id, lang)} · {lesson.minutes} {tx.common.minutes}</div>
               </div>
               <PlayCircle size={18} className="text-emerald-400 shrink-0" />
             </Link>
@@ -73,7 +72,7 @@ export default function CourseCatalog({ courses }: { courses: CatalogCourse[] })
           {courses.map((c) => (
             <CourseCard
               key={c.id}
-              course={{ id: c.id, icon: c.icon, accent: c.accent, level: c.level, lessonCount: c.lessons.length, minutes: c.minutes }}
+              course={{ id: c.id, level: c.level, lessonCount: c.lessons.length, minutes: c.minutes }}
               done={completedCount(study, c.lessons.map((l) => `${c.id}/${l.id}`))}
             />
           ))}

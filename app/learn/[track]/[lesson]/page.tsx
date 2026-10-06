@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { courses, getCourse } from "@/lib/catalog";
+import { courses, getCourse, trackTitle } from "@/lib/catalog";
 import { getCourseOutline } from "@/lib/catalog-server";
 import { loadLesson } from "@/data/lessons";
 import { NODE_DATA } from "@/data/roadmap-nodes";
@@ -24,9 +24,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!lesson || !course) return {};
   const description =
     NODE_DATA[track]?.find((n) => n.id === lessonId)?.description ??
-    `Interactive ${course.roadmap.title} lesson with exercises and a quiz.`;
+    `Interactive ${trackTitle(track)} lesson with exercises and a quiz.`;
   return {
-    title: `${lesson.title.en} — ${course.roadmap.title}`,
+    title: `${lesson.title.en} — ${trackTitle(track)}`,
     description,
     alternates: { canonical: `/learn/${track}/${lessonId}/` },
     openGraph: { type: "article", title: lesson.title.en, description, url: `/learn/${track}/${lessonId}/` },
@@ -39,6 +39,8 @@ export default async function LessonPage({ params }: Props) {
   const lesson = await loadLesson(track, lessonId);
   if (!course || !lesson) notFound();
   const outline = await getCourseOutline(track);
+  const practice = outline.find((l) => l.lessonId === lessonId)?.practice;
+  if (!practice) notFound();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -49,7 +51,7 @@ export default async function LessonPage({ params }: Props) {
     inLanguage: ["en", "ar"],
     isAccessibleForFree: true,
     url: `${SITE_URL}/learn/${track}/${lessonId}/`,
-    isPartOf: { "@type": "Course", name: course.roadmap.title, url: `${SITE_URL}/learn/${track}/` },
+    isPartOf: { "@type": "Course", name: trackTitle(track), url: `${SITE_URL}/learn/${track}/` },
   };
 
   return (
@@ -60,6 +62,7 @@ export default async function LessonPage({ params }: Props) {
         trackIcon={course.roadmap.icon}
         lesson={lesson}
         outline={outline.map(({ lessonId, title, minutes, module }) => ({ lessonId, title, minutes, module }))}
+        practice={practice}
       />
     </>
   );
