@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
 import { sign } from "../src/auth";
-import { RUNNER_CEILING, RUNNER_PATHS, SIG_HEADER, SIGNATURE_WINDOW_MS, TS_HEADER, type LanguagesResponse, type RunResult } from "../../shared/protocol";
+import { RUNNER_CEILING, RUNNER_PATHS, SIGNATURE_WINDOW_MS, type LanguagesResponse, type RunResult } from "../../shared/protocol";
 import { LANG_IDS } from "../../shared/languages";
 import { MAX_BODY_BYTES } from "../src/validate";
 import { signedFetch, startServer, type TestServer } from "./helpers";
@@ -214,5 +214,3 @@ describe("start-up refuses a weak secret", () => {
   });
 });
 
-void SIG_HEADER;
-void TS_HEADER;

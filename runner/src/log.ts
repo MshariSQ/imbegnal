@@ -71,7 +71,6 @@ export interface Logger {
 
 /** Remove control characters (log injection) and cap length. */
 export function sanitizeLogString(v: string, max = 200): string {
-  // eslint-disable-next-line no-control-regex
   const clean = v.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, " ");
   return clean.length > max ? `${clean.slice(0, max)}...` : clean;
 }
