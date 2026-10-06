@@ -124,7 +124,8 @@ export interface MockApi {
   calls: ApiCall[];
   /** replace the GET /api/challenges answer; return null to answer with a network failure */
   stats: (signedIn: boolean) => ChallengesApiResponse | null;
-  leaderboard: (q: { track?: string; period: "all" | "week"; signedIn: boolean }) => LeaderboardResponse;
+  /** return null to answer with a network failure */
+  leaderboard: (q: { track?: string; period: "all" | "week"; signedIn: boolean }) => LeaderboardResponse | null;
   /** answer for POST .../submit; may return a custom status */
   submit: (id: string, body: Record<string, unknown>, callNo: number) => { status?: number; headers?: Record<string, string>; json: unknown } | SubmitResponse;
   hint: (id: string, index: number) => { status?: number; json: unknown };
@@ -174,7 +175,8 @@ export async function mockApi(ctx: BrowserContext, api: MockApi): Promise<void> 
     }
     if (req.method() === "GET" && url.pathname === "/api/leaderboard") {
       const period = url.searchParams.get("period") === "week" ? "week" : "all";
-      return json(200, api.leaderboard({ track: url.searchParams.get("track") ?? undefined, period, signedIn }));
+      const lb = api.leaderboard({ track: url.searchParams.get("track") ?? undefined, period, signedIn });
+      return lb ? json(200, lb) : route.abort("connectionfailed");
     }
     const m = url.pathname.match(/^\/api\/challenges\/([^/]+)\/(open|hint|submit)$/);
     if (req.method() === "POST" && m) {

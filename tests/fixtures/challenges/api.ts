@@ -50,13 +50,14 @@ export const fixtureLeaderboard: LeaderboardEntry[] = [
 export const fixtureMe: LeaderboardEntry = { rank: 128, name: "Test Learner", username: "tester", points: 45, solves: 1, firstBloods: 0, lastSolveAt: ago(2 * DAY) };
 
 export function fixtureLeaderboardResponse(opts: { track?: string; period: "all" | "week"; signedIn: boolean; meInside?: boolean }): LeaderboardResponse {
-  const entries = opts.period === "week" ? fixtureLeaderboard.slice(0, 3).map((e, i) => ({ ...e, rank: i + 1, points: Math.round(e.points / 10) })) : fixtureLeaderboard;
-  return {
-    entries,
-    me: opts.signedIn ? (opts.meInside ? { ...entries[1], name: "Test Learner" } : fixtureMe) : undefined,
-    track: opts.track ?? "all",
-    period: opts.period,
-  };
+  let entries = opts.period === "week" ? fixtureLeaderboard.slice(0, 3).map((e, i) => ({ ...e, rank: i + 1, points: Math.round(e.points / 10) })) : fixtureLeaderboard;
+  let me: LeaderboardEntry | undefined = opts.signedIn ? fixtureMe : undefined;
+  if (opts.signedIn && opts.meInside) {
+    // The learner sits inside the visible range (rank 5), so no pinned row is needed.
+    me = { ...fixtureMe, rank: 5 };
+    entries = entries.map((e) => (e.rank === 5 ? me! : e));
+  }
+  return { entries, me, track: opts.track ?? "all", period: opts.period };
 }
 
 export const correctResponse = (awarded: number, firstBlood = false): SubmitResponse => ({ correct: true, awarded, alreadySolved: false, firstBlood });
