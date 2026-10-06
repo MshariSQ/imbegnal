@@ -9,7 +9,7 @@ import { extname, join, normalize, resolve } from "node:path";
 import type { AddressInfo } from "node:net";
 import { chromium, type Browser, type BrowserContext, type Page, type Route } from "playwright";
 import type { ChallengeStat, ChallengesApiResponse, LeaderboardResponse, SubmitResponse } from "../../../shared/api";
-import { fixtureLeaderboardResponse, fixtureStats } from "../../fixtures/challenges/api";
+import { FIXTURE_NOW, fixtureLeaderboardResponse, fixtureStats } from "../../fixtures/challenges/api";
 
 export const ROOT = resolve(__dirname, "../../..");
 export const SITE_DIR = process.env.CTF_E2E_SITE_DIR ?? join(ROOT, "node_modules/.cache/ctf-e2e-site");
@@ -95,6 +95,8 @@ export async function newContext(browser: Browser, o: ContextOptions = {}): Prom
     colorScheme: o.theme ?? "dark",
     serviceWorkers: "block",
   });
+  // Deterministic relative times ("2 hours ago") while timers keep running.
+  await ctx.clock.setFixedTime(FIXTURE_NOW);
   await ctx.addInitScript(
     ({ lang, theme, token }) => {
       try {
@@ -211,3 +213,61 @@ export function collectErrors(page: Page): string[] {
 export function statById(stats: ChallengesApiResponse | null, id: string): ChallengeStat | undefined {
   return stats?.stats.find((s) => s.id === id);
 }
+
+// ── page helpers ─────────────────────────────────────────────────────────────
+export interface OpenedPage {
+  page: Page;
+  ctx: BrowserContext;
+  errors: string[];
+  api: MockApi;
+  close: () => Promise<void>;
+}
+
+/** New context + mocked Worker + page navigated to `path` (relative to the static site). */
+export async function openPage(browser: Browser, origin: string, path: string, o: ContextOptions & { api?: MockApi } = {}): Promise<OpenedPage> {
+  const ctx = await newContext(browser, o);
+  const api = o.api ?? defaultMock();
+  await mockApi(ctx, api);
+  const page = await ctx.newPage();
+  const errors = collectErrors(page);
+  await page.goto(origin + path);
+  return { page, ctx, errors, api, close: () => ctx.close() };
+}
+
+/** Poll until `fn` stops throwing (async-friendly stand-in for expect.poll). */
+export async function eventually<T>(fn: () => T | Promise<T>, timeoutMs = 8000): Promise<T> {
+  const start = Date.now();
+  for (;;) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (Date.now() - start > timeoutMs) throw e;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  }
+}
+
+/** Titles of the visible challenge cards, in DOM order. */
+export const cardTitles = (page: Page) => page.locator('[data-testid="ctf-grid"] h3').allTextContents();
+
+// ── accessibility ────────────────────────────────────────────────────────────
+interface AxeViolation {
+  id: string;
+  impact?: string | null;
+  help: string;
+  nodes: { target: unknown[]; html: string }[];
+}
+
+/** Runs axe-core (injected via CDP, so the page CSP does not matter); returns serious + critical violations. */
+export async function seriousViolations(page: Page): Promise<AxeViolation[]> {
+  const source = readFileSync(join(ROOT, "node_modules/axe-core/axe.min.js"), "utf8");
+  await page.evaluate(source);
+  const result = await page.evaluate(async () => {
+    const axe = (globalThis as unknown as { axe: { run: (ctx: Document, opts: object) => Promise<{ violations: AxeViolation[] }> } }).axe;
+    return axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } });
+  });
+  return result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+}
+
+export const describeViolations = (vs: AxeViolation[]) =>
+  vs.map((v) => `${v.id} (${v.impact}): ${v.help}\n    ${v.nodes.slice(0, 3).map((n) => `${n.target.join(" ")} :: ${n.html.slice(0, 120)}`).join("\n    ")}`).join("\n");
