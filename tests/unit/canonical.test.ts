@@ -6,6 +6,7 @@ import { join, relative, resolve } from "node:path";
 import { roadmaps, type Roadmap } from "../../data/roadmaps";
 import { NODE_DATA } from "../../data/roadmap-nodes";
 import { curricula } from "../../data/curricula";
+import { curriculumAr } from "../../lib/i18n-curriculum";
 import { courses as directory } from "../../data/courses";
 import { certifications } from "../../data/certifications";
 import { FIELD_TO_TRACK, UNMAPPED_FIELD_LABELS, fieldKey, fieldTrack } from "../../data/field-map";
@@ -130,7 +131,7 @@ test("renaming a roadmap changes every rendered track title (title helper with a
   assert.equal(trackTitle("frontend", "en", renamed), trackTitle("frontend"));
   for (const r of roadmaps) {
     assert.equal(trackTitle(r.id, "en"), r.title);
-    assert.equal(trackTitle(r.id, "ar"), curricula[r.id].arabic.title);
+    assert.equal(trackTitle(r.id, "ar"), curriculumAr.curriculum.tracks[r.id].title);
   }
   assert.equal(trackTitle("no-such-track"), "no-such-track");
   assert.equal(trackMeta("no-such-track"), null);

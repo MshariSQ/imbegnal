@@ -17,7 +17,8 @@
 import { roadmaps, type Roadmap } from "@/data/roadmaps";
 import { NODE_DATA, type RoadmapNodeInfo } from "@/data/roadmap-nodes";
 import { hasLesson } from "@/data/lessons";
-import { curricula, type Badge, type BadgeRule, type Curriculum } from "@/data/curricula";
+import type { Badge, BadgeRule, Curriculum } from "@/data/curricula";
+import { curriculumAr } from "./i18n-curriculum";
 import type { L10n, LessonSection, RunnerLang } from "@/data/lessons/types";
 import type { ChallengeMeta } from "@/shared/challenges";
 import type { LangId } from "@/shared/languages";
@@ -97,7 +98,7 @@ const byId = (list: readonly Roadmap[], id: string) => list.find((r) => r.id ===
 export function trackMeta(id: string, source: readonly Roadmap[] = roadmaps): TrackMeta | null {
   const r = byId(source, id);
   if (!r) return null;
-  const ar = curricula[id]?.arabic;
+  const ar = curriculumAr.curriculum.tracks[id];
   return {
     id,
     title: { en: r.title, ar: ar?.title ?? r.title },
@@ -117,10 +118,6 @@ export function trackTitle(id: string, lang: keyof L10n = "en", source: readonly
 
 export function trackDescription(id: string, lang: keyof L10n = "en", source: readonly Roadmap[] = roadmaps): string {
   return trackMeta(id, source)?.description[lang] ?? "";
-}
-
-export function getCurriculum(id: string): Curriculum | undefined {
-  return curricula[id];
 }
 
 // ── Course outline + progress (client-safe shapes) ───────────────────────────
@@ -220,18 +217,19 @@ function toPracticeChallenge(c: ChallengeMeta): PracticeChallenge {
  * Challenges worth doing for a track or one of its lessons. Pure: the caller
  * passes the public registry (an empty registry yields an empty list).
  *
- * Lesson scope: challenges that list the lesson in `lessons`, plus the ids the
- * curriculum names for it. Track scope: every challenge of the track, those tied
+ * Lesson scope: challenges that list the lesson in `lessons`, plus the ids in
+ * `namedIds` (the curriculum's `lessonLinks[lesson].challenges`). Track scope: every challenge of the track, those tied
  * to a lesson of the track first. Easier first within a group.
  */
 export function pickChallenges(
   registry: readonly ChallengeMeta[],
   trackId: string,
   lessonId?: string,
-  limit = Infinity
+  limit = Infinity,
+  namedIds: readonly string[] = []
 ): PracticeChallenge[] {
   const key = lessonId ? lessonKey(trackId, lessonId) : null;
-  const named = new Set(lessonId ? (curricula[trackId]?.lessonLinks?.[lessonId]?.challenges ?? []) : []);
+  const named = new Set(namedIds);
   const own = registry.filter((c) => c.track === trackId);
   const pool = key
     ? registry.filter((c) => c.lessons?.includes(key) || named.has(c.id))
@@ -245,6 +243,9 @@ export function pickChallenges(
  * What a learner can practice for a lesson, from its sections and the public
  * challenge registry. Pure so it runs in the unit tests for every lesson.
  *
+ * `cur` is the track's curriculum (passed in so this module stays light for the
+ * client bundle); without it the blank lab falls back to Python.
+ *
  * GUARANTEE: at least one link. The blank Code Lab (in the lesson's language,
  * `lessonLinks[lesson].lang ?? primaryLang`) is offered unless the curriculum
  * opts out with `lab: false` AND the lesson already has other practice.
@@ -253,9 +254,9 @@ export function resolvePractice(
   trackId: string,
   lessonId: string,
   sections: readonly LessonSection[],
-  registry: readonly ChallengeMeta[]
+  registry: readonly ChallengeMeta[],
+  cur?: Pick<Curriculum, "primaryLang" | "lessonLinks">
 ): LessonPractice {
-  const cur = curricula[trackId];
   const link = cur?.lessonLinks?.[lessonId];
   const labs: PracticeLab[] = [];
   const demos: PracticeDemo[] = [];
@@ -273,7 +274,7 @@ export function resolvePractice(
       });
     }
   });
-  const challenges = pickChallenges(registry, trackId, lessonId, 4);
+  const challenges = pickChallenges(registry, trackId, lessonId, 4, link?.challenges);
   const hasOther = labs.length + demos.length + challenges.length > 0;
   const lang: LangId = link?.lang ?? cur?.primaryLang ?? "python";
   const blank: PracticeBlank | null =
@@ -366,8 +367,8 @@ export function evaluateBadge(badge: Badge, s: CourseStats): BadgeState {
   return { badge, available, earned: available && have >= need, have, need };
 }
 
-export function evaluateBadges(trackId: string, s: CourseStats): BadgeState[] {
-  return (curricula[trackId]?.badges ?? []).map((b) => evaluateBadge(b, s)).filter((b) => b.available);
+export function evaluateBadges(badges: readonly Badge[], s: CourseStats): BadgeState[] {
+  return badges.map((b) => evaluateBadge(b, s)).filter((b) => b.available);
 }
 
 /** Certificate readiness: 100% of the lessons. */

@@ -6,6 +6,7 @@ import { loadLesson, hasLesson } from "../../data/lessons";
 import { BADGE_ICONS, curricula, type Curriculum } from "../../data/curricula";
 import type { L10n } from "../../data/lessons/types";
 import { LANG_IDS } from "../../shared/languages";
+import { curriculumAr } from "../../lib/i18n-curriculum";
 import { MODULE_ORDER, courses, courseStats, evaluateBadges, type CourseLesson } from "../../lib/catalog";
 import { localSupports, runLocal } from "../helpers/exec-local";
 
@@ -59,8 +60,10 @@ test("every learner-facing string is bilingual and the Arabic is Arabic", () => 
       assert.ok(t.ar.trim().length > 0, `${path}: empty Arabic`);
       assert.match(t.ar, ARABIC, `${path}: Arabic text contains no Arabic letters`);
     }
-    assert.match(c.arabic.title, /[؀-ۿ]|^DevOps$/);
-    assert.ok(c.arabic.description.length > 10);
+    const ar = curriculumAr.curriculum.tracks[id];
+    assert.ok(ar, `${id}: Arabic track name missing from lib/i18n-curriculum`);
+    assert.match(ar.title, /[\u0600-\u06FF]|^DevOps$/);
+    assert.match(ar.description, ARABIC);
   }
 });
 
@@ -156,13 +159,13 @@ test("every badge rule is reachable and evaluates deterministically from progres
       lessons,
       { lessons: Object.fromEntries(lessons.map((l) => [`${course.id}/${l.lessonId}`, { done: 1, quiz: 1 }])), labs: allLabs }
     );
-    const before = evaluateBadges(course.id, none);
-    const after = evaluateBadges(course.id, everything);
+    const before = evaluateBadges(curricula[course.id].badges, none);
+    const after = evaluateBadges(curricula[course.id].badges, everything);
     assert.ok(before.length >= 3, `${course.id}: fewer than 3 badges are available`);
     assert.ok(before.every((b) => !b.earned), `${course.id}: a badge is earned with zero progress`);
     assert.ok(after.every((b) => b.earned), `${course.id}: a badge is unreachable: ${after.filter((b) => !b.earned).map((b) => b.badge.id)}`);
     assert.ok(after.some((b) => b.badge.rule.kind === "course"));
-    assert.deepEqual(evaluateBadges(course.id, everything), after, "deterministic");
+    assert.deepEqual(evaluateBadges(curricula[course.id].badges, everything), after, "deterministic");
   }
 });
 

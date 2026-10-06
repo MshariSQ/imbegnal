@@ -28,7 +28,7 @@ test("every lesson of every track has at least one practice link, and every link
     for (const ref of course.lessons) {
       const lesson = await loadLesson(course.id, ref.lessonId);
       assert.ok(lesson, `${course.id}/${ref.lessonId}`);
-      const p = resolvePractice(course.id, ref.lessonId, lesson.sections, []);
+      const p = resolvePractice(course.id, ref.lessonId, lesson.sections, [], curricula[course.id]);
       assert.ok(practiceCount(p) >= 1, `${course.id}/${ref.lessonId} has no practice link`);
       lessons++;
 
@@ -56,7 +56,7 @@ test("every lesson of every track has at least one practice link, and every link
 test("every runnable code-demo and exercise is offered, pseudo-code demos are not", async () => {
   const lesson = await loadLesson("cyber-security", "python");
   assert.ok(lesson);
-  const p = resolvePractice("cyber-security", "python", lesson.sections, []);
+  const p = resolvePractice("cyber-security", "python", lesson.sections, [], curricula["cyber-security"]);
   const expected = lesson.sections.flatMap((s, i) => (s.type === "exercise" || (s.type === "code-demo" && s.runnable !== false) ? [i] : []));
   assert.deepEqual(p.demos.map((d) => d.section), expected);
   assert.ok(p.labs.some((l) => l.id === "failed-logins"));
@@ -65,9 +65,9 @@ test("every runnable code-demo and exercise is offered, pseudo-code demos are no
 test("lab: false drops the blank Code Lab only when the lesson has other practice", () => {
   const sections = [{ type: "text" as const, body: { en: "x", ar: "x" } }];
   // html-css opts out of a blank lab; with no demos/labs/challenges it still gets the fallback
-  const alone = resolvePractice("frontend", "html-css", sections, []);
+  const alone = resolvePractice("frontend", "html-css", sections, [], curricula.frontend);
   assert.ok(alone.blank, "fallback keeps the guarantee");
-  const withDemo = resolvePractice("frontend", "html-css", [...sections, { type: "code-demo", lang: "web", code: "<p>x</p>", explanation: { en: "x", ar: "x" } }], []);
+  const withDemo = resolvePractice("frontend", "html-css", [...sections, { type: "code-demo", lang: "web", code: "<p>x</p>", explanation: { en: "x", ar: "x" } }], [], curricula.frontend);
   assert.equal(withDemo.blank, null);
   assert.equal(withDemo.demos.length, 1);
   assert.equal(withDemo.demos[0].lang, "web");
@@ -75,9 +75,9 @@ test("lab: false drops the blank Code Lab only when the lesson has other practic
 
 test("the blank Code Lab uses the lesson language, else the track's primaryLang", () => {
   const sections = [{ type: "text" as const, body: { en: "x", ar: "x" } }];
-  assert.equal(resolvePractice("cyber-security", "linux", sections, []).blank?.lang, "bash");
-  assert.equal(resolvePractice("cyber-security", "setup", sections, []).blank?.lang, curricula["cyber-security"].primaryLang);
-  assert.equal(resolvePractice("frontend", "typescript", sections, []).blank?.lang, "typescript");
+  assert.equal(resolvePractice("cyber-security", "linux", sections, [], curricula["cyber-security"]).blank?.lang, "bash");
+  assert.equal(resolvePractice("cyber-security", "setup", sections, [], curricula["cyber-security"]).blank?.lang, curricula["cyber-security"].primaryLang);
+  assert.equal(resolvePractice("frontend", "typescript", sections, [], curricula.frontend).blank?.lang, "typescript");
 });
 
 test("recommended challenges: empty registry works; lesson links, difficulty order and no leaked statements", () => {
@@ -98,7 +98,7 @@ test("recommended challenges: empty registry works; lesson links, difficulty ord
   assert.equal(card.href, "/challenges/c-linked/");
   assert.ok(!JSON.stringify(card).includes("SECRET STORY"), "cards carry public card data only");
 
-  const withChallenges = resolvePractice("cyber-security", "linux", [], registry);
+  const withChallenges = resolvePractice("cyber-security", "linux", [], registry, curricula["cyber-security"]);
   assert.deepEqual(withChallenges.challenges.map((c) => c.id), ["c-linked"]);
 });
 

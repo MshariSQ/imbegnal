@@ -6,6 +6,7 @@
 import "server-only";
 import { loadLesson } from "@/data/lessons";
 import { challenges } from "@/data/challenges";
+import { curricula, type Curriculum } from "@/data/curricula";
 import type { Lesson } from "@/data/lessons/types";
 import {
   getCourse,
@@ -26,7 +27,11 @@ export function lessonStats(lesson: Lesson) {
 
 /** Challenges worth doing for a track (or one of its lessons). An empty registry yields []. */
 export function recommendedChallenges(trackId: string, lessonId?: string, limit?: number): PracticeChallenge[] {
-  return pickChallenges(challenges, trackId, lessonId, limit);
+  return pickChallenges(challenges, trackId, lessonId, limit, lessonId ? curricula[trackId]?.lessonLinks?.[lessonId]?.challenges : undefined);
+}
+
+export function getCurriculum(trackId: string): Curriculum | undefined {
+  return curricula[trackId];
 }
 
 /**
@@ -36,7 +41,7 @@ export function recommendedChallenges(trackId: string, lessonId?: string, limit?
  */
 export async function practiceFor(trackId: string, lessonId: string): Promise<LessonPractice | null> {
   const lesson = await loadLesson(trackId, lessonId);
-  return lesson ? resolvePractice(trackId, lessonId, lesson.sections, challenges) : null;
+  return lesson ? resolvePractice(trackId, lessonId, lesson.sections, challenges, curricula[trackId]) : null;
 }
 
 /** Ordered lesson data for a course (titles, durations, activity counts, practice). */
@@ -54,7 +59,7 @@ export async function getCourseOutline(trackId: string): Promise<CourseLesson[]>
         minutes: lesson.estMinutes,
         module: ref.module,
         description: desc[ref.lessonId] ?? "",
-        practice: resolvePractice(trackId, ref.lessonId, lesson.sections, challenges),
+        practice: resolvePractice(trackId, ref.lessonId, lesson.sections, challenges, curricula[trackId]),
         ...lessonStats(lesson),
       };
     })
