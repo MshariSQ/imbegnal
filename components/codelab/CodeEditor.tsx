@@ -9,7 +9,7 @@
  * keyboard users are never trapped; Ctrl/Cmd+Enter runs.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import CodeMirror, { Decoration, EditorState, EditorView, keymap } from "@uiw/react-codemirror";
+import CodeMirror, { Decoration, EditorState, EditorView, Prec, keymap } from "@uiw/react-codemirror";
 import type { Extension } from "@codemirror/state";
 import { indentUnit } from "@codemirror/language";
 import { indentWithTab } from "@codemirror/commands";
@@ -96,15 +96,9 @@ export default function CodeEditor({
         ".cm-scroller": { lineHeight: "1.6" },
       }),
       errorLineTheme,
+      // Highest precedence: the default keymap binds Mod-Enter to "insert blank line".
       // eslint-disable-next-line react-hooks/refs -- triggerRun reads the ref only when the key is pressed
-      keymap.of([
-        {
-          key: "Mod-Enter",
-          preventDefault: true,
-          run: triggerRun,
-        },
-        indentWithTab,
-      ]),
+      Prec.highest(keymap.of([{ key: "Mod-Enter", preventDefault: true, run: triggerRun }, indentWithTab])),
     ];
     if (langExt) ext.push(langExt);
     if (wrap) ext.push(EditorView.lineWrapping);

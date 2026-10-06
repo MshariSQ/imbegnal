@@ -114,7 +114,7 @@ function Stream({
   const locale = intlLocale(lang);
   const color = tone === "error" ? "text-red-300" : tone === "warn" ? "text-amber-300" : "text-fg";
   return (
-    <section aria-label={region} className="min-w-0">
+    <section className="min-w-0">
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <h3 className="text-xs font-bold uppercase tracking-wider text-fg-subtle">{label}</h3>
         {clean && <CopyButton text={clean} label={fill(o.copy, { what: copyWhat })} copiedLabel={fill(o.copiedWhat, { what: copyWhat })} />}

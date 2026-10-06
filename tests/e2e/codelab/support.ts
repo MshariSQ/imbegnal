@@ -342,3 +342,37 @@ export const editorText = (page: Page) => page.locator(".cm-content").first().in
 
 /** The visible Run button for the current viewport (desktop toolbar or mobile bar). */
 export const runButton = (page: Page) => page.locator('[data-testid="run-button"]:visible').first();
+
+// ── Suite plumbing ───────────────────────────────────────────────────────────
+
+export interface Suite {
+  site: Site;
+  browser: Browser;
+  close(): Promise<void>;
+}
+
+/** One static server + one browser per spec file; every test gets a fresh, isolated context. */
+export async function bootSuite(): Promise<Suite> {
+  const site = await startSite();
+  const browser = await launch();
+  return {
+    site,
+    browser,
+    close: async () => {
+      await browser.close();
+      await site.close();
+    },
+  };
+}
+
+/** Runs `fn` with a harness and always closes its context. */
+export async function withPage(s: Suite, opts: PageOptions, fn: (h: Harness) => Promise<void>, api?: MockApi): Promise<void> {
+  const h = await newHarness(s.browser, s.site, opts, api);
+  try {
+    await fn(h);
+  } finally {
+    await h.context.close();
+  }
+}
+
+export const resultPanel = (page: Page) => page.locator('[data-testid="run-result"]');
