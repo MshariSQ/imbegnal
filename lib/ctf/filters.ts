@@ -90,7 +90,7 @@ export function matchesQuery(item: ChallengeListItem, q: string, ctx: Pick<Filte
   const needle = normalizeText(q);
   if (!needle) return true;
   const hay = normalizeText(
-    [item.title[ctx.lang], item.summary[ctx.lang], item.topic.replace(/-/g, " "), item.tags.join(" "), ctx.trackTitle(item.track)].join(" \n ")
+    [item.title[ctx.lang], item.summary[ctx.lang], item.topic, item.topic.replace(/-/g, " "), item.tags.join(" "), ctx.trackTitle(item.track)].join(" \n ")
   );
   return needle.split(/\s+/).every((w) => hay.includes(w));
 }
