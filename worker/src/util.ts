@@ -16,6 +16,23 @@ export interface Env {
   AI_DAILY_LIMIT_FREE?: string; // per user per day (default 20)
   AI_DAILY_LIMIT_PRO?: string; // (default 200)
   AI_DAILY_LIMIT_GLOBAL?: string; // all users combined per day (default 600) — spend kill switch
+  // Code Lab — see worker/README-lab.md. All optional strings; defaults live in worker/src/lab/config.ts.
+  RUNNER_URL?: string; // base URL of the runner service (https; http only for loopback)
+  RUNNER_SECRET?: string; // HMAC secret shared with the runner (`wrangler secret put RUNNER_SECRET`)
+  RUN_DAILY_LIMIT_FREE?: string; // runs per user per UTC day (default 50)
+  RUN_DAILY_LIMIT_PRO?: string; // (default 500)
+  RUN_DAILY_LIMIT_GLOBAL?: string; // all users combined per day (default 20000) — cost kill switch
+  RUN_PER_MINUTE_FREE?: string; // burst limit per user (default 10)
+  RUN_PER_MINUTE_PRO?: string; // (default 30)
+  RUN_MAX_CONCURRENT?: string; // simultaneous runs per user (default 2)
+  // Abuse protection: signals of one kind inside the window that trigger an automatic suspension.
+  ABUSE_WINDOW_MIN?: string; // sliding window in minutes (default 10)
+  ABUSE_SUSPEND_HOURS?: string; // suspension length (default 24)
+  ABUSE_RESOURCE_MAX?: string; // timeouts / memory / output floods (default 8)
+  ABUSE_NETWORK_PROBE_MAX?: string; // (default 5)
+  ABUSE_FLOOD_MAX?: string; // rate-limit hits (default 25)
+  ABUSE_BRUTEFORCE_MAX?: string; // wrong-flag floods (default 30)
+  ABUSE_VOLUME_MAX?: string; // (default 5)
 }
 
 export interface TokenUser {
@@ -124,6 +141,9 @@ const ALLOWED_ORIGINS = [
   "https://msharisq.github.io",
   "http://localhost:3000",
   "http://localhost:3001",
+  // Local end-to-end runs (static site served on 4173)
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
 ];
 
 export function corsHeaders(origin: string): Record<string, string> {
