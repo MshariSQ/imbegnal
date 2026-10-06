@@ -30,8 +30,6 @@ export default function SubmitPanel({
   solved: boolean;
   next?: ChallengeListItem;
 }) {
-  const { tx } = useLang();
-  const t = tx.ctf.submit;
   const { state, submit, cooldown } = useSubmission(challenge.id);
   const resultRef = useRef<HTMLDivElement>(null);
   const pending = state.phase === "pending";

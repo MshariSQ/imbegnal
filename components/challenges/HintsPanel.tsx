@@ -42,7 +42,8 @@ export default function HintsPanel({
   const [error, setError] = useState<string | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const openRefs = useRef<Record<number, HTMLDivElement | null>>({});
-  const [focusRevealed, setFocusRevealed] = useState<number | null>(null);
+  // Set when a reveal succeeds; the effect below moves focus once the hint text is in the DOM.
+  const focusRevealed = useRef<number | null>(null);
 
   const used = clampCount(hintsUsed, hints.length);
   // A solved challenge has nothing left to protect: every hint is open for review.
@@ -53,11 +54,11 @@ export default function HintsPanel({
   }, [confirming]);
 
   useEffect(() => {
-    if (focusRevealed !== null) {
-      openRefs.current[focusRevealed]?.focus();
-      setFocusRevealed(null);
+    if (focusRevealed.current !== null) {
+      openRefs.current[focusRevealed.current]?.focus();
+      focusRevealed.current = null;
     }
-  }, [focusRevealed]);
+  }, [used]);
 
   async function reveal(index: number) {
     const token = user ? getToken() : null;
@@ -66,9 +67,9 @@ export default function HintsPanel({
     setError(null);
     try {
       await revealHint(challengeId, index, token);
+      focusRevealed.current = index;
       recordHint(challengeId, index);
       setConfirming(null);
-      setFocusRevealed(index);
     } catch (e) {
       const k = classifyFailure(e).kind;
       setError(k === "signin" ? tx.ctf.errors.signIn : k === "network" ? tx.ctf.errors.network : t.failed);
