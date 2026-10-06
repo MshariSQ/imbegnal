@@ -15,6 +15,7 @@
  * courses and Code Lab filters, so renaming a roadmap renames it everywhere.
  */
 import type { LangId } from "./languages";
+import type { ChallengeStat } from "./api";
 
 export interface L10nText {
   en: string;
@@ -132,4 +133,59 @@ export interface ChallengeReference {
   flag?: string;
   /** For code/output challenges: a passing solution per language. */
   solutions?: Partial<Record<LangId, string>>;
+}
+
+// ── Worker API shapes that shared/api.ts does not cover ──────────────────────
+// (additive: owned by the Challenges Worker module; the site imports these types)
+
+/** Submission limits the Worker enforces; the site may pre-validate with the same numbers. */
+export const SUBMIT_LIMITS = {
+  /** Max characters of a submitted flag. */
+  flagMaxChars: 256,
+  /** Max UTF-8 bytes of submitted source code. */
+  codeMaxBytes: 32 * 1024,
+  /** Max tests run per submission (extra tests of a grader are ignored). */
+  maxTests: 20,
+  /** Max hints per challenge (they are tracked in a 30-bit mask). */
+  maxHints: 30,
+} as const;
+
+/** `mine` of a ChallengeStat plus the reveal mask (bit i set = hint i was revealed). */
+export type ChallengeMine = NonNullable<ChallengeStat["mine"]> & { hintMask: number };
+
+/** POST /api/challenges/:id/open */
+export interface ChallengeOpenResponse {
+  ok: true;
+  /** ISO time of the FIRST open (stable across calls). */
+  openedAt: string;
+}
+
+/** POST /api/challenges/:id/hint — revealing again is free and returns the same text. */
+export interface ChallengeHintResponse {
+  index: number;
+  text: L10nText;
+  cost: number;
+  /** Indexes of every hint this learner has revealed so far. */
+  revealed: number[];
+  hintsUsed: number;
+  /** What a correct solve would award right now (points minus revealed hint costs). */
+  potentialPoints: number;
+}
+
+/** GET /api/certificates/:track?format=json */
+export interface CertificateInfo {
+  code: string;
+  track: string;
+  recipient: string;
+  issuedAt: string;
+  verifyUrl: string;
+}
+
+/** 403 body of GET /api/certificates/:track while lessons remain. */
+export interface CertificateIneligibleBody {
+  error: "not_eligible";
+  message?: string;
+  total: number;
+  done: number;
+  remaining: number;
 }
