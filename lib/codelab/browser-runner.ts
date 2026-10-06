@@ -162,6 +162,8 @@ function runJavaScript(opts: BrowserRunOptions): Promise<BrowserRunOutcome> {
       if (m.type === "out") {
         appendCapped(m.stream === "stdout" ? stdout : stderr, m.text, BROWSER_LIMITS.keepChars);
       } else if (m.type === "flood") {
+        // Everything past the kept prefix was dropped; say so.
+        (m.stream === "stderr" ? stderr : stdout).truncated = true;
         finish(() => resolve(resultOf({ status: "output_limit", exitCode: null, signal: "SIGKILL", stdout, stderr, runMs: performance.now() - t0 })));
       } else if (m.type === "done") {
         // The worker only forwards the kept prefix; its totals tell us what was dropped.

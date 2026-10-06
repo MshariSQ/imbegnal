@@ -15,7 +15,7 @@
  * Protocol (parent <- worker):
  *   { type: "out", stream: "stdout" | "stderr", text }   output kept so far (capped)
  *   { type: "done", exitCode, totals: { stdout, stderr }, errorLine? }
- *   { type: "flood" }                                      the program wrote > killChars
+ *   { type: "flood", stream }                              the program wrote > killChars to `stream`
  */
 
 export interface JsRunRequest {
@@ -31,7 +31,7 @@ export interface JsRunRequest {
 export type JsWorkerMessage =
   | { type: "out"; stream: "stdout" | "stderr"; text: string }
   | { type: "done"; exitCode: number; totals: { stdout: number; stderr: number }; errorLine?: number }
-  | { type: "flood" };
+  | { type: "flood"; stream: "stdout" | "stderr" };
 
 interface WorkerScope {
   postMessage(message: JsWorkerMessage): void;
@@ -82,7 +82,7 @@ async function main(req: JsRunRequest): Promise<void> {
     }
     if (totals[stream] > req.killChars) {
       flooded = true;
-      post({ type: "flood" });
+      post({ type: "flood", stream });
       throw new FloodSignal();
     }
   };

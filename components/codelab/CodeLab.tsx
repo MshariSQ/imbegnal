@@ -83,8 +83,10 @@ export default function CodeLab() {
   const params = useSearchParams();
   const qs = params.toString();
   const intent = useMemo(() => parseCodeLabQuery(new URLSearchParams(qs)), [qs]);
+  // shared/links only knows the 14 server languages; `?lang=web` selects the browser-only Web mode here.
+  const webMode = intent.kind === "blank" && !intent.lang && parseLabLang(params.get("lang")) === "web";
   const returnTo = `/code-lab/${qs ? `?${qs}` : ""}`;
-  return <LabSession key={intentKey(intent)} intent={intent} returnTo={returnTo} />;
+  return <LabSession key={`${intentKey(intent)}${webMode ? ":web" : ""}`} intent={intent} webMode={webMode} returnTo={returnTo} />;
 }
 
 type Boot = { status: "loading" } | { status: "error" } | { status: "notfound"; kind: "exercise" | "demo" | "challenge" | "snippet" } | { status: "ready" };
@@ -105,7 +107,7 @@ function scopeFor(ctx: LabContext, lang: LabLangId, home: LabLangId): DraftScope
   }
 }
 
-function LabSession({ intent, returnTo }: { intent: CodeLabIntent; returnTo: string }) {
+function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webMode: boolean; returnTo: string }) {
   const { tx, lang: ui } = useLang();
   const t = tx.codelab;
   const runner = useRunner();
@@ -157,7 +159,7 @@ function LabSession({ intent, returnTo }: { intent: CodeLabIntent; returnTo: str
           setBoot({ status: "notfound", kind: res.kind });
           return;
         }
-        const start = res.start;
+        const start = webMode ? { lang: "web" as const, code: getLabLanguage("web").hello, stdin: "" } : res.start;
         const startLang: LabLangId = start?.lang ?? parseLabLang(p.lastLang) ?? "python";
         const scope = scopeFor(res.ctx, startLang, startLang);
         const draft = getDraft(kv, draftKey(scope));
@@ -174,7 +176,7 @@ function LabSession({ intent, returnTo }: { intent: CodeLabIntent; returnTo: str
         if (!ac.signal.aborted) setBoot({ status: "error" });
       });
     return () => ac.abort();
-  }, [intent, attempt]);
+  }, [intent, webMode, attempt]);
 
   // ── Draft persistence (debounced; flushed when the page is hidden) ─────────
   const scope = useMemo(() => scopeFor(ctx, lang, home), [ctx, lang, home]);
