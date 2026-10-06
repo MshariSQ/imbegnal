@@ -39,12 +39,14 @@ export interface TestServer {
 export interface ServerOverrides {
   env?: Record<string, string>;
   secret?: string;
+  /** Reuse an existing `imbegnal.test=<id>` label (to adopt containers created before start-up). */
+  label?: string;
 }
 
 export async function startServer(o: ServerOverrides = {}): Promise<TestServer> {
   const secret = o.secret ?? randomBytes(32).toString("hex");
   const id = randomBytes(6).toString("hex");
-  const label = `imbegnal.test=${id}`;
+  const label = o.label ?? `imbegnal.test=${id}`;
   const config = loadConfig({
     RUNNER_SECRET: secret,
     RUNNER_PORT: "0",

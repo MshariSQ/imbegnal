@@ -316,14 +316,19 @@ export class RunnerService {
       return;
     }
 
-    const job = this.executor.execute(jr, { signal: ac.signal });
-    this.jobs.set(ac, job);
+    // Shutdown waits for the response to be flushed (or the caller to hang up), not just the job.
+    const flushed = res.closed
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+          res.once("close", () => resolve());
+        });
+    this.jobs.set(ac, flushed);
+    void flushed.then(() => this.jobs.delete(ac));
     try {
-      const { result } = await job;
+      const { result } = await this.executor.execute(jr, { signal: ac.signal });
       this.logJob(jr.lang, jr.code, jr.stdin, jr.jobId, result, slot.queueMs, t0);
       send(res, 200, result);
     } finally {
-      this.jobs.delete(ac);
       slot.release();
     }
   }
