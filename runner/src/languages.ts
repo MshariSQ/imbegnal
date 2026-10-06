@@ -484,7 +484,8 @@ const RECIPES: Record<LangId, Recipe> = {
       filename: file("kotlin"),
       compile: {
         argv: ["kotlinc", file("kotlin"), "-include-runtime", "-d", "main.jar"],
-        env: { JAVA_OPTS: jvmCommon(Math.floor(l.compileMemoryMb * 0.6)).join(" ") },
+        // java.io.tmpdir: the compiler's terminal library (jansi) extracts a native lib there; /tmp is read-only.
+        env: { JAVA_OPTS: [...jvmCommon(Math.floor(l.compileMemoryMb * 0.6)), "-Djava.io.tmpdir=/work/tmp"].join(" ") },
       },
       keepCompileOutput: true,
       run: { argv: ["java", ...jvmRunFlags(l.memoryMb), "-jar", "main.jar"] },
