@@ -35,7 +35,7 @@ export function startSite(): Promise<{ server: Server; origin: string }> {
   }
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
-    let rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, "");
+    const rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, "");
     let file = join(SITE_DIR, rel);
     if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
     if (!file.startsWith(SITE_DIR) || !existsSync(file)) {
