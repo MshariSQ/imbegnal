@@ -13,9 +13,16 @@ export const dynamicParams = false;
 /** `leaderboard` is its own static route; a challenge must never shadow it. */
 const RESERVED_IDS = new Set(["leaderboard"]);
 
-// An empty registry yields no challenge pages (the export still builds; /challenges/ shows its empty state).
+/**
+ * `output: export` refuses a dynamic route whose generateStaticParams() returns
+ * nothing, so an EMPTY registry (content not written yet) emits one placeholder
+ * param that renders notFound(). It disappears as soon as a challenge exists.
+ */
+const EMPTY_REGISTRY_PARAM = "_none";
+
 export function generateStaticParams() {
-  return challenges.filter((c) => !RESERVED_IDS.has(c.id)).map((c) => ({ id: c.id }));
+  const ids = challenges.filter((c) => !RESERVED_IDS.has(c.id)).map((c) => ({ id: c.id }));
+  return ids.length > 0 ? ids : [{ id: EMPTY_REGISTRY_PARAM }];
 }
 
 type Props = { params: Promise<{ id: string }> };
