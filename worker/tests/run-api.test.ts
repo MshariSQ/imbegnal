@@ -439,14 +439,15 @@ describe("lesson lab grading", () => {
     assert.equal(body.grade.tests[0].message, "runtime_error");
   });
 
-  test("the runner failing mid-grade refunds the unit and hides the failure as internal_error", async () => {
+  test("the runner failing mid-grade is a refunded 503, not a wrong answer", async () => {
     stub!.restore();
     let n = 0;
     stub = stubRunner((job) => (n++ === 1 ? new Response("down", { status: 503 }) : sumRunner(job)));
     const res = await post({ lang: "python", code: "CORRECT", ref });
-    const body = await jsonOf<RunApiResponse & { grade: GradeResult }>(res);
-    assert.equal(res.status, 200);
-    assert.equal(body.grade.passed, false);
+    // Same contract as an ungraded run: an outage is 503 runner_unavailable, never a wrong answer.
+    assert.equal(res.status, 503);
+    const body = await jsonOf<{ error: string; quota: { used: number } }>(res);
+    assert.equal(body.error, "runner_unavailable");
     assert.equal(body.quota.used, 0);
     assert.equal(usage("_global"), 0);
     assert.equal(progress().length, 0);
