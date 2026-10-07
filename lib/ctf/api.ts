@@ -4,7 +4,9 @@
  * `error` code to a localized message (see errors.ts).
  */
 import type { ApiErrorBody, ChallengesApiResponse, LeaderboardResponse, SubmitRequest, SubmitResponse } from "../../shared/api";
+import type { ChallengeHintResponse } from "../../shared/challenges";
 import { API_URL } from "../site";
+import { isL10nText } from "./hints";
 
 export class CtfApiError extends Error {
   constructor(
@@ -61,17 +63,16 @@ export const openChallenge = (id: string, token: string) =>
   request<unknown>(`/api/challenges/${encodeURIComponent(id)}/open`, { method: "POST", body: {}, token });
 
 /**
- * POST /api/challenges/:id/hint {index}. The response body is not part of the
- * shared contract yet, so everything in it is optional and the UI only relies
- * on the 2xx status (see the contract request in the delivery notes).
+ * POST /api/challenges/:id/hint {index}. This is the ONLY way the text of a hint reaches the page
+ * (besides `mine.revealedHints` of GET /api/challenges for hints already revealed): the public
+ * challenge data carries just the cost. An answer without a well-formed text counts as a failure,
+ * so nothing is shown as revealed that the server did not actually hand over.
  */
-export interface HintReveal {
-  index?: number;
-  cost?: number;
-  hintsUsed?: number;
+export async function revealHint(id: string, index: number, token: string): Promise<ChallengeHintResponse> {
+  const res = await request<Partial<ChallengeHintResponse>>(`/api/challenges/${encodeURIComponent(id)}/hint`, { method: "POST", body: { index }, token });
+  if (!isL10nText(res.text)) throw new CtfApiError(200, "invalid_response");
+  return res as ChallengeHintResponse;
 }
-export const revealHint = (id: string, index: number, token: string) =>
-  request<HintReveal>(`/api/challenges/${encodeURIComponent(id)}/hint`, { method: "POST", body: { index }, token });
 
 /** POST /api/challenges/:id/submit */
 export const submitChallenge = (id: string, req: SubmitRequest, token: string) =>
