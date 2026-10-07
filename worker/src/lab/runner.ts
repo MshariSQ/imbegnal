@@ -1,8 +1,11 @@
 // Client for the runner service (shared/protocol.ts). The Worker is the trusted
 // caller: it signs every request with HMAC-SHA256, never follows redirects,
 // bounds the wait, and validates the runner's JSON before trusting any of it.
-// Failures NEVER throw: they come back as an "internal_error" result with the
-// message "runner_unavailable" so the caller can refund the quota.
+// Failures NEVER throw. When the job certainly did not run (no runner, connection
+// refused, the runner rejected the request) the result is "internal_error" with the
+// message "runner_unavailable" so the caller refunds the quota. When the job may have
+// run (no answer in time, an answer too large to read) the result is a user-visible,
+// charged "timeout" / "output_limit": refunding those made them free to trigger.
 import type { LanguageAvailability, LanguagesApiResponse } from "../../../shared/api";
 import { LANG_IDS, type LangId } from "../../../shared/languages";
 import {
@@ -18,11 +21,21 @@ import {
 import type { Env } from "../util";
 import { stripControl } from "./config";
 
-/** Slack on top of compile + run limits for queueing, container start-up and the network. */
+/**
+ * How long a job may legitimately take on the runner besides compile + run: waiting for a
+ * slot (the runner answers 503 busy after RUNNER_QUEUE_TIMEOUT_MS, 30 s by default; keep it
+ * at or below this), container create/start, writing the source and seeding caches.
+ */
+const RUNNER_QUEUE_BUDGET_MS = 30_000;
+const RUNNER_SETUP_BUDGET_MS = 15_000;
 const TIMEOUT_SLACK_MS = 5_000;
 const LANGUAGES_TIMEOUT_MS = 4_000;
-/** Largest response body we will read (two 64 KiB streams plus compiler output, JSON-escaped). */
-const MAX_RESPONSE_BYTES = 1024 * 1024;
+/**
+ * Largest response body we will read. The runner keeps up to 64 KiB of stdout, stderr and
+ * compiler output each, and JSON escapes a control character as 6 bytes: about 1.2 MB worst
+ * case, so an honest answer always fits.
+ */
+const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const MAX_MESSAGE_CHARS = 300;
 
 const STATUSES: readonly RunStatus[] = [
@@ -130,22 +143,25 @@ export function parseRunnerResult(raw: unknown, jobId: string): RunResult | null
   };
 }
 
-function unavailable(jobId: string): RunResult {
+function synthetic(jobId: string, status: RunStatus, message: string): RunResult {
   return {
     jobId,
-    status: "internal_error",
+    status,
     exitCode: null,
     signal: null,
     stdout: "",
     stderr: "",
     stdoutBytes: 0,
     stderrBytes: 0,
-    truncated: { stdout: false, stderr: false },
+    truncated: { stdout: status === "output_limit", stderr: status === "output_limit" },
     runMs: 0,
     compileMs: 0,
-    message: "runner_unavailable",
+    message,
   };
 }
+
+/** The job certainly did not run: refunded by the caller. */
+const unavailable = (jobId: string): RunResult => synthetic(jobId, "internal_error", "runner_unavailable");
 
 /** Callers may only LOWER the runner's own limits; clamp to the protocol ceilings. */
 function sanitizeLimits(limits: RunLimits | undefined): RunLimits | undefined {
@@ -157,7 +173,7 @@ function sanitizeLimits(limits: RunLimits | undefined): RunLimits | undefined {
   return out;
 }
 
-/** Reads the body as text, refusing anything over MAX_RESPONSE_BYTES. */
+/** Reads the body as text, refusing anything over MAX_RESPONSE_BYTES (null). */
 async function readCapped(res: Response): Promise<string | null> {
   const declared = Number(res.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > MAX_RESPONSE_BYTES) return null;
@@ -184,28 +200,56 @@ async function readCapped(res: Response): Promise<string | null> {
   return new TextDecoder().decode(bytes);
 }
 
-/** One signed request. Returns parsed JSON, or null for any transport / HTTP / body problem. */
-async function callRunner(cfg: RunnerConfig, method: "GET" | "POST", path: string, rawBody: string, timeoutMs: number): Promise<unknown> {
+/**
+ * What happened to one signed request:
+ *   ok         parsed JSON from a 2xx answer
+ *   not_run    the runner never took the job: connection failure, redirect, non-2xx answer
+ *              (401 bad signature, 409 duplicate, 413, 503 busy/shutting down, 500 lost)
+ *   no_answer  we gave up waiting after sending it; the job may well have run
+ *   oversize   the answer exceeded MAX_RESPONSE_BYTES; the job ran (its output is the cause)
+ *   garbled    a 2xx answer that is not JSON (a runner bug, not the learner's doing)
+ */
+type CallOutcome =
+  | { kind: "ok"; json: unknown }
+  | { kind: "not_run" }
+  | { kind: "no_answer" }
+  | { kind: "oversize" }
+  | { kind: "garbled" };
+
+async function callRunner(cfg: RunnerConfig, method: "GET" | "POST", path: string, rawBody: string, timeoutMs: number): Promise<CallOutcome> {
   const timestamp = String(Date.now());
   const signature = await signRunnerRequest(cfg.secret, timestamp, rawBody);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${cfg.base}${path}`, {
-      method,
-      headers: { [TS_HEADER]: timestamp, [SIG_HEADER]: signature, ...(method === "POST" ? { "content-type": "application/json" } : {}), accept: "application/json" },
-      ...(method === "POST" ? { body: rawBody } : {}),
-      redirect: "manual",
-      signal: controller.signal,
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${cfg.base}${path}`, {
+        method,
+        headers: { [TS_HEADER]: timestamp, [SIG_HEADER]: signature, ...(method === "POST" ? { "content-type": "application/json" } : {}), accept: "application/json" },
+        ...(method === "POST" ? { body: rawBody } : {}),
+        redirect: "manual",
+        signal: controller.signal,
+      });
+    } catch {
+      return controller.signal.aborted ? { kind: "no_answer" } : { kind: "not_run" };
+    }
     if (!res.ok) {
       await res.body?.cancel().catch(() => {});
-      return null;
+      return { kind: "not_run" };
     }
-    const text = await readCapped(res);
-    return text === null ? null : JSON.parse(text);
-  } catch {
-    return null;
+    let text: string | null;
+    try {
+      text = await readCapped(res);
+    } catch {
+      return controller.signal.aborted ? { kind: "no_answer" } : { kind: "garbled" };
+    }
+    if (text === null) return { kind: "oversize" };
+    try {
+      return { kind: "ok", json: JSON.parse(text) };
+    } catch {
+      return { kind: "garbled" };
+    }
   } finally {
     clearTimeout(timer);
   }
@@ -214,9 +258,20 @@ async function callRunner(cfg: RunnerConfig, method: "GET" | "POST", path: strin
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Runs one program on the runner. NEVER throws: an unconfigured, unreachable,
- * slow or misbehaving runner yields status "internal_error" with the message
- * "runner_unavailable".
+ * How long to wait for /v1/run. The runner applies per-language compile limits of up to
+ * RUNNER_CEILING (Go, Rust and Swift compile for 20 s), so the wait is derived from the
+ * ceilings, not from RUNNER_DEFAULTS: a job that legitimately uses its whole budget must
+ * never be cut off (and must never look like an infrastructure failure).
+ */
+export function runTimeoutBudgetMs(limits: RunLimits | undefined): number {
+  const compileMs = limits?.compileTimeoutMs ?? RUNNER_CEILING.compileTimeoutMs;
+  const runMs = limits?.runTimeoutMs ?? RUNNER_CEILING.runTimeoutMs;
+  return RUNNER_QUEUE_BUDGET_MS + RUNNER_SETUP_BUDGET_MS + compileMs + runMs + TIMEOUT_SLACK_MS;
+}
+
+/**
+ * Runs one program on the runner. NEVER throws. Refundable ("internal_error" /
+ * "runner_unavailable") only when the job certainly did not run; see callRunner.
  */
 export async function runOnRunner(env: Env, req: RunOnRunnerRequest): Promise<RunResult> {
   const jobId = crypto.randomUUID();
@@ -225,10 +280,18 @@ export async function runOnRunner(env: Env, req: RunOnRunnerRequest): Promise<Ru
     if (!cfg) return unavailable(jobId);
     const limits = sanitizeLimits(req.limits);
     const payload: RunRequest = { jobId, lang: req.lang, code: req.code, stdin: req.stdin, ...(limits ? { limits } : {}) };
-    const compileMs = limits?.compileTimeoutMs ?? RUNNER_DEFAULTS.compileTimeoutMs;
-    const runMs = limits?.runTimeoutMs ?? RUNNER_DEFAULTS.runTimeoutMs;
-    const raw = await callRunner(cfg, "POST", "/v1/run", JSON.stringify(payload), compileMs + runMs + TIMEOUT_SLACK_MS);
-    return (raw === null ? null : parseRunnerResult(raw, jobId)) ?? unavailable(jobId);
+    const out = await callRunner(cfg, "POST", "/v1/run", JSON.stringify(payload), runTimeoutBudgetMs(limits));
+    switch (out.kind) {
+      case "ok":
+        return parseRunnerResult(out.json, jobId) ?? unavailable(jobId);
+      case "oversize":
+        return synthetic(jobId, "output_limit", "The program produced more output than can be returned.");
+      case "no_answer":
+        return synthetic(jobId, "timeout", "The run did not finish within the time limit.");
+      case "garbled":
+      case "not_run":
+        return unavailable(jobId);
+    }
   } catch {
     return unavailable(jobId);
   }
@@ -257,7 +320,8 @@ export async function getLanguages(env: Env): Promise<LanguagesApiResponse> {
   const now = Date.now();
   if (languagesCache && languagesCache.key === key && now - languagesCache.at < languagesCache.ttl) return languagesCache.value;
 
-  const raw = await callRunner(cfg, "GET", "/v1/languages", "", LANGUAGES_TIMEOUT_MS);
+  const out = await callRunner(cfg, "GET", "/v1/languages", "", LANGUAGES_TIMEOUT_MS);
+  const raw = out.kind === "ok" ? out.json : null;
   let value: LanguagesApiResponse;
   if (isRecord(raw) && Array.isArray(raw.languages)) {
     const reported = new Map<string, LanguageAvailability>();

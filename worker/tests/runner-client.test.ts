@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { afterEach, describe, mock, test } from "node:test";
 import { RUNNER_CEILING, SIG_HEADER, TS_HEADER } from "../../shared/protocol";
-import { getLanguages, resetLanguagesCache, runOnRunner, signRunnerRequest } from "../src/lab/runner";
+import { getLanguages, resetLanguagesCache, runOnRunner, runTimeoutBudgetMs, signRunnerRequest } from "../src/lab/runner";
 import type { Env } from "../src/util";
 import { TestD1 } from "./helpers/d1";
 import { RUNNER_SECRET, RUNNER_URL, type RunnerStub, hang, makeEnv, okResult, stubRunner } from "./helpers/harness";
@@ -193,7 +193,7 @@ describe("failures never throw and read as runner_unavailable", () => {
     use(stubRunner(() => okResult()));
     expectUnavailable(await runOnRunner(env({ RUNNER_SECRET: "the-wrong-secret" }), REQ)); // stub verifies the HMAC -> 401
     stub!.restore();
-    for (const status of [429, 500, 502, 503]) {
+    for (const status of [409, 413, 429, 500, 502, 503]) {
       use(stubRunner(() => new Response("busy", { status })));
       expectUnavailable(await runOnRunner(env(), REQ));
       stub!.restore();
@@ -236,22 +236,45 @@ describe("failures never throw and read as runner_unavailable", () => {
     }
   });
 
-  test("an oversized response body is refused", async () => {
-    use(stubRunner(() => new Response(JSON.stringify({ ...okResult(), stdout: "y".repeat(2 * 1024 * 1024) }))));
-    expectUnavailable(await runOnRunner(env(), REQ));
+});
+
+// The job may have run: these are charged (and raise abuse signals upstream), never refunded.
+// Refunding them let learner code trigger free runs on purpose (security review findings).
+describe("answers that come too late or too large are charged, not refunded", () => {
+  test("an honest worst-case answer fits: 3 x 64 KiB of control characters, JSON-escaped (~1.2 MB)", async () => {
+    const ctrl = "\u0001".repeat(64 * 1024);
+    use(stubRunner(() => new Response(JSON.stringify({ ...okResult(), stdout: ctrl, stderr: ctrl, compileOutput: ctrl }))));
+    const r = await runOnRunner(env(), REQ);
+    assert.equal(r.status, "ok");
+    assert.equal(r.stdout.length, 64 * 1024);
   });
 
-  test("a runner that never answers is aborted after compile + run limits + slack", async () => {
+  test("an answer over the 2 MiB cap is output_limit", async () => {
+    use(stubRunner(() => new Response(JSON.stringify({ ...okResult(), stdout: "y".repeat(3 * 1024 * 1024) }))));
+    const r = await runOnRunner(env(), REQ);
+    assert.equal(r.status, "output_limit");
+    assert.notEqual(r.message, "runner_unavailable");
+  });
+
+  test("a runner that never answers is given up after queue + setup + compile + run + slack, as a timeout", async () => {
     mock.timers.enable({ apis: ["setTimeout"] });
     use(stubRunner((_job, seen) => hang(seen.signal)));
-    const pending = runOnRunner(env(), { ...REQ, limits: { compileTimeoutMs: 1000, runTimeoutMs: 2000 } });
+    const limits = { compileTimeoutMs: 1000, runTimeoutMs: 2000 };
+    const budget = runTimeoutBudgetMs(limits);
+    assert.equal(budget, 30_000 + 15_000 + 1000 + 2000 + 5000);
+    const pending = runOnRunner(env(), { ...REQ, limits });
     while (stub!.pending === 0) await new Promise((r) => setImmediate(r));
-    mock.timers.tick(1000 + 2000 + 4000); // just under the 5 s slack: still waiting
+    mock.timers.tick(budget - 1000);
     await new Promise((r) => setImmediate(r));
-    assert.equal(stub!.pending, 1, "must not give up before the run limits plus slack");
+    assert.equal(stub!.pending, 1, "must not give up before the runner's own limits have expired");
     mock.timers.tick(2000);
-    expectUnavailable(await pending);
+    const r = await pending;
+    assert.equal(r.status, "timeout");
     assert.equal(stub!.pending, 0);
+  });
+
+  test("without caller limits the wait covers the protocol ceilings (20 s compile for Go/Rust/Swift)", () => {
+    assert.equal(runTimeoutBudgetMs(undefined), 30_000 + 15_000 + 20_000 + 15_000 + 5000);
   });
 });
 
