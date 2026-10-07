@@ -293,6 +293,7 @@ html.font-arabic body {
     radial-gradient(circle at 0% 0%, rgb(16 185 129 / 0.12), transparent 32%),
     radial-gradient(circle at 100% 100%, rgb(16 185 129 / 0.1), transparent 34%),
     radial-gradient(ellipse at 50% 45%, rgb(236 253 245 / 0.9), #ffffff 70%);
+  background-color: #ffffff;
 }
 .cert-frame::after {
   content: "";
