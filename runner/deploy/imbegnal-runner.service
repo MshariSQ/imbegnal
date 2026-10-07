@@ -1,0 +1,68 @@
+# systemd unit for the IMBEGNAL code-execution runner (bare-metal / VM install, see install.sh).
+#
+# The service user must reach the Docker daemon, which is root-equivalent on that host: run the
+# runner on a DEDICATED machine (or rootless Docker / gVisor, see runner/README.md), never next to
+# anything valuable. The unit below limits what the *service process itself* can do; the code a
+# learner submits never runs in this process, only inside throw-away containers.
+[Unit]
+Description=IMBEGNAL code-execution runner
+Documentation=file:///opt/imbegnal-runner/README.md
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+StartLimitIntervalSec=120
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=imbegnal-runner
+Group=imbegnal-runner
+SupplementaryGroups=docker
+EnvironmentFile=/etc/imbegnal-runner.env
+Environment=NODE_ENV=production
+# The docker CLI wants a writable HOME for its config; StateDirectory creates /var/lib/imbegnal-runner.
+Environment=HOME=/var/lib/imbegnal-runner
+StateDirectory=imbegnal-runner
+WorkingDirectory=/var/lib/imbegnal-runner
+ExecStart=/opt/node/bin/node /opt/imbegnal-runner/dist/runner/src/main.js
+Restart=always
+RestartSec=2
+# SIGTERM starts the graceful shutdown (RUNNER_SHUTDOWN_GRACE_MS, default 10 s, then jobs are killed).
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# --- hardening of the service process ---
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+# Allow-list of ordinary service syscalls; anything else fails with EPERM instead of killing the process.
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+# docker CLI -> /var/run/docker.sock (AF_UNIX); the HTTP listener needs AF_INET/AF_INET6.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# V8 needs writable+executable memory for its JIT: MemoryDenyWriteExecute must stay off.
+MemoryDenyWriteExecute=false
+UMask=0077
+LimitNOFILE=65536
+TasksMax=512
+MemoryMax=768M
+
+[Install]
+WantedBy=multi-user.target

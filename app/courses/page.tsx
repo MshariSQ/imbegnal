@@ -2,9 +2,23 @@
 
 import { useState } from "react";
 import { courses } from "@/data/courses";
+import { roadmaps } from "@/data/roadmaps";
+import { UNMAPPED_FIELD_LABELS, fieldKey } from "@/data/field-map";
+import { trackTitle } from "@/lib/catalog";
+import { useLang } from "@/lib/lang-context";
 import { PlayCircle, ChevronRight, Search, Clock } from "lucide-react";
 
-const FIELDS = ["All", ...Array.from(new Set(courses.map((c) => c.field))).sort()];
+/**
+ * Filter chips are canonical track ids (roadmaps[] order) followed by the few
+ * directory fields that have no roadmap (`other:<field>`). Their labels are
+ * rendered from roadmaps[] / the field map, never from the directory's free text.
+ */
+const FIELD_KEYS = Array.from(new Set(courses.map((c) => fieldKey(c.field)))).sort((a, b) => {
+  const ia = roadmaps.findIndex((r) => r.id === a);
+  const ib = roadmaps.findIndex((r) => r.id === b);
+  return (ia < 0 ? 1e6 : ia) - (ib < 0 ? 1e6 : ib) || a.localeCompare(b);
+});
+const FIELDS = ["All", ...FIELD_KEYS];
 const PRICES = ["All", "Free", "Paid"];
 
 const levelColors: Record<string, string> = {
@@ -14,18 +28,22 @@ const levelColors: Record<string, string> = {
 };
 
 export default function CoursesPage() {
+  const { tx, lang } = useLang();
   const [field, setField] = useState("All");
   const [price, setPrice] = useState("All");
   const [query, setQuery] = useState("");
 
+  const fieldLabel = (key: string) =>
+    key === "All" ? tx.curriculum.all : key.startsWith("other:") ? (UNMAPPED_FIELD_LABELS[key.slice(6)]?.[lang] ?? key.slice(6)) : trackTitle(key, lang);
+
   const filtered = courses.filter((c) => {
-    const matchField = field === "All" || c.field === field;
+    const matchField = field === "All" || fieldKey(c.field) === field;
     const isFree = c.price === "Free" || c.price === "Free Audit" || c.price === "Free + Paid" || c.price === "Free Credits";
     const matchPrice = price === "All" || (price === "Free" ? isFree : !isFree);
     const matchQuery = !query ||
       c.title.toLowerCase().includes(query.toLowerCase()) ||
       c.provider.toLowerCase().includes(query.toLowerCase()) ||
-      c.field.toLowerCase().includes(query.toLowerCase());
+      fieldLabel(fieldKey(c.field)).toLowerCase().includes(query.toLowerCase());
     return matchField && matchPrice && matchQuery;
   });
 
@@ -64,9 +82,9 @@ export default function CoursesPage() {
 
       <div className="flex flex-wrap gap-2 mb-8">
         {FIELDS.map((f) => (
-          <button key={f} onClick={() => setField(f)}
+          <button key={f} onClick={() => setField(f)} aria-pressed={field === f}
             className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${field === f ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400" : "border-line text-fg-subtle hover:text-fg hover:border-fg-faint"}`}>
-            {f}
+            {fieldLabel(f)}
           </button>
         ))}
       </div>

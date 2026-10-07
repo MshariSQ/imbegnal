@@ -210,6 +210,78 @@ The fix in every real case is the same, unglamorous checklist: real semantic ele
       },
     },
     {
+      type: "lab",
+      id: "contrast-ratio",
+      lang: "javascript",
+      prompt: {
+        en: `**Calculate accessible contrast.** WCAG 2.2 level AA requires a contrast ratio of at least **4.5 : 1** for normal text. Each input line holds two hex colours, text then background, such as \`#767676 #ffffff\`.
+
+For each line print \`RATIO VERDICT\`: the ratio rounded to **2 decimals** and \`PASS\` when it is at least 4.5 (compare the **unrounded** ratio) or \`FAIL\` otherwise.
+
+The formula: convert each sRGB channel \`c\` (0-255) to \`c / 255\`, then to linear light (\`c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4\`). Luminance is \`0.2126 R + 0.7152 G + 0.0722 B\`. The ratio is \`(lighter + 0.05) / (darker + 0.05)\`, so the order of the two colours does not matter.`,
+        ar: `**احسب التباين المقبول.** يتطلب المستوى AA من WCAG 2.2 نسبة تباين لا تقل عن **4.5 : 1** للنص العادي. يحتوي كل سطر دخل لونين بصيغة hex، النص ثم الخلفية، مثل \`#767676 #ffffff\`.
+
+اطبع لكل سطر \`RATIO VERDICT\`: النسبة مقرّبة إلى **خانتين عشريتين** و\`PASS\` حين تبلغ 4.5 على الأقل (قارن النسبة **غير المقرَّبة**) أو \`FAIL\` خلاف ذلك.
+
+المعادلة: حوّل كل قناة sRGB قيمتها \`c\` (0-255) إلى \`c / 255\` ثم إلى الضوء الخطي (\`c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4\`). السطوع هو \`0.2126 R + 0.7152 G + 0.0722 B\`. والنسبة \`(الأفتح + 0.05) / (الأغمق + 0.05)\` فلا يهم ترتيب اللونين.`,
+      },
+      starterCode: `const fs = require("fs");
+
+// TODO 1: turn "#rrggbb" into [r, g, b] numbers (parseInt(hex.slice(1, 3), 16) ...)
+function parseHex(hex) {
+  return [0, 0, 0];
+}
+
+// TODO 2: linearise each channel and weight them: 0.2126 R + 0.7152 G + 0.0722 B
+function luminance([r, g, b]) {
+  return 0;
+}
+
+for (const line of fs.readFileSync(0, "utf8").split("\\n")) {
+  if (line.trim() === "") continue;
+  const [fg, bg] = line.trim().split(/\\s+/);
+  const a = luminance(parseHex(fg));
+  const b = luminance(parseHex(bg));
+  // TODO 3: ratio = (lighter + 0.05) / (darker + 0.05); print "<ratio to 2 decimals> PASS|FAIL" (PASS when >= 4.5)
+  console.log("0.00 FAIL");
+}
+`,
+      solution: `const fs = require("fs");
+
+function parseHex(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+function luminance(rgb) {
+  const [r, g, b] = rgb.map((channel) => {
+    const c = channel / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+for (const line of fs.readFileSync(0, "utf8").split("\\n")) {
+  if (line.trim() === "") continue;
+  const [fg, bg] = line.trim().split(/\\s+/);
+  const a = luminance(parseHex(fg));
+  const b = luminance(parseHex(bg));
+  const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  console.log(ratio.toFixed(2) + " " + (ratio >= 4.5 ? "PASS" : "FAIL"));
+}
+`,
+      hints: [
+        { en: "`parseInt(hex.slice(1, 3), 16)` reads the red pair; green is `slice(3, 5)` and blue `slice(5, 7)`.", ar: "تقرأ `parseInt(hex.slice(1, 3), 16)` زوج الأحمر؛ والأخضر `slice(3, 5)` والأزرق `slice(5, 7)`." },
+        { en: "Map every channel through the linearisation formula before weighting them.", ar: "مرّر كل قناة عبر معادلة الخطّية قبل ترجيحها." },
+        { en: "Use `Math.max(a, b)` and `Math.min(a, b)` so the colour order does not matter, and `ratio.toFixed(2)` to print.", ar: "استخدم `Math.max(a, b)` و`Math.min(a, b)` ليختفي أثر ترتيب اللونين، و`ratio.toFixed(2)` للطباعة." },
+      ],
+      tests: [
+        { name: { en: "Black on white is the maximum ratio", ar: "الأسود على الأبيض أقصى نسبة" }, stdin: "#000000 #ffffff\n", expected: "21.00 PASS" },
+        { name: { en: "#767676 on white is the lightest grey that passes", ar: "#767676 على الأبيض أفتح رمادي ينجح" }, stdin: "#767676 #ffffff\n#777777 #ffffff\n", expected: "4.54 PASS\n4.48 FAIL" },
+        { name: { en: "Order of the colours does not matter", ar: "ترتيب اللونين لا يهم" }, stdin: "#ffffff #1a73e8\n#1a73e8 #ffffff\n", expected: "4.51 PASS\n4.51 PASS" },
+        { name: { en: "Identical colours have a ratio of 1", ar: "اللونان المتطابقان نسبتهما 1" }, stdin: "#336699 #336699\n", expected: "1.00 FAIL" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

@@ -234,6 +234,70 @@ print(extract_ips(log))  # ['192.168.1.5', '10.0.0.9', '203.0.113.7']`,
       ],
     },
     {
+      type: "lab",
+      id: "failed-logins",
+      lang: "python",
+      prompt: {
+        en: `**Hunt the brute-forcers.** An SSH server writes one line per failed login, like:
+
+\`Oct 05 03:12:01 sshd[311]: Failed password for root from 203.0.113.9 port 51022\`
+
+Read from standard input: the **first line is a threshold** \`N\`, every other line is a log line. Count the failed logins per source IP (lines that say \`Failed password for invalid user <name> from <ip>\` count too; successful logins and other lines are ignored).
+
+Print every IP with **at least N failures** as \`IP COUNT\`, most failures first (ties: lower IP text first). If no IP reaches the threshold, print \`no suspects\`.`,
+        ar: `**اصطد مخمِّني كلمات المرور.** يكتب خادم SSH سطراً لكل محاولة دخول فاشلة، مثل:
+
+\`Oct 05 03:12:01 sshd[311]: Failed password for root from 203.0.113.9 port 51022\`
+
+اقرأ من الدخل القياسي: **السطر الأول هو الحدّ** \`N\`، وكل سطر بعده سطر سجل. عُدَّ محاولات الدخول الفاشلة لكل عنوان IP مصدر (تُحتسب أيضاً الأسطر التي تقول \`Failed password for invalid user <name> from <ip>\`؛ وتُتجاهل عمليات الدخول الناجحة وبقية الأسطر).
+
+اطبع كل عنوان IP له **N محاولات فاشلة على الأقل** بالصيغة \`IP COUNT\`، الأكثر فشلاً أولاً (وعند التعادل يأتي العنوان الأصغر نصّياً أولاً). وإن لم يبلغ أي عنوان الحد فاطبع \`no suspects\`.`,
+      },
+      starterCode: `import re
+import sys
+
+lines = sys.stdin.read().splitlines()
+threshold = int(lines[0])
+
+# TODO 1: count "Failed password" lines per source IP (a regex with a capture group works well)
+counts = {}
+
+# TODO 2: keep IPs with count >= threshold, sorted by count (high first) then by IP text
+# TODO 3: print "IP COUNT" per suspect, or "no suspects" when the list is empty
+`,
+      solution: `import re
+import sys
+from collections import Counter
+
+lines = sys.stdin.read().splitlines()
+threshold = int(lines[0])
+
+pattern = re.compile(r"Failed password for (?:invalid user )?\\S+ from (\\d{1,3}(?:\\.\\d{1,3}){3})")
+counts = Counter()
+for line in lines[1:]:
+    match = pattern.search(line)
+    if match:
+        counts[match.group(1)] += 1
+
+suspects = sorted(((ip, n) for ip, n in counts.items() if n >= threshold), key=lambda item: (-item[1], item[0]))
+if not suspects:
+    print("no suspects")
+for ip, n in suspects:
+    print(f"{ip} {n}")
+`,
+      hints: [
+        { en: "Start with `re.compile(r\"Failed password for (?:invalid user )?\\S+ from (\\d+\\.\\d+\\.\\d+\\.\\d+)\")` and call `.search(line)` on each line after the first.", ar: "ابدأ بـ `re.compile(r\"Failed password for (?:invalid user )?\\S+ from (\\d+\\.\\d+\\.\\d+\\.\\d+)\")` ثم استدعِ `.search(line)` على كل سطر بعد الأول." },
+        { en: "`collections.Counter` counts for you: `counts[ip] += 1`.", ar: "تعدّ `collections.Counter` عنك: `counts[ip] += 1`." },
+        { en: "Sort with `key=lambda item: (-item[1], item[0])`: the minus sign puts the biggest count first.", ar: "رتّب بـ `key=lambda item: (-item[1], item[0])`: تضع علامة الناقص أكبر عدد أولاً." },
+      ],
+      tests: [
+        { name: { en: "Flags the repeat offender", ar: "يُبلغ عن المكرِّر" }, stdin: "3\nOct 05 03:12:01 sshd[311]: Failed password for root from 203.0.113.9 port 51022\nOct 05 03:12:03 sshd[311]: Failed password for admin from 203.0.113.9 port 51024\nOct 05 03:12:05 sshd[311]: Failed password for root from 203.0.113.9 port 51026\nOct 05 03:14:40 sshd[402]: Accepted password for alice from 198.51.100.7 port 40110\nOct 05 03:15:12 sshd[455]: Failed password for bob from 198.51.100.23 port 40300\n", expected: "203.0.113.9 3" },
+        { name: { en: "Counts invalid users and sorts by count, then IP", ar: "يعدّ المستخدمين غير الصالحين ويرتّب بالعدد ثم بالعنوان" }, stdin: "2\nFailed password for invalid user oracle from 10.0.0.9 port 1\nFailed password for invalid user test from 10.0.0.9 port 2\nFailed password for root from 10.0.0.12 port 3\nFailed password for root from 10.0.0.12 port 4\nFailed password for root from 10.0.0.2 port 5\nFailed password for root from 10.0.0.2 port 6\nFailed password for root from 10.0.0.2 port 7\n", expected: "10.0.0.2 3\n10.0.0.12 2\n10.0.0.9 2" },
+        { name: { en: "Prints no suspects below the threshold", ar: "يطبع no suspects تحت الحد" }, stdin: "5\nFailed password for root from 192.0.2.1 port 1\nFailed password for root from 192.0.2.1 port 2\nAccepted password for root from 192.0.2.1 port 3\n", expected: "no suspects" },
+        { name: { en: "Handles a log with no failures", ar: "يتعامل مع سجل بلا إخفاقات" }, stdin: "1\nAccepted publickey for deploy from 192.0.2.50 port 22\nsession opened for user deploy\n", expected: "no suspects" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

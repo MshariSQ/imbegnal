@@ -1,0 +1,15 @@
+# Optional TLS front end for `docker compose --profile caddy up`.
+# Only the runner's two API paths are exposed; everything else is a 404.
+{$RUNNER_DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 512KB
+	}
+	@api path /v1/run /v1/languages /healthz
+	handle @api {
+		reverse_proxy runner:4242
+	}
+	handle {
+		respond "not found" 404
+	}
+}

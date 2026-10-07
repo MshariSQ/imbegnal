@@ -1,0 +1,17 @@
+{
+  "name": "imbegnal-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sandboxed code-execution service for IMBEGNAL Code Lab (zero runtime dependencies)",
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node dist/runner/src/main.js",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "node --import tsx --test --test-concurrency=1 \"tests/**/*.test.ts\""
+  }
+}

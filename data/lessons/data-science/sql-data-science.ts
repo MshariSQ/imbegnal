@@ -169,6 +169,79 @@ print(total_by_category(data))  # {'food': 30, 'toys': 5}`,
       ],
     },
     {
+      type: "lab",
+      id: "top-customers",
+      lang: "python",
+      prompt: {
+        en: `**Write the query.** The script below builds a tiny SQLite database in memory (\`customers\` and \`orders\`) and runs your SQL. Your job is the query.
+
+Standard input holds one number \`N\`. Return every customer whose **total order amount is at least N**, as two columns \`name\` and \`total\` (the sum of that customer's order amounts), ordered by \`total\` descending and then by \`name\`. Customers with no orders must not appear.
+
+Use a **bound parameter** (\`?\`) for N instead of building the SQL string yourself. The script prints each row as \`name total\`.`,
+        ar: `**اكتب الاستعلام.** ينشئ السكربت أدناه قاعدة بيانات SQLite صغيرة في الذاكرة (\`customers\` و\`orders\`) وينفّذ استعلامك. مهمتك هي الاستعلام.
+
+يحتوي الدخل القياسي رقماً واحداً \`N\`. أعِد كل عميل **مجموع مبالغ طلباته N على الأقل** في عمودين \`name\` و\`total\` (مجموع مبالغ طلبات ذلك العميل)، مرتَّبين تنازلياً حسب \`total\` ثم حسب \`name\`. يجب ألا يظهر العملاء الذين لا طلبات لهم.
+
+استخدم **معاملاً مربوطاً** (\`?\`) لـ N بدلاً من بناء نص SQL بنفسك. يطبع السكربت كل صف بالصيغة \`name total\`.`,
+      },
+      starterCode: `import sqlite3
+
+n = int(input())
+
+db = sqlite3.connect(":memory:")
+db.executescript('''
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, country TEXT);
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);
+INSERT INTO customers VALUES (1,'Amal','EG'),(2,'Bilal','JO'),(3,'Chen','SG'),(4,'Dana','AE'),(5,'Eli','US');
+INSERT INTO orders (customer_id, amount) VALUES
+  (1,120),(1,80),(1,300),(2,45),(2,55),(3,500),(3,250),(4,99),(1,50),(2,20);
+''')
+
+# TODO: JOIN customers with orders, GROUP BY the customer, keep groups with SUM(amount) >= ?
+#       (HAVING), and ORDER BY total DESC, name. Pass n as the bound parameter.
+QUERY = "SELECT name, 0 AS total FROM customers WHERE ? >= 0"
+
+for name, total in db.execute(QUERY, (n,)):
+    print(name, total)
+`,
+      solution: `import sqlite3
+
+n = int(input())
+
+db = sqlite3.connect(":memory:")
+db.executescript('''
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, country TEXT);
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER, amount INTEGER);
+INSERT INTO customers VALUES (1,'Amal','EG'),(2,'Bilal','JO'),(3,'Chen','SG'),(4,'Dana','AE'),(5,'Eli','US');
+INSERT INTO orders (customer_id, amount) VALUES
+  (1,120),(1,80),(1,300),(2,45),(2,55),(3,500),(3,250),(4,99),(1,50),(2,20);
+''')
+
+QUERY = '''
+SELECT c.name, SUM(o.amount) AS total
+FROM customers AS c
+JOIN orders AS o ON o.customer_id = c.id
+GROUP BY c.id
+HAVING SUM(o.amount) >= ?
+ORDER BY total DESC, c.name
+'''
+
+for name, total in db.execute(QUERY, (n,)):
+    print(name, total)
+`,
+      hints: [
+        { en: "Start with `FROM customers AS c JOIN orders AS o ON o.customer_id = c.id`. An inner JOIN already drops customers without orders.", ar: "ابدأ بـ `FROM customers AS c JOIN orders AS o ON o.customer_id = c.id`. يسقط JOIN الداخلي العملاء بلا طلبات تلقائياً." },
+        { en: "`GROUP BY c.id` makes one row per customer so `SUM(o.amount)` is that customer's total.", ar: "يجعل `GROUP BY c.id` صفاً لكل عميل فيكون `SUM(o.amount)` مجموعه." },
+        { en: "Filter groups with `HAVING SUM(o.amount) >= ?` (WHERE runs before grouping, HAVING after).", ar: "رشّح المجموعات بـ `HAVING SUM(o.amount) >= ?` (يعمل WHERE قبل التجميع وHAVING بعده)." },
+      ],
+      tests: [
+        { name: { en: "Customers who spent at least 100", ar: "العملاء الذين أنفقوا 100 على الأقل" }, stdin: "100\n", expected: "Chen 750\nAmal 550\nBilal 120" },
+        { name: { en: "A high threshold keeps only the biggest spender", ar: "حدّ مرتفع يُبقي أكبر منفق فقط" }, stdin: "700\n", expected: "Chen 750" },
+        { name: { en: "Threshold 0 lists everyone who ordered", ar: "الحدّ 0 يعرض كل من طلب" }, stdin: "0\n", expected: "Chen 750\nAmal 550\nBilal 120\nDana 99" },
+        { name: { en: "No customer reaches 5000", ar: "لا عميل يبلغ 5000" }, stdin: "5000\n", expected: "" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

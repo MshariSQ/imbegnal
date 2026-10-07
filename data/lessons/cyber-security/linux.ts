@@ -175,6 +175,58 @@ The problem: if that folder is reachable from the internet (a web upload directo
       },
     },
     {
+      type: "lab",
+      id: "permission-string",
+      lang: "bash",
+      prompt: {
+        en: `**Read permissions like \`ls -l\`.** File modes are written as three octal digits (owner, group, others), where read = 4, write = 2, execute = 1.
+
+Read one mode per line from standard input and print \`MODE SYMBOLIC\`, where SYMBOLIC is the nine-character string \`ls -l\` would show. For example \`754\` becomes \`rwxr-xr--\` and \`600\` becomes \`rw-------\`.
+
+A line that is not exactly three digits from 0 to 7 must print \`LINE invalid\` (the original line, a space, then the word).`,
+        ar: `**اقرأ الصلاحيات كما يعرضها \`ls -l\`.** تُكتب صلاحيات الملفات بثلاثة أرقام ثمانية (المالك، المجموعة، الآخرون)، حيث القراءة = 4 والكتابة = 2 والتنفيذ = 1.
+
+اقرأ صلاحية واحدة في كل سطر من الدخل القياسي واطبع \`MODE SYMBOLIC\` حيث SYMBOLIC هو النص ذو التسعة أحرف الذي يعرضه \`ls -l\`. فمثلاً \`754\` تصبح \`rwxr-xr--\` و\`600\` تصبح \`rw-------\`.
+
+أي سطر ليس ثلاثة أرقام بالضبط من 0 إلى 7 يجب أن يطبع \`LINE invalid\` (السطر الأصلي ثم مسافة ثم الكلمة).`,
+      },
+      starterCode: `#!/bin/bash
+# Read modes line by line and print "MODE SYMBOLIC" (or "MODE invalid")
+while read -r mode || [ -n "$mode" ]; do
+  # TODO 1: reject anything that is not exactly three digits 0-7 (hint: [[ $mode =~ ^[0-7]{3}$ ]])
+  # TODO 2: for each digit, test the bits 4, 2 and 1 with $(( digit & 4 )) and build r/w/x or -
+  echo "$mode"
+done
+`,
+      solution: `#!/bin/bash
+while read -r mode || [ -n "$mode" ]; do
+  if [[ ! $mode =~ ^[0-7]{3}$ ]]; then
+    echo "$mode invalid"
+    continue
+  fi
+  out=""
+  for i in 0 1 2; do
+    d=\${mode:i:1}
+    (( d & 4 )) && out+="r" || out+="-"
+    (( d & 2 )) && out+="w" || out+="-"
+    (( d & 1 )) && out+="x" || out+="-"
+  done
+  echo "$mode $out"
+done
+`,
+      hints: [
+        { en: "`[[ $mode =~ ^[0-7]{3}$ ]]` is true only for exactly three octal digits.", ar: "تكون `[[ $mode =~ ^[0-7]{3}$ ]]` صحيحة فقط لثلاثة أرقام ثمانية بالضبط." },
+        { en: "Take digit number i with `${mode:i:1}`.", ar: "خذ الرقم ذا الترتيب i بـ `${mode:i:1}`." },
+        { en: "`(( d & 4 ))` succeeds when the read bit is set, so `(( d & 4 )) && out+=r || out+=-` appends the right character.", ar: "ينجح `(( d & 4 ))` عند ضبط بت القراءة، فيضيف `(( d & 4 )) && out+=r || out+=-` الحرف الصحيح." },
+      ],
+      tests: [
+        { name: { en: "Typical modes", ar: "صلاحيات شائعة" }, stdin: "754\n644\n", expected: "754 rwxr-xr--\n644 rw-r--r--" },
+        { name: { en: "Extremes: 000 and 777", ar: "الحالتان القصويان: 000 و777" }, stdin: "000\n777\n", expected: "000 ---------\n777 rwxrwxrwx" },
+        { name: { en: "Private key mode and executable script", ar: "صلاحية المفتاح الخاص وسكربت تنفيذي" }, stdin: "600\n755\n", expected: "600 rw-------\n755 rwxr-xr-x" },
+        { name: { en: "Rejects malformed modes", ar: "يرفض الصلاحيات المشوّهة" }, stdin: "789\n75\n7777\nrwx\n644\n", expected: "789 invalid\n75 invalid\n7777 invalid\nrwx invalid\n644 rw-r--r--" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

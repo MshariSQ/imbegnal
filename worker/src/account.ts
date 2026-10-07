@@ -1,5 +1,6 @@
 // Self-serve account deletion (privacy right to erasure) and anonymous usage events.
 import { type Env, NO_STORE, corsHeaders, getUser, json } from "./util";
+import { labAccountDeleteStatements } from "./lab/account-data";
 
 // ── DELETE /api/account ───────────────────────────────────────────────────────
 // Removes the user and everything keyed to them in one atomic batch.
@@ -12,6 +13,12 @@ export async function handleAccountDelete(req: Request, env: Env, origin: string
     env.DB.prepare("DELETE FROM ai_usage WHERE github_id = ?").bind(id),
     env.DB.prepare("DELETE FROM user_roadmap_progress WHERE github_id = ?").bind(id),
     env.DB.prepare("DELETE FROM user_bookmarks WHERE github_id = ?").bind(id),
+    // Code Lab runs/snippets/quotas/progress and Challenges progress, solves,
+    // attempts and certificates (audit_log is kept on purpose: operators' security record).
+    ...labAccountDeleteStatements(env, id),
+    ...["challenge_progress", "challenge_solves", "challenge_attempts", "certificates"].map((t) =>
+      env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(id)
+    ),
     env.DB.prepare("DELETE FROM users WHERE github_id = ?").bind(id),
   ]);
   return json({ ok: true }, 200, origin, NO_STORE);

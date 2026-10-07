@@ -586,6 +586,61 @@ Steps: grab both elements → make a \`let clicks = 0\` box → listen for "clic
       ],
     },
     {
+      type: "lab",
+      id: "top-words",
+      lang: "javascript",
+      prompt: {
+        en: `**Top three words.** Read a block of text from standard input and report its three most frequent words.
+
+Rules: compare words **case-insensitively**, treat any run of letters, digits and apostrophes as a word (punctuation separates words), and print the three most frequent as \`word count\`, one per line, most frequent first. Words with the same count are ordered **alphabetically**. If the text has fewer than three distinct words, print as many as exist; with no words print \`no words\`.`,
+        ar: `**أكثر ثلاث كلمات.** اقرأ نصاً من الدخل القياسي وأبلغ عن أكثر ثلاث كلمات تكراراً.
+
+القواعد: قارن الكلمات **دون اعتبار لحالة الأحرف**، واعتبر كل تسلسل من الحروف والأرقام والفواصل العليا (') كلمة (وتفصل علامات الترقيم بين الكلمات)، واطبع الأكثر تكراراً الثلاث بالصيغة \`word count\` كلٌّ في سطر، الأكثر تكراراً أولاً. الكلمات ذات العدد نفسه ترتَّب **أبجدياً**. إن كان في النص أقل من ثلاث كلمات مختلفة فاطبع ما وُجد؛ وإن لم تكن فيه كلمات فاطبع \`no words\`.`,
+      },
+      starterCode: `const fs = require("fs");
+const text = fs.readFileSync(0, "utf8");
+
+// TODO 1: lowercase the text and split it into words with a regex such as /[a-z0-9']+/g
+const words = [];
+
+// TODO 2: count how often each word appears (a Map or a plain object works)
+// TODO 3: sort by count (high first), then alphabetically, keep the first three
+// TODO 4: print "word count" per line, or "no words" when there are none
+console.log("no words");
+`,
+      solution: `const fs = require("fs");
+const text = fs.readFileSync(0, "utf8");
+
+const words = text.toLowerCase().match(/[a-z0-9']+/g) || [];
+
+const counts = new Map();
+for (const word of words) {
+  counts.set(word, (counts.get(word) || 0) + 1);
+}
+
+const top = [...counts.entries()]
+  .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+  .slice(0, 3);
+
+if (top.length === 0) {
+  console.log("no words");
+} else {
+  for (const [word, count] of top) console.log(word + " " + count);
+}
+`,
+      hints: [
+        { en: "`text.toLowerCase().match(/[a-z0-9']+/g)` returns all words, or `null` when there are none, so add `|| []`.", ar: "تعيد `text.toLowerCase().match(/[a-z0-9']+/g)` كل الكلمات أو `null` إن لم توجد، فأضف `|| []`." },
+        { en: "A `Map` keeps counts: `counts.set(w, (counts.get(w) || 0) + 1)`.", ar: "تحفظ `Map` الأعداد: `counts.set(w, (counts.get(w) || 0) + 1)`." },
+        { en: "The sort comparator returns the count difference first, then compares the words with `<` and `>` to break ties.", ar: "تعيد دالة المقارنة فرق العدد أولاً ثم تقارن الكلمات بـ `<` و`>` لكسر التعادل." },
+      ],
+      tests: [
+        { name: { en: "Counts words case-insensitively", ar: "يعدّ الكلمات دون اعتبار لحالة الأحرف" }, stdin: "The cat and the hat. THE END, and that's it!\n", expected: "the 3\nand 2\ncat 1" },
+        { name: { en: "Ties are broken alphabetically", ar: "يُكسر التعادل أبجدياً" }, stdin: "pear apple banana pear apple banana cherry\n", expected: "apple 2\nbanana 2\npear 2" },
+        { name: { en: "Fewer than three distinct words", ar: "أقل من ثلاث كلمات مختلفة" }, stdin: "Go go GO\nstop\n", expected: "go 3\nstop 1" },
+        { name: { en: "No words at all", ar: "بلا كلمات إطلاقاً" }, stdin: "...  ---  !!!\n", expected: "no words" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {
