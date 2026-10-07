@@ -94,7 +94,16 @@ function chromiumPath(): string | undefined {
   return undefined;
 }
 
-export const launch = (): Promise<Browser> => chromium.launch({ executablePath: chromiumPath(), args: ["--no-sandbox"] });
+/**
+ * Full Chromium, never the "headless shell": like desktop Chrome it puts the sandboxed Web
+ * preview frame in its own process (IsolateSandboxedIframes), which the never-yielding-script
+ * watchdog relies on. The headless shell keeps it in-process, so an infinite loop in the preview
+ * freezes the page (see docs/CODE_LAB.md, residual risks).
+ */
+export const launch = (): Promise<Browser> => {
+  const executablePath = chromiumPath();
+  return chromium.launch(executablePath ? { executablePath, args: ["--no-sandbox"] } : { channel: "chromium", args: ["--no-sandbox"] });
+};
 
 // ── Fake session ─────────────────────────────────────────────────────────────
 

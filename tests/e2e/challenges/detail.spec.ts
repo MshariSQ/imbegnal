@@ -31,7 +31,11 @@ describe("challenge detail: content", () => {
       const main = await t.page.locator("main").innerText();
       for (const s of ["Cyber Security", "Easy", "Flag", "Crypto", "50 pts", "10 min", "Story", "substitution cipher", "IMB{...}"]) assert.ok(main.includes(s), s);
       // statement code block is LTR
-      assert.equal(await t.page.locator("main pre", { hasText: "shift = 3" }).first().evaluate((e) => getComputedStyle(e).direction), "ltr");
+      // Polled: hydration can swap the node, and a detached node reports an empty direction.
+      await t.page.waitForFunction(() => {
+        const pre = [...document.querySelectorAll("main pre")].find((e) => e.textContent?.includes("shift = 3"));
+        return !!pre && getComputedStyle(pre).direction === "ltr";
+      });
       // track chip + course link
       assert.equal(await t.page.getByRole("link", { name: "View the course" }).getAttribute("href"), "/learn/cyber-security/");
       // lesson that exists is linked with its real title; the unknown key is skipped, never invented

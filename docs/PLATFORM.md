@@ -249,3 +249,7 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
 - Runner: one VM is a single point of failure for server runs (the browser fallback covers JS/Python); add a
   second VM behind the tunnel (Cloudflare load-balances connectors) before large launches. gVisor is recommended there.
 - Swift needs a checksum-pinned toolchain download (`SWIFT_SHA256`); it is reported unavailable until then.
+- Code Lab's Web (HTML/CSS/JS) preview stops a never-yielding script with a watchdog in the parent page. That works
+  where the browser runs the sandboxed preview frame in its own process (desktop Chrome and Edge). In browsers that keep
+  it in the page's process (Firefox and Safari today) `while(true){}` in the preview freezes the tab until it is closed.
+  Next step: instrument loops in preview scripts (time-checked loop guards) before they run.
