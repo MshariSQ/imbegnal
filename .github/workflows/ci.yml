@@ -42,6 +42,10 @@ jobs:
         run: npm run test:worker
       - name: Build
         run: npm run build
+      - name: No hint text in the static export (hints are Worker-only)
+        run: node --import tsx --test tests/unit/hints-no-leak.test.ts
+        env:
+          HINT_LEAK_REQUIRE_OUT: "1"
 
   # The sandbox is the riskiest component: its isolation tests run against a real Docker daemon.
   runner:

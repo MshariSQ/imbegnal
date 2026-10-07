@@ -75,9 +75,9 @@ Lesson-side contract: `LabExerciseSection` in `data/lessons/types.ts`
 | `POST /api/lab/snippets` | user | create immutable snippet → `{id, path}` |
 | `GET /api/lab/snippets/:id` | none | public read-only snippet |
 | `GET /api/lab/progress` | user | passed lab refs |
-| `GET /api/challenges` | optional | per-challenge stats (solves, first blood, median solve time) + caller's progress |
+| `GET /api/challenges` | optional | per-challenge stats (solves, first blood, median solve time) + caller's progress, incl. `revealedHints` (texts of the hints the caller revealed, or all of them once solved) |
 | `POST /api/challenges/:id/open` | user | stamps first-open time (time-to-solve) |
-| `POST /api/challenges/:id/hint` | user | `{index}` reveals a hint, costs points once |
+| `POST /api/challenges/:id/hint` | user | `{index}` → `ChallengeHintResponse` with the hint's text; costs points once (free after a solve). The only way a hint text reaches the browser: the public challenge data (`data/challenges/`) lists each hint's cost only, the texts live in `worker/src/graders/data/hints/` (`tests/unit/hints-no-leak.test.ts` scans the data, the site sources and `out/`) |
 | `POST /api/challenges/:id/submit` | user | `SubmitRequest` → `SubmitResponse` |
 | `GET /api/leaderboard?track=&period=` | optional | `LeaderboardResponse` |
 | `GET /api/certificates/:track` | user | PDF certificate when the track is complete (skeleton) |

@@ -90,6 +90,29 @@ test("withHint reveals in order and never lowers the count", () => {
   assert.equal(withHint(a, "x", 2).mine?.hintsUsed, 3);
 });
 
+test("withHint keeps the text the Worker handed over, sorted by index, and counts the texts held", () => {
+  const h0 = { en: "zero", ar: "صفر" };
+  const h1 = { en: "one", ar: "واحد" };
+  const a = withHint(undefined, "x", 1, h1);
+  assert.deepEqual(a.mine?.revealedHints, [{ index: 1, text: h1 }]);
+  assert.equal(a.mine?.hintsUsed, 1);
+  const b = withHint(a, "x", 0, h0);
+  assert.deepEqual(b.mine?.revealedHints, [{ index: 0, text: h0 }, { index: 1, text: h1 }]);
+  assert.equal(b.mine?.hintsUsed, 2);
+  // the same hint again replaces, never duplicates
+  assert.equal(withHint(b, "x", 1, h1).mine?.revealedHints?.length, 2);
+  // a later attempt keeps the texts
+  assert.deepEqual(withAttempt(b, "x").mine?.revealedHints, b.mine?.revealedHints);
+});
+
+test("withHint on a solved challenge stores the free text without moving the paid counter", () => {
+  const solved: ChallengeStat = { id: "x", solves: 1, mine: { solved: true, points: 45, attempts: 1, hintsUsed: 1, revealedHints: [{ index: 0, text: { en: "a", ar: "أ" } }] } };
+  const out = withHint(solved, "x", 1, { en: "b", ar: "ب" });
+  assert.equal(out.mine?.hintsUsed, 1);
+  assert.equal(out.mine?.points, 45);
+  assert.deepEqual(out.mine?.revealedHints?.map((h) => h.index), [0, 1]);
+});
+
 test("withAttempt counts wrong attempts and keeps the rest of the progress", () => {
   const out = withAttempt({ id: "x", solves: 3, mine: { solved: false, points: 0, attempts: 1, hintsUsed: 2 } }, "x");
   assert.equal(out.mine?.attempts, 2);

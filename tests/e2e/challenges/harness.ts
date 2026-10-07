@@ -9,7 +9,10 @@ import { extname, join, normalize, resolve } from "node:path";
 import type { AddressInfo } from "node:net";
 import { chromium, type Browser, type BrowserContext, type Page, type Route } from "playwright";
 import type { ChallengeStat, ChallengesApiResponse, LeaderboardResponse, SubmitResponse } from "../../../shared/api";
+import type { ChallengeHintResponse } from "../../../shared/challenges";
 import { FIXTURE_NOW, fixtureLeaderboardResponse, fixtureStats } from "../../fixtures/challenges/api";
+import { fixtureChallenges } from "../../fixtures/challenges/challenges";
+import { fixtureHintTexts } from "../../fixtures/challenges/hints";
 
 export const ROOT = resolve(__dirname, "../../..");
 export const SITE_DIR = process.env.CTF_E2E_SITE_DIR ?? join(ROOT, "node_modules/.cache/ctf-e2e-site");
@@ -138,10 +141,23 @@ export function defaultMock(): MockApi {
     stats: (signedIn) => fixtureStats(signedIn),
     leaderboard: (q) => fixtureLeaderboardResponse(q),
     submit: () => ({ correct: false, awarded: 0, alreadySolved: false, firstBlood: false }),
-    hint: (_id, index) => ({ json: { index } }),
+    hint: (id, index) => ({ json: fixtureHintReveal(id, index) }),
     callsTo: (method, pathPart) => api.calls.filter((c) => c.method === method && c.path.includes(pathPart)),
   };
   return api;
+}
+
+/**
+ * The mocked Worker's answer to POST .../hint: like the real one, it is the ONLY source of the hint
+ * text (the fixture site's public data carries just the costs). Hints count as revealed in order.
+ */
+export function fixtureHintReveal(id: string, index: number): ChallengeHintResponse | { error: string } {
+  const meta = fixtureChallenges.find((c) => c.id === id);
+  const text = fixtureHintTexts[id]?.[index];
+  if (!meta?.hints?.[index] || !text) return { error: "invalid_request" };
+  const revealed = Array.from({ length: index + 1 }, (_, i) => i);
+  const spent = revealed.reduce((s, i) => s + (meta.hints?.[i]?.cost ?? 0), 0);
+  return { index, text, cost: meta.hints[index].cost, revealed, hintsUsed: revealed.length, potentialPoints: Math.max(0, meta.points - spent) };
 }
 
 const CORS = {
@@ -226,10 +242,16 @@ export interface OpenedPage {
 }
 
 /** New context + mocked Worker + page navigated to `path` (relative to the static site). */
-export async function openPage(browser: Browser, origin: string, path: string, o: ContextOptions & { api?: MockApi } = {}): Promise<OpenedPage> {
+export async function openPage(
+  browser: Browser,
+  origin: string,
+  path: string,
+  o: ContextOptions & { api?: MockApi; /** extra routes etc., registered after the mock (so they run first) */ beforeGoto?: (ctx: BrowserContext) => Promise<void> } = {}
+): Promise<OpenedPage> {
   const ctx = await newContext(browser, o);
   const api = o.api ?? defaultMock();
   await mockApi(ctx, api);
+  await o.beforeGoto?.(ctx);
   const page = await ctx.newPage();
   const errors = collectErrors(page);
   await page.goto(origin + path);

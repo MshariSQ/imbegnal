@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import type { Server } from "node:http";
 import type { Browser, Page } from "playwright";
 import { collectErrors, defaultMock, eventually, launchBrowser, mockApi, newContext, openPage, startSite } from "./harness";
+import { fixtureHintTexts } from "../../fixtures/challenges/hints";
 import { correctResponse, FIXTURE_FIRST_BLOOD_FLAG, FIXTURE_FLAG, fixtureStats, wrongResponse } from "../../fixtures/challenges/api";
 
 let server: Server;
@@ -220,6 +221,34 @@ describe("challenge detail: content", () => {
 });
 
 describe("challenge detail: hints", () => {
+  it("never ships a hint text with the site: the HTML, the scripts and the data it serves carry costs only", async () => {
+    // Everything the static site served for the page (HTML, RSC payloads, JS chunks), mocked Worker answers excluded.
+    const ctx = await newContext(browser, { signedIn: true });
+    const api = defaultMock();
+    api.stats = () => ({ stats: [{ id: "caesar-warmup", solves: 5, mine: { solved: false, points: 0, attempts: 0, hintsUsed: 0 } }] });
+    await mockApi(ctx, api);
+    const bodies: Promise<string>[] = [];
+    ctx.on("response", (r) => {
+      if (r.url().startsWith(origin)) bodies.push(r.text().catch(() => ""));
+    });
+    try {
+      const page = await ctx.newPage();
+      await page.goto(origin + "/challenges/caesar-warmup/");
+      await page.getByRole("button", { name: /Reveal hint/ }).waitFor();
+      await page.waitForLoadState("networkidle");
+      const served = (await Promise.all(bodies)).join("\n");
+      assert.ok(served.length > 10_000, "the page, its payload and its scripts were captured");
+      assert.match(served, /The Caesar Warm-up|caesar-warmup/, "sanity: the captured responses are this challenge's page");
+      for (const [id, texts] of Object.entries(fixtureHintTexts)) {
+        for (const text of texts) {
+          for (const s of [text.en, text.ar]) assert.ok(!served.includes(s.slice(0, 24)), `${id}: hint text shipped with the site: ${s}`);
+        }
+      }
+    } finally {
+      await ctx.close();
+    }
+  });
+
   it("shows the cost before revealing, asks for confirmation, and only reveals after the server accepts", async () => {
     const t = await openPage(browser, origin, "/challenges/hidden-in-logs/", { signedIn: true });
     try {
@@ -269,7 +298,9 @@ describe("challenge detail: hints", () => {
 
   it("keeps already revealed hints open and shows a failed reveal as an error without revealing", async () => {
     const api = defaultMock();
-    api.stats = () => ({ stats: [{ id: "caesar-warmup", solves: 5, mine: { solved: false, points: 0, attempts: 1, hintsUsed: 1 } }] });
+    api.stats = () => ({
+      stats: [{ id: "caesar-warmup", solves: 5, mine: { solved: false, points: 0, attempts: 1, hintsUsed: 1, revealedHints: [{ index: 0, text: fixtureHintTexts["caesar-warmup"][0] }] } }],
+    });
     api.hint = () => ({ status: 500, json: { error: "error" } });
     const t = await openPage(browser, origin, "/challenges/caesar-warmup/", { signedIn: true, api });
     try {
@@ -279,6 +310,73 @@ describe("challenge detail: hints", () => {
       await t.page.getByRole("button", { name: "Yes, reveal it" }).click();
       await t.page.getByRole("alert").filter({ hasText: "Couldn't reveal the hint" }).waitFor();
       assert.equal(await t.page.getByText("The shift is the same for every letter").count(), 0);
+    } finally {
+      await t.close();
+    }
+  });
+
+  it("treats a reveal answer without a hint text as a failure: nothing is shown as revealed", async () => {
+    const api = defaultMock();
+    api.hint = (_id, index) => ({ json: { index, cost: 20, revealed: [index], hintsUsed: 1, potentialPoints: 130 } });
+    const t = await openPage(browser, origin, "/challenges/hidden-in-logs/", { signedIn: true, api });
+    try {
+      await t.page.getByRole("button", { name: /Reveal hint/ }).click();
+      await t.page.getByRole("button", { name: "Yes, reveal it" }).click();
+      await t.page.getByRole("alert").filter({ hasText: "Couldn't reveal the hint" }).waitFor();
+      assert.equal(t.api.callsTo("POST", "/hint").length, 1);
+      assert.equal(await t.page.getByText("Filter on the word Failed").count(), 0);
+      assert.match(await t.page.locator("aside").innerText(), /Hints used\s*0 \/ 1/);
+    } finally {
+      await t.close();
+    }
+  });
+
+  it("does not offer a paid reveal before the learner's revealed hints are known", async () => {
+    const api = defaultMock();
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => (release = r));
+    const t = await openPage(browser, origin, "/challenges/caesar-warmup/", {
+      signedIn: true,
+      api: Object.assign(api, {
+        stats: () => ({ stats: [{ id: "caesar-warmup", solves: 5, mine: { solved: false, points: 0, attempts: 1, hintsUsed: 1, revealedHints: [{ index: 0, text: fixtureHintTexts["caesar-warmup"][0] }] } }] }),
+      }),
+      beforeGoto: async (ctx) => {
+        // Hold GET /api/challenges until the assertions below ran.
+        await ctx.route("**/api/challenges", async (route) => {
+          await gate;
+          await route.fallback();
+        });
+      },
+    });
+    try {
+      await t.page.getByText("Loading your hints…").waitFor();
+      assert.equal(await t.page.getByRole("button", { name: /Reveal hint/ }).count(), 0, "no paid reveal while the stats load");
+      release();
+      await t.page.getByText("Count how many letters").waitFor();
+      const reveal = t.page.getByRole("button", { name: /Reveal hint/ });
+      await reveal.waitFor();
+      assert.match(await reveal.innerText(), /Costs 10 points/, "the next hint offered is hint 2, not the one already paid for");
+    } finally {
+      release();
+      await t.close();
+    }
+  });
+
+  it("solved: hints the learner never revealed are loaded for free from the Worker and marked as such", async () => {
+    const api = defaultMock();
+    // A solve booked before every hint text was handed over: only hint 1 is in the progress.
+    api.stats = () => ({
+      stats: [{ id: "caesar-warmup", solves: 5, mine: { solved: true, points: 45, attempts: 1, hintsUsed: 1, revealedHints: [{ index: 0, text: fixtureHintTexts["caesar-warmup"][0] }] } }],
+    });
+    const t = await openPage(browser, origin, "/challenges/caesar-warmup/", { signedIn: true, api });
+    try {
+      await t.page.getByText("The shift is the same for every letter").waitFor();
+      assert.deepEqual(
+        t.api.callsTo("POST", "/api/challenges/caesar-warmup/hint").map((c) => c.body),
+        [{ index: 1 }],
+        "only the missing hint is asked for, once"
+      );
+      assert.equal(await t.page.getByRole("button", { name: /Reveal hint/ }).count(), 0, "nothing to pay for on a solved challenge");
     } finally {
       await t.close();
     }

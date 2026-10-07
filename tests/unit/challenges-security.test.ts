@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { securityChallenges } from "../../data/challenges/security";
 import { securityGraders } from "../../worker/src/graders/data/security";
+import { securityHints } from "../../worker/src/graders/data/hints/security";
 import { securityReferences, puzzleFile } from "../fixtures/challenge-references/security";
 import { roadmaps } from "../../data/roadmaps";
 import { hasLesson } from "../../data/lessons";
@@ -84,7 +85,11 @@ for (const c of securityChallenges) {
 
     const hints = c.hints ?? [];
     assert.ok(hints.length >= 2 && hints.length <= 3, `${c.id}: 2-3 hints`);
-    for (const h of hints) assert.ok(nonEmpty(h.text.en) && nonEmpty(h.text.ar) && Number.isInteger(h.cost) && h.cost > 0);
+    for (const h of hints) assert.ok(Object.keys(h).join() === "cost" && Number.isInteger(h.cost) && h.cost > 0, `${c.id}: the public hint carries only a positive cost`);
+    // The text of each hint is Worker-only (worker/src/graders/data/hints), parallel to the public costs.
+    const texts = securityHints[c.id] ?? [];
+    assert.equal(texts.length, hints.length, `${c.id}: one Worker-only text per public hint cost`);
+    for (const t of texts) assert.ok(nonEmpty(t.en) && nonEmpty(t.ar), `${c.id}: bilingual hint`);
     const costs = hints.map((h) => h.cost);
     assert.deepEqual(costs, [...costs].sort((a, b) => a - b), "hint costs increase");
     assert.ok(costs.reduce((a, b) => a + b, 0) <= c.points * 0.4, `${c.id}: hints cost more than 40% of the points`);

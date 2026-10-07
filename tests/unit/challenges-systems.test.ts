@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { systemsChallenges } from "../../data/challenges/systems";
 import { systemsGraders } from "../../worker/src/graders/data/systems";
+import { systemsHints } from "../../worker/src/graders/data/hints/systems";
 import { systemsFlagSolvers, systemsReferences } from "../fixtures/challenge-references/systems";
 import { roadmaps } from "../../data/roadmaps";
 import { hasLesson } from "../../data/lessons";
@@ -129,9 +130,13 @@ test("metadata follows the authoring rubric", () => {
 
     const hints = c.hints ?? [];
     assert.ok(hints.length >= 2 && hints.length <= 3, `${at}: 2-3 hints`);
+    // The text of each hint is Worker-only (worker/src/graders/data/hints), parallel to the public costs.
+    const texts = systemsHints[c.id] ?? [];
+    assert.equal(texts.length, hints.length, `${at}: one Worker-only text per public hint cost`);
+    for (const t of texts) assert.ok(t.en.trim() && t.ar.trim(), `${at}: hint must be bilingual`);
     let prev = 0;
     for (const h of hints) {
-      assert.ok(h.text.en.trim() && h.text.ar.trim(), `${at}: hint must be bilingual`);
+      assert.deepEqual(Object.keys(h), ["cost"], `${at}: the public hint carries only its cost`);
       assert.ok(Number.isInteger(h.cost) && h.cost > prev, `${at}: hint costs must increase strictly`);
       prev = h.cost;
     }
