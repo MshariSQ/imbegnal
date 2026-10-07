@@ -352,3 +352,23 @@ test("sec-salted-wordlist: every account is crackable exactly once, salts matter
   assert.equal(demo[1], sha256("a1b2c3d4:hello"));
   assert.ok(metaOf("sec-salted-wordlist").description.ar.includes(demo[1]), "the Arabic statement shows the same demo entry");
 });
+
+test("sec-crypto-ladder: exactly one Caesar shift reads as English and the statement's toolbox examples are right", () => {
+  const stage1 = puzzleFile("sec-crypto-ladder", "stage1.txt");
+  const words = ["the", "next", "note", "is", "in", "and", "then", "so", "to", "it", "was", "with"];
+  const readable = Array.from({ length: 25 }, (_, i) => i + 1).filter((k) => {
+    const plain = stage1.replace(/[a-z]/gi, (c) => {
+      const base = c <= "Z" ? 65 : 97;
+      return String.fromCharCode(((c.charCodeAt(0) - base - k + 26) % 26) + base);
+    });
+    return plain.toLowerCase().split(/\W+/).filter((w) => words.includes(w)).length >= 6;
+  });
+  assert.equal(readable.length, 1, "a single shift produces English");
+  // the toolbox examples in the statement
+  assert.equal(Buffer.from("48656c6c6f", "hex").toString(), "Hello");
+  assert.equal(Buffer.from("SGVsbG8=", "base64").toString(), "Hello");
+  assert.equal("A".charCodeAt(0) ^ "b".charCodeAt(0), 0x23);
+  // stage 3 is not valid text before decryption (no accidental plaintext shortcut)
+  const raw = Buffer.from(puzzleFile("sec-crypto-ladder", "stage3.txt").trim(), "hex").toString("latin1");
+  assert.ok(!/FLAG=/.test(raw));
+});

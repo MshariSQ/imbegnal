@@ -50,7 +50,37 @@ export function solveSaltedWordlist(shadow: string, wordlist: string): string {
   return `IMB{${sha256(password).slice(0, 16)}}`;
 }
 
+// ── sec-crypto-ladder ─────────────────────────────────────────────────────────
+
+const caesarShift = (text: string, k: number) =>
+  text.replace(/[a-z]/gi, (c) => {
+    const base = c <= "Z" ? 65 : 97;
+    return String.fromCharCode(((c.charCodeAt(0) - base + k + 26) % 26) + base);
+  });
+
+/** Caesar (try all 25 shifts) -> hex -> base64 -> repeating-key XOR recovered with the "FLAG=" crib. */
+export function solveCryptoLadder(stage1: string, stage2: string, stage3: string): string {
+  const shift = Array.from({ length: 25 }, (_, i) => i + 1).find((k) => /stage2\.txt/.test(caesarShift(stage1, -k)));
+  if (shift === undefined) throw new Error("no Caesar shift reveals English");
+  const note2 = Buffer.from(Buffer.from(stage2.trim(), "hex").toString("utf8"), "base64").toString("utf8");
+  const keyLength = Number(/repeating key of exactly (\d+) bytes/.exec(note2)?.[1]);
+  const cipher = Buffer.from(stage3.trim(), "hex");
+  const crib = Buffer.from("FLAG=");
+  const key = Buffer.from(Array.from({ length: keyLength }, (_, i) => cipher[i] ^ crib[i]));
+  const plain = Buffer.from(cipher.map((b, i) => b ^ key[i % keyLength])).toString("utf8");
+  if (!plain.startsWith("FLAG=")) throw new Error("crib mismatch");
+  return plain.slice("FLAG=".length);
+}
+
 export const securityReferences: ChallengeReference[] = [
   { id: "sec-auth-log-hunt", flag: solveAuthLogHunt(puzzleFile("sec-auth-log-hunt", "auth.log")) },
   { id: "sec-salted-wordlist", flag: solveSaltedWordlist(puzzleFile("sec-salted-wordlist", "shadow.txt"), puzzleFile("sec-salted-wordlist", "wordlist.txt")) },
+  {
+    id: "sec-crypto-ladder",
+    flag: solveCryptoLadder(
+      puzzleFile("sec-crypto-ladder", "stage1.txt"),
+      puzzleFile("sec-crypto-ladder", "stage2.txt"),
+      puzzleFile("sec-crypto-ladder", "stage3.txt"),
+    ),
+  },
 ];

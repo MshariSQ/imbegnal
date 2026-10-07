@@ -379,4 +379,104 @@ dolphin
   addedAt: "2026-10-07",
 };
 
-export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist];
+const cryptoLadder: ChallengeMeta = {
+  id: "sec-crypto-ladder",
+  track: "cyber-security",
+  topic: "crypto",
+  title: { en: "Three Notes, Three Layers", ar: "ثلاث رسائل وثلاث طبقات" },
+  summary: {
+    en: "Climb a three-rung ladder of classic encodings: a Caesar shift, hex wrapped around base64, and a repeating-key XOR you crack with a known-plaintext crib.",
+    ar: "اصعد سلّماً من ثلاث درجات من التشفيرات الكلاسيكية: إزاحة قيصر، ثم ست عشري يلفّ base64، ثم XOR بمفتاح متكرر تكسره بنص معروف مسبقاً.",
+  },
+  description: {
+    en: `## The story
+
+During a training exercise, the blue team intercepted three notes passed between two "agents". Each note unlocks the next one, and the last one hides the flag. None of this is strong cryptography: it is a ladder of encodings and toy ciphers, and the point is to learn to recognise each of them.
+
+## Your task
+
+Read \`stage1.txt\`, \`stage2.txt\` and \`stage3.txt\` in order. Every note, once decoded, tells you how to handle the next one. Stage 1 is a classic **Caesar cipher** on the letters of an English sentence (digits and punctuation are untouched). You are not told the shift.
+
+Submit the flag from the last note. It looks like \`IMB{...}\` and is the whole text after the \`FLAG=\` marker.
+
+## Toolbox, with one tiny example each
+
+* **Caesar**: shift every letter by the same amount along the alphabet. Shifting \`Hello\` by 3 gives \`Khoor\`, and shifting back by 3 undoes it. There are only 25 useful shifts, so you can try them all.
+* **Hex**: two hexadecimal digits per byte. \`48 65 6c 6c 6f\` is the text \`Hello\`.
+* **Base64**: a text-safe encoding of bytes. \`SGVsbG8=\` is the text \`Hello\`.
+* **XOR with a repeating key**: byte \`i\` of the text is XORed with byte \`i mod k\` of a key of length \`k\`. For example \`A\` (0x41) XOR \`b\` (0x62) is 0x23. XOR is its own inverse: ciphertext XOR key gives the plaintext back, and **ciphertext XOR plaintext gives the key**.
+
+Everything can be done with a few lines of Python or JavaScript in Code Lab.`,
+    ar: `## القصة
+
+خلال تمرين تدريبي، اعترض الفريق الأزرق ثلاث رسائل تبادلها "عميلان". كل رسالة تفتح التي بعدها، وآخرها يخفي العلَم. لا شيء من هذا تشفير قوي: إنه سلّم من الترميزات والشيفرات اللعبية، والهدف أن تتعلم التعرّف على كل منها.
+
+## المطلوب
+
+اقرأ \`stage1.txt\` ثم \`stage2.txt\` ثم \`stage3.txt\` بالترتيب. كل رسالة، بعد فك ترميزها، تخبرك كيف تتعامل مع التي تليها. المرحلة الأولى **شيفرة قيصر** كلاسيكية على حروف جملة إنجليزية (الأرقام وعلامات الترقيم لا تتغير). ولا يُقال لك مقدار الإزاحة.
+
+أرسل العلَم من الرسالة الأخيرة. شكله \`IMB{...}\` وهو كل النص الذي يلي العلامة \`FLAG=\`.
+
+## صندوق الأدوات، بمثال صغير لكل أداة
+
+* **قيصر**: إزاحة كل حرف بالمقدار نفسه على الأبجدية. إزاحة \`Hello\` بمقدار 3 تعطي \`Khoor\`، والرجوع بمقدار 3 يلغيها. هناك 25 إزاحة مفيدة فقط، فيمكنك تجربتها كلها.
+* **ست عشري (Hex)**: خانتان سداسيتان عشريتان لكل بايت. \`48 65 6c 6c 6f\` هو النص \`Hello\`.
+* **Base64**: ترميز نصي آمن للبايتات. \`SGVsbG8=\` هو النص \`Hello\`.
+* **XOR بمفتاح متكرر**: البايت \`i\` من النص يُجرى عليه XOR مع البايت \`i mod k\` من مفتاح طوله \`k\`. مثلاً \`A\` (0x41) XOR \`b\` (0x62) يساوي 0x23. وXOR عكس نفسه: الشيفرة XOR المفتاح تعيد النص الأصلي، و**الشيفرة XOR النص الأصلي تعطي المفتاح**.
+
+يمكن إنجاز كل شيء ببضعة أسطر من بايثون أو جافاسكربت في Code Lab.`,
+  },
+  difficulty: 2,
+  points: 120,
+  estMinutes: 30,
+  kind: "flag",
+  flagFormat: "IMB{...}",
+  files: [
+    {
+      name: "stage1.txt",
+      content: `Dysu meha, hushkyj. Jxu dunj deju yi yd ijqwu2.jnj. Yj mqi udsetut myjx rqiu64 vyhij qdt jxud mhyjjud ekj yd xunqtusycqb, ie fuub evv rejx bqouhi je huqt yj.
+`,
+      description: { en: "Note 1: a Caesar-shifted English sentence.", ar: "الرسالة 1: جملة إنجليزية بإزاحة قيصر." },
+    },
+    {
+      name: "stage2.txt",
+      content: `563256736243426b6232356c4c694255614755676247467a644342756233526c49476c7a49476c7549484e305957646c4d7935306548517349486479615852305a57346759584d67614756344c69424a6443427063794259543149675a57356a636e6c776447566b4948647064476767595342795a58426c59585270626d6367613256354947396d4947563459574e3062486b674e5342696558526c637934675432356a5a53426b5a574e79655842305a5751734948526f5a5342305a58683049484e3059584a30637942336158526f49455a4d51556339494746755a434230614756754948526f5a53427a5a574e795a585175
+`,
+      description: { en: "Note 2: hexadecimal text.", ar: "الرسالة 2: نص بالنظام الست عشري." },
+    },
+    {
+      name: "stage3.txt",
+      content: `2a3c343d53253d37013f1f20252d14092030431d14163d42585d4330390525292207
+`,
+      description: { en: "Note 3: hexadecimal bytes of an XOR-encrypted message.", ar: "الرسالة 3: بايتات سداسية عشرية لرسالة مشفّرة بـ XOR." },
+    },
+  ],
+  hints: [
+    {
+      text: {
+        en: "Stage 1: there are only 25 possible shifts. Decode with each one and keep the output that reads as English. A line of code can print all 25.",
+        ar: "المرحلة 1: لا توجد سوى 25 إزاحة ممكنة. فك الترميز بكل واحدة منها واحتفظ بالناتج الذي يُقرأ إنجليزية. يكفي سطر كود لطباعتها كلها.",
+      },
+      cost: 10,
+    },
+    {
+      text: {
+        en: "Stage 2: undo the layers in the order the note describes. Turn the hex into bytes, read those bytes as text, and then base64-decode that text. In Python: `bytes.fromhex(...)` then `base64.b64decode(...)`.",
+        ar: "المرحلة 2: افكك الطبقات بالترتيب الذي تصفه الرسالة. حوّل الست عشري إلى بايتات، واقرأ هذه البايتات نصاً، ثم فكّ ترميز base64 لذلك النص. في بايثون: `bytes.fromhex(...)` ثم `base64.b64decode(...)`.",
+      },
+      cost: 15,
+    },
+    {
+      text: {
+        en: "Stage 3: you know the plaintext starts with `FLAG=`, which is exactly as long as the key. XOR the first 5 ciphertext bytes with those 5 characters to reveal the whole key, then XOR every byte with the key, repeating it.",
+        ar: "المرحلة 3: أنت تعرف أن النص الأصلي يبدأ بـ `FLAG=` وهو بطول المفتاح تماماً. أجرِ XOR بين أول 5 بايتات من الشيفرة وهذه الأحرف الخمسة لينكشف المفتاح كاملاً، ثم أجرِ XOR لكل بايت مع المفتاح مكرراً.",
+      },
+      cost: 20,
+    },
+  ],
+  lessons: ["cyber-security/cyber-basics", "cyber-security/python"],
+  tags: ["crypto", "encoding", "caesar", "base64", "xor", "known-plaintext"],
+  addedAt: "2026-10-07",
+};
+
+export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder];
