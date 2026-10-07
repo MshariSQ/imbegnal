@@ -644,4 +644,66 @@ const dsDescriptiveStats: ChallengeGrader = {
   ],
 };
 
-export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats];
+// ── ds-classifier-report ─────────────────────────────────────────────────────
+
+function classifierReport(pairs: [string, string][]): string {
+  const classes = [...new Set(pairs.flat())].sort();
+  const ratio = (a: number, b: number) => (b === 0 ? 0 : a / b);
+  const f1s: number[] = [];
+  const lines = classes.map((c) => {
+    const tp = pairs.filter(([a, p]) => a === c && p === c).length;
+    const precision = ratio(tp, pairs.filter(([, p]) => p === c).length);
+    const recall = ratio(tp, pairs.filter(([a]) => a === c).length);
+    const f1 = ratio(2 * precision * recall, precision + recall);
+    f1s.push(f1);
+    return `${c} ${precision.toFixed(6)} ${recall.toFixed(6)} ${f1.toFixed(6)}`;
+  });
+  const accuracy = pairs.filter(([a, p]) => a === p).length / pairs.length;
+  lines.push(`macro_f1 ${(f1s.reduce((a, b) => a + b, 0) / f1s.length).toFixed(6)}`);
+  lines.push(`accuracy ${accuracy.toFixed(6)}`);
+  return lines.join("\n");
+}
+
+function classifierTest(name: string, rows: string[], hidden = true): OutputTest {
+  const pairs = rows.map((r) => r.split(" ") as [string, string]);
+  return {
+    name,
+    stdin: `${rows.length}\n${rows.join("\n")}\n`,
+    expected: classifierReport(pairs),
+    mode: "float",
+    epsilon: 1e-3,
+    hidden: hidden || undefined,
+  };
+}
+
+/** A noisy classifier over `classes` labels: right ~60% of the time, otherwise a random label. */
+function noisyLog(seed: number, n: number, classes: string[], skew: number): string[] {
+  const r = rng(seed);
+  return Array.from({ length: n }, () => {
+    const actual = classes[Math.floor(Math.pow(r(), skew) * classes.length)];
+    const predicted = r() < 0.6 ? actual : classes[randInt(r, 0, classes.length - 1)];
+    return `${actual} ${predicted}`;
+  });
+}
+
+const dsClassifierReport: ChallengeGrader = {
+  id: "ds-classifier-report",
+  kind: "output",
+  tests: [
+    classifierTest(
+      "example",
+      ["bug bug", "bug billing", "bug bug", "bug bug", "billing billing", "billing billing", "billing bug", "feature feature", "feature bug", "bug bug", "billing billing", "feature billing"],
+      false,
+    ),
+    classifierTest("never predicted", ["spam ham", "spam ham", "ham ham", "ham ham"], false),
+    classifierTest("perfect single class", ["x x", "x x", "x x"]),
+    classifierTest("class only among the predictions", ["a a", "a b", "b b", "b c", "a a"]),
+    classifierTest("class only among the actuals", ["a a", "b a", "c c", "c a", "b b", "d a"]),
+    classifierTest("class names sort by character code", ["a10 a10", "a2 a2", "a2 a10", "b b", "a10 b", "_z _z", "a2 _z"]),
+    classifierTest("everything wrong", ["cat dog", "dog cat", "cat dog", "dog cat"]),
+    classifierTest("3000 tickets, 5 skewed classes", noisyLog(99, 3_000, ["alpha", "beta", "gamma", "delta", "eps"], 2.2)),
+    classifierTest("3000 tickets, 2 classes", noisyLog(7, 3_000, ["fraud", "legit"], 3)),
+  ],
+};
+
+export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats, dsClassifierReport];

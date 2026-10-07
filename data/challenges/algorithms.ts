@@ -975,4 +975,183 @@ for (const v of [mean, median, mode, std]) console.log(v.toFixed(4));
   addedAt: ADDED,
 };
 
-export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats];
+const dsClassifierReport: ChallengeMeta = {
+  id: "ds-classifier-report",
+  track: "data-science",
+  topic: "model-evaluation",
+  title: { en: "Report Card for a Classifier", ar: "بطاقة تقييم لمصنِّف" },
+  summary: {
+    en: "Score a ticket-triage model from its predictions: per-class precision, recall and F1, then macro-F1 and accuracy, with the zero-division traps handled.",
+    ar: "قيّم نموذج فرز التذاكر انطلاقًا من تنبؤاته: الدقة (precision) والاسترجاع (recall) و F1 لكل صنف، ثم macro-F1 والصحة (accuracy)، مع معالجة حالات القسمة على صفر.",
+  },
+  description: {
+    en: `## Story
+
+The support team trained a bot that sorts incoming tickets into classes such as \`billing\`, \`bug\` and \`feature\`. Before it goes live, you must grade it: for a log of real tickets you know both the **actual** class and the class the bot **predicted**.
+
+## Task
+
+Read the log and print, for **every class** that appears (as an actual *or* a predicted label), its precision, recall and F1, then the macro F1 and the accuracy.
+
+For a class \`c\`:
+
+* **TP** = tickets that are actually \`c\` and predicted \`c\`
+* **precision** = TP / (tickets predicted \`c\`)
+* **recall** = TP / (tickets that are actually \`c\`)
+* **F1** = 2 · precision · recall / (precision + recall)
+* If a denominator is 0, that value is defined as **0** (a class that is never predicted has precision 0; never present has recall 0; F1 is 0 when precision + recall is 0)
+
+Then **macro F1** = the plain average of the F1 of all classes, and **accuracy** = correct predictions / n.
+
+## Input
+
+* Line 1: \`n\` (1 ≤ n ≤ 3000)
+* Then \`n\` lines \`actual predicted\`. Labels are lowercase letters, digits or underscores, at most 12 characters, without spaces.
+
+## Output
+
+One line per class, classes sorted by plain character code (like Python's \`sorted\`): \`<class> <precision> <recall> <f1>\`. Then the lines \`macro_f1 <value>\` and \`accuracy <value>\`. Print at least 4 decimals: every number within \`0.001\` of the exact value is accepted.
+
+## Example
+
+\`\`\`
+12
+bug bug
+bug billing
+bug bug
+bug bug
+billing billing
+billing billing
+billing bug
+feature feature
+feature bug
+bug bug
+billing billing
+feature billing
+\`\`\`
+
+Output:
+
+\`\`\`
+billing 0.6 0.75 0.6667
+bug 0.6667 0.8 0.7273
+feature 1.0 0.3333 0.5
+macro_f1 0.6313
+accuracy 0.6667
+\`\`\`
+
+For \`feature\`: the bot predicted it once and was right (precision 1), but only 1 of the 3 real feature tickets was found (recall 0.3333).`,
+    ar: `## القصة
+
+درّب فريق الدعم روبوتًا يصنّف التذاكر الواردة إلى أصناف مثل \`billing\` و \`bug\` و \`feature\`. وقبل إطلاقه عليك تقييمه: لديك سجل لتذاكر حقيقية تعرف فيها الصنف **الفعلي** والصنف الذي **تنبأ** به الروبوت.
+
+## المطلوب
+
+اقرأ السجل واطبع، لكل **صنف** يظهر فيه (سواء كتسمية فعلية أو متنبَّأ بها)، الدقة (precision) والاسترجاع (recall) و F1، ثم macro F1 والصحة (accuracy).
+
+لصنف \`c\`:
+
+* **TP** = التذاكر التي صنفها الفعلي \`c\` وتنبأ بها الروبوت \`c\`
+* **precision** = TP / (عدد التذاكر المتنبَّأ بأنها \`c\`)
+* **recall** = TP / (عدد التذاكر التي صنفها الفعلي \`c\`)
+* **F1** = 2 · precision · recall / (precision + recall)
+* إذا كان المقام 0 فالقيمة تُعرَّف بأنها **0** (الصنف الذي لم يُتنبأ به أبدًا دقته 0؛ والذي لا وجود له فعليًا استرجاعه 0؛ و F1 تساوي 0 إذا كان precision + recall يساوي 0)
+
+ثم **macro F1** = المتوسط العادي لقيم F1 لجميع الأصناف، و**accuracy** = التنبؤات الصحيحة / n.
+
+## المدخلات
+
+* السطر الأول: \`n\` (‏1 ≤ n ≤ 3000)
+* ثم \`n\` سطرًا بالشكل \`actual predicted\`. التسميات حروف صغيرة أو أرقام أو شرطات سفلية، بطول 12 محرفًا على الأكثر وبلا مسافات.
+
+## المخرجات
+
+سطر لكل صنف، والأصناف مرتبة بحسب رمز المحرف المجرد (مثل \`sorted\` في Python): ‏\`<class> <precision> <recall> <f1>\`. ثم السطران \`macro_f1 <value>\` و \`accuracy <value>\`. اطبع 4 منازل عشرية على الأقل: يُقبل أي رقم يبعد عن القيمة الدقيقة بأقل من \`0.001\`.
+
+## مثال
+
+\`\`\`
+12
+bug bug
+bug billing
+bug bug
+bug bug
+billing billing
+billing billing
+billing bug
+feature feature
+feature bug
+bug bug
+billing billing
+feature billing
+\`\`\`
+
+الناتج:
+
+\`\`\`
+billing 0.6 0.75 0.6667
+bug 0.6667 0.8 0.7273
+feature 1.0 0.3333 0.5
+macro_f1 0.6313
+accuracy 0.6667
+\`\`\`
+
+للصنف \`feature\`: تنبأ به الروبوت مرة واحدة وأصاب (الدقة 1)، لكنه وجد تذكرة واحدة فقط من أصل 3 تذاكر feature حقيقية (الاسترجاع 0.3333).`,
+  },
+  difficulty: 2,
+  points: 150,
+  estMinutes: 30,
+  kind: "output",
+  lang: "python",
+  starterCode: {
+    python: `import sys
+
+data = sys.stdin.read().split()
+n = int(data[0])
+pairs = [(data[1 + 2 * i], data[2 + 2 * i]) for i in range(n)]
+
+# Your code here: per-class precision / recall / F1, then macro_f1 and accuracy
+print("macro_f1 0")
+print("accuracy 0")
+`,
+    javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+const n = Number(data[0]);
+const pairs = [];
+for (let i = 0; i < n; i++) pairs.push([data[1 + 2 * i], data[2 + 2 * i]]);
+
+// Your code here: per-class precision / recall / F1, then macro_f1 and accuracy
+console.log("macro_f1 0");
+console.log("accuracy 0");
+`,
+  },
+  sampleInput:
+    "12\nbug bug\nbug billing\nbug bug\nbug bug\nbilling billing\nbilling billing\nbilling bug\nfeature feature\nfeature bug\nbug bug\nbilling billing\nfeature billing\n",
+  hints: [
+    {
+      text: {
+        en: "Do one pass over the pairs and keep three dictionaries keyed by label: true positives, how often the label was predicted, and how often it was actual.",
+        ar: "اقرأ الأزواج في مرور واحد واحتفظ بثلاثة قواميس مفتاحها التسمية: الإيجابيات الصحيحة، وعدد مرات التنبؤ بالتسمية، وعدد مرات كونها فعلية.",
+      },
+      cost: 15,
+    },
+    {
+      text: {
+        en: "Write a small helper that divides and returns 0 when the denominator is 0, and use it for precision, recall and F1. A class that is never predicted must not crash your program.",
+        ar: "اكتب دالة مساعدة صغيرة تقسم وتعيد 0 عندما يكون المقام 0، واستخدمها للدقة والاسترجاع و F1. الصنف الذي لا يُتنبأ به أبدًا يجب ألا يُسقط برنامجك.",
+      },
+      cost: 20,
+    },
+    {
+      text: {
+        en: "The class list is the union of both columns, sorted: a class may appear only among the predictions. Macro F1 averages the per-class F1 over all of them; accuracy is the sum of TP divided by n.",
+        ar: "قائمة الأصناف هي اتحاد العمودين مرتبًا: قد يظهر صنف بين التنبؤات فقط. يحسب macro F1 متوسط F1 لكل الأصناف، والصحة هي مجموع TP مقسومًا على n.",
+      },
+      cost: 25,
+    },
+  ],
+  lessons: ["data-science/machine-learning-ds", "data-science/statistics"],
+  tags: ["classification", "precision-recall", "f1", "confusion-matrix"],
+  addedAt: ADDED,
+};
+
+export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats, dsClassifierReport];

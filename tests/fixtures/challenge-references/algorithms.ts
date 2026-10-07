@@ -248,6 +248,67 @@ for (const v of [mean, median, mode, std]) console.log(v.toFixed(6));
 `,
     },
   },
+  {
+    id: "ds-classifier-report",
+    solutions: {
+      python: `import sys
+from collections import Counter
+
+data = sys.stdin.read().split()
+n = int(data[0])
+pairs = [(data[1 + 2 * i], data[2 + 2 * i]) for i in range(n)]
+actual = Counter(a for a, _ in pairs)
+predicted = Counter(p for _, p in pairs)
+hits = Counter(a for a, p in pairs if a == p)
+
+
+def ratio(a, b):
+    return a / b if b else 0.0
+
+
+f1s = []
+for c in sorted(set(actual) | set(predicted)):
+    precision = ratio(hits[c], predicted[c])
+    recall = ratio(hits[c], actual[c])
+    f1 = ratio(2 * precision * recall, precision + recall)
+    f1s.append(f1)
+    print(f"{c} {precision:.6f} {recall:.6f} {f1:.6f}")
+print(f"macro_f1 {sum(f1s) / len(f1s):.6f}")
+print(f"accuracy {sum(hits.values()) / n:.6f}")
+`,
+      javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+const n = Number(data[0]);
+const actual = {};
+const predicted = {};
+const hits = {};
+const classes = new Set();
+let correct = 0;
+for (let i = 0; i < n; i++) {
+  const a = data[1 + 2 * i];
+  const p = data[2 + 2 * i];
+  classes.add(a);
+  classes.add(p);
+  actual[a] = (actual[a] || 0) + 1;
+  predicted[p] = (predicted[p] || 0) + 1;
+  if (a === p) {
+    hits[a] = (hits[a] || 0) + 1;
+    correct++;
+  }
+}
+const ratio = (a, b) => (b ? a / b : 0);
+const f1s = [];
+for (const c of [...classes].sort()) {
+  const precision = ratio(hits[c] || 0, predicted[c] || 0);
+  const recall = ratio(hits[c] || 0, actual[c] || 0);
+  const f1 = ratio(2 * precision * recall, precision + recall);
+  f1s.push(f1);
+  console.log(c, precision.toFixed(6), recall.toFixed(6), f1.toFixed(6));
+}
+console.log("macro_f1", (f1s.reduce((a, b) => a + b, 0) / f1s.length).toFixed(6));
+console.log("accuracy", (correct / n).toFixed(6));
+`,
+    },
+  },
 ];
 
 /**
@@ -530,6 +591,126 @@ const top = Math.max(...counts.values());
 const mode = Math.min(...[...counts].filter(([, c]) => c === top).map(([v]) => v));
 const std = Math.sqrt(values.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
 for (const v of [mean, median, mode, std]) console.log(v.toFixed(6));
+`,
+  },
+  {
+    id: "ds-classifier-report",
+    lang: "python",
+    name: "no zero-division guard (crashes on a class that is never predicted)",
+    code: `import sys
+from collections import Counter
+
+data = sys.stdin.read().split()
+n = int(data[0])
+pairs = [(data[1 + 2 * i], data[2 + 2 * i]) for i in range(n)]
+actual = Counter(a for a, _ in pairs)
+predicted = Counter(p for _, p in pairs)
+hits = Counter(a for a, p in pairs if a == p)
+f1s = []
+for c in sorted(set(actual) | set(predicted)):
+    precision = hits[c] / predicted[c]
+    recall = hits[c] / actual[c]
+    f1 = 2 * precision * recall / (precision + recall)
+    f1s.append(f1)
+    print(f"{c} {precision:.6f} {recall:.6f} {f1:.6f}")
+print(f"macro_f1 {sum(f1s) / len(f1s):.6f}")
+print(f"accuracy {sum(hits.values()) / n:.6f}")
+`,
+  },
+  {
+    id: "ds-classifier-report",
+    lang: "python",
+    name: "only classes that occur as actual labels",
+    code: `import sys
+from collections import Counter
+
+data = sys.stdin.read().split()
+n = int(data[0])
+pairs = [(data[1 + 2 * i], data[2 + 2 * i]) for i in range(n)]
+actual = Counter(a for a, _ in pairs)
+predicted = Counter(p for _, p in pairs)
+hits = Counter(a for a, p in pairs if a == p)
+
+
+def ratio(a, b):
+    return a / b if b else 0.0
+
+
+f1s = []
+for c in sorted(actual):
+    precision = ratio(hits[c], predicted[c])
+    recall = ratio(hits[c], actual[c])
+    f1 = ratio(2 * precision * recall, precision + recall)
+    f1s.append(f1)
+    print(f"{c} {precision:.6f} {recall:.6f} {f1:.6f}")
+print(f"macro_f1 {sum(f1s) / len(f1s):.6f}")
+print(f"accuracy {sum(hits.values()) / n:.6f}")
+`,
+  },
+  {
+    id: "ds-classifier-report",
+    lang: "python",
+    name: "precision and recall swapped",
+    code: `import sys
+from collections import Counter
+
+data = sys.stdin.read().split()
+n = int(data[0])
+pairs = [(data[1 + 2 * i], data[2 + 2 * i]) for i in range(n)]
+actual = Counter(a for a, _ in pairs)
+predicted = Counter(p for _, p in pairs)
+hits = Counter(a for a, p in pairs if a == p)
+
+
+def ratio(a, b):
+    return a / b if b else 0.0
+
+
+f1s = []
+for c in sorted(set(actual) | set(predicted)):
+    precision = ratio(hits[c], actual[c])
+    recall = ratio(hits[c], predicted[c])
+    f1 = ratio(2 * precision * recall, precision + recall)
+    f1s.append(f1)
+    print(f"{c} {precision:.6f} {recall:.6f} {f1:.6f}")
+print(f"macro_f1 {sum(f1s) / len(f1s):.6f}")
+print(f"accuracy {sum(hits.values()) / n:.6f}")
+`,
+  },
+  {
+    id: "ds-classifier-report",
+    lang: "javascript",
+    name: "macro F1 weighted by class size",
+    code: `const data = require("fs").readFileSync(0, "utf8").split(/\\\\s+/).filter(Boolean);
+const n = Number(data[0]);
+const actual = {};
+const predicted = {};
+const hits = {};
+const classes = new Set();
+let correct = 0;
+for (let i = 0; i < n; i++) {
+  const a = data[1 + 2 * i];
+  const p = data[2 + 2 * i];
+  classes.add(a);
+  classes.add(p);
+  actual[a] = (actual[a] || 0) + 1;
+  predicted[p] = (predicted[p] || 0) + 1;
+  if (a === p) {
+    hits[a] = (hits[a] || 0) + 1;
+    correct++;
+  }
+}
+const ratio = (a, b) => (b ? a / b : 0);
+let weighted = 0;
+for (const c of [...classes].sort()) {
+  const precision = ratio(hits[c] || 0, predicted[c] || 0);
+  const recall = ratio(hits[c] || 0, actual[c] || 0);
+  const f1 = ratio(2 * precision * recall, precision + recall);
+  weighted += f1 * (actual[c] || 0) / n;
+  console.log(c, precision.toFixed(6), recall.toFixed(6), f1.toFixed(6));
+}
+console.log("macro_f1", weighted.toFixed(6));
+console.log("accuracy", (correct / n).toFixed(6));
 `,
   },
 ];
