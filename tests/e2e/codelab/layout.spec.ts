@@ -41,6 +41,7 @@ describe("Code Lab: layout, RTL, mobile, accessibility", () => {
       const share = ed.width / (ed.width + out.width);
       assert.ok(share > 0.55 && share < 0.65, `editor share is ${share.toFixed(2)}`);
       assert.equal(await h.page.getByTestId("mobile-bar").isVisible(), false, "the sticky bar is mobile-only");
+      assert.equal(await h.page.locator('[data-testid="run-button"]:visible').count(), 1, "one Run button: the toolbar");
       assert.ok(await noHorizontalScroll(h.page));
       assert.equal(await h.page.locator(".cm-editor").first().evaluate((el) => el.closest("[dir]")?.getAttribute("dir")), "ltr");
       assert.match((await h.page.locator(".cm-content").getAttribute("aria-label")) ?? "", /code/i, "the editor is labelled");
@@ -54,6 +55,7 @@ describe("Code Lab: layout, RTL, mobile, accessibility", () => {
       assert.ok(await noHorizontalScroll(h.page));
       const bar = h.page.getByTestId("mobile-bar");
       assert.equal(await bar.isVisible(), true);
+      assert.equal(await h.page.locator('[data-testid="run-button"]:visible').count(), 1, "one Run button: the sticky bar, not the toolbar");
       const tabs = h.page.locator('[role="tablist"]:visible [role="tab"]');
       assert.deepEqual(await tabs.allInnerTexts(), ["Code", "Input", "Output"]);
       for (const t of await tabs.all()) assert.ok(((await t.boundingBox())?.height ?? 0) >= 40, "tap targets are at least 40px");

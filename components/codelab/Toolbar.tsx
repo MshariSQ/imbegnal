@@ -180,7 +180,7 @@ export default function Toolbar({
         )}
         <SettingsPopover prefs={prefs} onPrefs={onPrefs} onReset={onReset} showRunOn={showRunOn} canReset={canReset} />
         <ShortcutsPopover />
-        <RunButton busy={busy} disabled={!canRun} onRun={onRun} onStop={onStop} className="hidden lg:inline-flex ms-2" />
+        <RunButton busy={busy} disabled={!canRun} onRun={onRun} onStop={onStop} className="max-lg:hidden ms-2" />
       </div>
     </div>
   );
