@@ -39,5 +39,5 @@ else the newest `chromium-*` / `chromium_headless_shell-*` under `PLAYWRIGHT_BRO
 * no console errors, page errors or failed same-origin requests (404 prefetches of routes owned by
   other workstreams, e.g. `/code-lab/`, are ignored only while those routes are absent from `out/`)
 
-Known exclusion: axe skips `.cm-activeLine` because the CodeMirror GitHub-light theme in
-`components/lesson/CodeRunner.tsx` paints active-line tokens below 4.5:1 (not owned by this workstream).
+The editors' light theme (`lib/editor-theme.ts`) marks the active line with an inset bar instead of a
+background tint, so axe runs on the whole page with no exclusions.

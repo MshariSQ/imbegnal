@@ -13,14 +13,12 @@ import CodeMirror, { Decoration, EditorState, EditorView, Prec, keymap } from "@
 import type { Extension } from "@codemirror/state";
 import { indentUnit } from "@codemirror/language";
 import { indentWithTab } from "@codemirror/commands";
-import { githubDark, githubLightInit } from "@uiw/codemirror-theme-github";
-import { tags as t } from "@lezer/highlight";
+import { githubDark } from "@uiw/codemirror-theme-github";
+import { githubLightAA } from "@/lib/editor-theme";
 import { useTheme } from "@/lib/theme";
 import { loadEditorLanguage } from "@/lib/codelab/editor-langs";
 import type { EditorMode } from "@/lib/codelab/langs";
 
-// GitHub light colors atoms/booleans #e36209 (3.5:1 on white); darken to pass WCAG AA (5:1).
-const githubLightAA = githubLightInit({ styles: [{ tag: [t.atom, t.bool, t.special(t.variableName)], color: "#bc4c00" }] });
 
 const errorLineTheme = EditorView.baseTheme({
   ".cm-imb-error-line": { backgroundColor: "rgba(239, 68, 68, 0.16)", boxShadow: "inset 3px 0 0 #ef4444" },
