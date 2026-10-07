@@ -8,4 +8,5 @@ import type { ChallengeGrader } from "../../../../shared/challenges";
  */
 export const securityGraders: ChallengeGrader[] = [
   { id: "sec-auth-log-hunt", kind: "flag", flagHash: "9ed7785431fe10ad23d4490148cd5b08e080e9dcf0eaabafabf82018dfca551a" },
+  { id: "sec-salted-wordlist", kind: "flag", flagHash: "c196e59a3804d35679817eae5ea277907b9794871c62c5608cf9d845bf7226ef" },
 ];

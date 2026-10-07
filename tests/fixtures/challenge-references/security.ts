@@ -38,6 +38,19 @@ export function solveAuthLogHunt(log: string): string {
   return `IMB{${sha256(`${ip}|${firstLogin.get(ip)}|${failures.get(ip) ?? 0}`).slice(0, 16)}}`;
 }
 
+// ── sec-salted-wordlist ───────────────────────────────────────────────────────
+
+/** Replays the wordlist against the admin's `$imb1$salt$digest` entry; flag from the SHA-256 of the password. */
+export function solveSaltedWordlist(shadow: string, wordlist: string): string {
+  const entry = shadow.split("\n").find((l) => l.startsWith("admin:"));
+  if (!entry) throw new Error("no admin entry");
+  const [, , salt, digest] = entry.slice("admin:".length).split("$");
+  const password = wordlist.split("\n").find((w) => w !== "" && sha256(`${salt}:${w}`) === digest);
+  if (password === undefined) throw new Error("password not in wordlist");
+  return `IMB{${sha256(password).slice(0, 16)}}`;
+}
+
 export const securityReferences: ChallengeReference[] = [
   { id: "sec-auth-log-hunt", flag: solveAuthLogHunt(puzzleFile("sec-auth-log-hunt", "auth.log")) },
+  { id: "sec-salted-wordlist", flag: solveSaltedWordlist(puzzleFile("sec-salted-wordlist", "shadow.txt"), puzzleFile("sec-salted-wordlist", "wordlist.txt")) },
 ];

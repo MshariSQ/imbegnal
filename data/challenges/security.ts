@@ -156,4 +156,227 @@ Oct 14 04:15:41 web01 sshd[2315]: Failed password for invalid user guest from 20
   addedAt: "2026-10-07",
 };
 
-export const securityChallenges: ChallengeMeta[] = [authLogHunt];
+const saltedWordlist: ChallengeMeta = {
+  id: "sec-salted-wordlist",
+  track: "cyber-security",
+  topic: "password-cracking",
+  title: { en: "Salt Doesn't Save Weak Passwords", ar: "الملح لا ينقذ كلمات المرور الضعيفة" },
+  summary: {
+    en: "A leaked password table uses a home-made salted SHA-256 format. Replay a small wordlist against it and find the admin's password.",
+    ar: "جدول كلمات مرور مسرَّب بصيغة SHA-256 مملّحة صُنعت محلياً. أعد تجربة قائمة كلمات صغيرة عليه واكتشف كلمة مرور المدير.",
+  },
+  description: {
+    en: `## The leak
+
+A small internal tool was breached and its password table, \`shadow.txt\`, ended up in your inbox. The developers knew passwords must be salted, so every account has its own random salt and nobody can use a ready-made rainbow table. The trouble is that people still pick passwords from a very short list of favourites. \`wordlist.txt\` is that list (106 candidates).
+
+## Entry format
+
+Each line is \`user:$imb1$<salt>$<digest>\`:
+
+* \`<salt>\` is 8 lowercase hex characters, written in the line itself.
+* \`<digest>\` is the lowercase hex **SHA-256** of the text \`<salt>:<password>\`, that is the salt, a colon, then the password, all as UTF-8 text.
+
+A made-up entry to test your code against:
+
+\`\`\`
+demo:$imb1$a1b2c3d4$78ea1c9cb9370892c90770ba32e672a11ae51a041f25913996292e0e9c78edec
+\`\`\`
+
+Its password is \`hello\`, which is not on the real list. Check your hashing on it first: salt \`a1b2c3d4\` and \`hello\` must reproduce that digest.
+
+## Your task
+
+Recover the password of the account named \`admin\`. Every password in the table appears in \`wordlist.txt\`, spelled exactly as listed (case and punctuation matter).
+
+## The flag
+
+The flag is \`IMB{\`, then the **first 16 hex characters of the SHA-256 of the admin password alone** (no salt), then \`}\`.
+
+Hint on tooling: Python's \`hashlib.sha256(...).hexdigest()\` is all you need, and the whole attack is a ten-line loop.`,
+    ar: `## التسريب
+
+اختُرقت أداة داخلية صغيرة ووصلك جدول كلمات المرور الخاص بها في الملف \`shadow.txt\`. كان المطوّرون يعلمون أن كلمات المرور يجب أن تُملَّح، فلكل حساب ملح عشوائي خاص به ولا يمكن لأحد استخدام جدول قوس قزح جاهز. المشكلة أن الناس ما زالوا يختارون كلمات مرورهم من قائمة قصيرة جداً من المفضّلات. والملف \`wordlist.txt\` هو هذه القائمة (106 مرشحين).
+
+## صيغة السطر
+
+كل سطر بالشكل \`user:$imb1$<salt>$<digest>\`:
+
+* \`<salt>\` هو 8 خانات سداسية عشرية صغيرة مكتوبة في السطر نفسه.
+* \`<digest>\` هو **SHA-256** بالأحرف السداسية الصغيرة للنص \`<salt>:<password>\`، أي الملح ثم نقطتان رأسيتان ثم كلمة المرور، كلها نصاً بترميز UTF-8.
+
+سطر تجريبي مُختلَق لتختبر كودك عليه:
+
+\`\`\`
+demo:$imb1$a1b2c3d4$78ea1c9cb9370892c90770ba32e672a11ae51a041f25913996292e0e9c78edec
+\`\`\`
+
+كلمة مروره \`hello\` وهي ليست في القائمة الحقيقية. تحقق من التجزئة عليه أولاً: يجب أن يعيد الملح \`a1b2c3d4\` مع \`hello\` هذا الناتج نفسه.
+
+## المطلوب
+
+استرجع كلمة مرور الحساب المسمّى \`admin\`. كل كلمات المرور في الجدول موجودة في \`wordlist.txt\` مكتوبة كما هي تماماً (حالة الأحرف وعلامات الترقيم مهمة).
+
+## العلَم
+
+العلَم هو \`IMB{\` ثم **أول 16 خانة سداسية عشرية من SHA-256 لكلمة مرور المدير وحدها** (دون ملح) ثم \`}\`.
+
+ملاحظة عن الأدوات: يكفيك \`hashlib.sha256(...).hexdigest()\` في بايثون، والهجوم كله حلقة من عشرة أسطر.`,
+  },
+  difficulty: 2,
+  points: 100,
+  estMinutes: 25,
+  kind: "flag",
+  flagFormat: "IMB{...}",
+  files: [
+    {
+      name: "shadow.txt",
+      content: `admin:$imb1$a3f24563$e06488d035467667e61215006aca7daad8dca680b26639cbb26d5a9af44085c1
+mira:$imb1$cec0f476$92494400a89db8178854171dc4a4bedbe6037877f97a396455d02d972fde550e
+omar:$imb1$1fd1b8db$cc2af96e442a16d84942dd8791b466281d1de8851dd060478728b00f96b21f2b
+lina:$imb1$d9941cdb$99b91733118cc80ce207234697c60093ccc4e291b4efc02f3f5d8e6e6ee49a0b
+backup:$imb1$fbec8686$7e80ce1e9a3e42abe63516a6a580c076bfecb4d524e7a5dd4af5da46d94d0065
+`,
+      description: { en: "The leaked table: one salted SHA-256 entry per account.", ar: "الجدول المسرَّب: سطر SHA-256 مملّح لكل حساب." },
+    },
+    {
+      name: "wordlist.txt",
+      content: `Summer2024
+summer
+charlie
+tigger
+banana
+planet
+nutella
+kitten
+123456
+superman
+cookie
+lemon28
+ashley
+Temp#123
+pancake
+shadow
+abc12345
+Admin@123
+winter
+rocket
+iloveyou
+jaguar
+hello123
+zebra123
+password
+Autumn#2023
+Changeme1
+Baseball1
+coffee
+Qwerty!23
+victory
+batman
+qwerty123
+pepper
+Harley123
+passw0rd
+Gandalf7
+thunder
+Arsenal14
+jordan
+dragon
+Test1234
+P@ssw0rd
+Liverpool9
+Matrix01
+ranger
+monkey
+Welcome2024
+flower
+wizard
+hunter
+quality
+Chelsea1
+lovely
+cheese
+Sunshine1
+Hunter42
+magic
+donald
+master
+ninja
+Winter2024!
+falcon
+guitar
+whatever
+bailey
+yellow
+welcome1
+michael
+Backup#2024
+hockey
+samurai
+Football!
+Company1
+golden
+silver
+Pass1234
+admin123
+Monkey123
+Letmein!
+Spring2025!
+trustno1
+unicorn
+soccer
+Mustang1
+Frodo123
+oreo123
+Passw0rd!
+rainbow
+princess
+letmein
+orange
+sunshine
+Maverick
+freedom
+starwars
+Barcelona10
+football1
+Trustno1!
+Dragon99
+purple
+mango99
+Secret99
+pirate
+killer
+dolphin
+`,
+      description: { en: "106 candidate passwords, one per line.", ar: "106 كلمات مرور مرشحة، واحدة في كل سطر." },
+    },
+  ],
+  hints: [
+    {
+      text: {
+        en: "You cannot reverse a hash, but you can compute the hash of every candidate and compare. The salt is not a secret: it is stored next to the digest, so you simply use it as part of each guess.",
+        ar: "لا يمكنك عكس التجزئة، لكن يمكنك حساب تجزئة كل مرشح ومقارنتها. الملح ليس سراً: فهو مخزَّن بجانب الناتج، فاستخدمه ببساطة جزءاً من كل تخمين.",
+      },
+      cost: 8,
+    },
+    {
+      text: {
+        en: "Rebuild the exact input the format describes: salt, then `:`, then the candidate, encoded as UTF-8. Validate your hashing on the `demo` line (the candidate `hello`) before you loop over the real table.",
+        ar: "أعد بناء المدخل بالضبط كما تصف الصيغة: الملح ثم `:` ثم المرشح بترميز UTF-8. تحقق من تجزئتك على سطر `demo` (المرشح `hello`) قبل أن تدور على الجدول الحقيقي.",
+      },
+      cost: 12,
+    },
+    {
+      text: {
+        en: "Split each line with `line.split(\"$\")`: you get an empty string, `imb1`, the salt and the digest. Strip newlines from the wordlist lines, but do not change the case or drop punctuation.",
+        ar: "قسّم كل سطر بـ `line.split(\"$\")`: ستحصل على نص فارغ ثم `imb1` ثم الملح ثم الناتج. أزل نهايات الأسطر من كلمات القائمة لكن لا تغيّر حالة الأحرف ولا تحذف علامات الترقيم.",
+      },
+      cost: 15,
+    },
+  ],
+  lessons: ["cyber-security/cyber-basics", "cyber-security/python"],
+  tags: ["hashing", "salt", "wordlist", "password-cracking", "python"],
+  addedAt: "2026-10-07",
+};
+
+export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist];

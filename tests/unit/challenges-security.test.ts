@@ -330,3 +330,25 @@ test("sec-auth-log-hunt: the intended answer is unique and the tempting shortcut
   assert.notEqual(top(total)[0][0], correct[0][0], "most failures overall is a decoy (never got in)");
   assert.notEqual(top(total, everAccepted)[0][0], correct[0][0], "most failures among successful IPs is a decoy (failures after login)");
 });
+
+test("sec-salted-wordlist: every account is crackable exactly once, salts matter, the statement's demo entry checks out", () => {
+  const shadow = puzzleFile("sec-salted-wordlist", "shadow.txt").trimEnd().split("\n");
+  const words = puzzleFile("sec-salted-wordlist", "wordlist.txt").trimEnd().split("\n");
+  assert.equal(words.length, 106, "the statement says 106 candidates");
+  assert.equal(new Set(words).size, words.length);
+  assert.ok(!words.includes("hello"), "the demo password is not on the real list");
+  const salts = new Set<string>();
+  for (const line of shadow) {
+    const m = /^([a-z]+):\$imb1\$([0-9a-f]{8})\$([0-9a-f]{64})$/.exec(line);
+    assert.ok(m, `entry format: ${line.slice(0, 20)}`);
+    const [, , salt, digest] = m;
+    salts.add(salt);
+    assert.equal(words.filter((w) => sha256(`${salt}:${w}`) === digest).length, 1, "exactly one candidate matches");
+    assert.equal(words.filter((w) => sha256(w) === digest).length, 0, "forgetting the salt finds nothing");
+  }
+  assert.equal(salts.size, shadow.length, "salts are unique per account");
+  const demo = /demo:\$imb1\$a1b2c3d4\$([0-9a-f]{64})/.exec(metaOf("sec-salted-wordlist").description.en);
+  assert.ok(demo);
+  assert.equal(demo[1], sha256("a1b2c3d4:hello"));
+  assert.ok(metaOf("sec-salted-wordlist").description.ar.includes(demo[1]), "the Arabic statement shows the same demo entry");
+});
