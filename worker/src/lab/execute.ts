@@ -13,8 +13,8 @@ import { evaluateSuspension, recordAbuseSignal } from "../abuse";
 import type { Env } from "../util";
 import {
   GLOBAL_BUCKET,
+  GRADING_BUDGET_MS,
   RATE_WINDOW_SECONDS,
-  RUNNING_STALE_SECONDS,
   STORE_CODE_CHARS,
   STORE_OUTPUT_CHARS,
   STORE_STDIN_CHARS,
@@ -24,6 +24,7 @@ import {
   utcDay,
 } from "./config";
 import { reply, type LabUser } from "./http";
+import { runTimeoutBudgetMs } from "./runner";
 
 export { runOnRunner } from "./runner";
 export type { LabUser } from "./http";
@@ -38,6 +39,17 @@ export interface Reservation {
 }
 
 export type ReserveResult = { ok: true; reservation: Reservation; plan: Plan } | { ok: false; response: Response };
+
+/**
+ * A 'running' reservation older than this no longer counts toward the concurrency cap. It is the
+ * longest one reserved job can legitimately take: a graded lesson run or challenge submission
+ * starts no test after GRADING_BUDGET_MS, and the test started last may wait for one full runner
+ * call (runTimeoutBudgetMs at the ceiling limits), about 175 s in all. A shorter window let a
+ * learner start more graded jobs in parallel than RUN_MAX_CONCURRENT allows. The trade-off: a
+ * reservation leaked by a request that died before settling (worker crash, client gone) blocks
+ * one of that user's concurrency slots for at most this long.
+ */
+export const RUNNING_STALE_SECONDS = Math.ceil((GRADING_BUDGET_MS + runTimeoutBudgetMs(undefined)) / 1000);
 
 /** Outcomes whose reserved units are given back. */
 const REFUNDED: ReadonlySet<RunStatus | "rejected"> = new Set(["internal_error", "unsupported", "rejected"]);

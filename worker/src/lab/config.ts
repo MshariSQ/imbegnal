@@ -26,8 +26,12 @@ export const SNIPPET_TITLE_CHARS = 80;
 
 export const GLOBAL_BUCKET = "_global"; // lab_usage row that counts every user's runs
 
-/** A 'running' reservation older than this no longer counts toward concurrency. */
-export const RUNNING_STALE_SECONDS = 60;
+/**
+ * Wall-clock budget for the tests of ONE reservation: a graded lesson run (gradeLab) or a
+ * challenge submission (graders/engine gradeTests). No further test is started after it, so a
+ * reservation lasts at most this plus one runner call (see RUNNING_STALE_SECONDS in execute.ts).
+ */
+export const GRADING_BUDGET_MS = 90_000;
 export const RATE_WINDOW_SECONDS = 60;
 
 /** Parses a positive integer env value; anything else falls back to the default. */

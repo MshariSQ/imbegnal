@@ -13,11 +13,15 @@ import type { GradeResult, GradeTestResult } from "../../../shared/api";
 import type { LangId } from "../../../shared/languages";
 import { matchOutput } from "../../../shared/match";
 import { RUNNER_DEFAULTS, type RunLimits, type RunResult, type RunStatus } from "../../../shared/protocol";
+import { GRADING_BUDGET_MS } from "../lab/config";
 
 /** Literal marker in a harness template that receives the learner's code. */
 export const CODE_SENTINEL = "{{CODE}}";
-/** Wall-clock budget for all tests of one submission (ms); later tests are skipped as failed. */
-export const DEFAULT_BUDGET_MS = 90_000;
+/**
+ * Wall-clock budget for all tests of one submission (ms); later tests are skipped as failed.
+ * Shared with graded lesson runs: it bounds how long a quota reservation lasts.
+ */
+export const DEFAULT_BUDGET_MS = GRADING_BUDGET_MS;
 /** Max characters of expected/actual echoed for the first failing visible test. */
 const SHOWN_CHARS = 2_000;
 /** Max characters of any stream returned to the learner. */
