@@ -1,7 +1,7 @@
 // IMBEGNAL API — Cloudflare Worker + D1.
 // Routes: auth (GitHub, Google, email), profile, roadmap progress, bookmarks,
 // study-state sync and the AI tutor. Shared helpers live in util.ts.
-import { type Env, NO_STORE, corsHeaders, getCookie, getUser, isValidId, json, readJson, redirectWithToken } from "./util";
+import { type Env, NO_STORE, corsHeaders, getCookie, getUser, isValidId, json, parseStateCookie, readJson, redirectWithToken, stateCookieValue } from "./util";
 import { handleLogin, handleRegister } from "./auth-email";
 import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
 import { handleStateGet, handleStatePut } from "./state";
@@ -79,8 +79,11 @@ async function handleBadge(env: Env): Promise<Response> {
 }
 
 // ── GET /api/auth/github ──────────────────────────────────────────────────────
-function handleAuthGitHub(env: Env): Response {
+function handleAuthGitHub(req: Request, env: Env): Response {
   const state = crypto.randomUUID();
+  // Optional login nonce from the site (?nonce=). A malformed one is ignored, not
+  // an error: the flow then simply returns no nonce and the site refuses the token.
+  const nonce = new URL(req.url).searchParams.get("nonce");
   const params = new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
     redirect_uri: `${env.WORKER_URL}/api/auth/callback`,
@@ -88,12 +91,13 @@ function handleAuthGitHub(env: Env): Response {
     state,
   });
   // The state round-trips through an HttpOnly cookie on the worker origin so
-  // the callback can prove the flow started here (CSRF protection).
+  // the callback can prove the flow started here (CSRF protection). The login
+  // nonce rides along in the same cookie: "<state>.<nonce>".
   return new Response(null, {
     status: 302,
     headers: {
       Location: `https://github.com/login/oauth/authorize?${params}`,
-      "Set-Cookie": `sf_oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
+      "Set-Cookie": `sf_oauth_state=${stateCookieValue(state, nonce)}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
       "Cache-Control": "no-store",
     },
   });
@@ -104,7 +108,8 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const cookieState = getCookie(req, "sf_oauth_state");
+  // The nonce comes ONLY from the cookie set by /api/auth/github, never from this URL.
+  const { state: cookieState, nonce } = parseStateCookie(getCookie(req, "sf_oauth_state"));
   const clearState = `sf_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=0`;
 
   const fail = (reason: string) => {
@@ -153,7 +158,8 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
     return redirectWithToken(
       { sub: String(ghUser.id), username: ghUser.login, name: ghUser.name || ghUser.login, avatar: ghUser.avatar_url },
       env,
-      { "Set-Cookie": clearState }
+      { "Set-Cookie": clearState },
+      nonce
     );
   } catch (e) {
     return fail(e instanceof Error ? e.message : String(e));
@@ -303,10 +309,10 @@ export default {
     if (pathname === "/api/health") return handleHealth();
     if (pathname === "/api/stats") return handleStats(env, origin);
     if (pathname === "/api/badge") return handleBadge(env);
-    if (pathname === "/api/auth/github") return handleAuthGitHub(env);
+    if (pathname === "/api/auth/github") return handleAuthGitHub(req, env);
     if (pathname === "/api/auth/callback") return handleAuthCallback(req, env);
     if (pathname === "/api/auth/me") return handleMe(req, env, origin);
-    if (pathname === "/api/auth/google") return handleGoogleStart(env, origin);
+    if (pathname === "/api/auth/google") return handleGoogleStart(req, env, origin);
     if (pathname === "/api/auth/google/callback") return handleGoogleCallback(req, env);
     if (pathname === "/api/auth/register" && req.method === "POST") return handleRegister(req, env, origin);
     if (pathname === "/api/auth/login" && req.method === "POST") return handleLogin(req, env, origin);

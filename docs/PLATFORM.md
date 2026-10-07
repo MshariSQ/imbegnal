@@ -27,6 +27,15 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   (`localStorage`). When signed in, `lib/sync.ts` merges with the server copy
   (union of completions, newest note wins, XP derived from per-lesson records so
   merges never double-count) and pushes changes debounced.
+* **Sign-in**: GitHub and Google use the OAuth code flow on the Worker; the OAuth `state` round-trips
+  through an HttpOnly cookie. The Worker hands the JWT back in the URL fragment
+  (`/auth/callback/#token=...&nonce=...`). The `nonce` closes login CSRF on that last hop: the login
+  page creates a random per-tab nonce on click (`lib/auth-nonce.ts`, sessionStorage, 10 minutes, one
+  use) and sends it as `?nonce=` to `/api/auth/github` or `/api/auth/google`; the Worker keeps it in
+  the state cookie (`<state>.<nonce>`; a malformed nonce is ignored, not rejected) and echoes it only
+  from that cookie. The callback page saves the token only when the echoed nonce matches its own, so a
+  link carrying someone else's token (`#token=<attacker JWT>`) cannot sign a visitor in. Email/password
+  sign-in returns the token in a JSON response and is not affected.
 * **Theming**: semantic tokens in `app/globals.css` (`bg-surface`, `text-fg-muted`,
   `border-line`, …) flip on `<html data-theme>`. A tiny inline script applies the
   saved/system theme and RTL before first paint (no flash).
@@ -174,10 +183,10 @@ Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by t
 | `npx eslint .` | — | lint |
 | `npm run check:catalog` | — | `worker/src/generated/catalog.ts` matches the lesson/challenge data (`npm run gen:catalog` to refresh) |
 | `npm run test:unit` | host toolchains (optional) | contracts, output matching, curricula, canonical names, lessons; every lab and challenge reference solution is run against its tests on the host toolchains that exist (missing ones are skipped) |
-| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion |
+| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce |
 | `npm run test:runner` | Docker + `runner/image/build.sh slim` | the sandbox against a real Docker daemon: per-language Hello World, stdout/stderr, timeouts, memory, fork bombs, output floods, no network, no persistence, read-only root, uid, HMAC/replay |
 | `npm run test:e2e` | Docker, a runner image, `worker/node_modules`, Chromium | the real stack (runner + `wrangler dev` with local D1 and the real migrations + the exported site + Playwright): Hello World in Python/JS/Java/C/C++ through the UI, stdout vs stderr, infinite loop killed, network blocked, quota exhaustion message and refunds, lesson → "Try in Code Lab" → starter code → pass → XP, challenge solve → points |
-| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the instructor dashboard; English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
+| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification, the instructor dashboard and the sign-in callback (login nonce); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
 
 `npm run test:e2e` builds the site with `NEXT_PUBLIC_API_URL=http://127.0.0.1:8787`, starts everything on loopback
 (site 4173, Worker 8787, runner 4242) with throw-away secrets and a temporary D1, and tears it down afterwards.
@@ -240,6 +249,17 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
 ## Known gaps / next steps
 - Stripe billing, email verification and password reset (email auth currently has
   no verification — fine for progress sync, add before paid features).
+- Login CSRF, residual window while production runs the previous Worker (frontend-only mode): that Worker
+  cannot echo the login nonce, so when the API is positively identified as the old one (`GET /api/state`
+  answers 404, `getApiLevel()` in `lib/capabilities.ts`) the callback page accepts a fragment **without** a
+  nonce, but only in a tab that has just started a sign-in itself (it holds a stored nonce under 10 minutes
+  old, which the check consumes). A crafted `/auth/callback/#token=<attacker JWT>` link opened in a fresh tab
+  is refused. What remains: a victim who has clicked "Continue with GitHub/Google" and, within those 10
+  minutes and in that same tab, follows such a link instead of completing their own sign-in. Trade-off: under
+  the old Worker a sign-in that returns in a different tab or browser (for example a mobile hand-off through
+  the GitHub app) is refused, exactly as under the new Worker. A fragment that carries a nonce is always
+  checked, and when the API is the new one or its generation cannot be determined, a missing nonce is
+  refused. The window closes as soon as the new Worker is deployed; no site change is needed then.
 - Rate limiting is per-isolate (per IP: 60 requests/min, 10/min on `/api/auth/*`; override with the
   `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_AUTH_PER_MIN` variables); move to a Durable Object or Cloudflare Rate
   Limiting rules before large launches.

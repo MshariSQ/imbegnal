@@ -12,8 +12,9 @@ export const getStats = () => apiFetch("/api/stats");
 export const getMe = (token: string) => apiFetch("/api/auth/me", undefined, token);
 export const getUserProfile = (username: string) => apiFetch(`/api/users/${username}`);
 
-export function getLoginUrl(): string {
-  return `${API}/api/auth/github`;
+/** GitHub sign-in start URL. Pass the tab's login nonce (lib/auth-nonce.ts); the Worker echoes it on success. */
+export function getLoginUrl(nonce?: string | null): string {
+  return `${API}/api/auth/github${nonce ? `?nonce=${encodeURIComponent(nonce)}` : ""}`;
 }
 
 // ── Progress ──────────────────────────────────────────────────────────────────
@@ -58,8 +59,9 @@ export const loginWithEmail = (email: string, password: string) =>
 export const registerWithEmail = (name: string, email: string, password: string) =>
   postJson<{ token: string }>("/api/auth/register", { name, email, password });
 
-export function getGoogleLoginUrl(): string {
-  return `${API}/api/auth/google`;
+/** Google sign-in start URL; same nonce contract as getLoginUrl. */
+export function getGoogleLoginUrl(nonce?: string | null): string {
+  return `${API}/api/auth/google${nonce ? `?nonce=${encodeURIComponent(nonce)}` : ""}`;
 }
 
 // ── Study state sync (progress, notes, streak) ────────────────────────────────

@@ -1,7 +1,8 @@
 // "Continue with Google" — OAuth 2.0 authorization-code flow.
 // Enabled only when GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are configured.
-// Mirrors the GitHub flow: CSRF state round-trips through an HttpOnly cookie.
-import { type Env, getCookie, json, redirectWithToken, uniqueUsername } from "./util";
+// Mirrors the GitHub flow: CSRF state round-trips through an HttpOnly cookie,
+// together with the optional login nonce ("<state>.<nonce>", see util.ts).
+import { type Env, getCookie, json, parseStateCookie, redirectWithToken, stateCookieValue, uniqueUsername } from "./util";
 
 const STATE_COOKIE = "imb_google_state";
 
@@ -9,9 +10,11 @@ function redirectUri(env: Env) {
   return `${env.WORKER_URL}/api/auth/google/callback`;
 }
 
-export function handleGoogleStart(env: Env, origin: string): Response {
+export function handleGoogleStart(req: Request, env: Env, origin: string): Response {
   if (!env.GOOGLE_CLIENT_ID) return json({ error: "google_disabled" }, 404, origin);
   const state = crypto.randomUUID();
+  // Malformed nonces are ignored (the site then refuses the returned token).
+  const nonce = new URL(req.url).searchParams.get("nonce");
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID,
     redirect_uri: redirectUri(env),
@@ -24,7 +27,7 @@ export function handleGoogleStart(env: Env, origin: string): Response {
     status: 302,
     headers: {
       Location: `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-      "Set-Cookie": `${STATE_COOKIE}=${state}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
+      "Set-Cookie": `${STATE_COOKIE}=${stateCookieValue(state, nonce)}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
       "Cache-Control": "no-store",
     },
   });
@@ -45,7 +48,9 @@ export async function handleGoogleCallback(req: Request, env: Env): Promise<Resp
 
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return fail("disabled");
   if (!code) return fail("missing code");
-  if (!state || state !== getCookie(req, STATE_COOKIE)) return fail("state mismatch");
+  // The nonce comes ONLY from the cookie set by /api/auth/google, never from this URL.
+  const { state: cookieState, nonce } = parseStateCookie(getCookie(req, STATE_COOKIE));
+  if (!state || !cookieState || state !== cookieState) return fail("state mismatch");
 
   try {
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
@@ -80,7 +85,7 @@ export async function handleGoogleCallback(req: Request, env: Env): Promise<Resp
          email = excluded.email, last_login = CURRENT_TIMESTAMP`
     ).bind(sub, username, name, profile.picture ?? "", profile.email_verified ? profile.email ?? "" : "").run();
 
-    return redirectWithToken({ sub, username, name, avatar: profile.picture ?? "" }, env, { "Set-Cookie": clearState });
+    return redirectWithToken({ sub, username, name, avatar: profile.picture ?? "" }, env, { "Set-Cookie": clearState }, nonce);
   } catch (e) {
     return fail(e instanceof Error ? e.message : String(e));
   }
