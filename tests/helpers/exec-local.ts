@@ -9,7 +9,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { getLanguage, type LangId } from "../../shared/languages";
 
@@ -29,6 +29,16 @@ export interface LocalResult {
  */
 const GOCACHE = join(tmpdir(), "imb-local-gocache");
 
+/**
+ * Programs run with HOME set to their temp dir. rustup locates its toolchains and default
+ * through RUSTUP_HOME / CARGO_HOME, which default to ~/.rustup and ~/.cargo of the REAL home:
+ * pin them, or every rustc call fails with "no default is configured" (seen on GitHub CI).
+ */
+const TOOLCHAIN_HOMES = {
+  RUSTUP_HOME: process.env.RUSTUP_HOME || join(homedir(), ".rustup"),
+  CARGO_HOME: process.env.CARGO_HOME || join(homedir(), ".cargo"),
+};
+
 const working = new Map<string, boolean>();
 
 /**
@@ -39,9 +49,17 @@ function has(cmd: string): boolean {
   const cached = working.get(cmd);
   if (cached !== undefined) return cached;
   const versionArgs = cmd === "go" ? ["version"] : ["--version"];
-  const ok =
-    spawnSync("sh", ["-c", `command -v ${cmd}`], { encoding: "utf8" }).status === 0 &&
-    spawnSync(cmd, versionArgs, { encoding: "utf8", timeout: 20_000 }).status === 0;
+  // Probe with the same kind of environment runLocal uses (a throw-away HOME), so a toolchain
+  // that only works with the real HOME is caught here instead of failing every test.
+  const probeHome = mkdtempSync(join(tmpdir(), "imb-probe-"));
+  let ok = false;
+  try {
+    ok =
+      spawnSync("sh", ["-c", `command -v ${cmd}`], { encoding: "utf8" }).status === 0 &&
+      spawnSync(cmd, versionArgs, { encoding: "utf8", timeout: 20_000, env: { ...process.env, ...TOOLCHAIN_HOMES, HOME: probeHome } }).status === 0;
+  } finally {
+    rmSync(probeHome, { recursive: true, force: true });
+  }
   working.set(cmd, ok);
   return ok;
 }
@@ -72,7 +90,7 @@ export function runLocal(lang: LangId, code: string, stdin = "", timeoutMs = 20_
   const dir = mkdtempSync(join(tmpdir(), "imb-local-"));
   try {
     writeFileSync(join(dir, spec.filename), code);
-    const env = { ...process.env, HOME: dir, GOCACHE, GOFLAGS: "-mod=mod" };
+    const env = { ...process.env, ...TOOLCHAIN_HOMES, HOME: dir, GOCACHE, GOFLAGS: "-mod=mod" };
     if (r.compile) {
       const [cmd, ...args] = r.compile(spec.filename);
       const c = spawnSync(cmd, args, { cwd: dir, encoding: "utf8", timeout: timeoutMs, env });
