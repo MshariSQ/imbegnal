@@ -175,4 +175,148 @@ for (let i = 0; i < customers; i++) {
     tags: ["pricing", "tiers", "finops", "float"],
     addedAt: "2026-10-07",
   },
+  {
+    id: "os-clock-faults",
+    track: "operating-systems",
+    topic: "memory-management",
+    title: { en: "Clock: A Second Chance for Pages", ar: "ساعة الصفحات: فرصة ثانية" },
+    summary: {
+      en: "Implement the Clock (second-chance) page replacement policy that real kernels use to approximate LRU, and count its page faults.",
+      ar: "نفّذ سياسة استبدال الصفحات Clock (الفرصة الثانية) التي تستخدمها الأنظمة الحقيقية لتقريب LRU، واحسب أخطاء الصفحات فيها.",
+    },
+    description: {
+      en: `## The story
+
+LRU is the ideal page replacement policy for programs with locality, but updating an exact "last used" timestamp on **every memory access** would make the CPU crawl. Real kernels settle for a cheap approximation: the **Clock** algorithm, also called **second chance**.
+
+The hardware sets one **reference bit** per page whenever the page is touched. The OS arranges the frames in a circle and keeps a **hand** pointing at the next candidate for eviction. A page that was used since the hand last passed gets a second chance instead of being thrown out.
+
+## The task
+
+Write a function that returns the number of page faults a Clock-managed memory suffers for a reference string.
+
+- **Python:** \`clock_faults(k, refs)\`
+- **JavaScript:** \`clockFaults(k, refs)\`
+
+\`k\` is the number of frames (an integer, at least 1) and \`refs\` is the list of page numbers referenced in order (integers, at least 0; it may be empty). Return an integer. The tests call your function for you: just define it, do not read input or print anything.
+
+## The rules
+
+Memory starts **empty**: \`k\` empty frames, all reference bits 0, and the hand on frame 0.
+
+For every reference, in order:
+
+1. **Hit** (the page is in a frame): set that frame's reference bit to 1. The hand does **not** move.
+2. **Fault** (the page is not in memory): count one fault, then repeat the following until the page is placed:
+   - If the frame under the hand is **empty** or its reference bit is **0**: put the new page there, set its reference bit to 1, advance the hand to the next frame (wrapping around) and stop.
+   - Otherwise (the bit is 1): clear the bit to 0 and advance the hand. This is the second chance.
+
+The loop always ends: after at most one full turn every bit is 0.
+
+## Example
+
+For \`k = 3\` and the reference string \`1 2 3 4 1 2 5 1 2 3 4 5\` the tests feed your function this input (first line \`k\`, then the references):
+
+\`\`\`text
+3
+1 2 3 4 1 2 5 1 2 3 4 5
+\`\`\`
+
+The expected result is \`9\`. Replaying the start: pages 1, 2 and 3 fill the frames (3 faults) and the hand wraps to frame 0. Reference 4 faults and clears the bits of 1, 2 and 3 while the hand goes around once, then evicts page 1 from frame 0. Reference 1 then evicts page 2 (its bit is already 0), and so on.`,
+      ar: `## القصة
+
+LRU هي سياسة الاستبدال المثالية للبرامج ذات الترابط المكاني (locality)، لكن تحديث طابع زمني دقيق لـ"آخر استخدام" عند **كل وصول للذاكرة** سيجعل المعالج يزحف. لذلك تكتفي الأنظمة الحقيقية بتقريب رخيص هو خوارزمية **Clock** وتسمى أيضاً **الفرصة الثانية (second chance)**.
+
+تضبط العتاد **بتّ مرجع (reference bit)** لكل صفحة كلما لُمست. ويرتّب النظام الإطارات في دائرة ويحتفظ بـ**مؤشر** يشير إلى المرشّح التالي للطرد. والصفحة التي استُخدمت منذ مرور المؤشر الأخير تنال فرصة ثانية بدل أن تُطرد.
+
+## المطلوب
+
+اكتب دالة تعيد عدد أخطاء الصفحات التي تعانيها ذاكرة تُدار بـ Clock لسلسلة مراجع معيّنة.
+
+- **Python:** ‏\`clock_faults(k, refs)\`
+- **JavaScript:** ‏\`clockFaults(k, refs)\`
+
+\`k\` عدد الإطارات (عدد صحيح، 1 على الأقل) و\`refs\` قائمة أرقام الصفحات المرجوعة بالترتيب (أعداد صحيحة، 0 على الأقل؛ وقد تكون فارغة). أعد عدداً صحيحاً. الاختبارات تستدعي دالتك بنفسها: عرّفها فقط، ولا تقرأ مدخلاً ولا تطبع شيئاً.
+
+## القواعد
+
+تبدأ الذاكرة **فارغة**: \`k\` إطاراً فارغاً وكل بتّات المرجع 0 والمؤشر عند الإطار 0.
+
+لكل مرجع، بالترتيب:
+
+1. **إصابة (hit)** (الصفحة في أحد الإطارات): اضبط بتّ مرجع ذلك الإطار على 1. المؤشر **لا** يتحرك.
+2. **خطأ (fault)** (الصفحة ليست في الذاكرة): احسب خطأً واحداً، ثم كرّر ما يلي حتى توضع الصفحة:
+   - إن كان الإطار تحت المؤشر **فارغاً** أو بتّ مرجعه **0**: ضع الصفحة الجديدة فيه واضبط بتّها على 1 وحرّك المؤشر إلى الإطار التالي (مع الالتفاف) وتوقف.
+   - وإلا (البتّ 1): أعد البتّ إلى 0 وحرّك المؤشر. هذه هي الفرصة الثانية.
+
+تنتهي الحلقة دائماً: بعد دورة كاملة على الأكثر تصبح كل البتّات 0.
+
+## مثال
+
+من أجل \`k = 3\` وسلسلة المراجع \`1 2 3 4 1 2 5 1 2 3 4 5\` تعطي الاختبارات دالتك هذا المدخل (السطر الأول \`k\` ثم المراجع):
+
+\`\`\`text
+3
+1 2 3 4 1 2 5 1 2 3 4 5
+\`\`\`
+
+النتيجة المتوقعة \`9\`. لنعد تتبّع البداية: الصفحات 1 و2 و3 تملأ الإطارات (3 أخطاء) ويلتف المؤشر إلى الإطار 0. المرجع 4 يسبب خطأً ويمسح بتّات 1 و2 و3 أثناء دوران المؤشر دورة كاملة، ثم يطرد الصفحة 1 من الإطار 0. بعدها المرجع 1 يطرد الصفحة 2 (بتّها 0 أصلاً)، وهكذا.`,
+    },
+    difficulty: 1,
+    points: 50,
+    estMinutes: 20,
+    kind: "code",
+    lang: "python",
+    allowedLangs: ["python", "javascript"],
+    starterCode: {
+      python: `def clock_faults(k, refs):
+    """Return the number of page faults of the Clock (second-chance) policy.
+
+    k    -- number of frames (an integer >= 1)
+    refs -- list of page numbers (integers >= 0), possibly empty
+    """
+    # Your turn: simulate the frames, their reference bits and the hand.
+    return 0
+`,
+      javascript: `/**
+ * Return the number of page faults of the Clock (second-chance) policy.
+ *
+ * @param {number} k      number of frames (an integer >= 1)
+ * @param {number[]} refs page numbers (integers >= 0), possibly empty
+ * @returns {number}
+ */
+function clockFaults(k, refs) {
+  // Your turn: simulate the frames, their reference bits and the hand.
+  return 0;
+}
+`,
+    },
+    sampleInput: "3\n1 2 3 4 1 2 5 1 2 3 4 5\n",
+    hints: [
+      {
+        text: {
+          en: "Keep three things: a list of `k` frames (use `None` for an empty one), a parallel list of reference bits, and the hand position. A hit only sets the page's bit to 1; the hand does not move.",
+          ar: "احتفظ بثلاثة أشياء: قائمة من `k` إطاراً (استخدم `None` للإطار الفارغ)، وقائمة موازية لبتات المرجع، وموضع المؤشر. الإصابة تضبط بتّ الصفحة على 1 فقط، ولا يتحرك المؤشر.",
+        },
+        cost: 5,
+      },
+      {
+        text: {
+          en: "On a fault, loop: if the frame under the hand is empty or its bit is 0, replace it, set the new bit to 1 and advance the hand, then stop. Otherwise clear the bit to 0, advance the hand (wrap with `% k`) and look again.",
+          ar: "عند الخطأ كرّر: إن كان الإطار تحت المؤشر فارغاً أو بتّه 0 فاستبدله واضبط البتّ الجديد على 1 وحرّك المؤشر ثم توقف. وإلا فأعد البتّ إلى 0 وحرّك المؤشر (مع `% k` للالتفاف) وانظر مجدداً.",
+        },
+        cost: 6,
+      },
+      {
+        text: {
+          en: "Do not test emptiness with `if not frames[hand]`: page number 0 is valid and falsy. Compare with `None` explicitly.",
+          ar: "لا تفحص الفراغ بـ `if not frames[hand]`: رقم الصفحة 0 صالح لكنه يُعدّ قيمة خاطئة. قارن مع `None` صراحةً.",
+        },
+        cost: 9,
+      },
+    ],
+    lessons: ["operating-systems/memory-management"],
+    tags: ["page-replacement", "clock", "second-chance", "simulation"],
+    addedAt: "2026-10-07",
+  },
 ];

@@ -78,4 +78,50 @@ for (let i = 0; i < customers; i++) {
 `,
     },
   },
+  {
+    id: "os-clock-faults",
+    solutions: {
+      python: `def clock_faults(k, refs):
+    frames = [None] * k  # page held by each frame
+    bits = [0] * k       # reference bits
+    hand = 0
+    faults = 0
+    for page in refs:
+        if page in frames:
+            bits[frames.index(page)] = 1  # a hit only sets the bit; the hand stays
+            continue
+        faults += 1
+        while frames[hand] is not None and bits[hand] == 1:
+            bits[hand] = 0                # second chance: clear the bit and move on
+            hand = (hand + 1) % k
+        frames[hand] = page
+        bits[hand] = 1
+        hand = (hand + 1) % k
+    return faults
+`,
+      javascript: `function clockFaults(k, refs) {
+  const frames = new Array(k).fill(null); // page held by each frame
+  const bits = new Array(k).fill(0); // reference bits
+  let hand = 0;
+  let faults = 0;
+  for (const page of refs) {
+    const at = frames.indexOf(page);
+    if (at !== -1) {
+      bits[at] = 1; // a hit only sets the bit; the hand stays
+      continue;
+    }
+    faults += 1;
+    while (frames[hand] !== null && bits[hand] === 1) {
+      bits[hand] = 0; // second chance: clear the bit and move on
+      hand = (hand + 1) % k;
+    }
+    frames[hand] = page;
+    bits[hand] = 1;
+    hand = (hand + 1) % k;
+  }
+  return faults;
+}
+`,
+    },
+  },
 ];
