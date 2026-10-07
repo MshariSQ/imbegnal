@@ -48,3 +48,7 @@ next-env.d.ts
 node_modules
 .wrangler
 .dev.vars
+
+# Playwright screenshots/debug output from the E2E suites
+tests/e2e/artifacts/
+tests/e2e/codelab/artifacts/
