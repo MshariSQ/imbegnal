@@ -1,13 +1,28 @@
 // Self-serve account deletion (privacy right to erasure) and anonymous usage events.
 import { type Env, NO_STORE, corsHeaders, getUser, json } from "./util";
 import { labAccountDeleteStatements } from "./lab/account-data";
+import { isSuspended } from "./abuse";
+import { audit } from "./audit";
 
 // ── DELETE /api/account ───────────────────────────────────────────────────────
-// Removes the user and everything keyed to them in one atomic batch.
+// Removes the user and everything keyed to them in one atomic batch, except the little
+// enforcement state that must survive a "delete and sign in again" (see lab/account-data.ts).
+// A suspended account cannot delete itself until the suspension ends: otherwise deleting and
+// signing in again (same GitHub/Google id) would lift the suspension. Operators can still
+// erase it on request.
 export async function handleAccountDelete(req: Request, env: Env, origin: string): Promise<Response> {
   const user = await getUser(req, env);
   if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
   const id = user.sub;
+  if (await isSuspended(env, id)) {
+    return json(
+      { error: "account_suspended", message: "This account is suspended. You can delete it once the suspension ends, or ask us to." },
+      409,
+      origin,
+      NO_STORE,
+    );
+  }
+  await audit(env, { userId: id, action: "account.delete", detail: "self-serve erasure" });
   await env.DB.batch([
     env.DB.prepare("DELETE FROM user_state WHERE github_id = ?").bind(id),
     env.DB.prepare("DELETE FROM ai_usage WHERE github_id = ?").bind(id),

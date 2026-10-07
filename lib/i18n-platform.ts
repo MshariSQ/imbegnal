@@ -101,6 +101,7 @@ export const platformEn = {
     deleteLegacyLink: "open a request on GitHub",
     deleteAccount: "Delete account",
     deleteConfirm: "Delete your account and all synced data? This can't be undone. Progress saved on this device is kept.",
+    deleteSuspended: "This account is suspended right now, so it can't be deleted yet. Try again when the suspension ends, or ask us to delete it.",
     viewAll: "View all",
   },
   learn: {
@@ -330,6 +331,7 @@ export const platformAr: PlatformTx = {
     deleteLegacyLink: "افتح طلباً على GitHub",
     deleteAccount: "حذف الحساب",
     deleteConfirm: "هل تريد حذف حسابك وكل بياناتك المتزامنة؟ لا يمكن التراجع عن ذلك. يبقى التقدم المحفوظ على هذا الجهاز.",
+    deleteSuspended: "هذا الحساب موقوف حاليًا، لذلك لا يمكن حذفه الآن. حاول مرة أخرى بعد انتهاء الإيقاف، أو اطلب منا حذفه.",
     viewAll: "عرض الكل",
   },
   learn: {
