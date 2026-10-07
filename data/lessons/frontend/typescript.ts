@@ -269,6 +269,122 @@ Union types aren't academic — this exact lesson platform uses them constantly.
       },
     },
     {
+      type: "lab",
+      id: "typed-scores",
+      lang: "typescript",
+      prompt: {
+        en: `**Let the types do the checking.** Define the types, then the function. Each input line is \`name:score\` (score is an integer 0-100, names contain no colon).
+
+Implement \`summarize(entries: Entry[]): Summary\` where \`Summary\` has \`best\` (the entry with the highest score; on a tie the one that appears first), \`average\` (mean score) and \`passed\` (how many entries have a score of 60 or more). Print three lines:
+
+\`\`\`
+best: <name> (<score>)
+average: <mean with 1 decimal>
+passed: <n>/<total>
+\`\`\`
+
+For empty input print \`no entries\`.`,
+        ar: `**دع الأنواع تتولى الفحص.** عرّف الأنواع ثم الدالة. كل سطر دخل بالصيغة \`name:score\` (الدرجة عدد صحيح من 0 إلى 100 ولا يحتوي الاسم نقطتين رأسيتين).
+
+نفّذ \`summarize(entries: Entry[]): Summary\` حيث يحتوي \`Summary\` على \`best\` (السجل ذو أعلى درجة؛ وعند التعادل الذي يظهر أولاً) و\`average\` (متوسط الدرجات) و\`passed\` (عدد السجلات التي درجتها 60 فأكثر). اطبع ثلاثة أسطر:
+
+\`\`\`
+best: <name> (<score>)
+average: <المتوسط بخانة عشرية واحدة>
+passed: <n>/<total>
+\`\`\`
+
+وللدخل الفارغ اطبع \`no entries\`.`,
+      },
+      starterCode: `import * as fs from "node:fs";
+
+// TODO 1: describe a line of input
+interface Entry {
+  name: string;
+}
+
+// TODO 2: describe the result (best entry, average, passed count)
+interface Summary {
+  best: Entry;
+}
+
+function summarize(entries: Entry[]): Summary {
+  // TODO 3: find the best entry (first one wins ties), the mean score and how many scores are >= 60
+  return { best: entries[0] };
+}
+
+const entries: Entry[] = fs
+  .readFileSync(0, "utf8")
+  .split("\\n")
+  .filter((line) => line.trim() !== "")
+  .map((line) => {
+    const [name, score] = line.split(":");
+    return { name, score: Number(score) } as unknown as Entry;
+  });
+
+if (entries.length === 0) {
+  console.log("no entries");
+} else {
+  const s = summarize(entries);
+  console.log("best: " + s.best.name);
+}
+`,
+      solution: `import * as fs from "node:fs";
+
+interface Entry {
+  name: string;
+  score: number;
+}
+
+interface Summary {
+  best: Entry;
+  average: number;
+  passed: number;
+}
+
+function summarize(entries: Entry[]): Summary {
+  let best = entries[0];
+  let total = 0;
+  let passed = 0;
+  for (const entry of entries) {
+    if (entry.score > best.score) best = entry;
+    total += entry.score;
+    if (entry.score >= 60) passed++;
+  }
+  return { best, average: total / entries.length, passed };
+}
+
+const entries: Entry[] = fs
+  .readFileSync(0, "utf8")
+  .split("\\n")
+  .filter((line) => line.trim() !== "")
+  .map((line) => {
+    const [name, score] = line.split(":");
+    return { name, score: Number(score) };
+  });
+
+if (entries.length === 0) {
+  console.log("no entries");
+} else {
+  const s = summarize(entries);
+  console.log("best: " + s.best.name + " (" + s.best.score + ")");
+  console.log("average: " + s.average.toFixed(1));
+  console.log("passed: " + s.passed + "/" + entries.length);
+}
+`,
+      hints: [
+        { en: "`interface Entry { name: string; score: number }` and give `Summary` the fields `best`, `average` and `passed`.", ar: "`interface Entry { name: string; score: number }` وأعطِ `Summary` الحقول `best` و`average` و`passed`." },
+        { en: "Keep `best` as the first entry and replace it only when a score is strictly higher: that makes the first one win ties.", ar: "أبقِ `best` أول سجل واستبدله فقط حين تكون الدرجة أعلى تماماً: هكذا يفوز الأول عند التعادل." },
+        { en: "Once `Entry` has a `score`, the `as unknown as Entry` cast in the reader is no longer needed: remove it and let the compiler check the shape.", ar: "حالما يصبح لـ `Entry` حقل `score` لم تعد حاجة إلى التحويل `as unknown as Entry` في القارئ: احذفه ودع المترجم يفحص الشكل." },
+      ],
+      tests: [
+        { name: { en: "Best, average and pass count", ar: "الأفضل والمتوسط وعدد الناجحين" }, stdin: "amal:90\nbilal:55\nchen:72\n", expected: "best: amal (90)\naverage: 72.3\npassed: 2/3" },
+        { name: { en: "The first entry wins a tie", ar: "السجل الأول يفوز عند التعادل" }, stdin: "x:80\ny:80\nz:10\n", expected: "best: x (80)\naverage: 56.7\npassed: 2/3" },
+        { name: { en: "A single entry at the pass mark", ar: "سجل واحد عند حدّ النجاح" }, stdin: "solo:60\n", expected: "best: solo (60)\naverage: 60.0\npassed: 1/1" },
+        { name: { en: "Empty input", ar: "دخل فارغ" }, expected: "no entries" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

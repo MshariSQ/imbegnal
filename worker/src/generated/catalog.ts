@@ -122,12 +122,20 @@ export const catalog: Catalog = {
     {
       "id": "networking",
       "title": "Networking",
-      "lessons": []
+      "lessons": [
+        "osi-tcpip",
+        "ip-subnetting",
+        "transport-tcp-udp"
+      ]
     },
     {
       "id": "operating-systems",
       "title": "Operating Systems",
-      "lessons": []
+      "lessons": [
+        "processes-threads",
+        "cpu-scheduling",
+        "memory-management"
+      ]
     },
     {
       "id": "data-structures-algorithms",
@@ -145,5 +153,1233 @@ export const catalog: Catalog = {
       "lessons": []
     }
   ],
-  "labs": []
+  "labs": [
+    {
+      "ref": "cyber-security/linux/permission-string",
+      "track": "cyber-security",
+      "lesson": "linux",
+      "id": "permission-string",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Typical modes",
+          "stdin": "754\n644\n",
+          "expected": "754 rwxr-xr--\n644 rw-r--r--",
+          "mode": "trim"
+        },
+        {
+          "name": "Extremes: 000 and 777",
+          "stdin": "000\n777\n",
+          "expected": "000 ---------\n777 rwxrwxrwx",
+          "mode": "trim"
+        },
+        {
+          "name": "Private key mode and executable script",
+          "stdin": "600\n755\n",
+          "expected": "600 rw-------\n755 rwxr-xr-x",
+          "mode": "trim"
+        },
+        {
+          "name": "Rejects malformed modes",
+          "stdin": "789\n75\n7777\nrwx\n644\n",
+          "expected": "789 invalid\n75 invalid\n7777 invalid\nrwx invalid\n644 rw-r--r--",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "cyber-security/python/failed-logins",
+      "track": "cyber-security",
+      "lesson": "python",
+      "id": "failed-logins",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Flags the repeat offender",
+          "stdin": "3\nOct 05 03:12:01 sshd[311]: Failed password for root from 203.0.113.9 port 51022\nOct 05 03:12:03 sshd[311]: Failed password for admin from 203.0.113.9 port 51024\nOct 05 03:12:05 sshd[311]: Failed password for root from 203.0.113.9 port 51026\nOct 05 03:14:40 sshd[402]: Accepted password for alice from 198.51.100.7 port 40110\nOct 05 03:15:12 sshd[455]: Failed password for bob from 198.51.100.23 port 40300\n",
+          "expected": "203.0.113.9 3",
+          "mode": "trim"
+        },
+        {
+          "name": "Counts invalid users and sorts by count, then IP",
+          "stdin": "2\nFailed password for invalid user oracle from 10.0.0.9 port 1\nFailed password for invalid user test from 10.0.0.9 port 2\nFailed password for root from 10.0.0.12 port 3\nFailed password for root from 10.0.0.12 port 4\nFailed password for root from 10.0.0.2 port 5\nFailed password for root from 10.0.0.2 port 6\nFailed password for root from 10.0.0.2 port 7\n",
+          "expected": "10.0.0.2 3\n10.0.0.12 2\n10.0.0.9 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Prints no suspects below the threshold",
+          "stdin": "5\nFailed password for root from 192.0.2.1 port 1\nFailed password for root from 192.0.2.1 port 2\nAccepted password for root from 192.0.2.1 port 3\n",
+          "expected": "no suspects",
+          "mode": "trim"
+        },
+        {
+          "name": "Handles a log with no failures",
+          "stdin": "1\nAccepted publickey for deploy from 192.0.2.50 port 22\nsession opened for user deploy\n",
+          "expected": "no suspects",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "artificial-intelligence/python-for-ai/min-max-scale",
+      "track": "artificial-intelligence",
+      "lesson": "python-for-ai",
+      "id": "min-max-scale",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Scales a small list",
+          "stdin": "10 20 30 40 50\n",
+          "expected": "0.000 0.250 0.500 0.750 1.000",
+          "mode": "trim"
+        },
+        {
+          "name": "Handles negatives and decimals",
+          "stdin": "-5 0 2.5 5\n",
+          "expected": "0.000 0.500 0.750 1.000",
+          "mode": "trim"
+        },
+        {
+          "name": "All values equal prints zeros",
+          "stdin": "7 7 7\n",
+          "expected": "0.000 0.000 0.000",
+          "mode": "trim"
+        },
+        {
+          "name": "A single value",
+          "stdin": "42\n",
+          "expected": "0.000",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "artificial-intelligence/math-for-ml/gradient-descent",
+      "track": "artificial-intelligence",
+      "lesson": "math-for-ml",
+      "id": "gradient-descent",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "One step from zero",
+          "stdin": "0 0.1 1\n",
+          "expected": "0.6000\n6.7600",
+          "mode": "trim"
+        },
+        {
+          "name": "Converges towards the minimum at w = 3",
+          "stdin": "0 0.1 10\n",
+          "expected": "2.6779\n1.1038",
+          "mode": "trim"
+        },
+        {
+          "name": "A learning rate of 0.5 jumps straight to the minimum",
+          "stdin": "10 0.5 1\n",
+          "expected": "3.0000\n1.0000",
+          "mode": "trim"
+        },
+        {
+          "name": "Too large a learning rate diverges",
+          "stdin": "0 1.1 4\n",
+          "expected": "-3.2208\n39.6984",
+          "mode": "trim"
+        },
+        {
+          "name": "Zero steps changes nothing",
+          "stdin": "5 0.1 0\n",
+          "expected": "5.0000\n5.0000",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "data-science/python-data/group-totals",
+      "track": "data-science",
+      "lesson": "python-data",
+      "id": "group-totals",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Groups and totals",
+          "stdin": "food,5.25\ntransport,12\nfood,7.25\n",
+          "expected": "food: 12.50 2\ntransport: 12.00 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Alphabetical output with many groups",
+          "stdin": "rent,900\nfood,80.5\nfun,20\nfood,19.5\nbooks,35.99\nbooks,4.01\n",
+          "expected": "books: 40.00 2\nfood: 100.00 2\nfun: 20.00 1\nrent: 900.00 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Single row",
+          "stdin": "misc,0.5\n",
+          "expected": "misc: 0.50 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "no data",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "data-science/sql-data-science/top-customers",
+      "track": "data-science",
+      "lesson": "sql-data-science",
+      "id": "top-customers",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Customers who spent at least 100",
+          "stdin": "100\n",
+          "expected": "Chen 750\nAmal 550\nBilal 120",
+          "mode": "trim"
+        },
+        {
+          "name": "A high threshold keeps only the biggest spender",
+          "stdin": "700\n",
+          "expected": "Chen 750",
+          "mode": "trim"
+        },
+        {
+          "name": "Threshold 0 lists everyone who ordered",
+          "stdin": "0\n",
+          "expected": "Chen 750\nAmal 550\nBilal 120\nDana 99",
+          "mode": "trim"
+        },
+        {
+          "name": "No customer reaches 5000",
+          "stdin": "5000\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "cloud-computing/networking-cloud/subnet-plan",
+      "track": "cloud-computing",
+      "lesson": "networking-cloud",
+      "id": "subnet-plan",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Four /18 subnets from a /16",
+          "stdin": "10.0.0.0/16\n4\n",
+          "expected": "10.0.0.0/18\n10.0.64.0/18\n10.0.128.0/18\n10.0.192.0/18",
+          "mode": "trim"
+        },
+        {
+          "name": "Three subnets need a /26 split of a /24",
+          "stdin": "192.168.1.0/24\n3\n",
+          "expected": "192.168.1.0/26\n192.168.1.64/26\n192.168.1.128/26",
+          "mode": "trim"
+        },
+        {
+          "name": "One subnet is the block itself",
+          "stdin": "172.16.0.0/12\n1\n",
+          "expected": "172.16.0.0/12",
+          "mode": "trim"
+        },
+        {
+          "name": "A /30 cannot hold 8 subnets",
+          "stdin": "192.168.0.0/30\n8\n",
+          "expected": "impossible",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "devops/linux-devops/log-summary",
+      "track": "devops",
+      "lesson": "linux-devops",
+      "id": "log-summary",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Counts each level",
+          "stdin": "INFO service started\nWARN disk at 80%\nERROR connection refused\nINFO request ok\nERROR timeout\nERROR timeout\n",
+          "expected": "INFO 2\nWARN 1\nERROR 3\nOTHER 0\nTOTAL 6",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown levels are OTHER, blank lines ignored",
+          "stdin": "DEBUG verbose\n\nINFO ok\nFATAL out of memory\n\n",
+          "expected": "INFO 1\nWARN 0\nERROR 0\nOTHER 2\nTOTAL 3",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input prints zeros",
+          "stdin": "",
+          "expected": "INFO 0\nWARN 0\nERROR 0\nOTHER 0\nTOTAL 0",
+          "mode": "trim"
+        },
+        {
+          "name": "A message that contains other level words",
+          "stdin": "INFO retry after ERROR 500\nWARN INFO banner changed\n",
+          "expected": "INFO 1\nWARN 1\nERROR 0\nOTHER 0\nTOTAL 2",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "frontend/javascript/top-words",
+      "track": "frontend",
+      "lesson": "javascript",
+      "id": "top-words",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Counts words case-insensitively",
+          "stdin": "The cat and the hat. THE END, and that's it!\n",
+          "expected": "the 3\nand 2\ncat 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties are broken alphabetically",
+          "stdin": "pear apple banana pear apple banana cherry\n",
+          "expected": "apple 2\nbanana 2\npear 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Fewer than three distinct words",
+          "stdin": "Go go GO\nstop\n",
+          "expected": "go 3\nstop 1",
+          "mode": "trim"
+        },
+        {
+          "name": "No words at all",
+          "stdin": "...  ---  !!!\n",
+          "expected": "no words",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "frontend/typescript/typed-scores",
+      "track": "frontend",
+      "lesson": "typescript",
+      "id": "typed-scores",
+      "lang": "typescript",
+      "tests": [
+        {
+          "name": "Best, average and pass count",
+          "stdin": "amal:90\nbilal:55\nchen:72\n",
+          "expected": "best: amal (90)\naverage: 72.3\npassed: 2/3",
+          "mode": "trim"
+        },
+        {
+          "name": "The first entry wins a tie",
+          "stdin": "x:80\ny:80\nz:10\n",
+          "expected": "best: x (80)\naverage: 56.7\npassed: 2/3",
+          "mode": "trim"
+        },
+        {
+          "name": "A single entry at the pass mark",
+          "stdin": "solo:60\n",
+          "expected": "best: solo (60)\naverage: 60.0\npassed: 1/1",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "no entries",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "backend/databases/discount-update",
+      "track": "backend",
+      "lesson": "databases",
+      "id": "discount-update",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Discounts the paper category only",
+          "stdin": "paper\n",
+          "expected": "Backpack 4999\nMarker 179\nNotebook 1799\nPen 225\nPencil case 1299\nStapler 899",
+          "mode": "trim"
+        },
+        {
+          "name": "Discounts the bags category",
+          "stdin": "bags\n",
+          "expected": "Backpack 4499\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1169\nStapler 899",
+          "mode": "trim"
+        },
+        {
+          "name": "A category with one product",
+          "stdin": "office\n",
+          "expected": "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 809",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown category changes nothing",
+          "stdin": "toys\n",
+          "expected": "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 899",
+          "mode": "trim"
+        },
+        {
+          "name": "SQL-injection text is treated as a plain value",
+          "stdin": "x' OR '1'='1\n",
+          "expected": "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 899",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "backend/apis-rest/validate-user",
+      "track": "backend",
+      "lesson": "apis-rest",
+      "id": "validate-user",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "A valid request and a missing name",
+          "stdin": "{\"name\":\"Amal\",\"email\":\"amal@example.com\",\"age\":30}\n{\"email\":\"a@b.co\"}\n",
+          "expected": "201\n400 name",
+          "mode": "trim"
+        },
+        {
+          "name": "Reports the first failing field in order",
+          "stdin": "{\"name\":\"  \",\"email\":\"bad\"}\n{\"name\":\"Sam\",\"email\":\"sam@nodot\"}\n{\"name\":\"Sam\",\"email\":\"@example.com\"}\n{\"name\":\"Sam\",\"email\":\"a@@b.co\"}\n",
+          "expected": "400 name\n400 email\n400 email\n400 email",
+          "mode": "trim"
+        },
+        {
+          "name": "Age is optional but strict",
+          "stdin": "{\"name\":\"Kid\",\"email\":\"k@x.io\",\"age\":12}\n{\"name\":\"Old\",\"email\":\"o@x.io\",\"age\":121}\n{\"name\":\"Str\",\"email\":\"s@x.io\",\"age\":\"30\"}\n{\"name\":\"Flt\",\"email\":\"f@x.io\",\"age\":30.5}\n{\"name\":\"Ok\",\"email\":\"ok@x.io\",\"age\":13}\n",
+          "expected": "400 age\n400 age\n400 age\n400 age\n201",
+          "mode": "trim"
+        },
+        {
+          "name": "Not JSON, not an object",
+          "stdin": "not json\n[1,2,3]\nnull\n\"text\"\n",
+          "expected": "400 body\n400 body\n400 body\n400 body",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "ui-ux/accessibility/contrast-ratio",
+      "track": "ui-ux",
+      "lesson": "accessibility",
+      "id": "contrast-ratio",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Black on white is the maximum ratio",
+          "stdin": "#000000 #ffffff\n",
+          "expected": "21.00 PASS",
+          "mode": "trim"
+        },
+        {
+          "name": "#767676 on white is the lightest grey that passes",
+          "stdin": "#767676 #ffffff\n#777777 #ffffff\n",
+          "expected": "4.54 PASS\n4.48 FAIL",
+          "mode": "trim"
+        },
+        {
+          "name": "Order of the colours does not matter",
+          "stdin": "#ffffff #1a73e8\n#1a73e8 #ffffff\n",
+          "expected": "4.51 PASS\n4.51 PASS",
+          "mode": "trim"
+        },
+        {
+          "name": "Identical colours have a ratio of 1",
+          "stdin": "#336699 #336699\n",
+          "expected": "1.00 FAIL",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/osi-tcpip/layer-lookup",
+      "track": "networking",
+      "lesson": "osi-tcpip",
+      "id": "layer-lookup",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Application-layer protocols",
+          "stdin": "HTTP\ndns\nSSH\n",
+          "expected": "HTTP -> 7 Application\ndns -> 7 Application\nSSH -> 7 Application\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Devices and lower layers",
+          "stdin": "router\nswitch\nhub\nEthernet\n",
+          "expected": "router -> 3 Network\nswitch -> 2 Data Link\nhub -> 1 Physical\nEthernet -> 2 Data Link\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Transport and network protocols",
+          "stdin": "tcp\nUDP\nIP\nicmp\n",
+          "expected": "tcp -> 4 Transport\nUDP -> 4 Transport\nIP -> 3 Network\nicmp -> 3 Network\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown names and blank lines",
+          "stdin": "laser\n\n  Repeater  \nHTTPS\n",
+          "expected": "laser -> unknown\nRepeater -> 1 Physical\nHTTPS -> 7 Application\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input prints nothing",
+          "stdin": "",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/osi-tcpip/frame-overhead",
+      "track": "networking",
+      "lesson": "osi-tcpip",
+      "id": "frame-overhead",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Exactly one full frame",
+          "stdin": "1460\n",
+          "expected": "frames=1 wire=1518 overhead=58\n",
+          "mode": "trim"
+        },
+        {
+          "name": "One byte over: second frame is padded",
+          "stdin": "1461\n",
+          "expected": "frames=2 wire=1582 overhead=121\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Tiny payload is padded to 64 bytes",
+          "stdin": "1\n",
+          "expected": "frames=1 wire=64 overhead=63\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Zero bytes needs no frames",
+          "stdin": "0\n",
+          "expected": "frames=0 wire=0 overhead=0\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Several inputs, including 6 bytes (exactly 64 on the wire)",
+          "stdin": "6\n5\n2920\n",
+          "expected": "frames=1 wire=64 overhead=58\nframes=1 wire=64 overhead=59\nframes=2 wire=3036 overhead=116\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A 100,000-byte transfer",
+          "stdin": "100000\n",
+          "expected": "frames=69 wire=104002 overhead=4002\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/osi-tcpip/ethernet-header",
+      "track": "networking",
+      "lesson": "osi-tcpip",
+      "id": "ethernet-header",
+      "lang": "rust",
+      "tests": [
+        {
+          "name": "IPv4 frame to a unicast address",
+          "stdin": "0a00000000025254001234560800450000341c46400040060000c0000232cb007150\n",
+          "expected": "dst=0a:00:00:00:00:02\nsrc=52:54:00:12:34:56\ntype=IPv4 (0x0800)\npayload=20 bytes\n",
+          "mode": "trim"
+        },
+        {
+          "name": "ARP request sent to broadcast",
+          "stdin": "ffffffffffff52540012345608060001080006040001525400123456c0000232000000000000c0000201\n",
+          "expected": "dst=ff:ff:ff:ff:ff:ff (broadcast)\nsrc=52:54:00:12:34:56\ntype=ARP (0x0806)\npayload=28 bytes\n",
+          "mode": "trim"
+        },
+        {
+          "name": "LLDP frame sent to a multicast address",
+          "stdin": "0180c200000e52540012345688cc00000000000000000000\n",
+          "expected": "dst=01:80:c2:00:00:0e (multicast)\nsrc=52:54:00:12:34:56\ntype=unknown (0x88cc)\npayload=10 bytes\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Header only (upper-case hex): payload is 0 bytes",
+          "stdin": "0A000000000252540012345686DD\n",
+          "expected": "dst=0a:00:00:00:00:02\nsrc=52:54:00:12:34:56\ntype=IPv6 (0x86dd)\npayload=0 bytes\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A frame shorter than 14 bytes is rejected",
+          "stdin": "0a0000000002525400\n",
+          "expected": "error: frame too short\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Invalid hex is rejected",
+          "stdin": "0a00zz\n",
+          "expected": "error: invalid hex\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/ip-subnetting/cidr-calc",
+      "track": "networking",
+      "lesson": "ip-subnetting",
+      "id": "cidr-calc",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example, /26",
+          "stdin": "192.168.10.77/26\n",
+          "expected": "network=192.168.10.64 broadcast=192.168.10.127 mask=255.255.255.192 first=192.168.10.65 last=192.168.10.126 hosts=62\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Classic /8, /16 and /24 networks",
+          "stdin": "10.1.2.3/8\n172.16.5.130/16\n192.0.2.1/24\n",
+          "expected": "network=10.0.0.0 broadcast=10.255.255.255 mask=255.0.0.0 first=10.0.0.1 last=10.255.255.254 hosts=16777214\nnetwork=172.16.0.0 broadcast=172.16.255.255 mask=255.255.0.0 first=172.16.0.1 last=172.16.255.254 hosts=65534\nnetwork=192.0.2.0 broadcast=192.0.2.255 mask=255.255.255.0 first=192.0.2.1 last=192.0.2.254 hosts=254\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A boundary inside the third octet (/20)",
+          "stdin": "172.16.37.200/20\n",
+          "expected": "network=172.16.32.0 broadcast=172.16.47.255 mask=255.255.240.0 first=172.16.32.1 last=172.16.47.254 hosts=4094\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Tiny subnets: /30, /31 and /32",
+          "stdin": "192.0.2.5/30\n192.0.2.6/31\n198.51.100.9/32\n",
+          "expected": "network=192.0.2.4 broadcast=192.0.2.7 mask=255.255.255.252 first=192.0.2.5 last=192.0.2.6 hosts=2\nnetwork=192.0.2.6 broadcast=192.0.2.7 mask=255.255.255.254 first=192.0.2.6 last=192.0.2.7 hosts=2\nnetwork=198.51.100.9 broadcast=198.51.100.9 mask=255.255.255.255 first=198.51.100.9 last=198.51.100.9 hosts=1\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The whole address space, /0",
+          "stdin": "203.0.113.50/0\n",
+          "expected": "network=0.0.0.0 broadcast=255.255.255.255 mask=0.0.0.0 first=0.0.0.1 last=255.255.255.254 hosts=4294967294\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Invalid input is reported and blank lines are skipped",
+          "stdin": "192.168.1.0/33\n300.1.1.1/24\n10.0.0/8\n\nhello\n1.2.3.4\n",
+          "expected": "error: invalid CIDR\nerror: invalid CIDR\nerror: invalid CIDR\nerror: invalid CIDR\nerror: invalid CIDR\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/ip-subnetting/vlsm-plan",
+      "track": "networking",
+      "lesson": "ip-subnetting",
+      "id": "vlsm-plan",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Five subnets of different sizes (input is unsorted)",
+          "stdin": "192.168.10.0/24\nWAN-1 2\nLAN-B 50\nLAN-A 100\nWAN-2 2\nLAN-C 25\n",
+          "expected": "LAN-A 192.168.10.0/25 hosts=126\nLAN-B 192.168.10.128/26 hosts=62\nLAN-C 192.168.10.192/27 hosts=30\nWAN-1 192.168.10.224/30 hosts=2\nWAN-2 192.168.10.228/30 hosts=2\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The worked example from the prompt",
+          "stdin": "192.168.10.0/24\nWAN 2\nSales 50\nOffice 100\n",
+          "expected": "Office 192.168.10.0/25 hosts=126\nSales 192.168.10.128/26 hosts=62\nWAN 192.168.10.192/30 hosts=2\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Out of space: the second request has no room",
+          "stdin": "10.0.0.0/24\nA 200\nB 10\n",
+          "expected": "A 10.0.0.0/24 hosts=254\nB no space\n",
+          "mode": "trim"
+        },
+        {
+          "name": "254 hosts fit a /24 but 255 need a /23",
+          "stdin": "10.9.0.0/22\nsmall 254\nbig 255\n",
+          "expected": "big 10.9.0.0/23 hosts=510\nsmall 10.9.2.0/24 hosts=254\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Minimum block is a /30, even for one host",
+          "stdin": "203.0.113.0/29\nP2P 2\nHost 1\n",
+          "expected": "P2P 203.0.113.0/30 hosts=2\nHost 203.0.113.4/30 hosts=2\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty request list prints nothing",
+          "stdin": "192.0.2.0/24\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/ip-subnetting/route-lookup",
+      "track": "networking",
+      "lesson": "ip-subnetting",
+      "id": "route-lookup",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Most specific route wins",
+          "stdin": "5 4\n0.0.0.0/0 203.0.113.1\n10.0.0.0/8 10.0.0.1\n10.1.0.0/16 10.1.0.254\n10.1.2.0/24 eth2\n192.168.1.0/24 eth1\n10.1.2.77\n10.1.9.9\n10.200.0.1\n198.51.100.7\n",
+          "expected": "eth2\n10.1.0.254\n10.0.0.1\n203.0.113.1\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No default route: unmatched destinations have no route",
+          "stdin": "2 2\n192.0.2.0/24 eth0\n198.51.100.0/24 eth1\n192.0.2.200\n203.0.113.5\n",
+          "expected": "eth0\nno route\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Host route (/32) and the edges of a /24",
+          "stdin": "2 4\n192.0.2.0/24 eth0\n192.0.2.10/32 lo\n192.0.2.10\n192.0.2.11\n192.0.3.0\n192.0.1.255\n",
+          "expected": "lo\neth0\nno route\nno route\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Order in the table does not matter (a /12 containing a /18)",
+          "stdin": "2 4\n172.16.64.0/18 dc\n172.16.0.0/12 core\n172.16.127.255\n172.16.128.0\n172.31.255.255\n172.32.0.0\n",
+          "expected": "dc\ncore\ncore\nno route\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty table: every lookup is no route",
+          "stdin": "0 2\n1.2.3.4\n5.6.7.8\n",
+          "expected": "no route\nno route\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A table with 201 routes",
+          "stdin": "201 7\n0.0.0.0/0 gw\n10.0.0.0/16 r0\n10.1.0.0/16 r1\n10.2.0.0/16 r2\n10.3.0.0/16 r3\n10.4.0.0/16 r4\n10.5.0.0/16 r5\n10.6.0.0/16 r6\n10.7.0.0/16 r7\n10.8.0.0/16 r8\n10.9.0.0/16 r9\n10.10.0.0/16 r10\n10.11.0.0/16 r11\n10.12.0.0/16 r12\n10.13.0.0/16 r13\n10.14.0.0/16 r14\n10.15.0.0/16 r15\n10.16.0.0/16 r16\n10.17.0.0/16 r17\n10.18.0.0/16 r18\n10.19.0.0/16 r19\n10.20.0.0/16 r20\n10.21.0.0/16 r21\n10.22.0.0/16 r22\n10.23.0.0/16 r23\n10.24.0.0/16 r24\n10.25.0.0/16 r25\n10.26.0.0/16 r26\n10.27.0.0/16 r27\n10.28.0.0/16 r28\n10.29.0.0/16 r29\n10.30.0.0/16 r30\n10.31.0.0/16 r31\n10.32.0.0/16 r32\n10.33.0.0/16 r33\n10.34.0.0/16 r34\n10.35.0.0/16 r35\n10.36.0.0/16 r36\n10.37.0.0/16 r37\n10.38.0.0/16 r38\n10.39.0.0/16 r39\n10.40.0.0/16 r40\n10.41.0.0/16 r41\n10.42.0.0/16 r42\n10.43.0.0/16 r43\n10.44.0.0/16 r44\n10.45.0.0/16 r45\n10.46.0.0/16 r46\n10.47.0.0/16 r47\n10.48.0.0/16 r48\n10.49.0.0/16 r49\n10.50.0.0/16 r50\n10.51.0.0/16 r51\n10.52.0.0/16 r52\n10.53.0.0/16 r53\n10.54.0.0/16 r54\n10.55.0.0/16 r55\n10.56.0.0/16 r56\n10.57.0.0/16 r57\n10.58.0.0/16 r58\n10.59.0.0/16 r59\n10.60.0.0/16 r60\n10.61.0.0/16 r61\n10.62.0.0/16 r62\n10.63.0.0/16 r63\n10.64.0.0/16 r64\n10.65.0.0/16 r65\n10.66.0.0/16 r66\n10.67.0.0/16 r67\n10.68.0.0/16 r68\n10.69.0.0/16 r69\n10.70.0.0/16 r70\n10.71.0.0/16 r71\n10.72.0.0/16 r72\n10.73.0.0/16 r73\n10.74.0.0/16 r74\n10.75.0.0/16 r75\n10.76.0.0/16 r76\n10.77.0.0/16 r77\n10.78.0.0/16 r78\n10.79.0.0/16 r79\n10.80.0.0/16 r80\n10.81.0.0/16 r81\n10.82.0.0/16 r82\n10.83.0.0/16 r83\n10.84.0.0/16 r84\n10.85.0.0/16 r85\n10.86.0.0/16 r86\n10.87.0.0/16 r87\n10.88.0.0/16 r88\n10.89.0.0/16 r89\n10.90.0.0/16 r90\n10.91.0.0/16 r91\n10.92.0.0/16 r92\n10.93.0.0/16 r93\n10.94.0.0/16 r94\n10.95.0.0/16 r95\n10.96.0.0/16 r96\n10.97.0.0/16 r97\n10.98.0.0/16 r98\n10.99.0.0/16 r99\n10.100.0.0/16 r100\n10.101.0.0/16 r101\n10.102.0.0/16 r102\n10.103.0.0/16 r103\n10.104.0.0/16 r104\n10.105.0.0/16 r105\n10.106.0.0/16 r106\n10.107.0.0/16 r107\n10.108.0.0/16 r108\n10.109.0.0/16 r109\n10.110.0.0/16 r110\n10.111.0.0/16 r111\n10.112.0.0/16 r112\n10.113.0.0/16 r113\n10.114.0.0/16 r114\n10.115.0.0/16 r115\n10.116.0.0/16 r116\n10.117.0.0/16 r117\n10.118.0.0/16 r118\n10.119.0.0/16 r119\n10.120.0.0/16 r120\n10.121.0.0/16 r121\n10.122.0.0/16 r122\n10.123.0.0/16 r123\n10.124.0.0/16 r124\n10.125.0.0/16 r125\n10.126.0.0/16 r126\n10.127.0.0/16 r127\n10.128.0.0/16 r128\n10.129.0.0/16 r129\n10.130.0.0/16 r130\n10.131.0.0/16 r131\n10.132.0.0/16 r132\n10.133.0.0/16 r133\n10.134.0.0/16 r134\n10.135.0.0/16 r135\n10.136.0.0/16 r136\n10.137.0.0/16 r137\n10.138.0.0/16 r138\n10.139.0.0/16 r139\n10.140.0.0/16 r140\n10.141.0.0/16 r141\n10.142.0.0/16 r142\n10.143.0.0/16 r143\n10.144.0.0/16 r144\n10.145.0.0/16 r145\n10.146.0.0/16 r146\n10.147.0.0/16 r147\n10.148.0.0/16 r148\n10.149.0.0/16 r149\n10.150.0.0/16 r150\n10.151.0.0/16 r151\n10.152.0.0/16 r152\n10.153.0.0/16 r153\n10.154.0.0/16 r154\n10.155.0.0/16 r155\n10.156.0.0/16 r156\n10.157.0.0/16 r157\n10.158.0.0/16 r158\n10.159.0.0/16 r159\n10.160.0.0/16 r160\n10.161.0.0/16 r161\n10.162.0.0/16 r162\n10.163.0.0/16 r163\n10.164.0.0/16 r164\n10.165.0.0/16 r165\n10.166.0.0/16 r166\n10.167.0.0/16 r167\n10.168.0.0/16 r168\n10.169.0.0/16 r169\n10.170.0.0/16 r170\n10.171.0.0/16 r171\n10.172.0.0/16 r172\n10.173.0.0/16 r173\n10.174.0.0/16 r174\n10.175.0.0/16 r175\n10.176.0.0/16 r176\n10.177.0.0/16 r177\n10.178.0.0/16 r178\n10.179.0.0/16 r179\n10.180.0.0/16 r180\n10.181.0.0/16 r181\n10.182.0.0/16 r182\n10.183.0.0/16 r183\n10.184.0.0/16 r184\n10.185.0.0/16 r185\n10.186.0.0/16 r186\n10.187.0.0/16 r187\n10.188.0.0/16 r188\n10.189.0.0/16 r189\n10.190.0.0/16 r190\n10.191.0.0/16 r191\n10.192.0.0/16 r192\n10.193.0.0/16 r193\n10.194.0.0/16 r194\n10.195.0.0/16 r195\n10.196.0.0/16 r196\n10.197.0.0/16 r197\n10.198.0.0/16 r198\n10.199.0.0/16 r199\n10.0.0.1\n10.7.0.1\n10.99.1.1\n10.150.3.1\n10.199.3.1\n10.200.0.1\n11.0.0.1\n",
+          "expected": "r0\nr7\nr99\nr150\nr199\ngw\ngw\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/transport-tcp-udp/tcp-state-machine",
+      "track": "networking",
+      "lesson": "transport-tcp-udp",
+      "id": "tcp-state-machine",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A client opens, closes actively and waits in TIME_WAIT",
+          "stdin": "connect\nrecv SYN+ACK\nclose\nrecv ACK\nrecv FIN\ntimeout\n",
+          "expected": "connect -> SYN_SENT\nrecv SYN+ACK -> ESTABLISHED\nclose -> FIN_WAIT_1\nrecv ACK -> FIN_WAIT_2\nrecv FIN -> TIME_WAIT\ntimeout -> CLOSED\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A server accepts a connection and is closed by the peer",
+          "stdin": "listen\nrecv SYN\nrecv ACK\nrecv FIN\nclose\nrecv ACK\n",
+          "expected": "listen -> LISTEN\nrecv SYN -> SYN_RECEIVED\nrecv ACK -> ESTABLISHED\nrecv FIN -> CLOSE_WAIT\nclose -> LAST_ACK\nrecv ACK -> CLOSED\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Simultaneous close goes through CLOSING",
+          "stdin": "connect\nrecv SYN+ACK\nclose\nrecv FIN\nrecv ACK\ntimeout\n",
+          "expected": "connect -> SYN_SENT\nrecv SYN+ACK -> ESTABLISHED\nclose -> FIN_WAIT_1\nrecv FIN -> CLOSING\nrecv ACK -> TIME_WAIT\ntimeout -> CLOSED\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Giving up early from LISTEN, SYN_SENT and SYN_RECEIVED",
+          "stdin": "listen\nclose\nconnect\nclose\nlisten\nrecv SYN\nclose\n",
+          "expected": "listen -> LISTEN\nclose -> CLOSED\nconnect -> SYN_SENT\nclose -> CLOSED\nlisten -> LISTEN\nrecv SYN -> SYN_RECEIVED\nclose -> FIN_WAIT_1\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Events that are not allowed leave the state unchanged",
+          "stdin": "recv ACK\nlisten\nconnect\nrecv SYN+ACK\nlisten\nbogus\n",
+          "expected": "recv ACK -> error (stays CLOSED)\nlisten -> LISTEN\nconnect -> error (stays LISTEN)\nrecv SYN+ACK -> error (stays LISTEN)\nlisten -> error (stays LISTEN)\nbogus -> error (stays LISTEN)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input prints nothing",
+          "stdin": "",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/transport-tcp-udp/cumulative-ack",
+      "track": "networking",
+      "lesson": "transport-tcp-udp",
+      "id": "cumulative-ack",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Segments arrive in order",
+          "stdin": "1000\n1000 100\n1100 100\n1200 50\n",
+          "expected": "ack=1100\nack=1200\nack=1250\n",
+          "mode": "trim"
+        },
+        {
+          "name": "One segment is lost and arrives late: duplicate ACKs, then a jump",
+          "stdin": "1000\n1000 100\n1200 100\n1300 100\n1400 100\n1100 100\n",
+          "expected": "ack=1100\nack=1100\nack=1100\nack=1100\nack=1500\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A retransmission that overlaps already received bytes",
+          "stdin": "5000\n5000 100\n5050 100\n5000 100\n5300 50\n5150 150\n",
+          "expected": "ack=5100\nack=5150\nack=5150\nack=5150\nack=5350\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A complete duplicate does not move the ACK",
+          "stdin": "0\n0 10\n0 10\n10 10\n",
+          "expected": "ack=10\nack=10\nack=20\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No segments: nothing is printed",
+          "stdin": "42\n",
+          "expected": "",
+          "mode": "trim"
+        },
+        {
+          "name": "500 segments arriving in reverse order",
+          "stdin": "0\n49900 100\n49800 100\n49700 100\n49600 100\n49500 100\n49400 100\n49300 100\n49200 100\n49100 100\n49000 100\n48900 100\n48800 100\n48700 100\n48600 100\n48500 100\n48400 100\n48300 100\n48200 100\n48100 100\n48000 100\n47900 100\n47800 100\n47700 100\n47600 100\n47500 100\n47400 100\n47300 100\n47200 100\n47100 100\n47000 100\n46900 100\n46800 100\n46700 100\n46600 100\n46500 100\n46400 100\n46300 100\n46200 100\n46100 100\n46000 100\n45900 100\n45800 100\n45700 100\n45600 100\n45500 100\n45400 100\n45300 100\n45200 100\n45100 100\n45000 100\n44900 100\n44800 100\n44700 100\n44600 100\n44500 100\n44400 100\n44300 100\n44200 100\n44100 100\n44000 100\n43900 100\n43800 100\n43700 100\n43600 100\n43500 100\n43400 100\n43300 100\n43200 100\n43100 100\n43000 100\n42900 100\n42800 100\n42700 100\n42600 100\n42500 100\n42400 100\n42300 100\n42200 100\n42100 100\n42000 100\n41900 100\n41800 100\n41700 100\n41600 100\n41500 100\n41400 100\n41300 100\n41200 100\n41100 100\n41000 100\n40900 100\n40800 100\n40700 100\n40600 100\n40500 100\n40400 100\n40300 100\n40200 100\n40100 100\n40000 100\n39900 100\n39800 100\n39700 100\n39600 100\n39500 100\n39400 100\n39300 100\n39200 100\n39100 100\n39000 100\n38900 100\n38800 100\n38700 100\n38600 100\n38500 100\n38400 100\n38300 100\n38200 100\n38100 100\n38000 100\n37900 100\n37800 100\n37700 100\n37600 100\n37500 100\n37400 100\n37300 100\n37200 100\n37100 100\n37000 100\n36900 100\n36800 100\n36700 100\n36600 100\n36500 100\n36400 100\n36300 100\n36200 100\n36100 100\n36000 100\n35900 100\n35800 100\n35700 100\n35600 100\n35500 100\n35400 100\n35300 100\n35200 100\n35100 100\n35000 100\n34900 100\n34800 100\n34700 100\n34600 100\n34500 100\n34400 100\n34300 100\n34200 100\n34100 100\n34000 100\n33900 100\n33800 100\n33700 100\n33600 100\n33500 100\n33400 100\n33300 100\n33200 100\n33100 100\n33000 100\n32900 100\n32800 100\n32700 100\n32600 100\n32500 100\n32400 100\n32300 100\n32200 100\n32100 100\n32000 100\n31900 100\n31800 100\n31700 100\n31600 100\n31500 100\n31400 100\n31300 100\n31200 100\n31100 100\n31000 100\n30900 100\n30800 100\n30700 100\n30600 100\n30500 100\n30400 100\n30300 100\n30200 100\n30100 100\n30000 100\n29900 100\n29800 100\n29700 100\n29600 100\n29500 100\n29400 100\n29300 100\n29200 100\n29100 100\n29000 100\n28900 100\n28800 100\n28700 100\n28600 100\n28500 100\n28400 100\n28300 100\n28200 100\n28100 100\n28000 100\n27900 100\n27800 100\n27700 100\n27600 100\n27500 100\n27400 100\n27300 100\n27200 100\n27100 100\n27000 100\n26900 100\n26800 100\n26700 100\n26600 100\n26500 100\n26400 100\n26300 100\n26200 100\n26100 100\n26000 100\n25900 100\n25800 100\n25700 100\n25600 100\n25500 100\n25400 100\n25300 100\n25200 100\n25100 100\n25000 100\n24900 100\n24800 100\n24700 100\n24600 100\n24500 100\n24400 100\n24300 100\n24200 100\n24100 100\n24000 100\n23900 100\n23800 100\n23700 100\n23600 100\n23500 100\n23400 100\n23300 100\n23200 100\n23100 100\n23000 100\n22900 100\n22800 100\n22700 100\n22600 100\n22500 100\n22400 100\n22300 100\n22200 100\n22100 100\n22000 100\n21900 100\n21800 100\n21700 100\n21600 100\n21500 100\n21400 100\n21300 100\n21200 100\n21100 100\n21000 100\n20900 100\n20800 100\n20700 100\n20600 100\n20500 100\n20400 100\n20300 100\n20200 100\n20100 100\n20000 100\n19900 100\n19800 100\n19700 100\n19600 100\n19500 100\n19400 100\n19300 100\n19200 100\n19100 100\n19000 100\n18900 100\n18800 100\n18700 100\n18600 100\n18500 100\n18400 100\n18300 100\n18200 100\n18100 100\n18000 100\n17900 100\n17800 100\n17700 100\n17600 100\n17500 100\n17400 100\n17300 100\n17200 100\n17100 100\n17000 100\n16900 100\n16800 100\n16700 100\n16600 100\n16500 100\n16400 100\n16300 100\n16200 100\n16100 100\n16000 100\n15900 100\n15800 100\n15700 100\n15600 100\n15500 100\n15400 100\n15300 100\n15200 100\n15100 100\n15000 100\n14900 100\n14800 100\n14700 100\n14600 100\n14500 100\n14400 100\n14300 100\n14200 100\n14100 100\n14000 100\n13900 100\n13800 100\n13700 100\n13600 100\n13500 100\n13400 100\n13300 100\n13200 100\n13100 100\n13000 100\n12900 100\n12800 100\n12700 100\n12600 100\n12500 100\n12400 100\n12300 100\n12200 100\n12100 100\n12000 100\n11900 100\n11800 100\n11700 100\n11600 100\n11500 100\n11400 100\n11300 100\n11200 100\n11100 100\n11000 100\n10900 100\n10800 100\n10700 100\n10600 100\n10500 100\n10400 100\n10300 100\n10200 100\n10100 100\n10000 100\n9900 100\n9800 100\n9700 100\n9600 100\n9500 100\n9400 100\n9300 100\n9200 100\n9100 100\n9000 100\n8900 100\n8800 100\n8700 100\n8600 100\n8500 100\n8400 100\n8300 100\n8200 100\n8100 100\n8000 100\n7900 100\n7800 100\n7700 100\n7600 100\n7500 100\n7400 100\n7300 100\n7200 100\n7100 100\n7000 100\n6900 100\n6800 100\n6700 100\n6600 100\n6500 100\n6400 100\n6300 100\n6200 100\n6100 100\n6000 100\n5900 100\n5800 100\n5700 100\n5600 100\n5500 100\n5400 100\n5300 100\n5200 100\n5100 100\n5000 100\n4900 100\n4800 100\n4700 100\n4600 100\n4500 100\n4400 100\n4300 100\n4200 100\n4100 100\n4000 100\n3900 100\n3800 100\n3700 100\n3600 100\n3500 100\n3400 100\n3300 100\n3200 100\n3100 100\n3000 100\n2900 100\n2800 100\n2700 100\n2600 100\n2500 100\n2400 100\n2300 100\n2200 100\n2100 100\n2000 100\n1900 100\n1800 100\n1700 100\n1600 100\n1500 100\n1400 100\n1300 100\n1200 100\n1100 100\n1000 100\n900 100\n800 100\n700 100\n600 100\n500 100\n400 100\n300 100\n200 100\n100 100\n0 100\n",
+          "expected": "ack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=0\nack=50000\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/transport-tcp-udp/internet-checksum",
+      "track": "networking",
+      "lesson": "transport-tcp-udp",
+      "id": "internet-checksum",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "The example from RFC 1071",
+          "stdin": "0001f203f4f5f6f7\n",
+          "expected": "checksum=0x220d\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An IPv4 header: checksum field zeroed, then filled in (verifies to zero)",
+          "stdin": "450000730000400040110000c0a80001c0a800c7\n45000073000040004011b861c0a80001c0a800c7\n",
+          "expected": "checksum=0xb861\nchecksum=0x0000\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An odd number of bytes is padded with a zero byte",
+          "stdin": "ff\nabcdef\n",
+          "expected": "checksum=0x00ff\nchecksum=0x6531\n",
+          "mode": "trim"
+        },
+        {
+          "name": "All zeros and all ones",
+          "stdin": "00000000\nffffffff\n",
+          "expected": "checksum=0xffff\nchecksum=0x0000\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Invalid hex is reported and blank lines are skipped",
+          "stdin": "xyz1\n\nabc\n",
+          "expected": "error: invalid hex\nerror: invalid hex\n",
+          "mode": "trim"
+        },
+        {
+          "name": "1400 bytes of data (many carries to fold)",
+          "stdin": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f90\n",
+          "expected": "checksum=0xd408\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/processes-threads/fork-children",
+      "track": "operating-systems",
+      "lesson": "processes-threads",
+      "id": "fork-children",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Three children",
+          "stdin": "3\n",
+          "expected": "parent: starting 3 children\nchild 1: running\nparent: child 1 exited with status 10\nchild 2: running\nparent: child 2 exited with status 20\nchild 3: running\nparent: child 3 exited with status 30\nparent: all children reaped",
+          "mode": "trim"
+        },
+        {
+          "name": "A single child",
+          "stdin": "1\n",
+          "expected": "parent: starting 1 children\nchild 1: running\nparent: child 1 exited with status 10\nparent: all children reaped",
+          "mode": "trim"
+        },
+        {
+          "name": "Zero children: no fork at all",
+          "stdin": "0\n",
+          "expected": "parent: starting 0 children\nparent: all children reaped",
+          "mode": "trim"
+        },
+        {
+          "name": "Five children (no duplicated lines)",
+          "stdin": "5\n",
+          "expected": "parent: starting 5 children\nchild 1: running\nparent: child 1 exited with status 10\nchild 2: running\nparent: child 2 exited with status 20\nchild 3: running\nparent: child 3 exited with status 30\nchild 4: running\nparent: child 4 exited with status 40\nchild 5: running\nparent: child 5 exited with status 50\nparent: all children reaped",
+          "mode": "trim"
+        },
+        {
+          "name": "Upper bound: ten children, last status is 100",
+          "stdin": "10\n",
+          "expected": "parent: starting 10 children\nchild 1: running\nparent: child 1 exited with status 10\nchild 2: running\nparent: child 2 exited with status 20\nchild 3: running\nparent: child 3 exited with status 30\nchild 4: running\nparent: child 4 exited with status 40\nchild 5: running\nparent: child 5 exited with status 50\nchild 6: running\nparent: child 6 exited with status 60\nchild 7: running\nparent: child 7 exited with status 70\nchild 8: running\nparent: child 8 exited with status 80\nchild 9: running\nparent: child 9 exited with status 90\nchild 10: running\nparent: child 10 exited with status 100\nparent: all children reaped",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/processes-threads/process-state-simulator",
+      "track": "operating-systems",
+      "lesson": "processes-threads",
+      "id": "process-state-simulator",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example from the prompt (CPU busy)",
+          "stdin": "new P1\nnew P2\nadmit P1\nadmit P2\ndispatch P1\ndispatch P2\nblock P1\ndispatch P2\nwake P1\nexit P2\n",
+          "expected": "line 6: CPU busy, cannot dispatch P2\nP1: READY\nP2: TERMINATED",
+          "mode": "trim"
+        },
+        {
+          "name": "Illegal events and unknown processes",
+          "stdin": "admit P1\nnew P1\nnew P1\nblock P1\nsleep P1\n",
+          "expected": "line 1: illegal admit P1 in state NONE\nline 3: illegal new P1 in state NEW\nline 4: illegal block P1 in state NEW\nline 5: illegal sleep P1 in state NEW\nP1: NEW",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input prints nothing",
+          "stdin": "",
+          "expected": "",
+          "mode": "trim"
+        },
+        {
+          "name": "Full lifecycle with preemption and blank lines",
+          "stdin": "new A\nadmit A\n\ndispatch A\npreempt A\ndispatch A\nblock A\nwake A\ndispatch A\nexit A\n",
+          "expected": "A: TERMINATED",
+          "mode": "trim"
+        },
+        {
+          "name": "A READY process cannot exit directly",
+          "stdin": "new A\nadmit A\nexit A\n",
+          "expected": "line 3: illegal exit A in state READY\nA: READY",
+          "mode": "trim"
+        },
+        {
+          "name": "Two CPUs are not allowed: dispatch is refused until preempt",
+          "stdin": "new A\nnew B\nadmit A\nadmit B\ndispatch A\ndispatch B\npreempt A\ndispatch B\n",
+          "expected": "line 6: CPU busy, cannot dispatch B\nA: READY\nB: RUNNING",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/processes-threads/ps-zombie-hunt",
+      "track": "operating-systems",
+      "lesson": "processes-threads",
+      "id": "ps-zombie-hunt",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "PID PPID STAT COMMAND\n1 0 Ss init\n212 1 S sshd\n340 212 R+ bash\n341 340 Z defunct\n",
+          "expected": "R: 1\nS: 2\nZ: 1\nzombies: 341",
+          "mode": "trim"
+        },
+        {
+          "name": "Several states and two zombies",
+          "stdin": "PID PPID STAT COMMAND\n1 0 Ss systemd\n2 0 S kthreadd\n57 2 I kworker/0:1\n801 1 Ssl dockerd\n955 801 Z+ worker\n956 801 Z worker\n1203 1 D backup\n1300 1 R+ ps\n",
+          "expected": "D: 1\nI: 1\nR: 1\nS: 3\nZ: 2\nzombies: 955 956",
+          "mode": "trim"
+        },
+        {
+          "name": "Header only",
+          "stdin": "PID PPID STAT COMMAND\n",
+          "expected": "zombies: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "zombies: none",
+          "mode": "trim"
+        },
+        {
+          "name": "No zombies; commands with spaces",
+          "stdin": "PID PPID STAT COMMAND\n10 1 S+ vim\n11 1 S+ less\n12 1 T top\n14 1 S sleep 100\n",
+          "expected": "S: 3\nT: 1\nzombies: none",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/cpu-scheduling/fcfs-vs-sjf",
+      "track": "operating-systems",
+      "lesson": "cpu-scheduling",
+      "id": "fcfs-vs-sjf",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The lesson's worked example",
+          "stdin": "4\nP1 0 7\nP2 2 4\nP3 4 1\nP4 5 4\n",
+          "expected": "FCFS avg_wait=4.75 avg_turnaround=8.75\nSJF avg_wait=4.00 avg_turnaround=8.00",
+          "mode": "trim"
+        },
+        {
+          "name": "Convoy effect: a long job first",
+          "stdin": "3\nP1 0 10\nP2 0 1\nP3 0 1\n",
+          "expected": "FCFS avg_wait=7.00 avg_turnaround=11.00\nSJF avg_wait=1.00 avg_turnaround=5.00",
+          "mode": "trim"
+        },
+        {
+          "name": "CPU idles between arrivals",
+          "stdin": "2\nP1 0 2\nP2 10 3\n",
+          "expected": "FCFS avg_wait=0.00 avg_turnaround=2.50\nSJF avg_wait=0.00 avg_turnaround=2.50",
+          "mode": "trim"
+        },
+        {
+          "name": "Input is not sorted by arrival",
+          "stdin": "3\nC 3 2\nA 0 4\nB 1 3\n",
+          "expected": "FCFS avg_wait=2.33 avg_turnaround=5.33\nSJF avg_wait=2.00 avg_turnaround=5.00",
+          "mode": "trim"
+        },
+        {
+          "name": "Single process",
+          "stdin": "1\nX 5 6\n",
+          "expected": "FCFS avg_wait=0.00 avg_turnaround=6.00\nSJF avg_wait=0.00 avg_turnaround=6.00",
+          "mode": "trim"
+        },
+        {
+          "name": "No processes",
+          "stdin": "0\n",
+          "expected": "FCFS avg_wait=0.00 avg_turnaround=0.00\nSJF avg_wait=0.00 avg_turnaround=0.00",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/cpu-scheduling/round-robin",
+      "track": "operating-systems",
+      "lesson": "cpu-scheduling",
+      "id": "round-robin",
+      "lang": "java",
+      "tests": [
+        {
+          "name": "Example from the prompt (q = 2)",
+          "stdin": "2\n3\nA 0 5\nB 0 3\nC 0 1\n",
+          "expected": "A: finish=9 turnaround=9 waiting=4\nB: finish=8 turnaround=8 waiting=5\nC: finish=5 turnaround=5 waiting=4\navg_wait=4.33",
+          "mode": "trim"
+        },
+        {
+          "name": "Textbook case (q = 4)",
+          "stdin": "4\n3\nP1 0 24\nP2 0 3\nP3 0 3\n",
+          "expected": "P1: finish=30 turnaround=30 waiting=6\nP2: finish=7 turnaround=7 waiting=4\nP3: finish=10 turnaround=10 waiting=7\navg_wait=5.67",
+          "mode": "trim"
+        },
+        {
+          "name": "A newcomer is queued before the preempted process",
+          "stdin": "2\n3\nA 0 4\nB 1 3\nC 4 1\n",
+          "expected": "A: finish=6 turnaround=6 waiting=2\nB: finish=8 turnaround=7 waiting=4\nC: finish=7 turnaround=3 waiting=2\navg_wait=2.67",
+          "mode": "trim"
+        },
+        {
+          "name": "CPU idles before a late arrival",
+          "stdin": "3\n2\nA 0 2\nB 10 4\n",
+          "expected": "A: finish=2 turnaround=2 waiting=0\nB: finish=14 turnaround=4 waiting=0\navg_wait=0.00",
+          "mode": "trim"
+        },
+        {
+          "name": "Quantum 1 with five processes",
+          "stdin": "1\n5\nA 0 3\nB 1 2\nC 2 4\nD 6 1\nE 30 2\n",
+          "expected": "A: finish=6 turnaround=6 waiting=3\nB: finish=5 turnaround=4 waiting=2\nC: finish=10 turnaround=8 waiting=4\nD: finish=8 turnaround=2 waiting=1\nE: finish=32 turnaround=2 waiting=0\navg_wait=2.00",
+          "mode": "trim"
+        },
+        {
+          "name": "No processes",
+          "stdin": "2\n0\n",
+          "expected": "avg_wait=0.00",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/cpu-scheduling/priority-aging",
+      "track": "operating-systems",
+      "lesson": "cpu-scheduling",
+      "id": "priority-aging",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Aging disabled (huge A): strict priority order",
+          "stdin": "1000\n3\nA 1 3\nB 2 2\nC 3 1\n",
+          "expected": "A:3 B:2 C:1",
+          "mode": "trim"
+        },
+        {
+          "name": "Aging lets the low-priority process take turns",
+          "stdin": "1\n2\nH 1 6\nL 3 2\n",
+          "expected": "H:3 L:1 H:3 L:1",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties go to the earlier process in the input",
+          "stdin": "5\n2\nX 2 2\nY 2 2\n",
+          "expected": "X:2 Y:2",
+          "mode": "trim"
+        },
+        {
+          "name": "Three processes with moderate aging",
+          "stdin": "2\n3\nA 3 4\nB 1 5\nC 5 2\n",
+          "expected": "B:4 A:1 B:1 C:1 A:3 C:1",
+          "mode": "trim"
+        },
+        {
+          "name": "A single process",
+          "stdin": "3\n1\nP 0 4\n",
+          "expected": "P:4",
+          "mode": "trim"
+        },
+        {
+          "name": "No processes: an empty line",
+          "stdin": "1000\n0\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/memory-management/page-translate",
+      "track": "operating-systems",
+      "lesson": "memory-management",
+      "id": "page-translate",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Lesson example",
+          "stdin": "4096 3\n0 5\n1 2\n3 7\n100\n4106\n8192\n16383\n",
+          "expected": "100 -> 20580\n4106 -> 8202\n8192 -> PAGE FAULT\n16383 -> 32767",
+          "mode": "trim"
+        },
+        {
+          "name": "Page boundaries and frame 0",
+          "stdin": "4096 2\n0 1\n1 0\n0\n4095\n4096\n4097\n8192\n",
+          "expected": "0 -> 4096\n4095 -> 8191\n4096 -> 0\n4097 -> 1\n8192 -> PAGE FAULT",
+          "mode": "trim"
+        },
+        {
+          "name": "A different page size",
+          "stdin": "256 1\n4 9\n1024\n1279\n1280\n",
+          "expected": "1024 -> 2304\n1279 -> 2559\n1280 -> PAGE FAULT",
+          "mode": "trim"
+        },
+        {
+          "name": "No addresses to translate",
+          "stdin": "4096 1\n0 0\n",
+          "expected": "",
+          "mode": "trim"
+        },
+        {
+          "name": "Addresses beyond 32 bits",
+          "stdin": "4096 1\n1048576 3\n4294967296\n4294967297\n8589934592\n",
+          "expected": "4294967296 -> 12288\n4294967297 -> 12289\n8589934592 -> PAGE FAULT",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/memory-management/fifo-vs-lru",
+      "track": "operating-systems",
+      "lesson": "memory-management",
+      "id": "fifo-vs-lru",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Belady string, 3 frames (FIFO wins)",
+          "stdin": "3\n1 2 3 4 1 2 5 1 2 3 4 5\n",
+          "expected": "FIFO faults=9\nLRU faults=10",
+          "mode": "trim"
+        },
+        {
+          "name": "Belady string, 4 frames (anomaly)",
+          "stdin": "4\n1 2 3 4 1 2 5 1 2 3 4 5\n",
+          "expected": "FIFO faults=10\nLRU faults=8",
+          "mode": "trim"
+        },
+        {
+          "name": "Textbook string, 3 frames",
+          "stdin": "3\n7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1\n",
+          "expected": "FIFO faults=15\nLRU faults=12",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty reference string",
+          "stdin": "3\n",
+          "expected": "FIFO faults=0\nLRU faults=0",
+          "mode": "trim"
+        },
+        {
+          "name": "One frame and repeated pages",
+          "stdin": "1\n1 1 2 2 1\n",
+          "expected": "FIFO faults=3\nLRU faults=3",
+          "mode": "trim"
+        },
+        {
+          "name": "A single page, plenty of frames",
+          "stdin": "5\n9 9 9 9 9 9\n",
+          "expected": "FIFO faults=1\nLRU faults=1",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/memory-management/first-fit-best-fit",
+      "track": "operating-systems",
+      "lesson": "memory-management",
+      "id": "first-fit-best-fit",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "Classic example, best-fit",
+          "stdin": "best 5\n100 500 200 300 600\n212 417 112 426\n",
+          "expected": "212 -> hole 3\n417 -> hole 1\n112 -> hole 2\n426 -> hole 4\nfree=533 largest=174",
+          "mode": "trim"
+        },
+        {
+          "name": "Classic example, first-fit",
+          "stdin": "first 5\n100 500 200 300 600\n212 417 112 426\n",
+          "expected": "212 -> hole 1\n417 -> hole 4\n112 -> hole 1\n426 -> FAIL\nfree=959 largest=300",
+          "mode": "trim"
+        },
+        {
+          "name": "External fragmentation",
+          "stdin": "first 3\n10 10 10\n15\n",
+          "expected": "15 -> FAIL\nfree=30 largest=10",
+          "mode": "trim"
+        },
+        {
+          "name": "Exact fit leaves an empty hole; best-fit tie",
+          "stdin": "best 3\n8 4 4\n4 4 5\n",
+          "expected": "4 -> hole 1\n4 -> hole 2\n5 -> hole 0\nfree=3 largest=3",
+          "mode": "trim"
+        },
+        {
+          "name": "No holes at all",
+          "stdin": "best 0\n7\n",
+          "expected": "7 -> FAIL\nfree=0 largest=0",
+          "mode": "trim"
+        },
+        {
+          "name": "No requests",
+          "stdin": "first 2\n64 32\n",
+          "expected": "free=96 largest=64",
+          "mode": "trim"
+        }
+      ]
+    }
+  ]
 };
