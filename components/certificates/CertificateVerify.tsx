@@ -6,15 +6,20 @@
  * Static export: the code only exists in the browser, so it is read with useSearchParams under a Suspense
  * boundary (app/certificate/page.tsx). The server render and the first client render are the neutral loading
  * shell; everything that depends on the code, the network or the clock appears after mount.
+ *
+ * `&print=1` (or the "Printable certificate" link on a valid result) switches to the printable certificate
+ * (PrintableCertificate.tsx) once the code has verified; the verification itself is the same request.
  */
 import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, Loader2, RefreshCw, SearchX, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Loader2, Printer, RefreshCw, SearchX, ShieldCheck } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { useLang } from "@/lib/lang-context";
 import { trackTitle } from "@/lib/ctf/labels";
 import { certificateHref, formatIssueDate, parseCertificateInput, verifyCertificate, type VerifiedCertificate, type VerifyOutcome } from "@/lib/certificates/verify";
+import { PRINT_PARAM, printableCertificateHref, wantsPrintView } from "@/lib/certificates/printable";
+import PrintableCertificate from "./PrintableCertificate";
 
 const MAIN = "mx-auto max-w-2xl px-4 pb-20 pt-28 sm:px-6";
 const BTN = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
@@ -42,9 +47,12 @@ export function CertificateFallback() {
 }
 
 export default function CertificateVerify({ courseTitles }: { courseTitles: Record<string, string> }) {
-  const raw = useSearchParams().get("code") ?? "";
-  // A new code in the URL starts a fresh check (and clears the form's draft and error).
-  return <Verifier key={raw} raw={raw} courseTitles={courseTitles} />;
+  const params = useSearchParams();
+  const raw = params.get("code") ?? "";
+  const print = wantsPrintView(params.get(PRINT_PARAM));
+  // A new code in the URL starts a fresh check (and clears the form's draft and error). Toggling the printable
+  // view keeps the same Verifier, so it never re-fetches.
+  return <Verifier key={raw} raw={raw} print={print} courseTitles={courseTitles} />;
 }
 
 interface Settled {
@@ -53,7 +61,7 @@ interface Settled {
   outcome: VerifyOutcome;
 }
 
-function Verifier({ raw, courseTitles }: { raw: string; courseTitles: Record<string, string> }) {
+function Verifier({ raw, print, courseTitles }: { raw: string; print: boolean; courseTitles: Record<string, string> }) {
   const { tx } = useLang();
   const t = tx.certVerify;
   const router = useRouter();
@@ -68,6 +76,8 @@ function Verifier({ raw, courseTitles }: { raw: string; courseTitles: Record<str
   const [attempt, setAttempt] = useState(0);
   const [settled, setSettled] = useState<Settled | null>(null);
   const [formError, setFormError] = useState(false);
+  /** Set by an in-page switch between the result and the printable view: where focus goes once it renders. */
+  const [focusAfterSwitch, setFocusAfterSwitch] = useState(false);
 
   useEffect(() => {
     if (!code) return;
@@ -85,6 +95,11 @@ function Verifier({ raw, courseTitles }: { raw: string; courseTitles: Record<str
   const outcome: VerifyOutcome | null = !hasInput ? null : !code ? { kind: "invalid" } : settled && settled.code === code && settled.attempt === attempt ? settled.outcome : null;
   const checking = hasInput && outcome === null;
   const showForm = !hasInput || outcome?.kind === "invalid";
+  const printable = outcome?.kind === "valid" && outcome.certificate.recipient ? { cert: outcome.certificate, recipient: outcome.certificate.recipient } : null;
+
+  if (print && printable) {
+    return <PrintableCertificate cert={printable.cert} recipient={printable.recipient} courseTitles={courseTitles} focusOnMount={focusAfterSwitch} onBack={() => setFocusAfterSwitch(true)} />;
+  }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -144,7 +159,9 @@ function Verifier({ raw, courseTitles }: { raw: string; courseTitles: Record<str
           </div>
         )}
 
-        {outcome?.kind === "valid" && <ValidCard cert={outcome.certificate} headingId={headingId} courseTitles={courseTitles} />}
+        {outcome?.kind === "valid" && (
+          <ValidCard cert={outcome.certificate} headingId={headingId} courseTitles={courseTitles} focusOnMount={focusAfterSwitch} onSwitch={() => setFocusAfterSwitch(true)} />
+        )}
 
         {outcome?.kind === "invalid" && (
           <section aria-labelledby={headingId} className="card p-6 sm:p-8" data-testid="cert-invalid">
@@ -194,9 +211,27 @@ function Verifier({ raw, courseTitles }: { raw: string; courseTitles: Record<str
   );
 }
 
-function ValidCard({ cert, headingId, courseTitles }: { cert: VerifiedCertificate; headingId: string; courseTitles: Record<string, string> }) {
+function ValidCard({
+  cert,
+  headingId,
+  courseTitles,
+  focusOnMount,
+  onSwitch,
+}: {
+  cert: VerifiedCertificate;
+  headingId: string;
+  courseTitles: Record<string, string>;
+  /** Back from the printable view: put focus on this result's heading. */
+  focusOnMount: boolean;
+  onSwitch: () => void;
+}) {
   const { tx, lang } = useLang();
   const t = tx.certVerify.valid;
+  const p = tx.certVerify.printable;
+  const hintId = `${headingId}-print-hint`;
+  useEffect(() => {
+    if (focusOnMount) document.getElementById(headingId)?.focus();
+  }, [focusOnMount, headingId]);
   const course = cert.track ? trackTitle(tx, cert.track, courseTitles[cert.track]) : undefined;
   const issued = cert.issuedAt ? formatIssueDate(cert.issuedAt, lang) : "";
   const rows: { label: string; value: string; ltr?: boolean }[] = [
@@ -212,7 +247,7 @@ function ValidCard({ cert, headingId, courseTitles }: { cert: VerifiedCertificat
           <ShieldCheck size={26} aria-hidden />
         </span>
         <div className="min-w-0">
-          <h2 id={headingId} className="text-2xl font-extrabold text-fg">
+          <h2 id={headingId} tabIndex={-1} className="text-2xl font-extrabold text-fg outline-none">
             {t.title}
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-fg-muted">{t.body}</p>
@@ -235,6 +270,17 @@ function ValidCard({ cert, headingId, courseTitles }: { cert: VerifiedCertificat
           </div>
         ))}
       </dl>
+      {cert.recipient && (
+        <div className="mt-6 flex flex-col gap-2 border-t border-line pt-6 sm:flex-row sm:items-center sm:gap-4">
+          <Link href={printableCertificateHref(cert.code)} onClick={onSwitch} aria-describedby={hintId} className={`${BTN_PRIMARY} shrink-0`}>
+            <Printer size={16} aria-hidden />
+            {p.open}
+          </Link>
+          <p id={hintId} className="text-sm leading-relaxed text-fg-muted">
+            {p.openHint}
+          </p>
+        </div>
+      )}
     </section>
   );
 }

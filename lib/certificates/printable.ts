@@ -48,3 +48,12 @@ export function certificateCodeFromInfo(body: unknown): string | null {
   const code = (body as Partial<CertificateInfo>).code;
   return typeof code === "string" ? normalizeCertificateCode(code) : null;
 }
+
+/**
+ * Font size of the recipient's name, in sheet units (1 unit = 1 mm on the printed A4 page): large for a typical
+ * name, stepping down so a long one (up to the Worker's 200 characters) stays inside the frame on two lines at most.
+ */
+export function recipientNameSize(name: string): number {
+  const n = Array.from(name.trim()).length;
+  return n <= 22 ? 15 : n <= 34 ? 12 : n <= 52 ? 9.5 : n <= 90 ? 7 : 5;
+}

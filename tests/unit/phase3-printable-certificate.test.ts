@@ -7,6 +7,7 @@ import {
   certificateVerifyUrl,
   langDir,
   printableCertificateHref,
+  recipientNameSize,
   wantsPrintView,
 } from "../../lib/certificates/printable";
 import { formatIssueDate } from "../../lib/certificates/verify";
@@ -85,4 +86,16 @@ test("every new certificate string has an Arabic translation", () => {
   }
   assert.equal(translations.en.certVerify.sheet.title, "Certificate of completion");
   assert.equal(translations.ar.certVerify.sheet.title, "شهادة إتمام");
+});
+
+test("recipientNameSize steps down for long names and counts characters, not UTF-16 units", () => {
+  assert.equal(recipientNameSize("Layla Hassan"), 15);
+  assert.equal(recipientNameSize("ليلى حسن"), 15);
+  assert.equal(recipientNameSize("𝓛".repeat(22)), 15, "astral characters count once");
+  assert.equal(recipientNameSize("Maximilian Alexander Featherstonehaugh"), 9.5);
+  assert.equal(recipientNameSize("x".repeat(30)), 12);
+  assert.equal(recipientNameSize("x".repeat(80)), 7);
+  assert.equal(recipientNameSize("x".repeat(200)), 5);
+  const sizes = [5, 20, 30, 45, 70, 120, 200].map((n) => recipientNameSize("a".repeat(n)));
+  assert.deepEqual([...sizes].sort((a, b) => b - a), sizes, "never grows with length");
 });
