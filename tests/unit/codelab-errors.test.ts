@@ -108,6 +108,19 @@ test("run statuses teach: timeouts name the limit and loops, memory names the ca
   assert.doesNotMatch(describeRunStatus("timeout", en, { browser: true }).help ?? "", /\{/);
 });
 
+test("a browser timeout from the Web loop guard names the loop's line, in both languages", () => {
+  for (const dict of [en, ar]) {
+    const help = describeRunStatus("timeout", dict, { browser: true, line: 12 }).help ?? "";
+    assert.match(help, /12/);
+    assert.match(help, /5/);
+    assert.doesNotMatch(help, /\{\w+\}/);
+  }
+  assert.match(describeRunStatus("timeout", en, { browser: true, line: 12 }).help ?? "", /loop on line 12 .*longer than 5 s/);
+  // Without a line (the watchdog) or on the server, the generic text stays.
+  assert.equal(describeRunStatus("timeout", en, { browser: true }).help, describeRunStatus("timeout", en, { browser: true, line: undefined }).help);
+  assert.doesNotMatch(describeRunStatus("timeout", en, { line: 12 }).help ?? "", /line 12/);
+});
+
 test("every run status and problem string exists in English and Arabic without leftover placeholders", () => {
   const statuses: RunStatus[] = ["ok", "compile_error", "runtime_error", "timeout", "memory_limit", "output_limit", "unsupported", "internal_error"];
   for (const dict of [en, ar]) {
