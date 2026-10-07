@@ -13,7 +13,7 @@
     "test:worker": "node --import tsx --test \"worker/tests/**/*.test.ts\"",
     "test:runner": "node --import tsx --test --test-concurrency=1 \"runner/tests/**/*.test.ts\"",
     "test:e2e": "node tests/e2e/run.mjs",
-    "test:e2e:ui": "node tests/e2e/challenges/build-fixture-site.mjs && next build && node --import tsx --test --test-concurrency=1 \"tests/e2e/curriculum/*.spec.ts\" \"tests/e2e/phase3/*.spec.ts\" \"tests/e2e/codelab/*.spec.ts\" \"tests/e2e/challenges/*.spec.ts\"",
+    "test:e2e:ui": "node tests/e2e/challenges/build-fixture-site.mjs && next build && node --import tsx --test --test-concurrency=1 \"tests/e2e/curriculum/*.spec.ts\" \"tests/e2e/phase3/*.spec.ts\" \"tests/e2e/codelab/*.spec.ts\" \"tests/e2e/challenges/*.spec.ts\" \"tests/e2e/auth/*.spec.ts\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p worker && tsc --noEmit -p runner"
   },
   "dependencies": {
