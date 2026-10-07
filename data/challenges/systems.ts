@@ -521,4 +521,181 @@ for (const job of jobs) console.log(job.name);
     tags: ["ci-cd", "pipeline", "topological-sort", "parsing"],
     addedAt: "2026-10-07",
   },
+  {
+    id: "net-route-aggregator",
+    track: "networking",
+    topic: "routing",
+    title: { en: "Route Aggregator", ar: "مُجمِّع المسارات" },
+    summary: {
+      en: "Collapse a messy list of IPv4 routes into the smallest equivalent list of CIDR blocks, the way routers summarise their tables.",
+      ar: "اختصر قائمة فوضوية من مسارات IPv4 إلى أصغر قائمة مكافئة من كتل CIDR، كما تلخّص الموجِّهات جداولها.",
+    },
+    description: {
+      en: `## The story
+
+A branch office announces its networks to head office one \`/24\` at a time. After a few years of growth the routing table has hundreds of entries, many of them redundant: some networks are swallowed by bigger ones, some are listed twice, and many sit right next to each other and could be announced as one bigger block. Smaller tables mean faster lookups and less memory, so routers **summarise** (aggregate) routes whenever the addresses allow it.
+
+## The task
+
+Given a list of IPv4 networks in CIDR notation, print the **smallest possible list of CIDR blocks that covers exactly the same set of addresses**: no address may be added, none may be lost.
+
+**Input:**
+
+- the first line is \`n\` (1 to 2000), the number of networks;
+- then \`n\` lines \`a.b.c.d/p\`. Every line is a proper network: its host bits are zero (\`10.1.2.0/24\`, never \`10.1.2.77/24\`). Duplicates, overlaps, and any order are possible.
+
+**Output:** the blocks, one per line as \`a.b.c.d/p\`, **sorted by network address** (lowest first).
+
+Merging only works when the blocks are adjacent **and aligned**: two \`/24\` networks join into a \`/23\` only if the first one starts on an even third octet. For example \`172.16.1.0/24\` + \`172.16.2.0/24\` cannot become one block, because \`172.16.1.0/23\` would also contain \`172.16.0.0/24\`, which was not in the list.
+
+## Examples
+
+\`\`\`text
+4
+192.168.0.0/24
+192.168.1.0/24
+192.168.2.0/24
+192.168.3.0/24
+\`\`\`
+
+Output:
+
+\`\`\`text
+192.168.0.0/22
+\`\`\`
+
+The four networks are consecutive and the first is aligned on a multiple of four, so one \`/22\` covers them exactly.
+
+\`\`\`text
+3
+172.16.1.0/24
+172.16.2.0/24
+172.16.0.0/24
+\`\`\`
+
+Output:
+
+\`\`\`text
+172.16.0.0/23
+172.16.2.0/24
+\`\`\`
+
+Together the three networks span \`172.16.0.0\` to \`172.16.2.255\`. The best you can do is a \`/23\` (0 and 1) and a \`/24\` (2).`,
+      ar: `## القصة
+
+يعلن أحد الفروع عن شبكاته لدى المقر الرئيسي شبكة \`/24\` تلو الأخرى. وبعد سنوات من النمو صار جدول التوجيه فيه مئات المدخلات، كثير منها زائد: بعض الشبكات تبتلعها شبكات أكبر، وبعضها مذكور مرتين، وكثير منها متجاور ويمكن الإعلان عنه ككتلة أكبر واحدة. الجداول الأصغر تعني بحثاً أسرع وذاكرة أقل، لذلك **تلخّص** الموجِّهات (aggregate) المسارات كلما سمحت العناوين بذلك.
+
+## المطلوب
+
+بإعطائك قائمة شبكات IPv4 بصيغة CIDR، اطبع **أصغر قائمة ممكنة من كتل CIDR تغطي مجموعة العناوين نفسها تماماً**: لا يجوز إضافة أي عنوان ولا فقدان أي عنوان.
+
+**المدخل:**
+
+- السطر الأول \`n\` (من 1 إلى 2000) عدد الشبكات؛
+- ثم \`n\` من الأسطر بصيغة \`a.b.c.d/p\`. كل سطر شبكة صحيحة: بتّات المضيف فيها أصفار (\`10.1.2.0/24\` وليس \`10.1.2.77/24\`). وقد توجد تكرارات وتداخلات وبأي ترتيب.
+
+**المخرج:** الكتل، كتلة في كل سطر بصيغة \`a.b.c.d/p\`، **مرتّبة بحسب عنوان الشبكة** (الأصغر أولاً).
+
+لا يصح الدمج إلا إذا كانت الكتل متجاورة **ومحاذاة**: تنضم شبكتان \`/24\` إلى \`/23\` فقط إذا بدأت الأولى عند قيمة زوجية للبايت الثالث. فمثلاً \`172.16.1.0/24\` + \`172.16.2.0/24\` لا تصيران كتلة واحدة، لأن \`172.16.1.0/23\` ستحتوي أيضاً \`172.16.0.0/24\` التي لم تكن في القائمة.
+
+## أمثلة
+
+\`\`\`text
+4
+192.168.0.0/24
+192.168.1.0/24
+192.168.2.0/24
+192.168.3.0/24
+\`\`\`
+
+المخرج:
+
+\`\`\`text
+192.168.0.0/22
+\`\`\`
+
+الشبكات الأربع متتالية والأولى محاذاة على مضاعف الأربعة، فتغطيها \`/22\` واحدة بدقة.
+
+\`\`\`text
+3
+172.16.1.0/24
+172.16.2.0/24
+172.16.0.0/24
+\`\`\`
+
+المخرج:
+
+\`\`\`text
+172.16.0.0/23
+172.16.2.0/24
+\`\`\`
+
+تمتد الشبكات الثلاث معاً من \`172.16.0.0\` إلى \`172.16.2.255\`. وأفضل ما يمكنك فعله هو \`/23\` (للشبكتين 0 و1) و\`/24\` (للشبكة 2).`,
+    },
+    difficulty: 2,
+    points: 150,
+    estMinutes: 40,
+    kind: "output",
+    lang: "python",
+    starterCode: {
+      python: `import sys
+
+tokens = sys.stdin.read().split()
+count = int(tokens[0])
+
+intervals = []  # (first address, last address) as integers
+for text in tokens[1:1 + count]:
+    address, prefix = text.split("/")
+    a, b, c, d = (int(part) for part in address.split("."))
+    first = (a << 24) | (b << 16) | (c << 8) | d
+    intervals.append((first, first + (1 << (32 - int(prefix))) - 1))
+
+# Your turn: merge the intervals, cover each one with the fewest CIDR blocks and print them.
+for first, last in sorted(intervals):
+    print(first, last)
+`,
+      javascript: `const tokens = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+const count = Number(tokens[0]);
+
+const intervals = []; // [first address, last address] as numbers
+for (const text of tokens.slice(1, 1 + count)) {
+  const [address, prefix] = text.split("/");
+  const [a, b, c, d] = address.split(".").map(Number);
+  const first = ((a * 256 + b) * 256 + c) * 256 + d;
+  intervals.push([first, first + 2 ** (32 - Number(prefix)) - 1]);
+}
+
+// Your turn: merge the intervals, cover each one with the fewest CIDR blocks and print them.
+intervals.sort((x, y) => x[0] - y[0]);
+for (const [first, last] of intervals) console.log(first, last);
+`,
+    },
+    sampleInput: "4\n192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n192.168.3.0/24\n",
+    hints: [
+      {
+        text: {
+          en: "Turn every block into an integer interval `[first, last]`. Sort the intervals, then merge the ones that overlap or touch (`next.first <= current.last + 1`). Work with integers, not strings.",
+          ar: "حوّل كل كتلة إلى مجال من الأعداد الصحيحة `[first, last]`. رتّب المجالات ثم ادمج المتداخلة أو المتلاصقة (`next.first <= current.last + 1`). اشتغل بالأعداد لا بالنصوص.",
+        },
+        cost: 12,
+      },
+      {
+        text: {
+          en: "A merged interval is not always one CIDR block. Cover it greedily from its start: the biggest block that fits starts at `first` with a size that is a power of two, divides `first` exactly (alignment) and does not pass `last`. Emit it, move `first` forward, repeat.",
+          ar: "المجال المدموج ليس دائماً كتلة CIDR واحدة. غطِّه بجشع من بدايته: أكبر كتلة تناسب تبدأ عند `first` وحجمها قوة للعدد 2 ويقسم `first` تماماً (المحاذاة) ولا يتجاوز `last`. أخرجها وحرّك `first` وكرّر.",
+        },
+        cost: 20,
+      },
+      {
+        text: {
+          en: "In JavaScript, `|`, `&` and `<<` work on signed 32-bit numbers, which breaks near 255.255.255.255. Use ordinary arithmetic (`*`, `%`, `Math.floor`) on numbers, which are exact up to 2^53.",
+          ar: "في JavaScript تعمل المعاملات `|` و`&` و`<<` على أعداد 32 بت بإشارة، فتنكسر قرب 255.255.255.255. استخدم الحساب العادي (`*` و`%` و`Math.floor`) على الأعداد فهي دقيقة حتى 2^53.",
+        },
+        cost: 28,
+      },
+    ],
+    lessons: ["networking/ip-subnetting"],
+    tags: ["cidr", "route-summarization", "aggregation", "ipv4"],
+    addedAt: "2026-10-07",
+  },
 ];

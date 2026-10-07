@@ -201,4 +201,72 @@ console.log(order.join("\\n"));
 `,
     },
   },
+  {
+    id: "net-route-aggregator",
+    solutions: {
+      python: `import sys
+
+tokens = sys.stdin.read().split()
+count = int(tokens[0])
+
+intervals = []
+for text in tokens[1:1 + count]:
+    address, prefix = text.split("/")
+    a, b, c, d = (int(part) for part in address.split("."))
+    first = (a << 24) | (b << 16) | (c << 8) | d
+    intervals.append((first, first + (1 << (32 - int(prefix))) - 1))
+intervals.sort()
+
+merged = []
+for first, last in intervals:
+    if merged and first <= merged[-1][1] + 1:  # overlapping or touching
+        merged[-1][1] = max(merged[-1][1], last)
+    else:
+        merged.append([first, last])
+
+for first, last in merged:
+    while first <= last:
+        size = 1 << 32
+        while first % size != 0 or size > last - first + 1:  # aligned and not past the end
+            size >>= 1
+        prefix = 32 - (size.bit_length() - 1)
+        octets = [(first >> shift) & 255 for shift in (24, 16, 8, 0)]
+        print(".".join(map(str, octets)) + "/" + str(prefix))
+        first += size
+`,
+      javascript: `const tokens = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+const count = Number(tokens[0]);
+
+// Plain arithmetic: bit operators would wrap at 32 bits.
+const intervals = [];
+for (const text of tokens.slice(1, 1 + count)) {
+  const [address, prefix] = text.split("/");
+  const [a, b, c, d] = address.split(".").map(Number);
+  const first = ((a * 256 + b) * 256 + c) * 256 + d;
+  intervals.push([first, first + 2 ** (32 - Number(prefix)) - 1]);
+}
+intervals.sort((x, y) => x[0] - y[0]);
+
+const merged = [];
+for (const [first, last] of intervals) {
+  const top = merged[merged.length - 1];
+  if (top && first <= top[1] + 1) top[1] = Math.max(top[1], last); // overlapping or touching
+  else merged.push([first, last]);
+}
+
+const lines = [];
+for (const [start, last] of merged) {
+  let first = start;
+  while (first <= last) {
+    let size = 2 ** 32;
+    while (first % size !== 0 || size > last - first + 1) size /= 2; // aligned and not past the end
+    const octets = [24, 16, 8, 0].map((shift) => Math.floor(first / 2 ** shift) % 256);
+    lines.push(octets.join(".") + "/" + (32 - Math.log2(size)));
+    first += size;
+  }
+}
+console.log(lines.join("\\n"));
+`,
+    },
+  },
 ];
