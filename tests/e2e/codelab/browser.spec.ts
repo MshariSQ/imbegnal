@@ -115,6 +115,32 @@ console.log("parent=" + (function(){ try { return typeof parent.document; } catc
     });
   });
 
+  it("Web: a comment that mentions <head> cannot switch off the CSP, the console capture or the loop guard", async () => {
+    await withPage(s, { signedIn: false }, async (h) => {
+      await openLab(h, s.site, "lang=web");
+      await setEditor(
+        h.page,
+        `<!-- Tip: styles belong in <head> -->
+<!doctype html>
+<html lang="ar" dir="rtl"><head><title>t</title></head><body>
+<ul id="l"></ul>
+<script>
+for (var i = 0; i < 3; i++) document.getElementById("l").innerHTML += "<li>" + i + "</li>";
+fetch("https://example.com/x").then(() => console.log("net=open"), () => console.log("net=blocked"));
+console.log("lang=" + document.documentElement.lang + " dir=" + document.documentElement.dir + " mode=" + document.compatMode);
+</script></body></html>`
+      );
+      await runButton(h.page).click();
+      await resultPanel(h.page).waitFor();
+      await h.page.waitForFunction(() => /net=/.test(document.querySelector('[data-testid="run-result"]')?.textContent ?? ""), null, { timeout: 8000 });
+      const t = await resultPanel(h.page).innerText();
+      assert.match(t, /net=blocked/, "the CSP still applies");
+      // The page renders as written: standards mode and the <html> tag's own lang/dir.
+      assert.match(t, /lang=ar dir=rtl mode=CSS1Compat/);
+      assert.equal(await h.page.frameLocator('iframe[title="Preview"]').locator("#l li").count(), 3, "the guarded loop ran");
+    });
+  });
+
   it("Web: a script error is reported with its line number", async () => {
     await withPage(s, { signedIn: false }, async (h) => {
       await openLab(h, s.site, "lang=web");

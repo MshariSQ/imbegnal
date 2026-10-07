@@ -114,25 +114,40 @@ function harness(token: string, limits: WebHarnessLimits): string {
   return `<script>(function(){${body}})();<\/script>`;
 }
 
+/** A doctype at the start of the page (only whitespace and comments before it). */
+const LEADING_DOCTYPE = /^(?:\s|<!--[\s\S]*?-->)*<!doctype(?=[\s>])[^>]*>/i;
+
 /**
- * Builds the srcdoc for `code` (a full document or just a fragment). The CSP
- * meta and harness are placed first so nothing in the user's markup runs before them.
+ * Real <html>, <head> or <body> start tags. Comments, scripts and raw-text elements are
+ * skipped, so a tag mentioned in them ("styles belong in <head>") is not mistaken for one.
+ */
+const DOCUMENT_TAGS = /<!--[\s\S]*?(?:-->|$)|<(script|style|textarea|title|xmp)(?=[\s/>])[^>]*>[\s\S]*?<\/\1\s*>|<(html|head|body)(?=[\s/>])/gi;
+
+/** True when `code` is a whole document (doctype or a real html/head/body tag), not a fragment. */
+function isDocument(code: string): boolean {
+  if (LEADING_DOCTYPE.test(code)) return true;
+  for (const m of code.matchAll(DOCUMENT_TAGS)) if (m[2]) return true;
+  return false;
+}
+
+/**
+ * Builds the srcdoc for `code` (a full document or just a fragment). The CSP meta and the
+ * harness go BEFORE any of the learner's markup: right after a leading doctype (which must
+ * stay first, or the page would switch to quirks mode), else at the very start. So nothing
+ * the learner writes runs before them or can hide them, wherever their <head> is, and even
+ * when a comment or a script mentions "<head>" first. The parser creates <html>/<head> for
+ * the injected elements; a later <html> tag only adds its attributes (lang, dir) and a later
+ * <head> tag is ignored, so the learner's page renders the same. Nothing injected contains a
+ * newline, so the learner's line numbers do not move.
  */
 export function buildPreviewDocument(code: string, token: string, limits: WebHarnessLimits = WEB_LIMITS): string {
   const inject = `<meta http-equiv="Content-Security-Policy" content="${WEB_PREVIEW_CSP}">${harness(token, limits)}`;
-
-  const head = code.match(/<head(\s[^>]*)?>/i);
-  if (head && head.index !== undefined) {
-    const at = head.index + head[0].length;
-    return code.slice(0, at) + inject + code.slice(at);
+  if (!isDocument(code)) {
+    // A fragment (or text before any tag): wrap it in a standards-mode document.
+    return `<!doctype html><html><head><meta charset="utf-8">${inject}</head><body>${code}</body></html>`;
   }
-  const htmlTag = code.match(/<html(\s[^>]*)?>/i);
-  if (htmlTag && htmlTag.index !== undefined) {
-    const at = htmlTag.index + htmlTag[0].length;
-    return `${code.slice(0, at)}<head><meta charset="utf-8">${inject}</head>${code.slice(at)}`;
-  }
-  // A fragment (or text before any tag): wrap it in a standards-mode document.
-  return `<!doctype html><html><head><meta charset="utf-8">${inject}</head><body>${code}</body></html>`;
+  const at = code.match(LEADING_DOCTYPE)?.[0].length ?? 0;
+  return code.slice(0, at) + inject + code.slice(at);
 }
 
 /** Validates an untrusted postMessage payload against the run's token. */
