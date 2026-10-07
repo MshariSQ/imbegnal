@@ -421,6 +421,27 @@ describe("printable certificate", () => {
     }
   });
 
+  it("a hand-typed code (lowercase, no dashes) switches views without a second check and keeps focus", async () => {
+    const worker = defaultWorker();
+    worker.verify = () => ({ json: { ...VALID_CERT, recipient: ARABIC_NAME } });
+    const loose = CERT_CODE.replace(/-/g, "").toLowerCase();
+    const t = await openPage(browser, origin, `/certificate/?code=${loose}`, { worker });
+    try {
+      const card = t.page.getByTestId("cert-valid");
+      await card.waitFor();
+      await t.page.getByRole("link", { name: en.printable.open }).click();
+      await t.page.getByTestId("cert-sheet").waitFor();
+      await eventually(async () => assert.ok(await t.page.evaluate(() => !!document.activeElement?.closest("h1")), "focus moves to the new heading"));
+      await t.page.getByRole("link", { name: en.printable.back }).click();
+      await card.waitFor();
+      await eventually(async () => assert.equal(await t.page.evaluate(() => document.activeElement?.textContent), en.valid.title));
+      assert.equal(worker.callsTo("/api/certificates/verify/").length, 1, "one verification for the whole visit");
+      clean(t);
+    } finally {
+      await t.close();
+    }
+  });
+
   it("without a recipient the result card stays, with no printable link", async () => {
     const worker = defaultWorker();
     worker.verify = () => ({ json: { valid: true, code: CERT_CODE, track: "frontend" } });

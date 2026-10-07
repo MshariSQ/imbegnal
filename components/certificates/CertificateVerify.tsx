@@ -51,8 +51,10 @@ export default function CertificateVerify({ courseTitles }: { courseTitles: Reco
   const raw = params.get("code") ?? "";
   const print = wantsPrintView(params.get(PRINT_PARAM));
   // A new code in the URL starts a fresh check (and clears the form's draft and error). Toggling the printable
-  // view keeps the same Verifier, so it never re-fetches.
-  return <Verifier key={raw} raw={raw} print={print} courseTitles={courseTitles} />;
+  // view keeps the same Verifier, so it never re-fetches. Keyed by the canonical code: the view links use it,
+  // so a hand-typed "imbabcd…" in the URL must not count as a different code (a remount would check again
+  // and lose the focus target).
+  return <Verifier key={parseCertificateInput(raw) ?? raw} raw={raw} print={print} courseTitles={courseTitles} />;
 }
 
 interface Settled {
