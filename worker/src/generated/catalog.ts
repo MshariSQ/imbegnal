@@ -150,7 +150,11 @@ export const catalog: Catalog = {
     {
       "id": "reverse-engineering",
       "title": "Reverse Engineering",
-      "lessons": []
+      "lessons": [
+        "how-programs-run",
+        "assembly-basics",
+        "static-analysis-deobfuscation"
+      ]
     }
   ],
   "labs": [
@@ -1377,6 +1381,393 @@ export const catalog: Catalog = {
           "name": "No requests",
           "stdin": "first 2\n64 32\n",
           "expected": "free=96 largest=64",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/how-programs-run/elf-header",
+      "track": "reverse-engineering",
+      "lesson": "how-programs-run",
+      "id": "elf-header",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A 64-bit little-endian shared object (x86-64)",
+          "stdin": "7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00\n03 00 3e 00 01 00 00 00 40 10 00 00 00 00 00 00\n",
+          "expected": "class: 64-bit\nendian: little\ntype: DYN\nmachine: x86-64\nentry: 0x1040\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A 32-bit little-endian ARM executable",
+          "stdin": "7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00\n02 00 28 00 01 00 00 00 f4 82 00 00\n",
+          "expected": "class: 32-bit\nendian: little\ntype: EXEC\nmachine: ARM\nentry: 0x82f4\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A 32-bit big-endian file with an unknown machine",
+          "stdin": "7f 45 4c 46 01 02 01 00 00 00 00 00 00 00 00 00\n00 02 00 08 00 00 00 01 00 40 01 00\n",
+          "expected": "class: 32-bit\nendian: big\ntype: EXEC\nmachine: other\nentry: 0x400100\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A Windows program (MZ) is not an ELF file",
+          "stdin": "4d 5a 90 00 03 00 00 00\n",
+          "expected": "not an ELF file\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "not an ELF file\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Right magic but cut off before the entry point",
+          "stdin": "7f 45 4c 46 02 01 01 00\n",
+          "expected": "truncated or corrupt ELF header\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/how-programs-run/endianness",
+      "track": "reverse-engineering",
+      "lesson": "how-programs-run",
+      "id": "endianness",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "The classic 0x12345678",
+          "stdin": "1\n305419896\n",
+          "expected": "0x12345678 -> 78 56 34 12 -> 0x78563412\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Boundaries: zero and the largest 32-bit value",
+          "stdin": "2\n0\n4294967295\n",
+          "expected": "0x00000000 -> 00 00 00 00 -> 0x00000000\n0xffffffff -> ff ff ff ff -> 0xffffffff\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A small number ends up in the top byte",
+          "stdin": "2\n1\n66051\n",
+          "expected": "0x00000001 -> 01 00 00 00 -> 0x01000000\n0x00010203 -> 03 02 01 00 -> 0x03020100\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Values with the high bit set",
+          "stdin": "1\n3735928559\n",
+          "expected": "0xdeadbeef -> ef be ad de -> 0xefbeadde\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No numbers at all",
+          "stdin": "0\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/how-programs-run/memory-map",
+      "track": "reverse-engineering",
+      "lesson": "how-programs-run",
+      "id": "memory-map",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Hits in code, data and stack",
+          "stdin": "4\n00400000-00401000 r-xp demo\n00600000-00601000 rw-p demo\n01d3a000-01d5b000 rw-p [heap]\n7ffd5a3c0000-7ffd5a3e1000 rw-p [stack]\n4\n0x400100\n0x600abc\n0x1d40000\n0x7ffd5a3d0000\n",
+          "expected": "0x400100 -> demo (r-xp)\n0x600abc -> demo (rw-p)\n0x1d40000 -> [heap] (rw-p)\n0x7ffd5a3d0000 -> [stack] (rw-p)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Boundaries: start is inside, end is outside",
+          "stdin": "2\n00400000-00401000 r-xp demo\n00600000-00601000 rw-p demo\n5\n0x400000\n0x400fff\n0x401000\n0x5fffff\n0x601000\n",
+          "expected": "0x400000 -> demo (r-xp)\n0x400fff -> demo (r-xp)\n0x401000 -> unmapped\n0x5fffff -> unmapped\n0x601000 -> unmapped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Addresses above 32 bits and below the first region",
+          "stdin": "2\n7f3a10000000-7f3a101c0000 r-xp libc.so\n7f3a101c0000-7f3a101c4000 r--p libc.so\n3\n0x7f3a100a1b2c\n0x7f3a101c0000\n0x0\n",
+          "expected": "0x7f3a100a1b2c -> libc.so (r-xp)\n0x7f3a101c0000 -> libc.so (r--p)\n0x0 -> unmapped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty memory map",
+          "stdin": "0\n2\n0x1\n0x7ffd5a3d0000\n",
+          "expected": "0x1 -> unmapped\n0x7ffd5a3d0000 -> unmapped\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/assembly-basics/emulate-listing",
+      "track": "reverse-engineering",
+      "lesson": "assembly-basics",
+      "id": "emulate-listing",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example: 7 * 5 + 3",
+          "stdin": "mov rax, 7\nimul rax, 5     ; rax = 35\nadd rax, 3\nret\n",
+          "expected": "rax = 38\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Comments, blank lines, upper case, hex, and/or",
+          "stdin": "; compute (0xff & 0x3c) | 1\nMOV RAX, 0xFF\nAND RAX, 0x3c\n\nor rax, 1   ; set the lowest bit\nret\n",
+          "expected": "rax = 61\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Register-to-register operations and a negative result",
+          "stdin": "xor rcx, rcx\nmov rax, 5\nmov rbx, 8\nsub rax, rbx      ; -3\nimul rax, rbx     ; -24\nadd rax, rcx\nret\n",
+          "expected": "rax = -24\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Wrap-around: the largest signed value plus one",
+          "stdin": "mov rax, 0x7fffffffffffffff\ninc rax\nret\n",
+          "expected": "rax = -9223372036854775808\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Shifts, and nothing runs after ret",
+          "stdin": "mov rax, 1\nshl rax, 40\nmov rbx, rax\nshr rbx, 38\nadd rax, rbx\nneg rdx\nret\nmov rax, 99\n",
+          "expected": "rax = 1099511627780\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty listing: every register is zero",
+          "stdin": "",
+          "expected": "rax = 0\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/assembly-basics/loop-jumps",
+      "track": "reverse-engineering",
+      "lesson": "assembly-basics",
+      "id": "loop-jumps",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example: a countdown loop",
+          "stdin": "mov rcx, 3\nagain:\ndec rcx\njnz again\nret\n",
+          "expected": "rax = 0\nsteps = 8\n",
+          "mode": "trim"
+        },
+        {
+          "name": "sum_to(5) with cmp and je",
+          "stdin": "mov rdi, 5\nxor rax, rax\ntop:\ncmp rdi, 0\nje done\nadd rax, rdi\ndec rdi\njmp top\ndone:\nret\n",
+          "expected": "rax = 15\nsteps = 30\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Factorial of 6 with a do-while loop",
+          "stdin": "mov rcx, 6\nmov rax, 1\nagain:\nimul rax, rcx\ndec rcx\njnz again\nret\n",
+          "expected": "rax = 720\nsteps = 21\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Signed comparison: max(-7, 3) with a forward jump",
+          "stdin": "mov rax, -7\nmov rbx, 3\ncmp rax, rbx\njge keep\nmov rax, rbx\nkeep:\nret\n",
+          "expected": "rax = 3\nsteps = 6\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An endless loop hits the step limit",
+          "stdin": "spin:\njmp spin\n",
+          "expected": "step limit exceeded\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Boundary: exactly 10000 steps is allowed",
+          "stdin": "mov rcx, 4999\nl:\ndec rcx\njnz l\nret\n",
+          "expected": "rax = 0\nsteps = 10000\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/assembly-basics/stack-frames",
+      "track": "reverse-engineering",
+      "lesson": "assembly-basics",
+      "id": "stack-frames",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "The worked example: a balanced call",
+          "stdin": "push 7\ncall f\npush 9\npop\nret\n",
+          "expected": "return to 2\nstack: d7\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Nested calls return in reverse order",
+          "stdin": "call main\npush 1\ncall helper\npush 2\npop\nret\npop\nret\n",
+          "expected": "return to 3\nreturn to 1\nstack: empty\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An unbalanced push makes ret land on data",
+          "stdin": "call vuln\npush 4660\nret\n",
+          "expected": "crash: ret popped data 4660\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "stack: empty\n",
+          "mode": "trim"
+        },
+        {
+          "name": "ret on an empty stack",
+          "stdin": "ret\n",
+          "expected": "crash: stack empty\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Pending calls and a negative value, listed top first",
+          "stdin": "push -5\ncall a\ncall b\npush 99\n",
+          "expected": "stack: d99 r3 r2 d-5\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/static-analysis-deobfuscation/extract-strings",
+      "track": "reverse-engineering",
+      "lesson": "static-analysis-deobfuscation",
+      "id": "extract-strings",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "4\n00 48 65 6c 6c 6f 00 01 41 42 00 70 61 73 73 77 6f 72 64 ff\n",
+          "expected": "0x0001  Hello\n0x000b  password\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A run of exactly N is kept, N-1 is dropped, and a run may end the input",
+          "stdin": "3\n41 42 00 43 44 45 00 46 47 48 49\n",
+          "expected": "0x0003  CDE\n0x0007  FGHI\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Space and tilde are printable, 0x7f and 0x80 are not",
+          "stdin": "1\n7f 20 7e 80 41\n",
+          "expected": "0x0001   ~\n0x0004  A\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No run is long enough: no output",
+          "stdin": "4\n00 01 02 41 42 43 00\n",
+          "expected": "",
+          "mode": "trim"
+        },
+        {
+          "name": "Strings inside an ELF-like dump (mixed-case hex, several lines)",
+          "stdin": "6\n7f 45 4c 46 02 01 01 00 00 00 2e 74 65 78 74 00\n2e 64 61 74 61 00 2f 6C 69 62 36 34 2f 6C 64 2D\n6c 69 6e 75 78 2D 78 38 36 2D 36 34 2e 73 6f 2E\n32 00 47 4C 49 42 43 5F 32 2E 32 2E 35 00 55 73\n61 67 65 3A 20 25 73 20 3c 66 69 6C 65 3E 0a 00\nff FE\n",
+          "expected": "0x0016  /lib64/ld-linux-x86-64.so.2\n0x0032  GLIBC_2.2.5\n0x003e  Usage: %s <file>\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A larger input: 120 repeated records",
+          "stdin": "4\n41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00 41 42 43 44 00\n",
+          "expected": "0x0000  ABCD\n0x0005  ABCD\n0x000a  ABCD\n0x000f  ABCD\n0x0014  ABCD\n0x0019  ABCD\n0x001e  ABCD\n0x0023  ABCD\n0x0028  ABCD\n0x002d  ABCD\n0x0032  ABCD\n0x0037  ABCD\n0x003c  ABCD\n0x0041  ABCD\n0x0046  ABCD\n0x004b  ABCD\n0x0050  ABCD\n0x0055  ABCD\n0x005a  ABCD\n0x005f  ABCD\n0x0064  ABCD\n0x0069  ABCD\n0x006e  ABCD\n0x0073  ABCD\n0x0078  ABCD\n0x007d  ABCD\n0x0082  ABCD\n0x0087  ABCD\n0x008c  ABCD\n0x0091  ABCD\n0x0096  ABCD\n0x009b  ABCD\n0x00a0  ABCD\n0x00a5  ABCD\n0x00aa  ABCD\n0x00af  ABCD\n0x00b4  ABCD\n0x00b9  ABCD\n0x00be  ABCD\n0x00c3  ABCD\n0x00c8  ABCD\n0x00cd  ABCD\n0x00d2  ABCD\n0x00d7  ABCD\n0x00dc  ABCD\n0x00e1  ABCD\n0x00e6  ABCD\n0x00eb  ABCD\n0x00f0  ABCD\n0x00f5  ABCD\n0x00fa  ABCD\n0x00ff  ABCD\n0x0104  ABCD\n0x0109  ABCD\n0x010e  ABCD\n0x0113  ABCD\n0x0118  ABCD\n0x011d  ABCD\n0x0122  ABCD\n0x0127  ABCD\n0x012c  ABCD\n0x0131  ABCD\n0x0136  ABCD\n0x013b  ABCD\n0x0140  ABCD\n0x0145  ABCD\n0x014a  ABCD\n0x014f  ABCD\n0x0154  ABCD\n0x0159  ABCD\n0x015e  ABCD\n0x0163  ABCD\n0x0168  ABCD\n0x016d  ABCD\n0x0172  ABCD\n0x0177  ABCD\n0x017c  ABCD\n0x0181  ABCD\n0x0186  ABCD\n0x018b  ABCD\n0x0190  ABCD\n0x0195  ABCD\n0x019a  ABCD\n0x019f  ABCD\n0x01a4  ABCD\n0x01a9  ABCD\n0x01ae  ABCD\n0x01b3  ABCD\n0x01b8  ABCD\n0x01bd  ABCD\n0x01c2  ABCD\n0x01c7  ABCD\n0x01cc  ABCD\n0x01d1  ABCD\n0x01d6  ABCD\n0x01db  ABCD\n0x01e0  ABCD\n0x01e5  ABCD\n0x01ea  ABCD\n0x01ef  ABCD\n0x01f4  ABCD\n0x01f9  ABCD\n0x01fe  ABCD\n0x0203  ABCD\n0x0208  ABCD\n0x020d  ABCD\n0x0212  ABCD\n0x0217  ABCD\n0x021c  ABCD\n0x0221  ABCD\n0x0226  ABCD\n0x022b  ABCD\n0x0230  ABCD\n0x0235  ABCD\n0x023a  ABCD\n0x023f  ABCD\n0x0244  ABCD\n0x0249  ABCD\n0x024e  ABCD\n0x0253  ABCD\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/static-analysis-deobfuscation/peel-layers",
+      "track": "reverse-engineering",
+      "lesson": "static-analysis-deobfuscation",
+      "id": "peel-layers",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example: xor then Base64",
+          "stdin": "xor:42,b64\nQkM=\n",
+          "expected": "hi\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Three layers: rot13, xor with a hex key, Base64",
+          "stdin": "rot13,xor:0x5a,b64\nICgoPXo0PXo9Lyh6OCMrejU/LCsuKA==\n",
+          "expected": "meet at the old bridge\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Reverse then hex",
+          "stdin": "rev,hex\n6465737365727473\n",
+          "expected": "stressed\n",
+          "mode": "trim"
+        },
+        {
+          "name": "ROT13 applied on top of hex text (letters a-f change too)",
+          "stdin": "b64,hex,rot13\n533256354s6941304q6n51794p55394p49513q3q\n",
+          "expected": "Key: 4242-OK!\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Order matters: Base64, then reverse",
+          "stdin": "b64,rev\n==wcyVGd0FWbgIXZkJ3b\n",
+          "expected": "order matters\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty message",
+          "stdin": "b64\n\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/static-analysis-deobfuscation/xor-crib",
+      "track": "reverse-engineering",
+      "lesson": "static-analysis-deobfuscation",
+      "id": "xor-crib",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "net\n44 4f 5e\n",
+          "expected": "key = 0x2a\ntext = net\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A configuration line, continuous lowercase hex",
+          "stdin": "password\n545859515e500d1747564444405845530a545f565950525a52\n",
+          "expected": "key = 0x37\ntext = config: password=changeme\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Key 0x00: the text was never changed",
+          "stdin": "plain\n706c61696e20746578742c206e6f20656e636f64696e6720617420616c6c\n",
+          "expected": "key = 0x00\ntext = plain text, no encoding at all\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Key 0xff, the top of the range",
+          "stdin": "build\n899a8d8c969091dfcdd1cedfd2df9d8a96939bdf9094\n",
+          "expected": "key = 0xff\ntext = version 2.1 - build ok\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Upper-case hex split over two lines",
+          "stdin": "example\n34 28 28 2C 66 73 73 29 2C 38 3D 28 39 2F 72\n39 24 3D 31 2C 30 39 72 33 2E 3B 73 3F 34 39 3F 37\n",
+          "expected": "key = 0x5c\ntext = http://updates.example.org/check\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No key reveals the crib",
+          "stdin": "zebra\n2f2e3529282f266129243324\n",
+          "expected": "no key found\n",
           "mode": "trim"
         }
       ]
