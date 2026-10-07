@@ -172,6 +172,167 @@ for (const pw of lines.slice(1, 1 + n)) {
 console.log(out.join("\n"));
 `;
 
+// ── re-stack-vm ───────────────────────────────────────────────────────────────
+
+const STACK_VM_PY = String.raw`import sys
+
+LIMIT = 100000
+
+
+class Fault(Exception):
+    pass
+
+
+def run(code):
+    out = []
+    stack = []
+    pc = 0
+    steps = 0
+    try:
+        while pc < len(code):
+            if steps >= LIMIT:
+                out.append("LIMIT\n")
+                break
+            steps += 1
+            op = code[pc]
+            pc += 1
+            if op == 0x00:
+                break
+            if op in (0x01, 0x0A, 0x0B, 0x0C):
+                if pc >= len(code):
+                    raise Fault()
+                arg = code[pc]
+                pc += 1
+                if op == 0x01:
+                    stack.append(arg)
+                    continue
+                if op == 0x0A:
+                    taken = True
+                else:
+                    if not stack:
+                        raise Fault()
+                    v = stack.pop()
+                    taken = (v == 0) if op == 0x0B else (v != 0)
+                if taken:
+                    if arg >= len(code):
+                        raise Fault()
+                    pc = arg
+            elif op in (0x02, 0x03, 0x04, 0x0D):
+                if len(stack) < 2:
+                    raise Fault()
+                b = stack.pop()
+                a = stack.pop()
+                stack.append(a + b if op == 0x02 else a - b if op == 0x03 else a * b if op == 0x04 else int(a < b))
+            elif op == 0x05:
+                if not stack:
+                    raise Fault()
+                stack.append(stack[-1])
+            elif op == 0x06:
+                if len(stack) < 2:
+                    raise Fault()
+                stack[-1], stack[-2] = stack[-2], stack[-1]
+            elif op == 0x07:
+                if not stack:
+                    raise Fault()
+                stack.pop()
+            elif op == 0x08:
+                if not stack:
+                    raise Fault()
+                out.append(str(stack.pop()) + "\n")
+            elif op == 0x09:
+                if not stack:
+                    raise Fault()
+                out.append(chr(stack.pop()))
+            elif op == 0x0E:
+                if len(stack) < 2:
+                    raise Fault()
+                stack.append(stack[-2])
+            else:
+                raise Fault()
+    except Fault:
+        out.append("FAULT\n")
+    return "".join(out)
+
+
+program = bytes(int(token, 16) for token in sys.stdin.read().split())
+sys.stdout.write(run(program))
+`;
+
+const STACK_VM_JS = String.raw`const code = require("fs").readFileSync(0, "utf8").split(/\s+/).filter(Boolean).map((t) => parseInt(t, 16));
+const LIMIT = 100000;
+
+class Fault extends Error {}
+
+function run(program) {
+  const out = [];
+  const stack = [];
+  let pc = 0;
+  let steps = 0;
+  const pop = () => {
+    if (stack.length === 0) throw new Fault();
+    return stack.pop();
+  };
+  try {
+    while (pc < program.length) {
+      if (steps >= LIMIT) {
+        out.push("LIMIT\n");
+        break;
+      }
+      steps++;
+      const op = program[pc++];
+      if (op === 0x00) break;
+      if (op === 0x01 || op === 0x0a || op === 0x0b || op === 0x0c) {
+        if (pc >= program.length) throw new Fault();
+        const arg = program[pc++];
+        if (op === 0x01) {
+          stack.push(arg);
+          continue;
+        }
+        let taken = true;
+        if (op !== 0x0a) {
+          const v = pop();
+          taken = op === 0x0b ? v === 0 : v !== 0;
+        }
+        if (taken) {
+          if (arg >= program.length) throw new Fault();
+          pc = arg;
+        }
+      } else if (op === 0x02 || op === 0x03 || op === 0x04 || op === 0x0d) {
+        if (stack.length < 2) throw new Fault();
+        const b = stack.pop();
+        const a = stack.pop();
+        stack.push(op === 0x02 ? a + b : op === 0x03 ? a - b : op === 0x04 ? a * b : a < b ? 1 : 0);
+      } else if (op === 0x05) {
+        const v = pop();
+        stack.push(v, v);
+      } else if (op === 0x06) {
+        if (stack.length < 2) throw new Fault();
+        const b = stack.pop();
+        const a = stack.pop();
+        stack.push(b, a);
+      } else if (op === 0x07) {
+        pop();
+      } else if (op === 0x08) {
+        out.push(String(pop()) + "\n");
+      } else if (op === 0x09) {
+        out.push(String.fromCharCode(pop()));
+      } else if (op === 0x0e) {
+        if (stack.length < 2) throw new Fault();
+        stack.push(stack[stack.length - 2]);
+      } else {
+        throw new Fault();
+      }
+    }
+  } catch (e) {
+    if (!(e instanceof Fault)) throw e;
+    out.push("FAULT\n");
+  }
+  return out.join("");
+}
+
+process.stdout.write(run(code));
+`;
+
 export const securityReferences: ChallengeReference[] = [
   { id: "sec-auth-log-hunt", flag: solveAuthLogHunt(puzzleFile("sec-auth-log-hunt", "auth.log")) },
   { id: "sec-salted-wordlist", flag: solveSaltedWordlist(puzzleFile("sec-salted-wordlist", "shadow.txt"), puzzleFile("sec-salted-wordlist", "wordlist.txt")) },
@@ -186,4 +347,5 @@ export const securityReferences: ChallengeReference[] = [
   { id: "re-js-unmask", flag: solveJsUnmask(puzzleFile("re-js-unmask", "vault.js")) },
   { id: "re-crackme-checker", flag: solveCrackme(puzzleFile("re-crackme-checker", "crackme.py")) },
   { id: "sec-password-strength", solutions: { python: PASSWORD_STRENGTH_PY, javascript: PASSWORD_STRENGTH_JS } },
+  { id: "re-stack-vm", solutions: { python: STACK_VM_PY, javascript: STACK_VM_JS } },
 ];

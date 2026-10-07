@@ -47,7 +47,9 @@ const RUBRIC: Record<number, [number, number]> = { 1: [50, 50], 2: [100, 150], 3
 // ── 1. parity ─────────────────────────────────────────────────────────────────
 
 test("every meta has exactly one grader with the same id and kind, and vice versa", () => {
-  assert.ok(securityChallenges.length >= 1, "the security group ships 6-7 challenges");
+  assert.equal(securityChallenges.length, 7, "the security group ships 7 challenges (4 cyber-security, 3 reverse-engineering)");
+  assert.equal(securityChallenges.filter((c) => c.track === "cyber-security").length, 4);
+  assert.equal(securityChallenges.filter((c) => c.track === "reverse-engineering").length, 3);
   const metaIds = securityChallenges.map((c) => c.id);
   const graderIds = securityGraders.map((g) => g.id);
   assert.equal(new Set(metaIds).size, metaIds.length, "duplicate meta ids");
@@ -208,7 +210,7 @@ test("flag solvers derive a flag whose SHA-256 equals the grader's flagHash", as
     assert.equal(await gradeFlag(g, "IMB{wrong}"), false);
     checked++;
   }
-  assert.ok(checked >= 1, "flag challenges are covered");
+  assert.equal(checked, 5, "five flag challenges");
 });
 
 const toRunResult = (r: ReturnType<typeof runLocal>): RunResult => ({
@@ -442,5 +444,92 @@ test("re-crackme-checker: the real program accepts exactly the derived serial an
     const fits = [...alphabet].filter((ch) => ((rol((ch.charCodeAt(0) ^ acc) & 0xff, 3) + 7 * i) & 0xff) === out[i]);
     assert.deepEqual(fits, [serial[i]], `position ${i} has one solution`);
     acc = (acc * 3 + serial.charCodeAt(i) + i) & 0xff;
+  }
+});
+
+test("re-stack-vm: expected outputs agree with an independent interpreter and the spec's corner cases are covered", () => {
+  const g = securityGraders.find((x) => x.id === "re-stack-vm");
+  assert.ok(g && g.kind === "output");
+  /** Third implementation (table-driven), written from the statement only. */
+  const interpret = (hex: string): string => {
+    const code = hex.split(/\s+/).filter(Boolean).map((t) => parseInt(t, 16));
+    const st: number[] = [];
+    let out = "";
+    let pc = 0;
+    let steps = 0;
+    const need = (n: number) => {
+      if (st.length < n) throw new Error("fault");
+    };
+    try {
+      while (pc < code.length) {
+        if (steps === 100000) return `${out}LIMIT\n`;
+        steps++;
+        const op = code[pc++];
+        if (op === 0x00) break;
+        const operand = () => {
+          if (pc >= code.length) throw new Error("fault");
+          return code[pc++];
+        };
+        const jump = (to: number) => {
+          if (to >= code.length) throw new Error("fault");
+          pc = to;
+        };
+        switch (op) {
+          case 0x01: st.push(operand()); break;
+          case 0x02: case 0x03: case 0x04: case 0x0d: {
+            need(2);
+            const b = st.pop() as number;
+            const a = st.pop() as number;
+            st.push(op === 0x02 ? a + b : op === 0x03 ? a - b : op === 0x04 ? a * b : Number(a < b));
+            break;
+          }
+          case 0x05: need(1); st.push(st[st.length - 1]); break;
+          case 0x06: need(2); st.push(st.pop() as number, st.pop() as number); break;
+          case 0x07: need(1); st.pop(); break;
+          case 0x08: need(1); out += `${st.pop()}\n`; break;
+          case 0x09: need(1); out += String.fromCharCode(st.pop() as number); break;
+          case 0x0a: jump(operand()); break;
+          case 0x0b: case 0x0c: {
+            const addr = operand();
+            need(1);
+            const v = st.pop() as number;
+            if ((op === 0x0b) === (v === 0)) jump(addr);
+            break;
+          }
+          case 0x0e: need(2); st.push(st[st.length - 2]); break;
+          default: throw new Error("fault");
+        }
+      }
+    } catch (e) {
+      if ((e as Error).message !== "fault") throw e;
+      out += "FAULT\n";
+    }
+    return out;
+  };
+  const seen = new Set<string>();
+  for (const t of g.tests) {
+    const got = interpret(t.stdin);
+    assert.equal(got, t.expected, `${t.name}: expected output disagrees with the independent interpreter`);
+    for (const word of ["FAULT", "LIMIT"]) if (got.includes(word)) seen.add(word);
+    if (got === "") seen.add("empty");
+    if (/-\d/.test(got)) seen.add("negative");
+  }
+  assert.deepEqual([...seen].sort(), ["FAULT", "LIMIT", "empty", "negative"]);
+  // every opcode of the table is exercised somewhere in the tests
+  const used = new Set<number>();
+  for (const t of g.tests) {
+    const bytes = t.stdin.split(/\s+/).filter(Boolean).map((x) => parseInt(x, 16));
+    for (let i = 0; i < bytes.length; i++) {
+      used.add(bytes[i]);
+      if ([0x01, 0x0a, 0x0b, 0x0c].includes(bytes[i])) i++; // skip the operand
+    }
+  }
+  for (let op = 0; op <= 0x0e; op++) assert.ok(used.has(op), `opcode ${op.toString(16)} is never exercised`);
+  // the statement documents all fifteen opcodes, in both languages
+  for (const lang of ["en", "ar"] as const) {
+    const table = metaOf("re-stack-vm").description[lang];
+    for (const name of ["HALT", "PUSH", "ADD", "SUB", "MUL", "DUP", "SWAP", "POP", "PRINT", "PRINTC", "JMP", "JZ", "JNZ", "LT", "OVER"]) {
+      assert.ok(table.includes(`| ${name} |`), `${lang}: opcode ${name} is documented`);
+    }
   }
 });

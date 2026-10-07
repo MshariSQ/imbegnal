@@ -957,4 +957,246 @@ if __name__ == "__main__":
   addedAt: "2026-10-07",
 };
 
-export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder, passwordStrength, jsUnmask, crackme];
+const stackVm: ChallengeMeta = {
+  id: "re-stack-vm",
+  track: "reverse-engineering",
+  topic: "virtual-machines",
+  title: { en: "Run the Bytecode: A Tiny Stack VM", ar: "شغّل الشيفرة الثنائية: آلة مكدّس افتراضية صغيرة" },
+  summary: {
+    en: "Implement the interpreter of a 15-opcode stack machine from its opcode table, and run bytecode that counts, loops, prints text and sometimes crashes on purpose.",
+    ar: "نفّذ مفسِّر آلة مكدّس ذات 15 رمز عملية انطلاقاً من جدول الرموز، وشغّل شيفرة ثنائية تعدّ وتكرّر وتطبع نصاً وتنهار أحياناً عن قصد.",
+  },
+  description: {
+    en: `## The story
+
+Malware analysts, game modders and language designers all meet the same shape sooner or later: a **virtual machine**. A program is not machine code, it is a list of bytes that a small interpreter decodes one instruction at a time. To understand such a program you first need the interpreter. Today you write it.
+
+The \`STK1\` machine has a **stack** of integers and a **program counter** (\`pc\`) that starts at 0. The program is a list of bytes. The machine repeats: read the opcode at \`pc\`, advance \`pc\`, execute it.
+
+## Opcodes
+
+| Hex | Name | Operand | Effect |
+|---|---|---|---|
+| \`00\` | HALT | none | stop the program |
+| \`01\` | PUSH | 1 byte \`n\` (0-255) | push \`n\` |
+| \`02\` | ADD | none | pop \`b\`, pop \`a\`, push \`a + b\` |
+| \`03\` | SUB | none | pop \`b\`, pop \`a\`, push \`a - b\` |
+| \`04\` | MUL | none | pop \`b\`, pop \`a\`, push \`a * b\` |
+| \`05\` | DUP | none | push a copy of the top value |
+| \`06\` | SWAP | none | exchange the top two values |
+| \`07\` | POP | none | discard the top value |
+| \`08\` | PRINT | none | pop a value and print it in decimal followed by a newline |
+| \`09\` | PRINTC | none | pop a value and print the ASCII character with that code (no newline) |
+| \`0A\` | JMP | 1 byte \`addr\` | set \`pc\` to \`addr\` |
+| \`0B\` | JZ | 1 byte \`addr\` | pop a value; if it is 0 set \`pc\` to \`addr\` |
+| \`0C\` | JNZ | 1 byte \`addr\` | pop a value; if it is not 0 set \`pc\` to \`addr\` |
+| \`0D\` | LT | none | pop \`b\`, pop \`a\`, push 1 if \`a < b\`, else 0 |
+| \`0E\` | OVER | none | push a copy of the second value from the top (\`a b\` becomes \`a b a\`) |
+
+An operand byte follows its opcode in the program, so those instructions are two bytes long. Jump addresses are absolute positions in the program (the first byte is address 0). If a conditional jump is **not** taken, execution continues after its operand.
+
+## Ending the run
+
+* Executing \`HALT\`, or running past the last byte of the program, ends it normally.
+* A **fault** ends it at once and prints \`FAULT\` followed by a newline right after whatever was already printed. A fault is: an unknown opcode, an instruction that needs more values than the stack holds, an operand byte missing at the end of the program, or a **taken** jump to an address that is at or beyond the program length.
+* A program that has executed **100000** instructions is stopped before the next one: print \`LIMIT\` and a newline. (Real sandboxes need such a watchdog.)
+
+## Input and output
+
+The input is the program as hexadecimal byte values (one or two digits each, upper or lower case) separated by any whitespace, possibly across several lines. The program has at most 255 bytes, and an empty input is an empty program. Print whatever the program prints. Values fit in a signed 64-bit integer in every test.
+
+## Examples
+
+Input:
+
+\`\`\`
+01 03 05 08 01 01 03 05 0C 02 00
+\`\`\`
+
+Output:
+
+\`\`\`
+3
+2
+1
+\`\`\`
+
+Read as assembly: \`PUSH 3\`, then a loop at address 2 \`DUP, PRINT, PUSH 1, SUB, DUP, JNZ 2\`, then \`HALT\`.
+
+Input:
+
+\`\`\`
+01 06 01 07 04 08 01 0A 01 04 03 08
+\`\`\`
+
+Output:
+
+\`\`\`
+42
+6
+\`\`\`
+
+Input:
+
+\`\`\`
+01 4F 09 01 4B 09 01 0A 09
+\`\`\`
+
+Output:
+
+\`\`\`
+OK
+\`\`\`
+
+The hidden tests run much more than these three: loops, text, every fault, the instruction limit and awkward formatting.`,
+    ar: `## القصة
+
+يصادف محلّلو البرمجيات الخبيثة ومعدّلو الألعاب ومصمّمو اللغات الشكلَ نفسه عاجلاً أو آجلاً: **الآلة الافتراضية**. البرنامج ليس شيفرة آلة، بل قائمة بايتات يفكّ مفسِّر صغير ترميزها تعليمة بتعليمة. ولكي تفهم برنامجاً كهذا تحتاج أولاً إلى مفسِّره. وأنت اليوم تكتبه.
+
+تملك الآلة \`STK1\` **مكدّساً** من الأعداد الصحيحة و**عدّاد برنامج** (\`pc\`) يبدأ من 0. والبرنامج قائمة بايتات. تكرّر الآلة: اقرأ رمز العملية عند \`pc\`، وقدّم \`pc\`، ونفّذ.
+
+## رموز العمليات
+
+| ست عشري | الاسم | المعامل | الأثر |
+|---|---|---|---|
+| \`00\` | HALT | لا يوجد | أوقف البرنامج |
+| \`01\` | PUSH | بايت واحد \`n\` (0-255) | ادفع \`n\` |
+| \`02\` | ADD | لا يوجد | اسحب \`b\` ثم \`a\` وادفع \`a + b\` |
+| \`03\` | SUB | لا يوجد | اسحب \`b\` ثم \`a\` وادفع \`a - b\` |
+| \`04\` | MUL | لا يوجد | اسحب \`b\` ثم \`a\` وادفع \`a * b\` |
+| \`05\` | DUP | لا يوجد | ادفع نسخة من القيمة العليا |
+| \`06\` | SWAP | لا يوجد | بدّل أعلى قيمتين |
+| \`07\` | POP | لا يوجد | تخلَّ عن القيمة العليا |
+| \`08\` | PRINT | لا يوجد | اسحب قيمة واطبعها بالنظام العشري يتبعها سطر جديد |
+| \`09\` | PRINTC | لا يوجد | اسحب قيمة واطبع محرف ASCII الذي له هذا الرمز (دون سطر جديد) |
+| \`0A\` | JMP | بايت واحد \`addr\` | اجعل \`pc\` يساوي \`addr\` |
+| \`0B\` | JZ | بايت واحد \`addr\` | اسحب قيمة؛ فإن كانت 0 فاجعل \`pc\` يساوي \`addr\` |
+| \`0C\` | JNZ | بايت واحد \`addr\` | اسحب قيمة؛ فإن لم تكن 0 فاجعل \`pc\` يساوي \`addr\` |
+| \`0D\` | LT | لا يوجد | اسحب \`b\` ثم \`a\` وادفع 1 إن كان \`a < b\` وإلا 0 |
+| \`0E\` | OVER | لا يوجد | ادفع نسخة من القيمة الثانية من القمة (يصير \`a b\` هو \`a b a\`) |
+
+يأتي بايت المعامل بعد رمز عمليته في البرنامج، فطول هذه التعليمات بايتان. عناوين القفز مواضع مطلقة في البرنامج (البايت الأول عنوانه 0). وإذا لم يُنفَّذ القفز الشرطي فيتابع التنفيذ بعد معامله.
+
+## انتهاء التشغيل
+
+* ينتهي التشغيل طبيعياً بتنفيذ \`HALT\` أو بتجاوز آخر بايت في البرنامج.
+* **العطل (fault)** يوقف التشغيل فوراً ويطبع \`FAULT\` يتبعه سطر جديد مباشرة بعد ما طُبع سابقاً. والعطل هو: رمز عملية غير معروف، أو تعليمة تحتاج قيماً أكثر مما في المكدّس، أو بايت معامل ناقص في نهاية البرنامج، أو قفزة **منفَّذة** إلى عنوان يساوي طول البرنامج أو يتجاوزه.
+* البرنامج الذي نفّذ **100000** تعليمة يُوقَف قبل التعليمة التالية: اطبع \`LIMIT\` وسطراً جديداً. (فالصناديق الرملية الحقيقية تحتاج مراقباً كهذا.)
+
+## الدخل والخرج
+
+الدخل هو البرنامج بقيم بايتات سداسية عشرية (خانة أو خانتان لكل منها، بأحرف كبيرة أو صغيرة) تفصلها أي مسافات بيضاء، وقد تمتد على عدة أسطر. للبرنامج 255 بايتاً على الأكثر، والدخل الفارغ برنامج فارغ. اطبع ما يطبعه البرنامج. القيم تتسع في عدد صحيح بإشارة 64 بت في كل الاختبارات.
+
+## أمثلة
+
+الدخل:
+
+\`\`\`
+01 03 05 08 01 01 03 05 0C 02 00
+\`\`\`
+
+الخرج:
+
+\`\`\`
+3
+2
+1
+\`\`\`
+
+مقروءاً كلغة تجميع: \`PUSH 3\` ثم حلقة عند العنوان 2 هي \`DUP, PRINT, PUSH 1, SUB, DUP, JNZ 2\` ثم \`HALT\`.
+
+الدخل:
+
+\`\`\`
+01 06 01 07 04 08 01 0A 01 04 03 08
+\`\`\`
+
+الخرج:
+
+\`\`\`
+42
+6
+\`\`\`
+
+الدخل:
+
+\`\`\`
+01 4F 09 01 4B 09 01 0A 09
+\`\`\`
+
+الخرج:
+
+\`\`\`
+OK
+\`\`\`
+
+تشغّل الاختبارات المخفية أكثر بكثير من هذه الثلاثة: حلقات ونصوص وكل أنواع الأعطال وحد التعليمات وتنسيقات غريبة.`,
+  },
+  difficulty: 3,
+  points: 250,
+  estMinutes: 45,
+  kind: "output",
+  lang: "python",
+  sampleInput: "01 03 05 08 01 01 03 05 0C 02 00\n",
+  starterCode: {
+    python: `import sys
+
+code = [int(token, 16) for token in sys.stdin.read().split()]
+stack = []
+pc = 0
+# Your turn: fetch, decode and execute instructions until the program ends.
+`,
+    javascript: `const code = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean).map((t) => parseInt(t, 16));
+const stack = [];
+let pc = 0;
+// Your turn: fetch, decode and execute instructions until the program ends.
+`,
+    c: `#include <stdio.h>
+
+int main(void) {
+    unsigned code[256];
+    int n = 0;
+    unsigned byte;
+    while (n < 256 && scanf("%x", &byte) == 1) code[n++] = byte;
+    /* Your turn: fetch, decode and execute the n program bytes. */
+    return 0;
+}
+`,
+  },
+  hints: [
+    {
+      text: {
+        en: "The machine is just three things: the byte list, `pc` and the stack. Loop while `pc` is inside the program: read `code[pc]`, advance `pc`, then branch on the opcode. Instructions with an operand read the next byte and advance `pc` again.",
+        ar: "الآلة ثلاثة أشياء فقط: قائمة البايتات و`pc` والمكدّس. كرّر ما دام `pc` داخل البرنامج: اقرأ `code[pc]` وقدّم `pc` ثم تفرّع حسب رمز العملية. التعليمات ذات المعامل تقرأ البايت التالي وتقدّم `pc` مرة أخرى.",
+      },
+      cost: 15,
+    },
+    {
+      text: {
+        en: "For binary operations pop `b` first and then `a`, and compute `a - b` and `a < b`, not the other way round. A conditional jump always pops its value, even when it is not taken, and then skips its operand byte.",
+        ar: "في العمليات الثنائية اسحب `b` أولاً ثم `a`، واحسب `a - b` و`a < b` لا العكس. القفز الشرطي يسحب قيمته دائماً حتى لو لم يُنفَّذ، ثم يتخطى بايت معامله.",
+      },
+      cost: 25,
+    },
+    {
+      text: {
+        en: "Make faults explicit: check the stack depth before every pop, check that an operand byte exists, and check a jump target only when the jump is taken. Count executed instructions and stop with `LIMIT` before the 100001st. On any stop reason, print what the program produced and then `FAULT` or `LIMIT` immediately.",
+        ar: "اجعل الأعطال صريحة: افحص عمق المكدّس قبل كل سحب، وافحص وجود بايت المعامل، وافحص هدف القفز فقط عندما يُنفَّذ. عُدّ التعليمات المنفَّذة وتوقف بـ `LIMIT` قبل التعليمة رقم 100001. وعند أي سبب إيقاف اطبع ما أنتجه البرنامج ثم `FAULT` أو `LIMIT` مباشرة.",
+      },
+      cost: 30,
+    },
+  ],
+  lessons: ["reverse-engineering/how-programs-run", "reverse-engineering/assembly-basics"],
+  tags: ["virtual-machine", "bytecode", "interpreter", "stack", "opcodes"],
+  addedAt: "2026-10-07",
+};
+
+export const securityChallenges: ChallengeMeta[] = [
+  authLogHunt,
+  saltedWordlist,
+  cryptoLadder,
+  passwordStrength,
+  jsUnmask,
+  crackme,
+  stackVm,
+];
