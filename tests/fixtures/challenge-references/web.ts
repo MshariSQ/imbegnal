@@ -68,4 +68,72 @@ console.log(winner + " " + best.join(","));
 `,
     },
   },
+  {
+    id: "be-http-status",
+    solutions: {
+      python: String.raw`
+import sys
+
+lines = sys.stdin.read().split("\n")
+n = int(lines[0])
+
+
+def status(f):
+    body_methods = f["method"] in ("POST", "PUT", "PATCH")
+    if f["route"] == "unknown":
+        return 404
+    if f["route"] == "wrong-method":
+        return 405
+    if f["rate"] == "exceeded":
+        return 429
+    if f["auth"] != "valid":
+        return 401
+    if f["perm"] == "no":
+        return 403
+    if f["item"] == "missing":
+        return 404
+    if f["item"] == "deleted":
+        return 410
+    if body_methods and f["media"] == "other":
+        return 415
+    if body_methods and f["body"] == "malformed":
+        return 400
+    if body_methods and f["body"] == "invalid":
+        return 422
+    if f["conflict"] == "yes":
+        return 409
+    return {"POST": 201, "DELETE": 204}.get(f["method"], 200)
+
+
+for line in lines[1:1 + n]:
+    print(status(dict(pair.split("=") for pair in line.split())))
+`,
+      javascript: String.raw`
+const lines = require("fs").readFileSync(0, "utf8").split("\n");
+const n = parseInt(lines[0], 10);
+
+function status(f) {
+  const bodyMethods = ["POST", "PUT", "PATCH"].includes(f.method);
+  if (f.route === "unknown") return 404;
+  if (f.route === "wrong-method") return 405;
+  if (f.rate === "exceeded") return 429;
+  if (f.auth !== "valid") return 401;
+  if (f.perm === "no") return 403;
+  if (f.item === "missing") return 404;
+  if (f.item === "deleted") return 410;
+  if (bodyMethods && f.media === "other") return 415;
+  if (bodyMethods && f.body === "malformed") return 400;
+  if (bodyMethods && f.body === "invalid") return 422;
+  if (f.conflict === "yes") return 409;
+  if (f.method === "POST") return 201;
+  if (f.method === "DELETE") return 204;
+  return 200;
+}
+
+for (const line of lines.slice(1, 1 + n)) {
+  console.log(status(Object.fromEntries(line.split(" ").map((pair) => pair.split("=")))));
+}
+`,
+    },
+  },
 ];
