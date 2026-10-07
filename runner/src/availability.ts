@@ -25,6 +25,8 @@ export interface LangState {
 }
 
 const EXPECTED = "Hello, World!";
+/** Smoke-test outcomes caused by load rather than by a missing or broken toolchain. */
+const TRANSIENT = new Set(["timeout", "memory_limit", "output_limit", "internal_error"]);
 
 export class Availability {
   private readonly states = new Map<LangId, LangState>();
@@ -88,6 +90,19 @@ export class Availability {
   }
 
   private async probe(lang: LangId): Promise<LangState> {
+    const prev = this.states.get(lang);
+    const next = await this.probeOnce(lang);
+    // A re-check that only ran out of time or memory (a busy host compiling Kotlin, Go or Rust
+    // next to learners' jobs) says nothing about the toolchain: keep the last good result rather
+    // than refusing every run of a working language until the next re-check.
+    if (!next.available && next.transient && prev?.available) {
+      this.log.warn("language smoke test inconclusive; keeping previous result", { lang, status: next.transient });
+      return prev;
+    }
+    return { available: next.available, version: next.version, reason: next.reason };
+  }
+
+  private async probeOnce(lang: LangId): Promise<LangState & { transient?: string }> {
     const spec = getLanguage(lang);
     if (!spec) return { available: false, reason: "toolchain" };
     // Runs through the normal slot queue so smoke tests never exceed RUNNER_MAX_CONCURRENCY.
@@ -100,7 +115,8 @@ export class Availability {
       );
       if (infra) return { available: false, reason: "docker" };
       if (result.status === "ok" && result.stdout.trim() === EXPECTED) return { available: true, version };
-      return { available: false, reason: "toolchain" };
+      const transient = TRANSIENT.has(result.status) ? result.status : undefined;
+      return { available: false, reason: "toolchain", transient };
     } finally {
       slot.release();
     }

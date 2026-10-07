@@ -270,7 +270,7 @@ Environment variables (see [`deploy/.env.example`](deploy/.env.example)):
 | `RUNNER_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `RUNNER_SHUTDOWN_GRACE_MS` | `10000` | Time running jobs get on SIGTERM before they are killed |
 | `RUNNER_REAP_AGE_MS` | `120000` | Age after which an unowned labelled container is removed |
-| `RUNNER_AVAILABILITY_TTL_MS` | `60000` | Cache lifetime of the language smoke tests |
+| `RUNNER_AVAILABILITY_TTL_MS` | `900000` | How long smoke-test results are trusted before a background re-check (each re-check runs Hello World in every language). A re-check that only times out or runs out of memory keeps the previous result. |
 | `RUNNER_REPLAY_TTL_MS` | `600000` | How long a `jobId` is remembered |
 
 Containers and images the runner creates carry the label `imbegnal.runner=1`; job containers are named `imb-run-<jobId>`.

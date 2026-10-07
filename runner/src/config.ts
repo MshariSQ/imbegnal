@@ -128,7 +128,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): RunnerConfig {
     reapLabels,
     reapAgeMs: intVar(env, "RUNNER_REAP_AGE_MS", 2 * 60_000, 1000, 24 * 3_600_000),
     reapIntervalMs: intVar(env, "RUNNER_REAP_INTERVAL_MS", 60_000, 100, 3_600_000),
-    availabilityTtlMs: intVar(env, "RUNNER_AVAILABILITY_TTL_MS", 60_000, 1000, 3_600_000),
+    // Toolchains are fixed per image; re-checks only catch a broken daemon or image. Each re-check
+    // compiles and runs Hello World in every language, so it must not run every minute.
+    availabilityTtlMs: intVar(env, "RUNNER_AVAILABILITY_TTL_MS", 900_000, 1000, 3_600_000),
     replayTtlMs: intVar(env, "RUNNER_REPLAY_TTL_MS", 10 * 60_000, 1000, 24 * 3_600_000),
     shutdownGraceMs: intVar(env, "RUNNER_SHUTDOWN_GRACE_MS", 10_000, 0, 120_000),
   };

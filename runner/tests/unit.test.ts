@@ -4,17 +4,19 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { describe, test } from "node:test";
 import { ReplayGuard, sign, verifyRequest } from "../src/auth";
+import { Availability } from "../src/availability";
+import type { JobExecutor } from "../src/executor";
 import { ConfigError, loadConfig } from "../src/config";
 import { buildCreateArgs, cliEnvironment, containerName } from "../src/docker";
 import { allRecipes, detectJavaTarget, getRecipe, isRejection, stripJavaNoise, formatVersion } from "../src/languages";
 import { resolveLimits } from "../src/limits";
-import { buildRecord, createLogger } from "../src/log";
+import { buildRecord, createLogger, silentLogger } from "../src/log";
 import { OutputCollector, completeUtf8Length } from "../src/output";
 import { BusyError, SlotQueue } from "../src/queue";
 import { classifyStep, signalFromExitCode } from "../src/status";
 import { MAX_BODY_BYTES, validateRunRequest } from "../src/validate";
 import { LANG_IDS, LANGUAGES } from "../../shared/languages";
-import { RUNNER_CEILING, SIGNATURE_WINDOW_MS } from "../../shared/protocol";
+import { RUNNER_CEILING, SIGNATURE_WINDOW_MS, type RunStatus } from "../../shared/protocol";
 
 const SECRET = "s".repeat(40);
 const JOB = "11111111-2222-3333-4444-555555555555";
@@ -554,5 +556,40 @@ describe("slot queue", () => {
     await assert.rejects(w, BusyError);
     assert.equal(q.queuedCount, 0);
     a.release();
+  });
+});
+
+describe("language availability", () => {
+  /** Executor stub: each smoke test pops the next outcome for its language. */
+  function stubExecutor(outcomes: Record<string, RunStatus[]>): JobExecutor {
+    return {
+      async execute(req: { jobId: string; lang: string }) {
+        const status = outcomes[req.lang]?.shift() ?? "ok";
+        const stdout = status === "ok" ? "Hello, World!\n" : "";
+        return { infra: false, version: "1.0", result: { jobId: req.jobId, status, exitCode: status === "ok" ? 0 : 1, stdout, stderr: "", stdoutBytes: stdout.length, stderrBytes: 0, truncated: { stdout: false, stderr: false }, runMs: 1, compileMs: 1 } };
+      },
+    } as unknown as JobExecutor;
+  }
+
+  test("a re-check that only times out keeps a working language available", async () => {
+    const outcomes: Record<string, RunStatus[]> = { go: ["ok", "timeout", "memory_limit"], python: ["ok", "compile_error"] };
+    const a = new Availability(["go", "python"], stubExecutor(outcomes), new SlotQueue(2, 2, 5000), silentLogger, 60_000, true);
+    await a.refreshNow();
+    assert.equal(a.isUnsupported("go"), false);
+    assert.equal(a.isUnsupported("python"), false);
+
+    await a.refreshNow(); // go times out under load, python's toolchain is genuinely broken now
+    assert.equal(a.isUnsupported("go"), false, "a timeout is inconclusive");
+    assert.equal(a.state("go").available, true);
+    assert.equal(a.isUnsupported("python"), true, "a deterministic failure is believed");
+
+    await a.refreshNow(); // memory_limit: still inconclusive
+    assert.equal(a.state("go").available, true);
+  });
+
+  test("a language that never passed is not assumed to work after a timeout", async () => {
+    const a = new Availability(["kotlin"], stubExecutor({ kotlin: ["timeout"] }), new SlotQueue(1, 1, 5000), silentLogger, 60_000, true);
+    await a.refreshNow();
+    assert.equal(a.isUnsupported("kotlin"), true);
   });
 });
