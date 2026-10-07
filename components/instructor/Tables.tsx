@@ -27,7 +27,7 @@ const ROWHEAD = "px-3 py-3 text-start align-top font-normal";
 function TableSection({ title, note, caption, empty, hasRows, children }: { title: string; note?: ReactNode; caption: string; empty: string; hasRows: boolean; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="mt-10">
+    <section className="mt-10">
       <h2 id={id} className="text-xl font-extrabold text-fg">
         {title}
       </h2>

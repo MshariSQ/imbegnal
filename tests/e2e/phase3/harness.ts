@@ -301,7 +301,7 @@ export const ANALYTICS_30: InstructorAnalytics = {
       attempts: 210,
       learners: 64,
       passRate: 0.31,
-      medianRunMs: 1350,
+      medianRunMs: 1300,
       failures: { wrong_output: 120, timeout: 8, runtime_error: 5, compile_error: 2 },
       commonErrors: [
         { text: "IndexError: list index out of range", count: 31 },
