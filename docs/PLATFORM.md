@@ -81,7 +81,9 @@ Database changes go in `worker/migrations/NNNN_name.sql` (never edit an applied 
 Local dev against a database created by hand from the old `schema*.sql` files: delete `worker/.wrangler/state` first
 (migrations would otherwise fail with "duplicate column"), then re-run the commands below.
 Local dev: secrets in `worker/.dev.vars` (git-ignored), then in `worker/`:
-`npx wrangler d1 migrations apply skillforge-db --local && npx wrangler dev`, and `npm run dev` at the root.
+`npx wrangler d1 migrations apply skillforge-db --local --config wrangler.toml && npm run dev`, and `npm run dev` at the root.
+Always pass `--config wrangler.toml` to `wrangler` inside `worker/` (`npm run dev` / `npm run deploy` there do it for you):
+wrangler finds the site's root `wrangler.jsonc` before `worker/wrangler.toml` and would act on the wrong project.
 
 ### AI tutor cost controls (set these in the Cloudflare dashboard only — Worker → Settings → Variables; do not add them to `wrangler.toml [vars]`, a deploy would reset them)
 
@@ -98,7 +100,7 @@ Also set a monthly spend limit in the Anthropic Console as the last line of defe
 ## Launch metrics (D1)
 
 ```bash
-npx wrangler d1 execute skillforge-db --remote --command "<SQL>"
+cd worker && npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command "<SQL>"
 ```
 
 ```sql
