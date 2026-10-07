@@ -251,12 +251,16 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
 - Stripe billing, email verification and password reset (email auth currently has
   no verification — fine for progress sync, add before paid features).
 - Login CSRF, residual window while production runs the previous Worker (frontend-only mode): that Worker
-  cannot echo the login nonce, so the callback page still accepts a fragment **without** a nonce when the API
-  is positively identified as the old one (`GET /api/state` answers 404, `getApiLevel()` in
-  `lib/capabilities.ts`). While that lasts, a crafted `/auth/callback/#token=<attacker JWT>` link can still
-  sign a visitor in to the attacker's account. A fragment that carries a nonce is always checked, and when the
-  API is the new one or its generation cannot be determined, a missing nonce is refused. The window closes as
-  soon as the new Worker is deployed; no site change is needed then.
+  cannot echo the login nonce, so when the API is positively identified as the old one (`GET /api/state`
+  answers 404, `getApiLevel()` in `lib/capabilities.ts`) the callback page accepts a fragment **without** a
+  nonce, but only in a tab that has just started a sign-in itself (it holds a stored nonce under 10 minutes
+  old, which the check consumes). A crafted `/auth/callback/#token=<attacker JWT>` link opened in a fresh tab
+  is refused. What remains: a victim who has clicked "Continue with GitHub/Google" and, within those 10
+  minutes and in that same tab, follows such a link instead of completing their own sign-in. Trade-off: under
+  the old Worker a sign-in that returns in a different tab or browser (for example a mobile hand-off through
+  the GitHub app) is refused, exactly as under the new Worker. A fragment that carries a nonce is always
+  checked, and when the API is the new one or its generation cannot be determined, a missing nonce is
+  refused. The window closes as soon as the new Worker is deployed; no site change is needed then.
 - Rate limiting is per-isolate (per IP: 60 requests/min, 10/min on `/api/auth/*`; override with the
   `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_AUTH_PER_MIN` variables); move to a Durable Object or Cloudflare Rate
   Limiting rules before large launches.

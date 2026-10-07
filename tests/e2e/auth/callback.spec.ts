@@ -3,8 +3,9 @@
  *
  * An attacker link https://<site>/auth/callback/#token=<attacker JWT> must NOT sign a visitor in when the
  * new Worker is deployed; a normal "Continue with GitHub" flow, whose fragment echoes this tab's nonce, must.
- * With the previous Worker (GET /api/state answers 404) a fragment without a nonce is still accepted: the
- * documented residual window (docs/PLATFORM.md, Known gaps).
+ * With the previous Worker (GET /api/state answers 404) a fragment without a nonce is accepted only in a tab
+ * that has just started a sign-in (holds a fresh nonce); a fresh tab opened from an attacker link is refused.
+ * What remains is the documented residual window (docs/PLATFORM.md, Known gaps).
  *
  * Run (build first; serves `out/` and mocks the Worker, no network needed):
  *   npm run build
@@ -225,6 +226,8 @@ describe("previous API (frontend-only mode: the Worker never echoes a nonce)", (
       await s.page.goto(`${origin}/login/`);
       await s.page.getByTestId("oauth-github").click();
       await waitForPath(s.page, "/dashboard/");
+      assert.equal(s.startNonces.length, 1);
+      assert.match(s.startNonces[0], NONCE_RE, "the click stored and sent a nonce, which the old Worker ignores");
       assert.equal(await savedToken(s.page), TEST_TOKEN);
       assert.equal(await storedNonce(s.page), null);
       clean(s);
@@ -244,12 +247,47 @@ describe("previous API (frontend-only mode: the Worker never echoes a nonce)", (
     }
   });
 
-  it("residual window (documented): a link without a nonce is accepted while the old Worker runs", async () => {
+  it("an attacker link without a nonce, opened in a tab that started no sign-in, does NOT sign in (English)", async () => {
     const s = await session("legacy");
     try {
       await s.page.goto(`${origin}/auth/callback/#token=${TEST_TOKEN}`);
+      const u = await waitForPath(s.page, "/login/");
+      assert.equal(u.searchParams.get("error"), "login_untrusted");
+      assert.equal(await savedToken(s.page), null, "the attacker's token was not saved");
+      assert.equal(await loginAlert(s.page), en.errorLoginUntrusted);
+      clean(s);
+    } finally {
+      await s.close();
+    }
+  });
+
+  it("the same link is refused in Arabic too, and a stale sign-in (over 10 minutes) does not open the window", async () => {
+    const s = await session("legacy", "ar");
+    try {
+      await s.page.goto(`${origin}/login/`);
+      await s.page.evaluate(() => sessionStorage.setItem("imb_login_nonce", JSON.stringify({ n: "E".repeat(32), t: Date.now() - 11 * 60 * 1000 })));
+      await s.page.goto(`${origin}/auth/callback/#token=${TEST_TOKEN}`);
+      const u = await waitForPath(s.page, "/login/");
+      assert.equal(u.searchParams.get("error"), "login_expired");
+      assert.equal(await savedToken(s.page), null);
+      assert.equal(await loginAlert(s.page), ar.errorLoginExpired);
+      assert.equal(await storedNonce(s.page), null);
+      clean(s);
+    } finally {
+      await s.close();
+    }
+  });
+
+  it("residual window (documented): a victim mid-sign-in who follows a nonce-less link in the same tab is signed in", async () => {
+    const s = await session("legacy");
+    try {
+      await s.page.goto(`${origin}/login/`);
+      // As right after a click on a sign-in button: this tab holds a fresh nonce the old Worker cannot echo.
+      await s.page.evaluate(() => sessionStorage.setItem("imb_login_nonce", JSON.stringify({ n: "F".repeat(32), t: Date.now() })));
+      await s.page.goto(`${origin}/auth/callback/#token=${TEST_TOKEN}`);
       await waitForPath(s.page, "/dashboard/");
       assert.equal(await savedToken(s.page), TEST_TOKEN);
+      assert.equal(await storedNonce(s.page), null, "the window is single-use");
     } finally {
       await s.close();
     }

@@ -123,7 +123,7 @@ export function beginInBrowser(): string | null {
   try {
     return begin(window.sessionStorage, Date.now());
   } catch {
-    // sessionStorage blocked: the flow continues without a nonce; with the new API the callback refuses it.
+    // sessionStorage blocked: the flow continues without a nonce, and the callback (old or new API) refuses it.
     return null;
   }
 }
