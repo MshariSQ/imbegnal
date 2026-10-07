@@ -68,7 +68,7 @@ describe("accessibility (axe-core: zero serious/critical)", () => {
   it("interactive states: filters open, hint confirm, result panels (EN + AR, light + dark)", async () => {
     for (const lang of ["en", "ar"] as const) {
       for (const theme of ["light", "dark"] as const) {
-        const list = await openPage(browser, origin, "/challenges/?difficulty=2", { lang, theme, signedIn: true, viewport: { width: 390, height: 800 } });
+        const list = await openPage(browser, origin, "/challenges/?difficulty=1", { lang, theme, signedIn: true, viewport: { width: 390, height: 800 } });
         try {
           await READY["/challenges/"](list.page);
           await list.page.locator('button[aria-controls="ctf-more-filters"]').click();
