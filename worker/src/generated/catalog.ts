@@ -145,7 +145,12 @@ export const catalog: Catalog = {
     {
       "id": "databases",
       "title": "Databases",
-      "lessons": []
+      "lessons": [
+        "relational-sql-basics",
+        "data-modeling-normalization",
+        "joins-aggregation",
+        "indexes-performance"
+      ]
     },
     {
       "id": "reverse-engineering",
@@ -1377,6 +1382,438 @@ export const catalog: Catalog = {
           "name": "No requests",
           "stdin": "first 2\n64 32\n",
           "expected": "free=96 largest=64",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/relational-sql-basics/select-where-order",
+      "track": "databases",
+      "lesson": "relational-sql-basics",
+      "id": "select-where-order",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Modern books, top 3",
+          "stdin": "1990 3\n",
+          "expected": "The Road | 2006 | 4.2\nKafka on the Shore | 2002 | 4.1\nSnow Crash | 1992 | 4.1",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties are broken by title",
+          "stdin": "1980 4\n",
+          "expected": "The Remains of the Day | 1989 | 4.3\nBeloved | 1987 | 4.2\nThe Road | 2006 | 4.2\nKafka on the Shore | 2002 | 4.1",
+          "mode": "trim"
+        },
+        {
+          "name": "Only unrated or low-rated books match: no rows",
+          "stdin": "2010 5\n",
+          "expected": "(no books)",
+          "mode": "trim"
+        },
+        {
+          "name": "A limit larger than the result returns every match",
+          "stdin": "1950 20\n",
+          "expected": "Dune | 1965 | 4.5\nPalace Walk | 1956 | 4.4\nSeason of Migration to the North | 1966 | 4.3\nThe Remains of the Day | 1989 | 4.3\nBeloved | 1987 | 4.2\nThe Left Hand of Darkness | 1969 | 4.2\nThe Road | 2006 | 4.2\nKafka on the Shore | 2002 | 4.1\nSnow Crash | 1992 | 4.1\nA Brief History of Time | 1988 | 4.0\nNeuromancer | 1984 | 4.0",
+          "mode": "trim"
+        },
+        {
+          "name": "LIMIT 0 returns nothing",
+          "stdin": "1960 0\n",
+          "expected": "(no books)",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/relational-sql-basics/crud-stock-take",
+      "track": "databases",
+      "lesson": "relational-sql-basics",
+      "id": "crud-stock-take",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Restock products below 10 by 20",
+          "stdin": "10 20\n",
+          "expected": "restocked: 4\ndeleted: 2\ninserted: 1\n1 Notebook A5 stock=12 price=4.50\n2 Gel Pen Black stock=23 price=1.75\n3 Stapler stock=20 price=12.00\n4 Whiteboard Marker stock=25 price=2.20\n6 Sticky Notes stock=28 price=3.00\n8 Highlighter Set stock=22 price=6.50\n9 Desk Lamp stock=5 price=24.99",
+          "mode": "trim"
+        },
+        {
+          "name": "Threshold 0: nothing is below it",
+          "stdin": "0 5\n",
+          "expected": "restocked: 0\ndeleted: 2\ninserted: 1\n1 Notebook A5 stock=12 price=4.50\n2 Gel Pen Black stock=3 price=1.75\n3 Stapler stock=0 price=12.00\n4 Whiteboard Marker stock=25 price=2.20\n6 Sticky Notes stock=8 price=3.00\n8 Highlighter Set stock=2 price=6.50\n9 Desk Lamp stock=5 price=24.99",
+          "mode": "trim"
+        },
+        {
+          "name": "Boundary: stock equal to the threshold is not restocked",
+          "stdin": "12 1\n",
+          "expected": "restocked: 4\ndeleted: 2\ninserted: 1\n1 Notebook A5 stock=12 price=4.50\n2 Gel Pen Black stock=4 price=1.75\n3 Stapler stock=1 price=12.00\n4 Whiteboard Marker stock=25 price=2.20\n6 Sticky Notes stock=9 price=3.00\n8 Highlighter Set stock=3 price=6.50\n9 Desk Lamp stock=5 price=24.99",
+          "mode": "trim"
+        },
+        {
+          "name": "Huge threshold: every active product, no discontinued ones",
+          "stdin": "100 1\n",
+          "expected": "restocked: 6\ndeleted: 2\ninserted: 1\n1 Notebook A5 stock=13 price=4.50\n2 Gel Pen Black stock=4 price=1.75\n3 Stapler stock=1 price=12.00\n4 Whiteboard Marker stock=26 price=2.20\n6 Sticky Notes stock=9 price=3.00\n8 Highlighter Set stock=3 price=6.50\n9 Desk Lamp stock=5 price=24.99",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/relational-sql-basics/constraints-guard",
+      "track": "databases",
+      "lesson": "relational-sql-basics",
+      "id": "constraints-guard",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Two valid students",
+          "stdin": "amal@mail.com 20\nbilal@mail.com 31\n",
+          "expected": "OK amal@mail.com\nOK bilal@mail.com\nrows: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Duplicate email is rejected",
+          "stdin": "amal@mail.com 20\namal@mail.com 22\n",
+          "expected": "OK amal@mail.com\nREJECTED amal@mail.com - UNIQUE\nrows: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Missing email is rejected",
+          "stdin": "NULL 25\n",
+          "expected": "REJECTED NULL - NOT NULL\nrows: 0",
+          "mode": "trim"
+        },
+        {
+          "name": "Age boundaries: 15 and 101 fail, 16 and 100 pass",
+          "stdin": "kid@mail.com 15\nold@mail.com 101\nedge16@mail.com 16\nedge100@mail.com 100\n",
+          "expected": "REJECTED kid@mail.com - CHECK\nREJECTED old@mail.com - CHECK\nOK edge16@mail.com\nOK edge100@mail.com\nrows: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input inserts nothing",
+          "stdin": "",
+          "expected": "rows: 0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/data-modeling-normalization/split-wide-table",
+      "track": "databases",
+      "lesson": "data-modeling-normalization",
+      "id": "split-wide-table",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Row counts after normalizing",
+          "stdin": "",
+          "expected": "customers: 4\nproducts: 3\norders: 6\norder_lines: 8\nvalue at current prices: 135.25",
+          "mode": "trim"
+        },
+        {
+          "name": "One price change touches one row but changes every order",
+          "stdin": "Pen 200\n",
+          "expected": "customers: 4\nproducts: 3\norders: 6\norder_lines: 8\nprice of Pen: 1 row changed\nvalue at current prices: 161.50",
+          "mode": "trim"
+        },
+        {
+          "name": "Several price changes",
+          "stdin": "Pen 100\nBackpack 2500\nNotebook 500\n",
+          "expected": "customers: 4\nproducts: 3\norders: 6\norder_lines: 8\nprice of Pen: 1 row changed\nprice of Backpack: 1 row changed\nprice of Notebook: 1 row changed\nvalue at current prices: 120.00",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown product changes nothing",
+          "stdin": "Eraser 99\n",
+          "expected": "customers: 4\nproducts: 3\norders: 6\norder_lines: 8\nprice of Eraser: 0 row changed\nvalue at current prices: 135.25",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/data-modeling-normalization/junction-table",
+      "track": "databases",
+      "lesson": "data-modeling-normalization",
+      "id": "junction-table",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Valid enrollments and the roster",
+          "stdin": "1 10\n1 20\n2 10\n",
+          "expected": "OK 1 10\nOK 1 20\nOK 2 10\nAlgebra: 2\nBiology: 1\nChemistry: 0",
+          "mode": "trim"
+        },
+        {
+          "name": "The same pair twice is rejected",
+          "stdin": "1 10\n1 10\n",
+          "expected": "OK 1 10\nREJECTED 1 10 - UNIQUE\nAlgebra: 1\nBiology: 0\nChemistry: 0",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown student or course is rejected",
+          "stdin": "9 10\n1 99\n3 30\n",
+          "expected": "REJECTED 9 10 - FOREIGN KEY\nREJECTED 1 99 - FOREIGN KEY\nOK 3 30\nAlgebra: 0\nBiology: 0\nChemistry: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "No input: every course is empty",
+          "stdin": "",
+          "expected": "Algebra: 0\nBiology: 0\nChemistry: 0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/data-modeling-normalization/embed-to-reference",
+      "track": "databases",
+      "lesson": "data-modeling-normalization",
+      "id": "embed-to-reference",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Shared customers are stored once",
+          "stdin": "[{\"id\":101,\"total\":2500,\"customer\":{\"id\":1,\"name\":\"Amal\",\"city\":\"Cairo\"}},{\"id\":102,\"total\":900,\"customer\":{\"id\":2,\"name\":\"Bilal\",\"city\":\"Amman\"}},{\"id\":103,\"total\":4100,\"customer\":{\"id\":1,\"name\":\"Amal\",\"city\":\"Cairo\"}}]",
+          "expected": "[{\"id\":1,\"name\":\"Amal\",\"city\":\"Cairo\"},{\"id\":2,\"name\":\"Bilal\",\"city\":\"Amman\"}]\n[{\"id\":101,\"total\":2500,\"customerId\":1},{\"id\":102,\"total\":900,\"customerId\":2},{\"id\":103,\"total\":4100,\"customerId\":1}]",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "[]",
+          "expected": "[]\n[]",
+          "mode": "trim"
+        },
+        {
+          "name": "Guest order has no customer",
+          "stdin": "[{\"id\":1,\"total\":10,\"customer\":null},{\"id\":2,\"total\":20,\"customer\":{\"id\":5,\"name\":\"Dina\",\"city\":\"Tunis\"}}]",
+          "expected": "[{\"id\":5,\"name\":\"Dina\",\"city\":\"Tunis\"}]\n[{\"id\":1,\"total\":10,\"customerId\":null},{\"id\":2,\"total\":20,\"customerId\":5}]",
+          "mode": "trim"
+        },
+        {
+          "name": "Stale copy: the later data wins, the position stays",
+          "stdin": "[{\"id\":1,\"total\":5,\"customer\":{\"id\":1,\"name\":\"Amal\",\"city\":\"Cairo\"}},{\"id\":2,\"total\":6,\"customer\":{\"id\":2,\"name\":\"Bilal\",\"city\":\"Amman\"}},{\"id\":3,\"total\":7,\"customer\":{\"id\":1,\"name\":\"Amal\",\"city\":\"Giza\"}}]",
+          "expected": "[{\"id\":1,\"name\":\"Amal\",\"city\":\"Giza\"},{\"id\":2,\"name\":\"Bilal\",\"city\":\"Amman\"}]\n[{\"id\":1,\"total\":5,\"customerId\":1},{\"id\":2,\"total\":6,\"customerId\":2},{\"id\":3,\"total\":7,\"customerId\":1}]",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/joins-aggregation/left-join-filter",
+      "track": "databases",
+      "lesson": "joins-aggregation",
+      "id": "left-join-filter",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Minimum 0: every order, customers without orders kept",
+          "stdin": "0\n",
+          "expected": "Amal: order 1 (25.00)\nAmal: order 2 (9.00)\nAmal: order 5 (7.00)\nBilal: order 3 (41.00)\nCarla: no matching order\nDina: order 4 (15.00)\nDina: order 6 (3.00)\nEmad: no matching order",
+          "mode": "trim"
+        },
+        {
+          "name": "Minimum 1000: small orders drop out, their customers stay",
+          "stdin": "1000\n",
+          "expected": "Amal: order 1 (25.00)\nBilal: order 3 (41.00)\nCarla: no matching order\nDina: order 4 (15.00)\nEmad: no matching order",
+          "mode": "trim"
+        },
+        {
+          "name": "Boundary: an order equal to the minimum is included",
+          "stdin": "2500\n",
+          "expected": "Amal: order 1 (25.00)\nBilal: order 3 (41.00)\nCarla: no matching order\nDina: no matching order\nEmad: no matching order",
+          "mode": "trim"
+        },
+        {
+          "name": "Minimum above every order: all customers, no matches",
+          "stdin": "99999\n",
+          "expected": "Amal: no matching order\nBilal: no matching order\nCarla: no matching order\nDina: no matching order\nEmad: no matching order",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/joins-aggregation/group-having",
+      "track": "databases",
+      "lesson": "joins-aggregation",
+      "id": "group-having",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "No real filter: every department with employees",
+          "stdin": "1 0\n",
+          "expected": "Engineering: headcount=4 avg=5150.0 max=6100\nDesign: headcount=2 avg=4000.0 max=4100\nSupport: headcount=5 avg=2900.0 max=3100",
+          "mode": "trim"
+        },
+        {
+          "name": "Salary filter shrinks the groups before counting",
+          "stdin": "2 3000\n",
+          "expected": "Engineering: headcount=4 avg=5150.0 max=6100\nDesign: headcount=2 avg=4000.0 max=4100\nSupport: headcount=2 avg=3050.0 max=3100",
+          "mode": "trim"
+        },
+        {
+          "name": "HAVING removes small groups",
+          "stdin": "3 3000\n",
+          "expected": "Engineering: headcount=4 avg=5150.0 max=6100",
+          "mode": "trim"
+        },
+        {
+          "name": "Single employee above a high salary bar",
+          "stdin": "1 6000\n",
+          "expected": "Engineering: headcount=1 avg=6100.0 max=6100",
+          "mode": "trim"
+        },
+        {
+          "name": "Nothing qualifies",
+          "stdin": "9 0\n",
+          "expected": "no department qualifies",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/joins-aggregation/never-ordered",
+      "track": "databases",
+      "lesson": "joins-aggregation",
+      "id": "never-ordered",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "All categories",
+          "stdin": "*\n",
+          "expected": "Lamp, Planner, Stapler",
+          "mode": "trim"
+        },
+        {
+          "name": "One category with a single unordered product",
+          "stdin": "office\n",
+          "expected": "Stapler",
+          "mode": "trim"
+        },
+        {
+          "name": "Stationery: only the planner is unordered",
+          "stdin": "stationery\n",
+          "expected": "Planner",
+          "mode": "trim"
+        },
+        {
+          "name": "A category whose products were all ordered",
+          "stdin": "kitchen\n",
+          "expected": "(none)",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown category",
+          "stdin": "toys\n",
+          "expected": "(none)",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/indexes-performance/first-indexes",
+      "track": "databases",
+      "lesson": "indexes-performance",
+      "id": "first-indexes",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Customer 7: 15 orders found by index",
+          "stdin": "customer_id 7\n",
+          "expected": "rows: 15\naccess: index search",
+          "mode": "trim"
+        },
+        {
+          "name": "Last customer id (boundary)",
+          "stdin": "customer_id 200\n",
+          "expected": "rows: 15\naccess: index search",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown customer: no rows, still an index search",
+          "stdin": "customer_id 999\n",
+          "expected": "rows: 0\naccess: index search",
+          "mode": "trim"
+        },
+        {
+          "name": "Exact reference: one row",
+          "stdin": "reference ORD-000500\n",
+          "expected": "rows: 1\naccess: index search",
+          "mode": "trim"
+        },
+        {
+          "name": "Missing reference: zero rows",
+          "stdin": "reference ORD-999999\n",
+          "expected": "rows: 0\naccess: index search",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/indexes-performance/latest-orders-index",
+      "track": "databases",
+      "lesson": "indexes-performance",
+      "id": "latest-orders-index",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Latest paid orders",
+          "stdin": "paid\n",
+          "expected": "order 1877 on 2025-12-30\norder 417 on 2025-12-30\norder 1981 on 2025-12-28\norder 521 on 2025-12-28\norder 2085 on 2025-12-26\naccess: index search\nsort: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Latest shipped orders",
+          "stdin": "shipped\n",
+          "expected": "order 2294 on 2025-12-29\norder 834 on 2025-12-29\norder 2398 on 2025-12-27\norder 938 on 2025-12-27\norder 2502 on 2025-12-25\naccess: index search\nsort: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Another status: new",
+          "stdin": "new\n",
+          "expected": "order 1564 on 2025-12-29\norder 104 on 2025-12-29\norder 1668 on 2025-12-27\norder 208 on 2025-12-27\norder 1772 on 2025-12-25\naccess: index search\nsort: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Cancelled orders",
+          "stdin": "cancelled\n",
+          "expected": "order 2607 on 2025-12-30\norder 1147 on 2025-12-30\norder 2711 on 2025-12-28\norder 1251 on 2025-12-28\norder 2815 on 2025-12-26\naccess: index search\nsort: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown status: no rows, still a clean index plan",
+          "stdin": "refunded\n",
+          "expected": "access: index search\nsort: none",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/indexes-performance/sargable-year-count",
+      "track": "databases",
+      "lesson": "indexes-performance",
+      "id": "sargable-year-count",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "2024: the upper bound must exclude 2025-01-01",
+          "stdin": "2024\n",
+          "expected": "orders in 2024: 1516\naccess: index search",
+          "mode": "trim"
+        },
+        {
+          "name": "2025",
+          "stdin": "2025\n",
+          "expected": "orders in 2025: 1484\naccess: index search",
+          "mode": "trim"
+        },
+        {
+          "name": "A year before the data: zero rows",
+          "stdin": "2023\n",
+          "expected": "orders in 2023: 0\naccess: index search",
+          "mode": "trim"
+        },
+        {
+          "name": "A year after the data: zero rows",
+          "stdin": "2026\n",
+          "expected": "orders in 2026: 0\naccess: index search",
           "mode": "trim"
         }
       ]
