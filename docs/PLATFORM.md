@@ -186,7 +186,7 @@ Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by t
 | `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce |
 | `npm run test:runner` | Docker + `runner/image/build.sh slim` | the sandbox against a real Docker daemon: per-language Hello World, stdout/stderr, timeouts, memory, fork bombs, output floods, no network, no persistence, read-only root, uid, HMAC/replay |
 | `npm run test:e2e` | Docker, a runner image, `worker/node_modules`, Chromium | the real stack (runner + `wrangler dev` with local D1 and the real migrations + the exported site + Playwright): Hello World in Python/JS/Java/C/C++ through the UI, stdout vs stderr, infinite loop killed, network blocked, quota exhaustion message and refunds, lesson → "Try in Code Lab" → starter code → pass → XP, challenge solve → points |
-| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification, the instructor dashboard and the sign-in callback (login nonce); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
+| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard and the sign-in callback (login nonce); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
 
 `npm run test:e2e` builds the site with `NEXT_PUBLIC_API_URL=http://127.0.0.1:8787`, starts everything on loopback
 (site 4173, Worker 8787, runner 4242) with throw-away secrets and a temporary D1, and tears it down afterwards.
@@ -227,8 +227,9 @@ SELECT day, count FROM ai_usage WHERE github_id = '_global' ORDER BY day DESC LI
 - Weekly email/Telegram digest with streak status and the next lesson (needs the
   email already collected at signup).
 - Spaced-repetition review: resurface questions the learner missed, 1/3/7 days later.
-- Certificates of completion per course exist as a PDF skeleton with a verification code
-  (`/api/certificates/*`); give them a designed template and make them a Pro perk.
+- Certificates of completion per course have a verification code (`/api/certificates/*`), a plain PDF from the
+  Worker and a designed, printable certificate on the site (`/certificate/?code=...&print=1`, English or Arabic,
+  saved as PDF from the browser's print dialog, so Arabic names print correctly); make them a Pro perk.
 - Leaderboards by cohort/friends rather than global, to avoid discouraging beginners.
 - "Study with a friend" streak pairs; public learner profiles with badges.
 - AI-generated practice quizzes and "explain my wrong answer" from the tutor.

@@ -109,6 +109,8 @@ export interface MockWorker {
   verify: (code: string, call: number) => Reply;
   /** GET /api/instructor/analytics?days=N */
   analytics: (days: number, auth: string | null, call: number) => Reply;
+  /** GET /api/certificates/:track (`format` is the ?format= value, e.g. "json"; null for the PDF). */
+  certificate: (track: string, format: string | null, auth: string | null, call: number) => Reply;
   callsTo: (pathPart: string) => ApiCall[];
 }
 
@@ -117,6 +119,7 @@ export function defaultWorker(): MockWorker {
     calls: [],
     verify: () => ({ json: { valid: false } satisfies CertificateVerifyResponse }),
     analytics: () => ({ status: 403, json: { error: "forbidden" } }),
+    certificate: () => ({ status: 403, json: { error: "not_eligible", total: 1, done: 0, remaining: 1 } }),
     callsTo: (part) => w.calls.filter((c) => c.path.includes(part)),
   };
   return w;
@@ -146,6 +149,11 @@ async function answer(route: Route, worker: MockWorker, counts: Map<string, numb
 
   const verify = url.pathname.match(/^\/api\/certificates\/verify\/([^/]+)$/);
   if (req.method() === "GET" && verify) return send(worker.verify(decodeURIComponent(verify[1]), count(`v:${verify[1]}`)));
+  const cert = url.pathname.match(/^\/api\/certificates\/([^/]+)$/);
+  if (req.method() === "GET" && cert) {
+    const track = decodeURIComponent(cert[1]);
+    return send(worker.certificate(track, url.searchParams.get("format"), auth, count(`c:${track}`)));
+  }
   if (req.method() === "GET" && url.pathname === "/api/instructor/analytics") {
     return send(worker.analytics(Number(url.searchParams.get("days")), auth, count("analytics")));
   }
@@ -162,6 +170,8 @@ export interface ContextOptions {
   viewport?: { width: number; height: number };
   javaScript?: boolean;
   worker?: MockWorker;
+  /** Extra localStorage entries written before the app boots (e.g. study progress). */
+  storage?: Record<string, string>;
 }
 
 export interface OpenedPage {
@@ -193,16 +203,17 @@ export async function openPage(browser: Browser, origin: string, path: string, o
     return route.abort();
   });
   await ctx.addInitScript(
-    ({ lang, theme, token }) => {
+    ({ lang, theme, token, storage }) => {
       try {
         localStorage.setItem("sf-lang", lang);
         localStorage.setItem("imb-theme", theme);
         if (token) localStorage.setItem("sf_token", token);
+        for (const [k, v] of Object.entries(storage)) localStorage.setItem(k, v);
       } catch {
         /* ignore */
       }
     },
-    { lang: o.lang ?? "en", theme: o.theme ?? "dark", token: o.signedIn ? TEST_TOKEN : null }
+    { lang: o.lang ?? "en", theme: o.theme ?? "dark", token: o.signedIn ? TEST_TOKEN : null, storage: o.storage ?? {} }
   );
   const page = await ctx.newPage();
   const errors: string[] = [];

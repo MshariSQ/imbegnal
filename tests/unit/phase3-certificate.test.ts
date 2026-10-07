@@ -99,8 +99,8 @@ test("certVerify and instructor dictionaries are complete in both languages", ()
     const ar = keys(translations.ar[section]);
     for (const k of en.filter((k) => !/\.(zero|two|few|many)$/.test(k))) assert.ok(ar.includes(k), `ar.${section}.${k} missing`);
   }
-  // Arabic carries no leftover English sentences (letters only allowed in codes, product names and units)
-  const strip = (s: string) => s.replace(/IMBEGNAL|IMB-XXXX-XXXX-XXXX|GitHub|\{\w+\}/g, "");
+  // Arabic carries no leftover English sentences (letters only allowed in codes, product names, file formats and units)
+  const strip = (s: string) => s.replace(/IMBEGNAL|IMB-XXXX-XXXX-XXXX|GitHub|PDF|\{\w+\}/g, "");
   for (const section of ["certVerify", "instructor"] as const) {
     for (const k of keys(translations.ar[section])) {
       const value = k.split(".").reduce<unknown>((o, p) => (o as Record<string, unknown>)[p], translations.ar[section]) as string;
