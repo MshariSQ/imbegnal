@@ -102,3 +102,50 @@ export function formatPercent(ratio: number | null | undefined, lang: Lang): str
   if (ratio === null || ratio === undefined || !Number.isFinite(ratio)) return "—";
   return new Intl.NumberFormat(intlLocale(lang), { style: "percent", maximumFractionDigits: 1 }).format(ratio);
 }
+
+// ── payload hygiene ──────────────────────────────────────────────────────────
+
+const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+const str = (v: unknown): string => (typeof v === "string" ? v : "");
+const obj = (v: unknown): Record<string, unknown> => (typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+const counts = (v: unknown): Record<string, number> => Object.fromEntries(Object.entries(obj(v)).filter(([, n]) => typeof n === "number" && Number.isFinite(n)) as [string, number][]);
+const optNum = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+
+/**
+ * Coerces the Worker's JSON into the `InstructorAnalytics` shape so a partial or older answer renders as
+ * empty blocks instead of crashing the page. Null when the body is not an analytics object at all.
+ */
+export function normalizeAnalytics(raw: unknown): InstructorAnalytics | null {
+  const r = obj(raw);
+  if (Object.keys(r).length === 0 || typeof r.runs !== "object") return null;
+  const runs = obj(r.runs);
+  return {
+    generatedAt: str(r.generatedAt),
+    days: num(r.days),
+    runs: { total: num(runs.total), success: num(runs.success), byLang: counts(runs.byLang), byStatus: counts(runs.byStatus) },
+    tracks: list(r.tracks)
+      .map(obj)
+      .filter((t) => str(t.track) !== "")
+      .map((t) => ({ track: str(t.track), learners: num(t.learners), completed: num(t.completed), completionRate: num(t.completionRate), medianMinutesToComplete: optNum(t.medianMinutesToComplete) })),
+    exercises: list(r.exercises)
+      .map(obj)
+      .filter((e) => str(e.exercise) !== "")
+      .map((e) => ({
+        exercise: str(e.exercise),
+        attempts: num(e.attempts),
+        learners: num(e.learners),
+        passRate: num(e.passRate),
+        medianRunMs: num(e.medianRunMs),
+        failures: counts(e.failures),
+        commonErrors: list(e.commonErrors)
+          .map(obj)
+          .filter((c) => str(c.text) !== "")
+          .map((c) => ({ text: str(c.text), count: num(c.count) })),
+      })),
+    challenges: list(r.challenges)
+      .map(obj)
+      .filter((c) => str(c.id) !== "")
+      .map((c) => ({ id: str(c.id), solves: num(c.solves), attempts: num(c.attempts), medianMinutesToSolve: optNum(c.medianMinutesToSolve) })),
+  };
+}
