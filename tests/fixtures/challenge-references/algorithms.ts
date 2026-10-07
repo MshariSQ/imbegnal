@@ -309,6 +309,117 @@ console.log("accuracy", (correct / n).toFixed(6));
 `,
     },
   },
+  {
+    id: "ai-kmeans-step",
+    solutions: {
+      python: `import sys
+
+data = sys.stdin.read().split()
+n, k, d = int(data[0]), int(data[1]), int(data[2])
+values = list(map(float, data[3:]))
+points = [values[i * d:(i + 1) * d] for i in range(n)]
+centroids = [values[(n + j) * d:(n + j + 1) * d] for j in range(k)]
+
+sums = [[0.0] * d for _ in range(k)]
+counts = [0] * k
+assignment = []
+inertia = 0.0
+for p in points:
+    best, best_dist = 0, float("inf")
+    for j, c in enumerate(centroids):
+        dist = sum((x - y) ** 2 for x, y in zip(p, c))
+        if dist < best_dist:
+            best, best_dist = j, dist
+    inertia += best_dist
+    counts[best] += 1
+    for i, x in enumerate(p):
+        sums[best][i] += x
+    assignment.append(best)
+
+print(*assignment)
+for j in range(k):
+    new = centroids[j] if counts[j] == 0 else [s / counts[j] for s in sums[j]]
+    print(*[f"{x:.6f}" for x in new])
+print(f"{inertia:.6f}")
+`,
+      javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean).map(Number);
+const [n, k, d] = data;
+const points = [];
+const centroids = [];
+for (let i = 0; i < n; i++) points.push(data.slice(3 + i * d, 3 + (i + 1) * d));
+for (let j = 0; j < k; j++) centroids.push(data.slice(3 + (n + j) * d, 3 + (n + j + 1) * d));
+
+const sums = centroids.map(() => new Array(d).fill(0));
+const counts = new Array(k).fill(0);
+const assignment = [];
+let inertia = 0;
+for (const p of points) {
+  let best = 0;
+  let bestDist = Infinity;
+  centroids.forEach((c, j) => {
+    const dist = p.reduce((acc, x, i) => acc + (x - c[i]) ** 2, 0);
+    if (dist < bestDist) {
+      best = j;
+      bestDist = dist;
+    }
+  });
+  inertia += bestDist;
+  counts[best]++;
+  p.forEach((x, i) => (sums[best][i] += x));
+  assignment.push(best);
+}
+console.log(assignment.join(" "));
+for (let j = 0; j < k; j++) {
+  const next = counts[j] === 0 ? centroids[j] : sums[j].map((s) => s / counts[j]);
+  console.log(next.map((x) => x.toFixed(6)).join(" "));
+}
+console.log(inertia.toFixed(6));
+`,
+      cpp: `#include <cstdio>
+#include <iostream>
+#include <limits>
+#include <vector>
+using namespace std;
+
+int main() {
+    int n, k, d;
+    cin >> n >> k >> d;
+    vector<vector<double>> points(n, vector<double>(d)), centroids(k, vector<double>(d));
+    for (auto &p : points) for (auto &x : p) cin >> x;
+    for (auto &c : centroids) for (auto &x : c) cin >> x;
+
+    vector<vector<double>> sums(k, vector<double>(d, 0.0));
+    vector<int> counts(k, 0), assignment(n);
+    double inertia = 0.0;
+    for (int i = 0; i < n; i++) {
+        int best = 0;
+        double bestDist = numeric_limits<double>::infinity();
+        for (int j = 0; j < k; j++) {
+            double dist = 0.0;
+            for (int t = 0; t < d; t++) dist += (points[i][t] - centroids[j][t]) * (points[i][t] - centroids[j][t]);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = j;
+            }
+        }
+        inertia += bestDist;
+        counts[best]++;
+        for (int t = 0; t < d; t++) sums[best][t] += points[i][t];
+        assignment[i] = best;
+    }
+    for (int i = 0; i < n; i++) printf("%d%c", assignment[i], i + 1 < n ? ' ' : '\\n');
+    for (int j = 0; j < k; j++) {
+        for (int t = 0; t < d; t++) {
+            double v = counts[j] == 0 ? centroids[j][t] : sums[j][t] / counts[j];
+            printf("%.6f%c", v, t + 1 < d ? ' ' : '\\n');
+        }
+    }
+    printf("%.6f\\n", inertia);
+    return 0;
+}
+`,
+    },
+  },
 ];
 
 /**
@@ -711,6 +822,145 @@ for (const c of [...classes].sort()) {
 }
 console.log("macro_f1", weighted.toFixed(6));
 console.log("accuracy", (correct / n).toFixed(6));
+`,
+  },
+  {
+    id: "ai-kmeans-step",
+    lang: "python",
+    name: "ties go to the highest index (<=)",
+    code: `import sys
+
+data = sys.stdin.read().split()
+n, k, d = int(data[0]), int(data[1]), int(data[2])
+values = list(map(float, data[3:]))
+points = [values[i * d:(i + 1) * d] for i in range(n)]
+centroids = [values[(n + j) * d:(n + j + 1) * d] for j in range(k)]
+
+sums = [[0.0] * d for _ in range(k)]
+counts = [0] * k
+assignment = []
+inertia = 0.0
+for p in points:
+    best, best_dist = 0, float("inf")
+    for j, c in enumerate(centroids):
+        dist = sum((x - y) ** 2 for x, y in zip(p, c))
+        if dist <= best_dist:
+            best, best_dist = j, dist
+    inertia += best_dist
+    counts[best] += 1
+    for i, x in enumerate(p):
+        sums[best][i] += x
+    assignment.append(best)
+
+print(*assignment)
+for j in range(k):
+    new = centroids[j] if counts[j] == 0 else [s / counts[j] for s in sums[j]]
+    print(*[f"{x:.6f}" for x in new])
+print(f"{inertia:.6f}")
+`,
+  },
+  {
+    id: "ai-kmeans-step",
+    lang: "python",
+    name: "empty cluster collapses to the origin",
+    code: `import sys
+
+data = sys.stdin.read().split()
+n, k, d = int(data[0]), int(data[1]), int(data[2])
+values = list(map(float, data[3:]))
+points = [values[i * d:(i + 1) * d] for i in range(n)]
+centroids = [values[(n + j) * d:(n + j + 1) * d] for j in range(k)]
+
+sums = [[0.0] * d for _ in range(k)]
+counts = [0] * k
+assignment = []
+inertia = 0.0
+for p in points:
+    best, best_dist = 0, float("inf")
+    for j, c in enumerate(centroids):
+        dist = sum((x - y) ** 2 for x, y in zip(p, c))
+        if dist < best_dist:
+            best, best_dist = j, dist
+    inertia += best_dist
+    counts[best] += 1
+    for i, x in enumerate(p):
+        sums[best][i] += x
+    assignment.append(best)
+
+print(*assignment)
+for j in range(k):
+    new = [0.0] * d if counts[j] == 0 else [s / counts[j] for s in sums[j]]
+    print(*[f"{x:.6f}" for x in new])
+print(f"{inertia:.6f}")
+`,
+  },
+  {
+    id: "ai-kmeans-step",
+    lang: "python",
+    name: "inertia reports sqrt of the squared distances' sum",
+    code: `import sys
+
+data = sys.stdin.read().split()
+n, k, d = int(data[0]), int(data[1]), int(data[2])
+values = list(map(float, data[3:]))
+points = [values[i * d:(i + 1) * d] for i in range(n)]
+centroids = [values[(n + j) * d:(n + j + 1) * d] for j in range(k)]
+
+sums = [[0.0] * d for _ in range(k)]
+counts = [0] * k
+assignment = []
+inertia = 0.0
+for p in points:
+    best, best_dist = 0, float("inf")
+    for j, c in enumerate(centroids):
+        dist = sum((x - y) ** 2 for x, y in zip(p, c))
+        if dist < best_dist:
+            best, best_dist = j, dist
+    inertia += best_dist
+    counts[best] += 1
+    for i, x in enumerate(p):
+        sums[best][i] += x
+    assignment.append(best)
+
+print(*assignment)
+for j in range(k):
+    new = centroids[j] if counts[j] == 0 else [s / counts[j] for s in sums[j]]
+    print(*[f"{x:.6f}" for x in new])
+print(f"{inertia ** 0.5:.6f}")
+`,
+  },
+  {
+    id: "ai-kmeans-step",
+    lang: "python",
+    name: "inertia measured against the NEW centroids",
+    code: `import sys
+
+data = sys.stdin.read().split()
+n, k, d = int(data[0]), int(data[1]), int(data[2])
+values = list(map(float, data[3:]))
+points = [values[i * d:(i + 1) * d] for i in range(n)]
+centroids = [values[(n + j) * d:(n + j + 1) * d] for j in range(k)]
+
+sums = [[0.0] * d for _ in range(k)]
+counts = [0] * k
+assignment = []
+for p in points:
+    best, best_dist = 0, float("inf")
+    for j, c in enumerate(centroids):
+        dist = sum((x - y) ** 2 for x, y in zip(p, c))
+        if dist < best_dist:
+            best, best_dist = j, dist
+    counts[best] += 1
+    for i, x in enumerate(p):
+        sums[best][i] += x
+    assignment.append(best)
+
+moved = [centroids[j] if counts[j] == 0 else [s / counts[j] for s in sums[j]] for j in range(k)]
+inertia = sum(sum((x - y) ** 2 for x, y in zip(p, moved[a])) for p, a in zip(points, assignment))
+print(*assignment)
+for c in moved:
+    print(*[f"{x:.6f}" for x in c])
+print(f"{inertia:.6f}")
 `,
   },
 ];

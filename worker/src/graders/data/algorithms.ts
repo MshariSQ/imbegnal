@@ -230,7 +230,7 @@ const gridSerpentine = (() => {
 function randomMaze(seed: number, size: number, density: number, wantReachable: boolean): string[] {
   for (let s = seed; ; s++) {
     const r = rng(s);
-    const rows = Array.from({ length: size }, () => Array.from({ length: size }, () => (r() < density ? "#" : ".")));
+    const rows: string[][] = Array.from({ length: size }, () => Array.from({ length: size }, () => (r() < density ? "#" : ".")));
     rows[0][0] = "S";
     rows[size - 1][size - 1] = "E";
     const lines = rows.map((row) => row.join(""));
@@ -706,4 +706,95 @@ const dsClassifierReport: ChallengeGrader = {
   ],
 };
 
-export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats, dsClassifierReport];
+// ── ai-kmeans-step ───────────────────────────────────────────────────────────
+
+/** One k-means iteration: assignments, updated centroids (empty clusters stay put) and inertia of the OLD centroids. */
+function kmeansStep(points: number[][], centroids: number[][]): string {
+  const d = points[0].length;
+  const sums = centroids.map(() => new Array<number>(d).fill(0));
+  const counts = centroids.map(() => 0);
+  let inertia = 0;
+  const assignment = points.map((p) => {
+    let best = 0;
+    let bestDist = Infinity;
+    centroids.forEach((c, j) => {
+      const dist = p.reduce((acc, x, i) => acc + (x - c[i]) ** 2, 0);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = j;
+      }
+    });
+    inertia += bestDist;
+    counts[best]++;
+    p.forEach((x, i) => (sums[best][i] += x));
+    return best;
+  });
+  const moved = centroids.map((c, j) => (counts[j] === 0 ? c : sums[j].map((x) => x / counts[j])));
+  return [assignment.join(" "), ...moved.map((c) => c.map((x) => x.toFixed(6)).join(" ")), inertia.toFixed(6)].join("\n");
+}
+
+function kmeansTest(name: string, points: number[][], centroids: number[][], hidden = true): OutputTest {
+  const rows = [...points, ...centroids].map((row) => row.join(" "));
+  return {
+    name,
+    stdin: `${points.length} ${centroids.length} ${points[0].length}\n${rows.join("\n")}\n`,
+    expected: kmeansStep(points, centroids),
+    mode: "float",
+    epsilon: 1e-4,
+    hidden: hidden || undefined,
+  };
+}
+
+/**
+ * Random clustered data with coordinates on a 0.1 grid. No point is ever equally near to its two best centroids
+ * (checked in exact integer arithmetic), so the lowest-index tie rule is exercised only by the explicit tests
+ * and decimal parsing cannot flip an assignment.
+ */
+function kmeansData(seed: number, n: number, k: number, d: number, emptyCluster: boolean): { points: number[][]; centroids: number[][] } {
+  const r = rng(seed);
+  const tenth = (v: number) => v / 10;
+  const centres = Array.from({ length: k }, () => Array.from({ length: d }, () => randInt(r, -300, 300)));
+  const startTenths = centres.map((c) => c.map((x) => x + randInt(r, -60, 60)));
+  if (emptyCluster) startTenths[k - 1] = Array.from({ length: d }, () => 5_000);
+  const dist2 = (p: number[], c: number[]) => p.reduce((acc, x, i) => acc + (x - c[i]) ** 2, 0);
+  const pts: number[][] = [];
+  while (pts.length < n) {
+    const centre = centres[randInt(r, 0, k - 1)];
+    const p = centre.map((x) => x + randInt(r, -90, 90));
+    const ds = startTenths.map((c) => dist2(p, c)).sort((a, b) => a - b);
+    if (ds.length > 1 && ds[0] === ds[1]) continue;
+    pts.push(p);
+  }
+  return { points: pts.map((p) => p.map(tenth)), centroids: startTenths.map((c) => c.map(tenth)) };
+}
+
+const kmeansBig2d = kmeansData(2024, 1_500, 3, 2, false);
+const kmeans4d = kmeansData(31337, 800, 6, 4, false);
+const kmeansEmpty = kmeansData(555, 600, 4, 3, true);
+
+const aiKmeansStep: ChallengeGrader = {
+  id: "ai-kmeans-step",
+  kind: "output",
+  tests: [
+    kmeansTest("example", [[1, 1], [1.5, 2], [3, 4], [5, 7], [3.5, 5], [4.5, 5]], [[1, 1], [5, 7]], false),
+    kmeansTest("empty cluster stays put", [[0], [1], [2], [3]], [[0], [3], [100]], false),
+    kmeansTest("single centroid", [[2, 3], [4, 5], [-6, 1], [0, 0]], [[10, 10]]),
+    kmeansTest("ties go to the lowest index (3D)", [[1, 1, 0], [2, 2, 0], [0, 1, 1], [-1, -1, 0], [1, -1, 0]], [[0, 0, 0], [2, 0, 0], [0, 2, 0]]),
+    kmeansTest("identical centroids", [[1, 1], [2, 2], [8, 8], [9, 9]], [[1, 1], [1, 1], [9, 9]]),
+    kmeansTest("negative coordinates, 1D", [[-5], [-4], [-1], [1], [4], [6]], [[-3], [3]]),
+    kmeansTest("1500 points, 3 clusters", kmeansBig2d.points, kmeansBig2d.centroids),
+    kmeansTest("800 points in 4D, 6 clusters", kmeans4d.points, kmeans4d.centroids),
+    kmeansTest("far-away centroid gets nothing", kmeansEmpty.points, kmeansEmpty.centroids),
+  ],
+};
+
+export const algorithmsGraders: ChallengeGrader[] = [
+  dsaPairSumCount,
+  dsaBracketBalance,
+  dsaGridShortestPath,
+  dbLowStockReport,
+  dbLoyalCustomers,
+  dsDescriptiveStats,
+  dsClassifierReport,
+  aiKmeansStep,
+];

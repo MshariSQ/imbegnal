@@ -1154,4 +1154,211 @@ console.log("accuracy 0");
   addedAt: ADDED,
 };
 
-export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats, dsClassifierReport];
+// ── artificial-intelligence ───────────────────────────────────────────────────
+
+const aiKmeansStep: ChallengeMeta = {
+  id: "ai-kmeans-step",
+  track: "artificial-intelligence",
+  topic: "clustering",
+  title: { en: "One Step of k-means", ar: "خطوة واحدة من k-means" },
+  summary: {
+    en: "Run exactly one iteration of k-means by hand: assign every point to its nearest centroid, move the centroids, and report the inertia.",
+    ar: "نفّذ تكرارًا واحدًا بالضبط من خوارزمية k-means: أسند كل نقطة إلى أقرب مركز، وحرّك المراكز، ثم احسب القصور الذاتي (inertia).",
+  },
+  description: {
+    en: `## Story
+
+A delivery company has \`k\` pickup lockers placed around town and \`n\` customers who each use their nearest locker. Every night the company moves each locker to the **centre of its customers**. That is one iteration of **k-means**, the clustering algorithm behind customer segmentation, image palettes and vector quantisation. Implement it from scratch.
+
+## Task
+
+You are given \`n\` points and \`k\` current centroids in \`d\` dimensions. Perform one iteration:
+
+1. **Assign** every point to the nearest centroid by Euclidean distance. If two or more centroids are equally near, pick the one with the **lowest index**. Indexes start at 0.
+2. **Update** every centroid to the mean of the points assigned to it. A centroid that received **no** points stays where it was.
+3. **Inertia** = the sum, over all points, of the squared distance to the centroid the point was assigned to (the **old** centroids used in step 1).
+
+## Input
+
+* Line 1: \`n k d\` (1 ≤ n ≤ 2000, 1 ≤ k ≤ 8, 1 ≤ d ≤ 4)
+* Next \`n\` lines: the coordinates of a point (\`d\` numbers)
+* Next \`k\` lines: the coordinates of a centroid (\`d\` numbers)
+
+## Output
+
+* Line 1: \`n\` integers, the centroid index of every point in input order, separated by spaces
+* Next \`k\` lines: the new centroids (\`d\` numbers each)
+* Last line: the inertia
+
+Print at least 4 decimals; every number within \`0.0001\` of the exact value is accepted.
+
+## Example
+
+\`\`\`
+6 2 2
+1 1
+1.5 2
+3 4
+5 7
+3.5 5
+4.5 5
+1 1
+5 7
+\`\`\`
+
+Output:
+
+\`\`\`
+0 0 0 1 1 1
+1.8333 2.3333
+4.3333 5.6667
+24.75
+\`\`\`
+
+The point (3, 4) is exactly 13 away (squared) from both centroids, so the lower index 0 wins. The inertia is 0 + 1.25 + 13 + 0 + 6.25 + 4.25 = 24.75.`,
+    ar: `## القصة
+
+لدى شركة توصيل \`k\` خزانة استلام موزعة في المدينة و\`n\` عميلًا يستخدم كلٌّ منهم أقرب خزانة إليه. وكل ليلة تنقل الشركة كل خزانة إلى **مركز عملائها**. هذا هو تكرار واحد من **k-means**، خوارزمية العنقدة التي تقف خلف تقسيم العملاء وألوان الصور والتكميم الاتجاهي. نفّذها من الصفر.
+
+## المطلوب
+
+لديك \`n\` نقطة و\`k\` مركزًا حاليًا في فضاء بُعده \`d\`. نفّذ تكرارًا واحدًا:
+
+1. **الإسناد**: أسند كل نقطة إلى أقرب مركز بالمسافة الإقليدية. وإذا تساوى مركزان أو أكثر في القرب فاختر صاحب **أدنى فهرس**. الفهارس تبدأ من 0.
+2. **التحديث**: انقل كل مركز إلى متوسط النقاط المسندة إليه. والمركز الذي **لم** تُسند إليه نقاط يبقى في مكانه.
+3. **القصور الذاتي (inertia)** = مجموع مربعات المسافات من كل نقطة إلى المركز الذي أُسندت إليه (أي المراكز **القديمة** المستخدمة في الخطوة 1).
+
+## المدخلات
+
+* السطر الأول: \`n k d\` (‏1 ≤ n ≤ 2000 و 1 ≤ k ≤ 8 و 1 ≤ d ≤ 4)
+* ثم \`n\` سطرًا: إحداثيات نقطة (‏\`d\` أعداد)
+* ثم \`k\` سطرًا: إحداثيات مركز (‏\`d\` أعداد)
+
+## المخرجات
+
+* السطر الأول: \`n\` عددًا صحيحًا هي فهرس المركز لكل نقطة بترتيب الإدخال، يفصل بينها فراغ
+* ثم \`k\` سطرًا: المراكز الجديدة (‏\`d\` أعداد في كل سطر)
+* السطر الأخير: القصور الذاتي
+
+اطبع 4 منازل عشرية على الأقل؛ ويُقبل كل رقم يبعد عن القيمة الدقيقة بأقل من \`0.0001\`.
+
+## مثال
+
+\`\`\`
+6 2 2
+1 1
+1.5 2
+3 4
+5 7
+3.5 5
+4.5 5
+1 1
+5 7
+\`\`\`
+
+الناتج:
+
+\`\`\`
+0 0 0 1 1 1
+1.8333 2.3333
+4.3333 5.6667
+24.75
+\`\`\`
+
+النقطة (3, 4) يبعد مربع مسافتها 13 عن المركزين تمامًا، فيفوز الفهرس الأدنى 0. والقصور الذاتي = 0 + 1.25 + 13 + 0 + 6.25 + 4.25 = 24.75.`,
+  },
+  difficulty: 3,
+  points: 200,
+  estMinutes: 35,
+  kind: "output",
+  lang: "python",
+  starterCode: {
+    python: `import sys
+
+data = sys.stdin.read().split()
+n, k, d = int(data[0]), int(data[1]), int(data[2])
+values = list(map(float, data[3:]))
+points = [values[i * d:(i + 1) * d] for i in range(n)]
+centroids = [values[(n + j) * d:(n + j + 1) * d] for j in range(k)]
+
+# Your code here: assign every point to its nearest centroid (lowest index on ties),
+# move each centroid to the mean of its points, and add up the squared distances.
+print(*[0] * n)
+for c in centroids:
+    print(*c)
+print(0)
+`,
+    javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean).map(Number);
+const [n, k, d] = data;
+const points = [];
+const centroids = [];
+for (let i = 0; i < n; i++) points.push(data.slice(3 + i * d, 3 + (i + 1) * d));
+for (let j = 0; j < k; j++) centroids.push(data.slice(3 + (n + j) * d, 3 + (n + j + 1) * d));
+
+// Your code here: assign every point to its nearest centroid (lowest index on ties),
+// move each centroid to the mean of its points, and add up the squared distances.
+console.log(new Array(n).fill(0).join(" "));
+for (const c of centroids) console.log(c.join(" "));
+console.log(0);
+`,
+    cpp: `#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    int n, k, d;
+    cin >> n >> k >> d;
+    vector<vector<double>> points(n, vector<double>(d)), centroids(k, vector<double>(d));
+    for (auto &p : points) for (auto &x : p) cin >> x;
+    for (auto &c : centroids) for (auto &x : c) cin >> x;
+
+    // Your code here: assign every point to its nearest centroid (lowest index on ties),
+    // move each centroid to the mean of its points, and add up the squared distances.
+    for (int i = 0; i < n; i++) cout << 0 << (i + 1 < n ? " " : "\\n");
+    for (auto &c : centroids) {
+        for (int j = 0; j < d; j++) cout << c[j] << (j + 1 < d ? " " : "\\n");
+    }
+    cout << 0 << endl;
+    return 0;
+}
+`,
+  },
+  sampleInput: "6 2 2\n1 1\n1.5 2\n3 4\n5 7\n3.5 5\n4.5 5\n1 1\n5 7\n",
+  hints: [
+    {
+      text: {
+        en: "Split the work in two phases. First decide every point's cluster using the OLD centroids only; then compute the new centroids. Comparing squared distances is enough, no square root needed.",
+        ar: "قسّم العمل إلى مرحلتين. حدّد أولًا عنقود كل نقطة باستخدام المراكز القديمة فقط، ثم احسب المراكز الجديدة. تكفي مقارنة المسافات المربعة دون جذر تربيعي.",
+      },
+      cost: 20,
+    },
+    {
+      text: {
+        en: "Scan the centroids in index order and replace the best one only when the new distance is STRICTLY smaller; that gives the lowest index on ties. Keep a sum vector and a count per cluster, and only divide when the count is above 0.",
+        ar: "امسح المراكز بترتيب فهارسها ولا تستبدل الأفضل إلا إذا كانت المسافة الجديدة أصغر **تمامًا**؛ فيفوز الفهرس الأدنى عند التعادل. احتفظ لكل عنقود بمتجه مجاميع وعدّاد، ولا تقسم إلا عندما يكون العدّاد أكبر من 0.",
+      },
+      cost: 25,
+    },
+    {
+      text: {
+        en: "The inertia uses the distances to the centroids the points were assigned to (the old ones). Add each point's best squared distance to a running total while assigning, before any centroid moves.",
+        ar: "يستخدم القصور الذاتي المسافات إلى المراكز التي أُسندت إليها النقاط (القديمة). أضف أفضل مسافة مربعة لكل نقطة إلى مجموع جارٍ أثناء الإسناد، قبل أن يتحرك أي مركز.",
+      },
+      cost: 35,
+    },
+  ],
+  lessons: ["artificial-intelligence/machine-learning", "artificial-intelligence/math-for-ml"],
+  tags: ["k-means", "clustering", "unsupervised-learning"],
+  addedAt: ADDED,
+};
+
+export const algorithmsChallenges: ChallengeMeta[] = [
+  dsaPairSumCount,
+  dsaBracketBalance,
+  dsaGridShortestPath,
+  dbLowStockReport,
+  dbLoyalCustomers,
+  dsDescriptiveStats,
+  dsClassifierReport,
+  aiKmeansStep,
+];
