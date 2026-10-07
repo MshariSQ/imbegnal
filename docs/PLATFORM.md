@@ -3,15 +3,21 @@
 ## Architecture
 
 ```
-Browser (static Next.js export on GitHub Pages)        Cloudflare Worker + D1
-┌──────────────────────────────────────────┐          ┌─────────────────────────────┐
-│ app/            routes (App Router)       │          │ /api/auth/{github,google}   │
-│  learn/…        course + lesson player    │  HTTPS   │ /api/auth/{register,login}  │
-│  dashboard/     streak, XP, resume        │ ───────► │ /api/state   (sync, PUT/GET)│
-│  login/ pricing/ roadmaps/ …              │          │ /api/ai/chat (SSE → Claude) │
-│ lib/study-store local-first progress/notes│          │ /api/progress /bookmarks    │
-│ lib/sync        merge + debounced push    │          └─────────────────────────────┘
-└──────────────────────────────────────────┘
+Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
+┌──────────────────────────────────────────┐          ┌──────────────────────────────────┐
+│ app/            routes (App Router)       │          │ Cloudflare Worker (worker/) + D1  │
+│  learn/…        course + lesson player    │  HTTPS   │ /api/auth/*  /api/state  /api/ai │
+│  code-lab/      editor, run, share        │ ───────► │ /api/lab/*   run, quota, history │
+│  challenges/    CTF list, submit, board   │  Bearer  │ /api/challenges/* /api/leaderboard│
+│  dashboard/ login/ pricing/ roadmaps/ …   │   JWT    │ /api/certificates/* /instructor/* │
+│ lib/study-store local-first progress/notes│          └───────────────┬──────────────────┘
+│ lib/sync        merge + debounced push    │                          │ HMAC-signed HTTPS
+└──────────────────────────────────────────┘                          ▼ (RUNNER_URL)
+                                                       ┌──────────────────────────────────┐
+                                                       │ Runner (runner/) on a Docker VM   │
+                                                       │ one throw-away container per run: │
+                                                       │ no network, read-only, non-root   │
+                                                       └──────────────────────────────────┘
 ```
 
 * **Content** lives in `data/` (roadmaps → nodes → lessons). `lib/catalog.ts`
@@ -31,6 +37,9 @@ Browser (static Next.js export on GitHub Pages)        Cloudflare Worker + D1
   text is sent as a cached system block (follow-up questions are cheap), with
   per-user daily quotas (20 free / 200 pro by default) and server-side refusal
   fallback. The API key never reaches the browser.
+* **Code Lab and Challenges**: the binding spec is [`docs/CODE_LAB.md`](CODE_LAB.md); the runner's threat
+  model and operations are in [`runner/README.md`](../runner/README.md); Worker-side variables in
+  [`worker/README-lab.md`](../worker/README-lab.md). Summary in [Code Lab, Challenges and the runner](#code-lab-challenges-and-the-runner).
 
 ## Deploying
 
@@ -81,7 +90,11 @@ Database changes go in `worker/migrations/NNNN_name.sql` (never edit an applied 
 Local dev against a database created by hand from the old `schema*.sql` files: delete `worker/.wrangler/state` first
 (migrations would otherwise fail with "duplicate column"), then re-run the commands below.
 Local dev: secrets in `worker/.dev.vars` (git-ignored), then in `worker/`:
-`npx wrangler d1 migrations apply skillforge-db --local && npx wrangler dev`, and `npm run dev` at the root.
+`npx wrangler d1 migrations apply skillforge-db --local --config wrangler.toml && npm run dev`, and `npm run dev` at the root.
+
+> **Always pass `--config wrangler.toml` to `wrangler` inside `worker/`** (`npm run dev` / `npm run deploy` there do it for you).
+> Wrangler looks for `wrangler.json`/`wrangler.jsonc` in every parent directory *before* it looks for `wrangler.toml`,
+> so without the flag it picks up the site's root `wrangler.jsonc` and would deploy or migrate the wrong project.
 
 ### AI tutor cost controls (set these in the Cloudflare dashboard only — Worker → Settings → Variables; do not add them to `wrangler.toml [vars]`, a deploy would reset them)
 
@@ -95,10 +108,85 @@ Local dev: secrets in `worker/.dev.vars` (git-ignored), then in `worker/`:
 Counters reset at 00:00 UTC (03:00 Riyadh). Failed model calls are refunded.
 Also set a monthly spend limit in the Anthropic Console as the last line of defence.
 
+## Code Lab, Challenges and the runner
+
+![Lesson to Code Lab: starter code fails the server-side tests, a working solution passes, the lesson shows the lab as passed](media/code-lab-demo.gif)
+
+### Pieces
+
+| Piece | Where | What it does |
+|---|---|---|
+| Code Lab UI | `app/code-lab/`, `components/codelab/` | CodeMirror editor (14 languages), stdin, stdout/stderr panes, run history, read-only share links (`/code-lab/s/?id=`), "Open in Code Lab" from lessons and challenges. JavaScript and Python also run in the browser when signed out or when the runner is down. |
+| Challenges UI | `app/challenges/`, `components/challenges/` | List with track / difficulty / status filters, points, estimated time, solves, first blood; detail page with flag or code submission and hints; leaderboard (all-time / weekly, per track). |
+| Curriculum | `data/roadmaps.ts`, `data/curricula.ts`, `data/lessons/**` | `roadmaps[]` is the one taxonomy: course pages, Code Lab tags, challenge categories, certificates and analytics all use the roadmap `id` and look the title up at render time. Lessons embed graded `lab` exercises. |
+| Worker | `worker/src/lab/**`, `worker/src/challenges/**`, `worker/src/graders/**` | Quota reserve → signed runner call → grade → log (`lab_runs`) → refund on infrastructure failure. Flags are stored as SHA-256 hashes; hidden tests, harnesses and reference solutions exist only in the Worker bundle. |
+| Runner | `runner/` | Zero-dependency Node 22 service that executes one job per throw-away Docker container. |
+
+### Sandbox security (why untrusted code cannot hurt us)
+
+Every run gets a **fresh container** that is destroyed afterwards:
+`--network none` (no egress at all: no DNS, no TCP, no cloud metadata), `--read-only` root filesystem with a size-capped
+`tmpfs` work directory (nothing persists between runs or users), `--user 65534`, `--cap-drop ALL`,
+`--security-opt no-new-privileges`, Docker's default seccomp profile, `--pids-limit` (fork bombs), `--memory` = `--memory-swap`
+(OOM → `memory_limit`), `--cpus`, ulimits, a host-side wall-clock kill (infinite loops → `timeout`, compile and run timed
+separately) and streaming output caps (64 KiB kept, 1 MiB kills the job → `output_limit`). There is no shell between user
+input and Docker (argv only), the container environment is an explicit allow-list (the runner secret never enters it), and
+the service authenticates every request with HMAC + timestamp window + replay-protected job ids. The full threat model,
+residual risks (shared kernel, the Docker socket) and hardening options (gVisor `runsc`, rootless Docker) are in
+[`runner/README.md`](../runner/README.md#threat-model). Each of these properties has a test against a real Docker daemon
+(`npm run test:runner`) and again end-to-end through the Worker (`tests/e2e/full/sandbox.spec.ts`).
+
+On top of the sandbox the Worker enforces **quotas** (free 50 / pro 500 runs per UTC day, 10 / 30 per minute, 2 concurrent,
+20 000 per day globally — all overridable with `RUN_*` variables), refunds runs that fail for infrastructure reasons,
+records **abuse signals** (resource-limit hits, network probes, floods, flag brute force) that auto-suspend an account for
+24 h, and writes an **audit log** (`audit_log`). Logged per run: user, lesson/challenge, language, durations, exit code,
+output size, status and timestamp — never environment, secrets or host paths.
+
+### Deploying the runner (once)
+
+1. **A dedicated Linux VM** (Ubuntu 24.04, 2+ vCPU, 4+ GB RAM; nothing else on it). Then:
+   ```sh
+   git clone https://github.com/MshariSQ/imbegnal && cd imbegnal
+   sudo runner/deploy/install.sh --profile full   # Docker, Node 22, toolchain image, systemd unit, generated secret
+   ```
+   `--profile slim` (Python, JS/TS, Java, C, C++) builds in minutes; `full` adds C#, Go, Rust, Ruby, PHP, Kotlin, Bash
+   (and Swift when `SWIFT_SHA256` is exported). Languages that fail their start-up smoke test are reported as unavailable
+   and the Code Lab greys them out.
+2. **Publish it without opening a port**: a Cloudflare Tunnel to `http://localhost:4242`
+   ([steps](../runner/README.md#cloudflare-tunnel-setup)), e.g. `https://runner.imbegnal.com`.
+3. **Point the Worker at it** (Cloudflare → Workers & Pages → `skillforge-api` → Settings → Variables and Secrets, type *Secret*):
+   `RUNNER_URL` = the tunnel URL, `RUNNER_SECRET` = the value printed by `sudo sed -n 's/^RUNNER_SECRET=//p' /etc/imbegnal-runner.env`.
+   No GitHub secret is needed for the runner; it never sees the repository's credentials.
+4. Check: `GET <WORKER_URL>/api/lab/languages` answers `"runner": "up"` with the language list.
+
+Until `RUNNER_URL` is set the site keeps working: lessons, challenges with flag answers and the in-browser JavaScript/Python
+fallback work, and server runs answer a friendly "runner unavailable" (not charged).
+Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by the normal deploy.
+
+**Roles**: `users.role` is `student` by default. Promote an instructor (analytics at `/api/instructor/analytics`) or admin
+(audit log) with `wrangler d1 execute` — see [`worker/README-lab.md`](../worker/README-lab.md).
+
+## Tests
+
+| Command | Needs | Covers |
+|---|---|---|
+| `npm run typecheck` | — | site, Worker and runner TypeScript |
+| `npx eslint .` | — | lint |
+| `npm run check:catalog` | — | `worker/src/generated/catalog.ts` matches the lesson/challenge data (`npm run gen:catalog` to refresh) |
+| `npm run test:unit` | host toolchains (optional) | contracts, output matching, curricula, canonical names, lessons; every lab and challenge reference solution is run against its tests on the host toolchains that exist (missing ones are skipped) |
+| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion |
+| `npm run test:runner` | Docker + `runner/image/build.sh slim` | the sandbox against a real Docker daemon: per-language Hello World, stdout/stderr, timeouts, memory, fork bombs, output floods, no network, no persistence, read-only root, uid, HMAC/replay |
+| `npm run test:e2e` | Docker, a runner image, `worker/node_modules`, Chromium | the real stack (runner + `wrangler dev` with local D1 and the real migrations + the exported site + Playwright): Hello World in Python/JS/Java/C/C++ through the UI, stdout vs stderr, infinite loop killed, network blocked, quota exhaustion message and refunds, lesson → "Try in Code Lab" → starter code → pass → XP, challenge solve → points |
+
+`npm run test:e2e` builds the site with `NEXT_PUBLIC_API_URL=http://127.0.0.1:8787`, starts everything on loopback
+(site 4173, Worker 8787, runner 4242) with throw-away secrets and a temporary D1, and tears it down afterwards.
+`E2E_SKIP_BUILD=1` reuses `out/`, `E2E_SPECS="codelab.spec.ts"` runs one file, `E2E_KEEP=1` leaves the stack up.
+CI (`.github/workflows/ci.yml`) runs all of the above on every pull request.
+
 ## Launch metrics (D1)
 
 ```bash
-npx wrangler d1 execute skillforge-db --remote --command "<SQL>"
+cd worker && npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command "<SQL>"
 ```
 
 ```sql
@@ -129,8 +217,8 @@ SELECT day, count FROM ai_usage WHERE github_id = '_global' ORDER BY day DESC LI
 - Weekly email/Telegram digest with streak status and the next lesson (needs the
   email already collected at signup).
 - Spaced-repetition review: resurface questions the learner missed, 1/3/7 days later.
-- Shareable certificates of completion per course (PDF + verification URL) —
-  also the natural Pro feature.
+- Certificates of completion per course exist as a PDF skeleton with a verification code
+  (`/api/certificates/*`); give them a designed template and make them a Pro perk.
 - Leaderboards by cohort/friends rather than global, to avoid discouraging beginners.
 - "Study with a friend" streak pairs; public learner profiles with badges.
 - AI-generated practice quizzes and "explain my wrong answer" from the tutor.
@@ -151,8 +239,11 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
 ## Known gaps / next steps
 - Stripe billing, email verification and password reset (email auth currently has
   no verification — fine for progress sync, add before paid features).
-- Rate limiting is per-isolate; move to a Durable Object or Cloudflare Rate
+- Rate limiting is per-isolate (per IP: 60 requests/min, 10/min on `/api/auth/*`; override with the
+  `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_AUTH_PER_MIN` variables); move to a Durable Object or Cloudflare Rate
   Limiting rules before large launches.
 - Lessons are TypeScript objects; at 100+ lessons consider MDX/JSON content with
   a lint step that enforces English/Arabic parity.
-- Add Playwright smoke tests to CI (a local e2e script was used during development).
+- Runner: one VM is a single point of failure for server runs (the browser fallback covers JS/Python); add a
+  second VM behind the tunnel (Cloudflare load-balances connectors) before large launches. gVisor is recommended there.
+- Swift needs a checksum-pinned toolchain download (`SWIFT_SHA256`); it is reported unavailable until then.
