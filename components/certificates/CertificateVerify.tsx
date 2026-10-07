@@ -222,8 +222,15 @@ function ValidCard({ cert, headingId, courseTitles }: { cert: VerifiedCertificat
         {rows.map((r) => (
           <div key={r.label} className="min-w-0">
             <dt className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">{r.label}</dt>
-            <dd className="mt-1 break-words text-base font-bold text-fg text-start" dir={r.ltr ? "ltr" : "auto"} data-field={r.ltr ? "code" : undefined}>
-              {r.ltr ? <span className="font-mono tracking-wide">{r.value}</span> : r.value}
+            <dd className="mt-1 break-words text-start text-base font-bold text-fg">
+              {/* The cell follows the page direction; the code is an LTR island and a name is isolated so it cannot reorder neighbours. */}
+              {r.ltr ? (
+                <span dir="ltr" data-field="code" className="inline-block font-mono tracking-wide">
+                  {r.value}
+                </span>
+              ) : (
+                <bdi>{r.value}</bdi>
+              )}
             </dd>
           </div>
         ))}

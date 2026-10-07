@@ -16,7 +16,9 @@ export interface Fmt {
   minutes: (n: number | undefined) => string;
 }
 
-const TH = "px-3 py-2.5 text-start text-xs font-semibold uppercase tracking-wider text-fg-subtle whitespace-nowrap";
+const TH = "px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-fg-subtle whitespace-nowrap";
+const THS = `${TH} text-start`;
+const THE = `${TH} text-end`;
 const NUM = "px-3 py-3 text-end tabular-nums whitespace-nowrap";
 const ROWHEAD = "px-3 py-3 text-start align-top font-normal";
 
@@ -64,11 +66,11 @@ export function TracksTable({ tracks, trackTitles, fmt }: { tracks: InstructorAn
     <TableSection title={t.title} note={t.note} caption={t.caption} empty={t.empty} hasRows={tracks.length > 0}>
       <thead className="border-b border-line bg-surface-2">
         <tr>
-          <th scope="col" className={TH}>{t.cols.course}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.learners}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.completed}</th>
-          <th scope="col" className={TH}>{t.cols.rate}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.median}</th>
+          <th scope="col" className={THS}>{t.cols.course}</th>
+          <th scope="col" className={THE}>{t.cols.learners}</th>
+          <th scope="col" className={THE}>{t.cols.completed}</th>
+          <th scope="col" className={THS}>{t.cols.rate}</th>
+          <th scope="col" className={THE}>{t.cols.median}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-line">
@@ -133,13 +135,13 @@ export function ExercisesTable({
     <TableSection title={t.title} note={t.note} caption={t.caption} empty={t.empty} hasRows={rows.length > 0}>
       <thead className="border-b border-line bg-surface-2">
         <tr>
-          <th scope="col" className={TH}>{t.cols.exercise}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.attempts}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.learners}</th>
-          <th scope="col" className={TH}>{t.cols.passRate}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.median}</th>
-          <th scope="col" className={TH}>{t.cols.failures}</th>
-          <th scope="col" className={TH}>{t.cols.errors}</th>
+          <th scope="col" className={THS}>{t.cols.exercise}</th>
+          <th scope="col" className={THE}>{t.cols.attempts}</th>
+          <th scope="col" className={THE}>{t.cols.learners}</th>
+          <th scope="col" className={THS}>{t.cols.passRate}</th>
+          <th scope="col" className={THE}>{t.cols.median}</th>
+          <th scope="col" className={THS}>{t.cols.failures}</th>
+          <th scope="col" className={THS}>{t.cols.errors}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-line">
@@ -208,10 +210,10 @@ export function ChallengesTable({ challenges, challengeTitles, fmt }: { challeng
     <TableSection title={t.title} caption={t.caption} empty={t.empty} hasRows={rows.length > 0}>
       <thead className="border-b border-line bg-surface-2">
         <tr>
-          <th scope="col" className={TH}>{t.cols.challenge}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.solves}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.attempts}</th>
-          <th scope="col" className={`${TH} text-end`}>{t.cols.median}</th>
+          <th scope="col" className={THS}>{t.cols.challenge}</th>
+          <th scope="col" className={THE}>{t.cols.solves}</th>
+          <th scope="col" className={THE}>{t.cols.attempts}</th>
+          <th scope="col" className={THE}>{t.cols.median}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-line">
