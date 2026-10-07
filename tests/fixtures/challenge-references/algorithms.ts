@@ -213,6 +213,41 @@ ORDER BY total_cents DESC, c.name ASC;
 `,
     },
   },
+  {
+    id: "ds-descriptive-stats",
+    solutions: {
+      python: `import math
+import sys
+from collections import Counter
+
+data = sys.stdin.read().split()
+n = int(data[0])
+values = [float(x) for x in data[1:1 + n]]
+mean = sum(values) / n
+ordered = sorted(values)
+median = ordered[n // 2] if n % 2 else (ordered[n // 2 - 1] + ordered[n // 2]) / 2
+counts = Counter(values)
+top = max(counts.values())
+mode = min(v for v, c in counts.items() if c == top)
+std = math.sqrt(sum((v - mean) ** 2 for v in values) / n)
+for v in (mean, median, mode, std):
+    print(f"{v:.6f}")
+`,
+      javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+const n = Number(data[0]);
+const values = data.slice(1, 1 + n).map(Number);
+const mean = values.reduce((a, b) => a + b, 0) / n;
+const sorted = [...values].sort((a, b) => a - b);
+const median = n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+const counts = new Map();
+for (const v of values) counts.set(v, (counts.get(v) || 0) + 1);
+const top = Math.max(...counts.values());
+const mode = Math.min(...[...counts].filter(([, c]) => c === top).map(([v]) => v));
+const std = Math.sqrt(values.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
+for (const v of [mean, median, mode, std]) console.log(v.toFixed(6));
+`,
+    },
+  },
 ];
 
 /**
@@ -436,6 +471,65 @@ ORDER BY total_cents DESC, c.name ASC;
 FROM customers c JOIN orders o ON o.customer_id = c.id LEFT JOIN order_items i ON i.order_id = o.id
 GROUP BY c.id HAVING COUNT(DISTINCT o.id) >= 2
 ORDER BY total_cents DESC, c.name ASC;
+`,
+  },
+  {
+    id: "ds-descriptive-stats",
+    lang: "python",
+    name: "sample standard deviation (n - 1)",
+    code: `import math
+import sys
+from collections import Counter
+
+data = sys.stdin.read().split()
+n = int(data[0])
+values = [float(x) for x in data[1:1 + n]]
+mean = sum(values) / n
+ordered = sorted(values)
+median = ordered[n // 2] if n % 2 else (ordered[n // 2 - 1] + ordered[n // 2]) / 2
+counts = Counter(values)
+top = max(counts.values())
+mode = min(v for v, c in counts.items() if c == top)
+std = math.sqrt(sum((v - mean) ** 2 for v in values) / max(n - 1, 1))
+for v in (mean, median, mode, std):
+    print(f"{v:.6f}")
+`,
+  },
+  {
+    id: "ds-descriptive-stats",
+    lang: "python",
+    name: "median without sorting and mode of the first-seen value",
+    code: `import math
+import sys
+from collections import Counter
+
+data = sys.stdin.read().split()
+n = int(data[0])
+values = [float(x) for x in data[1:1 + n]]
+mean = sum(values) / n
+median = values[n // 2] if n % 2 else (values[n // 2 - 1] + values[n // 2]) / 2
+mode = Counter(values).most_common(1)[0][0]
+std = math.sqrt(sum((v - mean) ** 2 for v in values) / n)
+for v in (mean, median, mode, std):
+    print(f"{v:.6f}")
+`,
+  },
+  {
+    id: "ds-descriptive-stats",
+    lang: "javascript",
+    name: "even-length median takes the upper middle value",
+    code: `const data = require("fs").readFileSync(0, "utf8").split(/\\\\s+/).filter(Boolean);
+const n = Number(data[0]);
+const values = data.slice(1, 1 + n).map(Number);
+const mean = values.reduce((a, b) => a + b, 0) / n;
+const sorted = [...values].sort((a, b) => a - b);
+const median = sorted[Math.floor(n / 2)];
+const counts = new Map();
+for (const v of values) counts.set(v, (counts.get(v) || 0) + 1);
+const top = Math.max(...counts.values());
+const mode = Math.min(...[...counts].filter(([, c]) => c === top).map(([v]) => v));
+const std = Math.sqrt(values.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
+for (const v of [mean, median, mode, std]) console.log(v.toFixed(6));
 `,
   },
 ];

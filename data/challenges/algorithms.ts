@@ -822,4 +822,157 @@ FROM customers AS c;
   addedAt: ADDED,
 };
 
-export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers];
+// ── data-science ──────────────────────────────────────────────────────────────
+
+const dsDescriptiveStats: ChallengeMeta = {
+  id: "ds-descriptive-stats",
+  track: "data-science",
+  topic: "statistics",
+  title: { en: "Rainfall Summary", ar: "ملخص هطول الأمطار" },
+  summary: {
+    en: "Turn a messy list of daily rainfall readings into the four numbers every report starts with: mean, median, mode and standard deviation.",
+    ar: "حوّل قائمة غير مرتبة من قراءات المطر اليومية إلى الأرقام الأربعة التي يبدأ بها كل تقرير: المتوسط والوسيط والمنوال والانحراف المعياري.",
+  },
+  description: {
+    en: `## Story
+
+A weather station logs the rainfall (in millimetres) of every day of the season, in the order the readings arrived. Before the data goes into a dashboard, the analyst wants a one-glance summary.
+
+## Task
+
+Read the readings and print four statistics, **one per line, in this order**:
+
+1. **mean**: the sum divided by the count
+2. **median**: the middle value of the sorted readings; for an even count, the average of the two middle values
+3. **mode**: the most frequent value; if several values share the highest frequency, print the **smallest** of them
+4. **standard deviation**: the **population** standard deviation, \`sqrt( Σ(x − mean)² / n )\` (divide by \`n\`, not \`n − 1\`)
+
+## Input
+
+* Line 1: \`n\` (1 ≤ n ≤ 5000)
+* Line 2: \`n\` numbers, each with at most 2 decimal places and \`|x| ≤ 100000\`, in no particular order
+
+## Output
+
+Four lines with the four numbers. Print at least 4 decimals; any answer within \`0.0001\` of the exact value is accepted.
+
+## Example
+
+\`\`\`
+8
+2 4 4 4 5 5 7 9
+\`\`\`
+
+Output:
+
+\`\`\`
+5
+4.5
+4
+2
+\`\`\`
+
+(The mean is 40 / 8 = 5, the two middle values 4 and 5 give 4.5, the value 4 appears three times, and the squared distances from 5 add up to 32, so σ = √(32 / 8) = 2.)`,
+    ar: `## القصة
+
+تسجّل محطة أرصاد كمية المطر (بالميليمتر) لكل يوم من أيام الموسم بحسب ترتيب وصول القراءات. وقبل إدخال البيانات في لوحة المتابعة يريد المحلل ملخصًا يُقرأ بنظرة واحدة.
+
+## المطلوب
+
+اقرأ القراءات واطبع أربع إحصاءات، **كل واحدة في سطر وبهذا الترتيب**:
+
+1. **المتوسط (mean)**: المجموع مقسومًا على العدد
+2. **الوسيط (median)**: القيمة الوسطى للقراءات بعد ترتيبها؛ وإذا كان العدد زوجيًا فمتوسط القيمتين الوسطيين
+3. **المنوال (mode)**: القيمة الأكثر تكرارًا؛ وإذا تساوى عدة قيم في أعلى تكرار فاطبع **أصغرها**
+4. **الانحراف المعياري**: الانحراف المعياري **للمجتمع**، أي \`sqrt( Σ(x − mean)² / n )\` (قسمة على \`n\` وليس \`n − 1\`)
+
+## المدخلات
+
+* السطر الأول: \`n\` (‏1 ≤ n ≤ 5000)
+* السطر الثاني: \`n\` عددًا، لكل منها منزلتان عشريتان على الأكثر و\`|x| ≤ 100000\`، بلا ترتيب معيّن
+
+## المخرجات
+
+أربعة أسطر بالأرقام الأربعة. اطبع 4 منازل عشرية على الأقل؛ ويُقبل أي جواب يبعد عن القيمة الدقيقة بأقل من \`0.0001\`.
+
+## مثال
+
+\`\`\`
+8
+2 4 4 4 5 5 7 9
+\`\`\`
+
+الناتج:
+
+\`\`\`
+5
+4.5
+4
+2
+\`\`\`
+
+(المتوسط 40 / 8 = 5، والقيمتان الوسطيان 4 و5 تعطيان 4.5، والقيمة 4 تتكرر ثلاث مرات، ومجموع مربعات البعد عن 5 يساوي 32 فيكون σ = √(32 / 8) = 2.)`,
+  },
+  difficulty: 1,
+  points: 50,
+  estMinutes: 15,
+  kind: "output",
+  lang: "python",
+  starterCode: {
+    python: `import sys
+
+data = sys.stdin.read().split()
+n = int(data[0])
+values = [float(x) for x in data[1:1 + n]]
+
+# Your code here: compute mean, median, mode and population standard deviation
+mean = median = mode = std = 0.0
+
+print(f"{mean:.4f}")
+print(f"{median:.4f}")
+print(f"{mode:.4f}")
+print(f"{std:.4f}")
+`,
+    javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+const n = Number(data[0]);
+const values = data.slice(1, 1 + n).map(Number);
+
+// Your code here: compute mean, median, mode and population standard deviation
+const mean = 0;
+const median = 0;
+const mode = 0;
+const std = 0;
+
+for (const v of [mean, median, mode, std]) console.log(v.toFixed(4));
+`,
+  },
+  sampleInput: "8\n2 4 4 4 5 5 7 9\n",
+  hints: [
+    {
+      text: {
+        en: "The readings arrive unsorted. Sort a copy first: the median is its middle element, or the average of the two middle ones when n is even.",
+        ar: "القراءات تصل غير مرتبة. رتّب نسخة منها أولًا: الوسيط هو عنصرها الأوسط، أو متوسط العنصرين الأوسطين عندما يكون n زوجيًا.",
+      },
+      cost: 5,
+    },
+    {
+      text: {
+        en: "Count how often each value appears with a dictionary (or Counter), then pick the highest count; break ties by taking the smallest value.",
+        ar: "عُدّ مرات ظهور كل قيمة بقاموس (أو Counter)، ثم اختر أعلى تكرار، وعند التعادل خذ أصغر قيمة.",
+      },
+      cost: 5,
+    },
+    {
+      text: {
+        en: "Standard deviation: take the mean first, then the average of (x − mean)² over all n values, then the square root. Dividing by n − 1 gives the sample version, which is not asked here.",
+        ar: "الانحراف المعياري: احسب المتوسط أولًا، ثم متوسط (x − mean)² على جميع القيم الـ n، ثم الجذر التربيعي. القسمة على n − 1 تعطي نسخة العينة وهي غير مطلوبة هنا.",
+      },
+      cost: 10,
+    },
+  ],
+  lessons: ["data-science/statistics"],
+  tags: ["statistics", "mean-median-mode", "standard-deviation"],
+  addedAt: ADDED,
+};
+
+export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats];

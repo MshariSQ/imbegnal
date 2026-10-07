@@ -585,4 +585,63 @@ if __name__ == "__main__":
   ],
 };
 
-export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers];
+// ── ds-descriptive-stats ─────────────────────────────────────────────────────
+
+function describe(values: number[]): number[] {
+  const n = values.length;
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const sorted = [...values].sort((a, b) => a - b);
+  const median = n % 2 === 1 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+  const counts = new Map<number, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  let mode = sorted[0];
+  let best = 0;
+  for (const v of sorted) {
+    const c = counts.get(v) ?? 0;
+    if (c > best) {
+      best = c;
+      mode = v;
+    }
+  }
+  const std = Math.sqrt(values.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
+  return [mean, median, mode, std];
+}
+
+function statsTest(name: string, values: number[], hidden = true): OutputTest {
+  return {
+    name,
+    stdin: `${values.length}\n${values.join(" ")}\n`,
+    expected: describe(values).map((v) => v.toFixed(6)).join("\n"),
+    mode: "float",
+    epsilon: 1e-4,
+    hidden: hidden || undefined,
+  };
+}
+
+const statsLarge = (() => {
+  const r = rng(314159);
+  return Array.from({ length: 5_000 }, () => randInt(r, -100_000, 100_000) / 100);
+})();
+const statsRepeated = (() => {
+  const r = rng(271828);
+  const pool = [0.1, 0.2, 0.3, 12.5, 12.55, -7.25, 100];
+  return Array.from({ length: 1_000 }, () => pool[randInt(r, 0, pool.length - 1)]);
+})();
+
+const dsDescriptiveStats: ChallengeGrader = {
+  id: "ds-descriptive-stats",
+  kind: "output",
+  tests: [
+    statsTest("example", [2, 4, 4, 4, 5, 5, 7, 9], false),
+    statsTest("decimals", [1.5, 2.5, 2.5, 3.5, 10], false),
+    statsTest("single reading", [42.5]),
+    statsTest("all equal", [3, 3, 3, 3]),
+    statsTest("two readings", [10, 4]),
+    statsTest("mode tie picks the smallest", [3, 1, 2, 3, 2, 1]),
+    statsTest("negative values, unsorted", [-5, 8, -5.5, 0, 12.25, -5, 3, 8, 1]),
+    statsTest("repeated decimals", statsRepeated),
+    statsTest("5000 readings", statsLarge),
+  ],
+};
+
+export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers, dsDescriptiveStats];
