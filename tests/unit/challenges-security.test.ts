@@ -400,3 +400,20 @@ test("sec-password-strength: expected outputs match an independent implementatio
   }
   assert.deepEqual([...seen].sort(), ["reasonable", "strong", "very strong", "very weak", "weak"]);
 });
+
+test("re-js-unmask: the script runs as shipped, denies a wrong guess and hides the flag from plain reading", () => {
+  const src = puzzleFile("re-js-unmask", "vault.js");
+  const r = runLocal("javascript", src);
+  assert.equal(r.exitCode, 0, r.stderr);
+  assert.equal(r.stdout.trim(), "ACCESS DENIED");
+  // the only accepted attempt is the flag itself (patched run, as a learner would do)
+  const flag = refOf("re-js-unmask").flag as string;
+  const granted = runLocal("javascript", src.replace("const attempt = 'hunter2';", `const attempt = ${JSON.stringify(flag)};`));
+  assert.equal(granted.stdout.trim(), "ACCESS GRANTED");
+  for (const probe of [flag, flag.slice(4, -1), Buffer.from(flag).toString("base64").slice(0, 12), [...flag].reverse().join("")]) {
+    assert.ok(!src.includes(probe), "no plain, reversed or base64 form of the flag is present");
+  }
+  // the toolbox claims in the statement are true
+  assert.equal("\x68\x69", "hi");
+  assert.equal(atob("aGk="), "hi");
+});

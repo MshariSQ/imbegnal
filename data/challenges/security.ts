@@ -698,4 +698,140 @@ int main(void) {
   addedAt: "2026-10-07",
 };
 
-export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder, passwordStrength];
+// ── reverse-engineering ───────────────────────────────────────────────────────
+
+const jsUnmask: ChallengeMeta = {
+  id: "re-js-unmask",
+  track: "reverse-engineering",
+  topic: "deobfuscation",
+  title: { en: "Obfuscation Is Not Encryption", ar: "التعتيم ليس تشفيراً" },
+  summary: {
+    en: "A contractor hid a secret in obfuscated JavaScript. Peel the encoding layers, or make the program hand the secret over, to recover it.",
+    ar: "أخفى مقاول سراً داخل جافاسكربت معتَّمة. قشّر طبقات الترميز، أو اجعل البرنامج نفسه يسلّمك السر، لتستعيده.",
+  },
+  description: {
+    en: `## The story
+
+A freelancer left \`vault.js\` behind: the "access control" of an internal demo page. The only accepted password is stored inside the script, and the owner insists it is safe because the source code is obfuscated. It is an hour of work for you to prove otherwise.
+
+## Your task
+
+Open \`vault.js\`. It compares the variable \`attempt\` with a secret and prints \`ACCESS GRANTED\` or \`ACCESS DENIED\`. The only attempt that is accepted is the flag, which has the shape \`IMB{...}\`.
+
+You can solve it two ways, and both are legitimate reverse-engineering:
+
+* **Static analysis:** read the code and undo, by hand or with your own script, what it does to build the secret.
+* **Dynamic analysis:** run it in Code Lab (JavaScript) and get the program to reveal the value it compares against.
+
+The program never reads input and needs no network. Brute-forcing \`attempt\` is pointless: the comparison is exact.
+
+## Things worth knowing
+
+* The escape \`"\\x68\\x69"\` is just the text \`hi\`, and \`obj["\\x70\\x75\\x73\\x68"](x)\` is \`obj.push(x)\`. Hex escapes hide names from a casual reader, not from the interpreter.
+* \`atob("aGk=")\` decodes base64 and returns \`hi\`.
+* XOR undoes itself: \`(a ^ k) ^ k === a\`.
+
+Submit the recovered flag.`,
+    ar: `## القصة
+
+ترك مستقلٌّ ملف \`vault.js\` خلفه: "التحكم في الوصول" لصفحة عرض داخلية. كلمة المرور المقبولة الوحيدة مخزّنة داخل السكربت، ويصرّ المالك على أنها آمنة لأن الشيفرة معتَّمة. ساعة عمل منك تكفي لإثبات العكس.
+
+## المطلوب
+
+افتح \`vault.js\`. يقارن المتغير \`attempt\` بسرّ ما ثم يطبع \`ACCESS GRANTED\` أو \`ACCESS DENIED\`. والمحاولة الوحيدة المقبولة هي العلَم الذي شكله \`IMB{...}\`.
+
+يمكنك الحل بطريقتين، وكلتاهما هندسة عكسية مشروعة:
+
+* **التحليل الساكن:** اقرأ الشيفرة وتراجع، يدوياً أو بسكربت من كتابتك، عمّا تفعله لبناء السر.
+* **التحليل الديناميكي:** شغّلها في Code Lab (جافاسكربت) واجعل البرنامج يكشف القيمة التي يقارن بها.
+
+لا يقرأ البرنامج أي دخل ولا يحتاج شبكة. التخمين العشوائي لـ \`attempt\` بلا فائدة: فالمقارنة دقيقة.
+
+## معلومات مفيدة
+
+* الرمز \`"\\x68\\x69"\` هو النص \`hi\` فقط، و\`obj["\\x70\\x75\\x73\\x68"](x)\` هو \`obj.push(x)\`. تخفي هذه الرموز الأسماء عن القارئ العابر لا عن المفسِّر.
+* \`atob("aGk=")\` يفكّ ترميز base64 ويُرجع \`hi\`.
+* XOR يلغي نفسه: \`(a ^ k) ^ k === a\`.
+
+أرسل العلَم الذي استرجعته.`,
+  },
+  difficulty: 1,
+  points: 50,
+  estMinutes: 15,
+  kind: "flag",
+  flagFormat: "IMB{...}",
+  files: [
+    {
+      name: "vault.js",
+      content: `// vault.js: client-side "access control" for an internal demo page.
+// The owner says the secret is safe because the source is obfuscated.
+const _0x3c1e = ['\\x43\\x42\\x73\\x67\\x47\\x78\\x6b\\x36\\x47', '\\x63\\x6b\\x56\\x30\\x49\\x4e\\x47\\x54\\x51', '\\x41\\x45\\x4b\\x56\\x68\\x6f\\x54\\x4a\\x78', '\\x47\\x47\\x6a\\x45\\x6d\\x50\\x41\\x3d\\x3d'];
+(function (_0x2b, _0x4d) {
+  const _0x1f = function (_0x5a) {
+    while (--_0x5a) {
+      _0x2b['\\x70\\x75\\x73\\x68'](_0x2b['\\x73\\x68\\x69\\x66\\x74']());
+    }
+  };
+  _0x1f(++_0x4d);
+})(_0x3c1e, 0x92);
+
+const _0x2e9a = function (_0x1a) {
+  return _0x3c1e[_0x1a];
+};
+
+const _0x6d = [0x2, 0x0, 0x3, 0x1];
+const _0x9b = [0x75, 0x6e, 0x6d, 0x61, 0x73, 0x6b];
+
+function _0x71() {
+  let _0xa = '';
+  for (let _0xi = 0x0; _0xi < _0x6d['\\x6c\\x65\\x6e\\x67\\x74\\x68']; _0xi++) {
+    _0xa += _0x2e9a(_0x6d[_0xi]);
+  }
+  const _0xb = atob(_0xa);
+  let _0xc = '';
+  for (let _0xi = 0x0; _0xi < _0xb['\\x6c\\x65\\x6e\\x67\\x74\\x68']; _0xi++) {
+    _0xc += String['\\x66\\x72\\x6f\\x6d\\x43\\x68\\x61\\x72\\x43\\x6f\\x64\\x65'](_0xb['\\x63\\x68\\x61\\x72\\x43\\x6f\\x64\\x65\\x41\\x74'](_0xi) ^ _0x9b[_0xi % _0x9b['\\x6c\\x65\\x6e\\x67\\x74\\x68']]);
+  }
+  return _0xc['\\x73\\x70\\x6c\\x69\\x74']('')['\\x72\\x65\\x76\\x65\\x72\\x73\\x65']()['\\x6a\\x6f\\x69\\x6e']('');
+}
+
+function _0x90(_0xin) {
+  return _0xin === _0x71();
+}
+
+// Try your luck: change the guess below.
+const attempt = 'hunter2';
+console.log(_0x90(attempt) ? 'ACCESS GRANTED' : 'ACCESS DENIED');
+`,
+      description: { en: "The obfuscated script. Runs as is in Code Lab (JavaScript).", ar: "السكربت المعتَّم. يعمل كما هو في Code Lab (جافاسكربت)." },
+    },
+  ],
+  hints: [
+    {
+      text: {
+        en: "Do not be scared by the escapes like `\\x41`: they are plain text written in a costly way. Find the line that decides ACCESS GRANTED and look at what `attempt` is compared with.",
+        ar: "لا تخف من رموز مثل `\\x41`: إنها نص عادي مكتوب بطريقة مرهقة. اعثر على السطر الذي يقرر ACCESS GRANTED وانظر إلى ما تُقارَن به `attempt`.",
+      },
+      cost: 5,
+    },
+    {
+      text: {
+        en: "The secret has to exist in memory at the moment of comparison. You do not need to understand every step: you only need that one value. What could you add to the script to look at it?",
+        ar: "لا بد أن يكون السر موجوداً في الذاكرة لحظة المقارنة. لست بحاجة إلى فهم كل خطوة، بل إلى تلك القيمة وحدها. ماذا يمكنك أن تضيف إلى السكربت لتراها؟",
+      },
+      cost: 5,
+    },
+    {
+      text: {
+        en: "The builder function joins the array pieces in the order given by the index list, base64-decodes them, XORs every byte with the repeating key `unmask`, and reverses the text. Call that function and print what it returns, or redo those steps yourself.",
+        ar: "تضمّ دالة البناء قطع المصفوفة بالترتيب الذي تحدده قائمة الفهارس، وتفكّ ترميز base64، وتجري XOR لكل بايت مع المفتاح المتكرر `unmask`، ثم تعكس النص. استدعِ هذه الدالة واطبع ما تُرجعه، أو أعد هذه الخطوات بنفسك.",
+      },
+      cost: 8,
+    },
+  ],
+  lessons: ["reverse-engineering/static-analysis-deobfuscation", "frontend/javascript"],
+  tags: ["javascript", "obfuscation", "deobfuscation", "base64", "xor", "static-analysis"],
+  addedAt: "2026-10-07",
+};
+
+export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder, passwordStrength, jsUnmask];

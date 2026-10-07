@@ -6,6 +6,7 @@
  * files exactly as a learner would (the same `files` that ship in data/challenges/security.ts).
  */
 import { createHash } from "node:crypto";
+import { runInNewContext } from "node:vm";
 import type { ChallengeReference } from "../../../shared/challenges";
 import { securityChallenges } from "../../../data/challenges/security";
 
@@ -70,6 +71,16 @@ export function solveCryptoLadder(stage1: string, stage2: string, stage3: string
   const plain = Buffer.from(cipher.map((b, i) => b ^ key[i % keyLength])).toString("utf8");
   if (!plain.startsWith("FLAG=")) throw new Error("crib mismatch");
   return plain.slice("FLAG=".length);
+}
+
+// ── re-js-unmask ──────────────────────────────────────────────────────────────
+
+/** Dynamic analysis: run vault.js in an isolated context (no console, no I/O) and ask its builder for the secret. */
+export function solveJsUnmask(source: string): string {
+  const sandbox: { atob: typeof atob; console: { log: () => void }; __secret?: string } = { atob, console: { log: () => undefined } };
+  runInNewContext(`${source}\n;globalThis.__secret = _0x71();`, sandbox, { timeout: 2000 });
+  if (typeof sandbox.__secret !== "string") throw new Error("the builder returned nothing");
+  return sandbox.__secret;
 }
 
 // ── sec-password-strength ─────────────────────────────────────────────────────
@@ -150,5 +161,6 @@ export const securityReferences: ChallengeReference[] = [
       puzzleFile("sec-crypto-ladder", "stage3.txt"),
     ),
   },
+  { id: "re-js-unmask", flag: solveJsUnmask(puzzleFile("re-js-unmask", "vault.js")) },
   { id: "sec-password-strength", solutions: { python: PASSWORD_STRENGTH_PY, javascript: PASSWORD_STRENGTH_JS } },
 ];
