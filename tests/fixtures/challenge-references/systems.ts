@@ -511,4 +511,117 @@ console.log(out.join("\\n"));
 `,
     },
   },
+  {
+    id: "devops-cron-next-run",
+    solutions: {
+      python: `import sys
+from datetime import datetime, timedelta, timezone
+
+
+def parse(field, low, high):
+    """Expand one cron field into the set of values it allows."""
+    values = set()
+    for item in field.split(","):
+        base, _, step = item.partition("/")
+        if base == "*":
+            first, last = low, high
+        elif "-" in base:
+            first, last = (int(part) for part in base.split("-"))
+        else:
+            first = last = int(base)
+        values.update(range(first, last + 1, int(step) if step else 1))
+    return values
+
+
+lines = sys.stdin.read().split("\\n")
+now = int(lines[0])
+count = int(lines[1])
+start = datetime.fromtimestamp(now // 60 * 60 + 60, timezone.utc)  # the first minute that counts
+
+for expression in lines[2:2 + count]:
+    f = expression.split()
+    minutes, hours = sorted(parse(f[0], 0, 59)), sorted(parse(f[1], 0, 23))
+    days, months, weekdays = parse(f[2], 1, 31), parse(f[3], 1, 12), parse(f[4], 0, 6)
+    restricted_both = not f[2].startswith("*") and not f[4].startswith("*")
+    day = start.replace(hour=0, minute=0)
+    found = None
+    for _ in range(12 * 366 + 1):
+        weekday = (day.weekday() + 1) % 7  # Python: Monday = 0; cron: Sunday = 0
+        by_date, by_weekday = day.day in days, weekday in weekdays
+        day_ok = (by_date or by_weekday) if restricted_both else (by_date and by_weekday)
+        if day.month in months and day_ok:
+            for hour in hours:
+                for minute in minutes:
+                    candidate = day.replace(hour=hour, minute=minute)
+                    if candidate >= start:
+                        found = candidate
+                        break
+                if found:
+                    break
+        if found:
+            break
+        day += timedelta(days=1)
+    print(found.strftime("%Y-%m-%d %H:%M") if found else "never")
+`,
+      javascript: `function parse(field, low, high) {
+  // Expand one cron field into the sorted list of values it allows.
+  const values = new Set();
+  for (const item of field.split(",")) {
+    const [base, step] = item.split("/");
+    let first;
+    let last;
+    if (base === "*") [first, last] = [low, high];
+    else if (base.includes("-")) [first, last] = base.split("-").map(Number);
+    else first = last = Number(base);
+    for (let v = first; v <= last; v += step ? Number(step) : 1) values.add(v);
+  }
+  return [...values].sort((a, b) => a - b);
+}
+
+const pad = (n, width = 2) => String(n).padStart(width, "0");
+const lines = require("fs").readFileSync(0, "utf8").split("\\n");
+const now = Number(lines[0]);
+const count = Number(lines[1]);
+const startMs = (Math.floor(now / 60) * 60 + 60) * 1000; // the first minute that counts
+const DAY = 86400000;
+const out = [];
+
+for (const expression of lines.slice(2, 2 + count)) {
+  const f = expression.split(/\\s+/);
+  const minutes = parse(f[0], 0, 59);
+  const hours = parse(f[1], 0, 23);
+  const days = parse(f[2], 1, 31);
+  const months = parse(f[3], 1, 12);
+  const weekdays = parse(f[4], 0, 6);
+  const restrictedBoth = !f[2].startsWith("*") && !f[4].startsWith("*");
+  let dayStart = Math.floor(startMs / DAY) * DAY;
+  let found = null;
+  for (let i = 0; i < 12 * 366 + 1 && found === null; i++, dayStart += DAY) {
+    const d = new Date(dayStart);
+    const byDate = days.includes(d.getUTCDate());
+    const byWeekday = weekdays.includes(d.getUTCDay()); // JS: Sunday = 0, like cron
+    const dayOk = restrictedBoth ? byDate || byWeekday : byDate && byWeekday;
+    if (!months.includes(d.getUTCMonth() + 1) || !dayOk) continue;
+    for (const hour of hours) {
+      for (const minute of minutes) {
+        const candidate = dayStart + (hour * 60 + minute) * 60000;
+        if (candidate >= startMs) {
+          found = candidate;
+          break;
+        }
+      }
+      if (found !== null) break;
+    }
+  }
+  if (found === null) {
+    out.push("never");
+  } else {
+    const t = new Date(found);
+    out.push(\`\${pad(t.getUTCFullYear(), 4)}-\${pad(t.getUTCMonth() + 1)}-\${pad(t.getUTCDate())} \${pad(t.getUTCHours())}:\${pad(t.getUTCMinutes())}\`);
+  }
+}
+console.log(out.join("\\n"));
+`,
+    },
+  },
 ];

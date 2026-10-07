@@ -1104,4 +1104,191 @@ for (const request of requests) {
     tags: ["iam", "policy", "least-privilege", "wildcards"],
     addedAt: "2026-10-07",
   },
+  {
+    id: "devops-cron-next-run",
+    track: "devops",
+    topic: "scheduling",
+    title: { en: "When Does Cron Run Next?", ar: "متى يعمل cron في المرة القادمة؟" },
+    summary: {
+      en: "Compute the next fire time of crontab expressions in UTC: lists, ranges, steps, month lengths, leap years and the famous day-of-month OR day-of-week rule.",
+      ar: "احسب وقت التشغيل التالي لتعبيرات crontab بتوقيت UTC: القوائم والمجالات والخطوات وأطوال الأشهر والسنوات الكبيسة وقاعدة يوم الشهر أو يوم الأسبوع الشهيرة.",
+    },
+    description: {
+      en: `## The story
+
+Your team's job scheduler runs everything from a crontab. Before a risky change, an engineer wants to know **exactly when each job fires next** ("will the backup collide with the deploy window?"). Sounds easy until you meet months with 28 to 31 days, leap years, and the oldest quirk of cron: the *day-of-month OR day-of-week* rule.
+
+Write the calculator. Everything is **UTC**.
+
+## The task
+
+**Input:**
+
+1. a line with \`now\`, a Unix timestamp in seconds;
+2. a line with \`n\`, the number of expressions;
+3. \`n\` lines, each a crontab expression of five space-separated fields: \`minute hour day-of-month month day-of-week\`.
+
+**Output:** for each expression, in order, the **first minute strictly after \`now\`** at which it fires, as \`YYYY-MM-DD HH:MM\` (UTC), or \`never\`.
+
+**Field syntax.** Each field is a comma-separated list of items. An item is one of: \`*\` (every value), \`*/n\` (every n-th value, counting from the field's smallest value), \`a\` (one value), \`a-b\` (a range, inclusive), \`a-b/n\` (every n-th value in the range, starting at \`a\`).
+
+| field | allowed values |
+|---|---|
+| minute | 0-59 |
+| hour | 0-23 |
+| day-of-month | 1-31 |
+| month | 1-12 |
+| day-of-week | 0-6 (0 = Sunday) |
+
+All input is valid; there are no names (\`MON\`, \`JAN\`) and no \`@daily\` shortcuts.
+
+**Which days qualify.** The month must be allowed. Then:
+
+- if **neither** the day-of-month field **nor** the day-of-week field starts with \`*\`, a day qualifies when **either** matches (the classic OR rule);
+- if at least one of the two starts with \`*\` (\`*\` and \`*/2\` both count), a day qualifies only when **both** match.
+
+**Timing rules.** \`now\` is truncated to its minute and the search starts with the following minute: at \`22:13:59\` the next minute is \`22:14\`, and at exactly \`22:14:00\` it is \`22:15\`. Print \`never\` when the expression matches no real date at all (for example 31 April or 30 February). Any other expression fires within 12 years: 29 February can take up to 8 years, because 2100 is not a leap year.
+
+## Example
+
+\`\`\`text
+1700000000
+5
+* * * * *
+*/15 * * * *
+0 9 * * 1-5
+30 2 29 2 *
+59 23 31 12 *
+\`\`\`
+
+\`1700000000\` is Tuesday 2023-11-14 22:13:20 UTC. Output:
+
+\`\`\`text
+2023-11-14 22:14
+2023-11-14 22:15
+2023-11-15 09:00
+2024-02-29 02:30
+2023-12-31 23:59
+\`\`\`
+
+The third expression means "09:00 on weekdays": today's 09:00 has passed, so the next one is Wednesday. The fourth needs the next leap day, in 2024.`,
+      ar: `## القصة
+
+يشغّل مجدوِل المهام في فريقك كل شيء من ملف crontab. وقبل تغيير محفوف بالمخاطر يريد مهندس أن يعرف **متى بالضبط تعمل كل مهمة في المرة القادمة** ("هل ستصطدم النسخة الاحتياطية بنافذة النشر؟"). يبدو الأمر سهلاً حتى تقابل أشهراً من 28 إلى 31 يوماً، والسنوات الكبيسة، وأقدم غرائب cron: قاعدة *يوم الشهر أو يوم الأسبوع*.
+
+اكتب الحاسبة. كل شيء بتوقيت **UTC**.
+
+## المطلوب
+
+**المدخل:**
+
+1. سطر فيه \`now\`، وهو طابع زمني Unix بالثواني؛
+2. سطر فيه \`n\` عدد التعبيرات؛
+3. \`n\` من الأسطر، كل منها تعبير crontab من خمسة حقول تفصل بينها مسافات: \`minute hour day-of-month month day-of-week\`.
+
+**المخرج:** لكل تعبير بالترتيب، **أول دقيقة بعد \`now\` تماماً** (بعدها وليس عندها) يعمل فيها، بصيغة \`YYYY-MM-DD HH:MM\` (UTC) أو \`never\`.
+
+**صيغة الحقول.** كل حقل قائمة عناصر تفصل بينها فواصل. والعنصر واحد مما يلي: \`*\` (كل القيم)، \`*/n\` (كل قيمة رقمها n، بالعدّ من أصغر قيمة في الحقل)، \`a\` (قيمة واحدة)، \`a-b\` (مجال شامل للطرفين)، \`a-b/n\` (كل قيمة رقمها n داخل المجال بدءاً من \`a\`).
+
+| الحقل | القيم المسموحة |
+|---|---|
+| minute | 0-59 |
+| hour | 0-23 |
+| day-of-month | 1-31 |
+| month | 1-12 |
+| day-of-week | 0-6 (0 = الأحد) |
+
+كل المدخلات صحيحة؛ ولا توجد أسماء (\`MON\` و\`JAN\`) ولا اختصارات مثل \`@daily\`.
+
+**أي الأيام تصلح.** يجب أن يكون الشهر مسموحاً. ثم:
+
+- إن كان **لا** حقل يوم الشهر **ولا** حقل يوم الأسبوع يبدأ بـ\`*\`، صلح اليوم إذا طابق **أحدهما** (قاعدة OR الكلاسيكية)؛
+- وإن بدأ واحد منهما على الأقل بـ\`*\` (فتُحسب \`*\` و\`*/2\`)، لم يصلح اليوم إلا إذا تطابق **الاثنان**.
+
+**قواعد التوقيت.** يُقتطع \`now\` إلى دقيقته ويبدأ البحث بالدقيقة التالية: عند \`22:13:59\` الدقيقة التالية هي \`22:14\`، وعند \`22:14:00\` بالضبط هي \`22:15\`. اطبع \`never\` حين لا يطابق التعبير أي تاريخ حقيقي (مثل 31 أبريل أو 30 فبراير). وأي تعبير آخر يعمل خلال 12 سنة: فقد يستغرق 29 فبراير حتى 8 سنوات، لأن 2100 ليست كبيسة.
+
+## مثال
+
+\`\`\`text
+1700000000
+5
+* * * * *
+*/15 * * * *
+0 9 * * 1-5
+30 2 29 2 *
+59 23 31 12 *
+\`\`\`
+
+القيمة \`1700000000\` هي الثلاثاء 2023-11-14 الساعة 22:13:20 UTC. المخرج:
+
+\`\`\`text
+2023-11-14 22:14
+2023-11-14 22:15
+2023-11-15 09:00
+2024-02-29 02:30
+2023-12-31 23:59
+\`\`\`
+
+التعبير الثالث يعني "09:00 في أيام العمل": مرّت 09:00 اليوم، فالتالية يوم الأربعاء. والرابع يحتاج إلى يوم الكبس القادم في 2024.`,
+    },
+    difficulty: 3,
+    points: 250,
+    estMinutes: 60,
+    kind: "output",
+    lang: "python",
+    starterCode: {
+      python: `import sys
+from datetime import datetime, timedelta, timezone
+
+lines = sys.stdin.read().split("\\n")
+now = int(lines[0])
+count = int(lines[1])
+start = datetime.fromtimestamp(now // 60 * 60 + 60, timezone.utc)  # the first minute that can fire
+
+for expression in lines[2:2 + count]:
+    minute_f, hour_f, day_f, month_f, weekday_f = expression.split()
+    # Your turn: expand the five fields, then walk the days from \`start\` until one qualifies.
+    print(start.strftime("%Y-%m-%d %H:%M"))
+`,
+      javascript: `const lines = require("fs").readFileSync(0, "utf8").split("\\n");
+const now = Number(lines[0]);
+const count = Number(lines[1]);
+const start = new Date((Math.floor(now / 60) * 60 + 60) * 1000); // the first minute that can fire
+const pad = (n) => String(n).padStart(2, "0");
+
+for (const expression of lines.slice(2, 2 + count)) {
+  const [minuteField, hourField, dayField, monthField, weekdayField] = expression.split(/\\s+/);
+  // Your turn: expand the five fields, then walk the days from \`start\` until one qualifies.
+  console.log(\`\${start.getUTCFullYear()}-\${pad(start.getUTCMonth() + 1)}-\${pad(start.getUTCDate())} \${pad(start.getUTCHours())}:\${pad(start.getUTCMinutes())}\`);
+}
+`,
+    },
+    sampleInput: "1700000000\n5\n* * * * *\n*/15 * * * *\n0 9 * * 1-5\n30 2 29 2 *\n59 23 31 12 *\n",
+    hints: [
+      {
+        text: {
+          en: "Parse each field into the set of allowed values first (`*`, `*/n`, `a`, `a-b`, `a-b/n`, comma lists), with the field's own range: minutes 0-59, hours 0-23, day of month 1-31, month 1-12, weekday 0-6. `*/n` starts at the field's minimum.",
+          ar: "حلّل كل حقل أولاً إلى مجموعة القيم المسموحة (`*` و`*/n` و`a` و`a-b` و`a-b/n` والقوائم بالفاصلة) بمجاله الخاص: الدقائق 0-59 والساعات 0-23 ويوم الشهر 1-31 والشهر 1-12 ويوم الأسبوع 0-6. و`*/n` تبدأ من الحد الأدنى للحقل.",
+        },
+        cost: 25,
+      },
+      {
+        text: {
+          en: "Do not step minute by minute: walk day by day from the day of the first candidate minute. A day qualifies when its month is allowed and the day rule holds; on a qualifying day take the earliest (hour, minute) that is not before the start. Stop after about 12 years: then the answer is `never`.",
+          ar: "لا تتقدّم دقيقة دقيقة: امشِ يوماً يوماً من يوم أول دقيقة مرشّحة. يصلح اليوم إن كان شهره مسموحاً وتحققت قاعدة اليوم؛ وفي اليوم الصالح خذ أبكر (ساعة، دقيقة) لا تسبق البداية. توقف بعد نحو 12 سنة: عندها الجواب `never`.",
+        },
+        cost: 35,
+      },
+      {
+        text: {
+          en: "The day rule: if the day-of-month text and the weekday text both do NOT start with `*`, the day is valid when EITHER matches. If at least one starts with `*` (so `*` and `*/2` count), BOTH must match. Let a date library do the calendar work: weekday numbers differ (Python's Monday is 0, cron's Sunday is 0).",
+          ar: "قاعدة اليوم: إن كان نص يوم الشهر ونص يوم الأسبوع كلاهما **لا** يبدأ بـ`*` فاليوم صالح إذا طابق **أحدهما**. وإن بدأ واحد منهما على الأقل بـ`*` (فتُحسب `*` و`*/2`) فيجب أن يتطابق **الاثنان**. اترك للمكتبة عمل التقويم: أرقام الأيام تختلف (الاثنين في Python هو 0 وأما الأحد في cron فهو 0).",
+        },
+        cost: 40,
+      },
+    ],
+    lessons: ["devops/linux-devops", "devops/cicd"],
+    tags: ["cron", "scheduling", "datetime", "parsing"],
+    addedAt: "2026-10-07",
+  },
 ];
