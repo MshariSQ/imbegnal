@@ -417,3 +417,30 @@ test("re-js-unmask: the script runs as shipped, denies a wrong guess and hides t
   assert.equal("\x68\x69", "hi");
   assert.equal(atob("aGk="), "hi");
 });
+
+test("re-crackme-checker: the real program accepts exactly the derived serial and rejects every mutation", () => {
+  const src = puzzleFile("re-crackme-checker", "crackme.py");
+  const serial = (refOf("re-crackme-checker").flag as string).slice(4, -1);
+  assert.match(serial, /^[A-Za-z0-9]{16}$/);
+  const run = (s: string) => runLocal("python", src, `${s}\n`);
+  const ok = run(serial);
+  assert.equal(ok.exitCode, 0, ok.stderr);
+  assert.equal(ok.stdout.trim(), "licence accepted");
+  // every single-character mutation, a few wrong lengths and the docstring's example are rejected
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const mutants = [0, 5, 10, 15].map((i) => serial.slice(0, i) + alphabet[(alphabet.indexOf(serial[i]) + 1) % alphabet.length] + serial.slice(i + 1));
+  for (const bad of [...mutants, serial.slice(1), `${serial}A`, "ABCDEFGHJKLMNPQR", "", "demo-demo-demo-demo"]) {
+    assert.equal(run(bad).stdout.trim(), "invalid serial", `rejects ${JSON.stringify(bad.length)}-char input`);
+  }
+  // the program's stages are bijective per step, so a position-by-position brute force on the
+  // unfolded table finds the same unique character each time: verify uniqueness for every position
+  const rol = (v: number, n: number) => ((v << n) | (v >> (8 - n))) & 0xff;
+  const table = [...Buffer.from(/fromhex\("([0-9a-f]{32})"\)/.exec(src)![1], "hex")];
+  const out = table.map((t, i) => (i < 15 ? t ^ table[i + 1] : t));
+  let acc = 0x5a;
+  for (let i = 0; i < 16; i++) {
+    const fits = [...alphabet].filter((ch) => ((rol((ch.charCodeAt(0) ^ acc) & 0xff, 3) + 7 * i) & 0xff) === out[i]);
+    assert.deepEqual(fits, [serial[i]], `position ${i} has one solution`);
+    acc = (acc * 3 + serial.charCodeAt(i) + i) & 0xff;
+  }
+});

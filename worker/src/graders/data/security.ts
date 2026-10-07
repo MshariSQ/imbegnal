@@ -11,6 +11,7 @@ export const securityGraders: ChallengeGrader[] = [
   { id: "sec-salted-wordlist", kind: "flag", flagHash: "c196e59a3804d35679817eae5ea277907b9794871c62c5608cf9d845bf7226ef" },
   { id: "sec-crypto-ladder", kind: "flag", flagHash: "4dd3a82180f7295fb70e9cb2331071995c7961e702140b4e5a6b56c715283156" },
   { id: "re-js-unmask", kind: "flag", flagHash: "3cbef4dd8a7f085461f5b7cf9c2408596d487cbdf6c3397a505b31dc7d03b0fb" },
+  { id: "re-crackme-checker", kind: "flag", flagHash: "f888b7395f5c3dadb4e9ee127f652bc40cf4fd560c82b6f97ee9a3d8a2872399" },
   {
     id: "sec-password-strength",
     kind: "output",

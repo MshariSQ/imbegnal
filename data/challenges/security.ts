@@ -834,4 +834,127 @@ console.log(_0x90(attempt) ? 'ACCESS GRANTED' : 'ACCESS DENIED');
   addedAt: "2026-10-07",
 };
 
-export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder, passwordStrength, jsUnmask];
+const crackme: ChallengeMeta = {
+  id: "re-crackme-checker",
+  track: "reverse-engineering",
+  topic: "crackme",
+  title: { en: "Crackme: The Licence Check", ar: "كراك مي: فحص الترخيص" },
+  summary: {
+    en: "A Python licence checker accepts exactly one 16-character serial. Read it, invert its two stages, and recover the serial instead of guessing.",
+    ar: "فاحص ترخيص بلغة بايثون يقبل رقماً تسلسلياً واحداً فقط من 16 محرفاً. اقرأه وعكس مرحلتيه واستعد الرقم بدل التخمين.",
+  },
+  description: {
+    en: `## The story
+
+You are handed \`crackme.py\`, the licence check of a small note-taking app. It reads one line (the serial) from standard input and prints \`licence accepted\` or \`invalid serial\`. You have no vendor, no keygen and no patience for 62^16 guesses. You do have the source, so you can reason about it.
+
+## Your task
+
+Find the one serial that makes the program print \`licence accepted\`. A serial is 16 characters from \`A-Z\`, \`a-z\` and \`0-9\`. The flag is \`IMB{\`, the serial, then \`}\`.
+
+You can run the program in Code Lab (Python), feed it candidate serials on standard input, and add \`print\` calls to look inside. Typing random serials will not get you anywhere. The check has structure you can undo:
+
+* Read it as a sequence of **stages** and work out which operations are reversible.
+* Undo the stages in the **opposite order** to the one the program runs them.
+* Some state (the variable the loop carries from one character to the next) depends on characters you have already recovered, so rebuild it as you go.
+
+## Bit tricks used, with an example
+
+* \`^\` is XOR. It undoes itself: \`(a ^ k) ^ k == a\`.
+* \`& 0xFF\` keeps a value inside one byte. Addition modulo 256 is undone by subtracting modulo 256.
+* A **rotate left by 3** inside one byte moves the top three bits to the bottom: \`0x96\` (\`10010110\`) becomes \`0xB4\` (\`10110100\`). Rotating **right** by 3 undoes it.
+
+There is exactly one accepted serial.`,
+    ar: `## القصة
+
+وصلك الملف \`crackme.py\`، وهو فحص الترخيص في تطبيق صغير لتدوين الملاحظات. يقرأ سطراً واحداً (الرقم التسلسلي) من الدخل القياسي ويطبع \`licence accepted\` أو \`invalid serial\`. ليس عندك بائع ولا مولّد مفاتيح ولا صبر على 62^16 تخميناً. لكن عندك الشيفرة المصدرية، فيمكنك أن تستنتج.
+
+## المطلوب
+
+اعثر على الرقم التسلسلي الوحيد الذي يجعل البرنامج يطبع \`licence accepted\`. الرقم من 16 محرفاً من \`A-Z\` و\`a-z\` و\`0-9\`. والعلَم هو \`IMB{\` ثم الرقم ثم \`}\`.
+
+يمكنك تشغيل البرنامج في Code Lab (بايثون) وتغذيته بأرقام مرشحة عبر الدخل القياسي وإضافة استدعاءات \`print\` لتنظر بداخله. كتابة أرقام عشوائية لن توصلك إلى شيء. في الفحص بنية يمكنك عكسها:
+
+* اقرأه كسلسلة من **المراحل** وحدّد أي العمليات قابلة للعكس.
+* افكك المراحل بالترتيب **المعاكس** للترتيب الذي ينفّذه البرنامج.
+* بعض الحالة (المتغير الذي تحمله الحلقة من محرف إلى التالي) يعتمد على محارف استرجعتها بالفعل، فأعد بناءه أثناء تقدمك.
+
+## حيل البتّات المستخدمة، مع مثال
+
+* \`^\` هو XOR وهو يلغي نفسه: \`(a ^ k) ^ k == a\`.
+* \`& 0xFF\` تُبقي القيمة داخل بايت واحد. والجمع بمعيار 256 يُلغى بالطرح بمعيار 256.
+* **الدوران لليسار بمقدار 3** داخل بايت واحد ينقل أعلى ثلاث بتّات إلى الأسفل: يصير \`0x96\` (\`10010110\`) هو \`0xB4\` (\`10110100\`). والدوران **لليمين** بمقدار 3 يلغيه.
+
+يوجد رقم تسلسلي مقبول واحد بالضبط.`,
+  },
+  difficulty: 3,
+  points: 200,
+  estMinutes: 40,
+  kind: "flag",
+  flagFormat: "IMB{...}",
+  files: [
+    {
+      name: "crackme.py",
+      content: `"""SnapNote Pro licence check (demo build).
+
+Type your 16-character serial on one line, for example:  echo ABCDEFGHJKLMNPQR | python crackme.py
+"""
+import sys
+
+_A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+_T = bytes.fromhex("4050605844e2dc532748589511b71a96")
+
+
+def _rol(v, n):
+    return ((v << n) | (v >> (8 - n))) & 0xFF
+
+
+def check(serial):
+    if len(serial) != 16 or any(c not in _A for c in serial):
+        return False
+    acc, out = 0x5A, []
+    for i, ch in enumerate(serial):
+        c = ord(ch)
+        out.append((_rol((c ^ acc) & 0xFF, 3) + 7 * i) & 0xFF)
+        acc = (acc * 3 + c + i) & 0xFF
+    for i in range(14, -1, -1):
+        out[i] ^= out[i + 1]
+    return bytes(out) == _T
+
+
+if __name__ == "__main__":
+    entered = sys.stdin.readline().strip()
+    print("licence accepted" if check(entered) else "invalid serial")
+`,
+      description: { en: "The licence checker. Reads the serial from standard input.", ar: "فاحص الترخيص. يقرأ الرقم التسلسلي من الدخل القياسي." },
+    },
+  ],
+  hints: [
+    {
+      text: {
+        en: "`check` has two stages: a loop over the characters that builds `out`, then a second loop that folds `out` from the end. A reverse-engineer undoes the LAST stage first.",
+        ar: "في `check` مرحلتان: حلقة على المحارف تبني `out`، ثم حلقة ثانية تطوي `out` من النهاية. يبدأ المهندس العكسي بعكس المرحلة الأخيرة أولاً.",
+      },
+      cost: 20,
+    },
+    {
+      text: {
+        en: "After the fold, each final byte is `out[i] ^ final[i+1]` (the last one is just `out[15]`). So from the target table `_T` you get `out[i] = _T[i] ^ _T[i+1]` for i < 15 and `out[15] = _T[15]`.",
+        ar: "بعد الطيّ، كل بايت نهائي هو `out[i] ^ final[i+1]` (والأخير هو `out[15]` وحده). فمن الجدول الهدف `_T` تحصل على `out[i] = _T[i] ^ _T[i+1]` لكل i < 15 و`out[15] = _T[15]`.",
+      },
+      cost: 25,
+    },
+    {
+      text: {
+        en: "Per character, from i = 0 (the running value `acc` depends on the earlier characters, so order matters): subtract `7 * i` modulo 256, rotate right by 3, XOR with the current `acc` to get the character code, then update `acc` with that recovered character exactly as the program does.",
+        ar: "لكل محرف، ابتداءً من i = 0 (فالقيمة الجارية `acc` تعتمد على المحارف السابقة، فللترتيب أهمية): اطرح `7 * i` بمعيار 256، وأدِر لليمين بمقدار 3، ثم XOR مع `acc` الحالية لتحصل على رمز المحرف، ثم حدّث `acc` بذلك المحرف المسترجع تماماً كما يفعل البرنامج.",
+      },
+      cost: 30,
+    },
+  ],
+  lessons: ["reverse-engineering/static-analysis-deobfuscation", "reverse-engineering/assembly-basics"],
+  tags: ["crackme", "python", "bit-manipulation", "xor", "static-analysis"],
+  addedAt: "2026-10-07",
+};
+
+export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder, passwordStrength, jsUnmask, crackme];

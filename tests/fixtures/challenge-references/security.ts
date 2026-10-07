@@ -83,6 +83,28 @@ export function solveJsUnmask(source: string): string {
   return sandbox.__secret;
 }
 
+// ── re-crackme-checker ────────────────────────────────────────────────────────
+
+const rotr8 = (v: number, n: number) => ((v >> n) | (v << (8 - n))) & 0xff;
+
+/** Static analysis: read the target table out of crackme.py and run both stages backwards. */
+export function solveCrackme(source: string): string {
+  const table = /_T = bytes\.fromhex\("([0-9a-f]{32})"\)/.exec(source)?.[1];
+  if (!table) throw new Error("target table not found");
+  const target = [...Buffer.from(table, "hex")];
+  // stage 2 (suffix fold): out[i] = T[i] ^ T[i+1], out[15] = T[15]
+  const out = target.map((t, i) => (i < 15 ? t ^ target[i + 1] : t));
+  // stage 1 (per character, in program order because `acc` depends on recovered characters)
+  let acc = 0x5a;
+  let serial = "";
+  out.forEach((o, i) => {
+    const c = rotr8((o - 7 * i) & 0xff, 3) ^ acc;
+    serial += String.fromCharCode(c);
+    acc = (acc * 3 + c + i) & 0xff;
+  });
+  return `IMB{${serial}}`;
+}
+
 // ── sec-password-strength ─────────────────────────────────────────────────────
 
 const PASSWORD_STRENGTH_PY = String.raw`import math
@@ -162,5 +184,6 @@ export const securityReferences: ChallengeReference[] = [
     ),
   },
   { id: "re-js-unmask", flag: solveJsUnmask(puzzleFile("re-js-unmask", "vault.js")) },
+  { id: "re-crackme-checker", flag: solveCrackme(puzzleFile("re-crackme-checker", "crackme.py")) },
   { id: "sec-password-strength", solutions: { python: PASSWORD_STRENGTH_PY, javascript: PASSWORD_STRENGTH_JS } },
 ];
