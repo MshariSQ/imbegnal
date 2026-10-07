@@ -27,6 +27,9 @@ jobs:
       - run: npm ci
       - run: npm ci
         working-directory: worker
+      # The image's rustup has no default toolchain; the Rust labs need a working rustc.
+      - name: Rust toolchain for the lab reference checks
+        run: rustup toolchain install stable --profile minimal && rustup default stable
       - name: Generated catalog is current
         run: npm run check:catalog
       - name: Typecheck (site, Worker, runner)
@@ -35,8 +38,8 @@ jobs:
         run: npx eslint .
       - name: Unit tests (contracts, curricula, lessons, labs, challenges)
         # Lab and challenge reference solutions run on the host toolchains that
-        # ubuntu-latest ships (Python, Node, Java, GCC, Go, Rust, Ruby, PHP, Bash);
-        # missing ones are skipped by tests/helpers/exec-local.ts.
+        # ubuntu-latest ships (Python, Node, Java, GCC, Go, Ruby, PHP, Bash) plus the
+        # Rust installed above; missing or broken ones are skipped by tests/helpers/exec-local.ts.
         run: npm run test:unit
       - name: Worker tests (D1 shim over node:sqlite, stubbed runner)
         run: npm run test:worker

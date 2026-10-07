@@ -29,8 +29,21 @@ export interface LocalResult {
  */
 const GOCACHE = join(tmpdir(), "imb-local-gocache");
 
+const working = new Map<string, boolean>();
+
+/**
+ * The toolchain is installed AND runs: `command -v` alone is not enough (GitHub's Ubuntu image
+ * ships a rustup `rustc` proxy with no default toolchain, which exists but cannot compile).
+ */
 function has(cmd: string): boolean {
-  return spawnSync("sh", ["-c", `command -v ${cmd}`], { encoding: "utf8" }).status === 0;
+  const cached = working.get(cmd);
+  if (cached !== undefined) return cached;
+  const versionArgs = cmd === "go" ? ["version"] : ["--version"];
+  const ok =
+    spawnSync("sh", ["-c", `command -v ${cmd}`], { encoding: "utf8" }).status === 0 &&
+    spawnSync(cmd, versionArgs, { encoding: "utf8", timeout: 20_000 }).status === 0;
+  working.set(cmd, ok);
+  return ok;
 }
 
 const RECIPES: Partial<Record<LangId, { needs: string; compile?: (f: string) => string[]; run: (f: string) => string[] }>> = {
