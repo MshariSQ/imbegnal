@@ -10,7 +10,58 @@
 import type { ChallengeFile, ChallengeReference } from "../../../shared/challenges";
 import { systemsChallenges } from "../../../data/challenges/systems";
 
-export const systemsFlagSolvers: Record<string, (files: ChallengeFile[]) => string> = {};
+// ── net-frame-dissect ────────────────────────────────────────────────────────
+
+/** Parses the hexdump -C style capture into frames of raw bytes (only the hex columns are read). */
+function parseFrames(text: string): Uint8Array[] {
+  const frames: number[][] = [];
+  for (const line of text.split("\n")) {
+    if (/^frame \d+ /.test(line)) {
+      frames.push([]);
+      continue;
+    }
+    const row = /^[0-9a-f]{8} {2}([^|]*)\|/.exec(line);
+    if (row && frames.length > 0) for (const h of row[1].match(/[0-9a-f]{2}/g) ?? []) frames[frames.length - 1].push(parseInt(h, 16));
+  }
+  return frames.map((f) => Uint8Array.from(f));
+}
+
+/** Ethernet (+ optional 802.1Q) → IPv4 (IHL, options, total length) → TCP (data offset): the TCP payload and the IPv4 destination. */
+function tcpPayload(frame: Uint8Array): { dst: number[]; payload: Uint8Array } | null {
+  let at = 12;
+  let etherType = (frame[at] << 8) | frame[at + 1];
+  at += 2;
+  if (etherType === 0x8100) {
+    at += 2; // skip the VLAN tag control information
+    etherType = (frame[at] << 8) | frame[at + 1];
+    at += 2;
+  }
+  if (etherType !== 0x0800 || frame[at + 9] !== 6) return null;
+  const ipHeader = (frame[at] & 0x0f) * 4;
+  const total = (frame[at + 2] << 8) | frame[at + 3];
+  const tcp = at + ipHeader;
+  const tcpHeader = (frame[tcp + 12] >> 4) * 4;
+  return { dst: [...frame.slice(at + 16, at + 20)], payload: frame.slice(tcp + tcpHeader, at + total) }; // at + total drops the FCS
+}
+
+export const systemsFlagSolvers: Record<string, (files: ChallengeFile[]) => string> = {
+  "net-frame-dissect": (files) => {
+    const capture = files.find((f) => f.name === "capture.txt");
+    if (!capture) throw new Error("capture.txt is missing");
+    for (const frame of parseFrames(capture.content)) {
+      const segment = tcpPayload(frame);
+      if (!segment) continue;
+      const text = Buffer.from(segment.payload).toString("latin1");
+      if (!text.startsWith("POST ")) continue;
+      const token = /token=([0-9a-f]+)/.exec(text.split("\r\n\r\n")[1] ?? "");
+      if (!token) continue;
+      const masked = Buffer.from(token[1], "hex");
+      const secret = Buffer.from(masked.map((byte, i) => byte ^ segment.dst[i % 4])).toString("latin1");
+      return `IMB{${secret}}`;
+    }
+    throw new Error("no HTTP request with a token found");
+  },
+};
 
 function solveFlag(id: string): string {
   const meta = systemsChallenges.find((c) => c.id === id);
@@ -624,4 +675,5 @@ console.log(out.join("\\n"));
 `,
     },
   },
+  { id: "net-frame-dissect", flag: solveFlag("net-frame-dissect") },
 ];

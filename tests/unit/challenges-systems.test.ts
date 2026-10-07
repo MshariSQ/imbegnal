@@ -240,7 +240,10 @@ test("flag solvers DERIVE a flag whose SHA-256 equals the grader's flagHash", as
 
 test("solvers fail on tampered puzzle files (the flag is not a constant)", () => {
   for (const c of systemsChallenges.filter((x) => x.kind === "flag")) {
-    const tampered = (c.files ?? []).map((f) => ({ ...f, content: f.content.replace(/[0-9a-f]/, (d) => ((parseInt(d, 16) + 1) % 16).toString(16)) }));
+    // Shift every hex digit of the dump columns (not the offsets, not the ASCII column): a different capture.
+    const bump = (d: string) => ((parseInt(d, 16) + 1) % 16).toString(16);
+    const tampered = (c.files ?? []).map((f) => ({ ...f, content: f.content.replace(/^([0-9a-f]{8} {2})([^|]*)/gm, (_m, offset: string, hex: string) => offset + hex.replace(/[0-9a-f]/g, bump)) }));
+    assert.ok(tampered.some((f, i) => f.content !== (c.files ?? [])[i].content), `${c.id}: the tamper step must change the files`);
     let derived: string | null = null;
     try {
       derived = systemsFlagSolvers[c.id](tampered);

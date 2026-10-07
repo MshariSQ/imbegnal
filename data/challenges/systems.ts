@@ -1291,4 +1291,169 @@ for (const expression of lines.slice(2, 2 + count)) {
     tags: ["cron", "scheduling", "datetime", "parsing"],
     addedAt: "2026-10-07",
   },
+  {
+    id: "net-frame-dissect",
+    track: "networking",
+    topic: "packet-analysis",
+    title: { en: "Frame by Frame", ar: "إطاراً بعد إطار" },
+    summary: {
+      en: "Dissect a raw capture layer by layer (Ethernet, VLAN, IPv4, TCP) to reach an HTTP request and unmask the secret inside it.",
+      ar: "فكّك لقطة شبكة خاماً طبقةً طبقة (Ethernet وVLAN وIPv4 وTCP) لتصل إلى طلب HTTP وتكشف السر المقنَّع بداخله.",
+    },
+    description: {
+      en: `## The story
+
+The security team mirrors a switch port onto an analysis box. During an incident review an analyst found that someone submitted a support ticket to an internal helpdesk **over plain HTTP** and included an API secret. The secret was not sent in the clear: the client library "protects" it by masking it with the address of the machine it talks to.
+
+The capture below holds the whole short conversation. No Wireshark, no tools: you only have hex digits, the layer diagrams from your networking course, and a pencil (or a few lines of code in Code Lab).
+
+## What you know
+
+- The capture has **four frames**, numbered in the file, dumped like \`hexdump -C\`: an offset, 16 bytes in hex, and the printable characters between \`|\` bars. Offsets restart at 0 in every frame.
+- Every frame is shown **exactly as it came off the wire**, including a trailing 4-byte **Ethernet FCS** (a checksum, not data).
+- Exactly one frame carries an **HTTP request**. Its form body contains a field \`token=\`: the secret, in **lowercase hex**, masked like this: take the secret as ASCII bytes and XOR byte *i* with byte *(i mod 4)* of the **destination IPv4 address from that same packet** (the four address bytes repeat).
+- The flag has the usual shape \`IMB{...}\`, with the unmasked secret between the braces.
+
+## Layer cheat sheet
+
+| Layer | Where the interesting bytes are |
+|---|---|
+| Ethernet II | 6 bytes destination MAC, 6 bytes source MAC, 2 bytes EtherType. EtherType \`81 00\` means an **802.1Q VLAN tag** follows: 2 bytes tag, then the real 2-byte EtherType (\`08 00\` = IPv4). |
+| IPv4 | byte 0: version (high nibble) and **IHL** (low nibble, in 32-bit words, so the header is \`IHL x 4\` bytes and may include options); bytes 2-3: **total length** (header + data); byte 9: protocol (\`06\` = TCP); bytes 12-15: source address; bytes 16-19: **destination address**. |
+| TCP | bytes 0-1: source port; bytes 2-3: destination port; byte 12: **data offset** (high nibble, in 32-bit words, so the header is \`offset x 4\` bytes, options included). The segment data follows. |
+
+## Worked example (not from the capture)
+
+An IPv4 header starting with \`45 00 00 28 ...\` has version 4 and IHL 5, so it is 20 bytes long and its total length is 0x0028 = 40 bytes. Masking the two ASCII bytes of \`ok\` (\`6f 6b\`) with the address \`10.0.0.7\` (\`0a 00 00 07\`) gives \`6f ^ 0a = 65\` and \`6b ^ 00 = 6b\`, that is \`656b\` as lowercase hex. Unmasking is the same operation again.
+
+## The task
+
+Find the HTTP request in \`capture.txt\`, unmask its token and submit the flag.`,
+      ar: `## القصة
+
+يعكس فريق الأمن منفذاً في المبدّل (switch) إلى جهاز تحليل. وأثناء مراجعة حادثة لاحظ محلل أن شخصاً أرسل تذكرة دعم إلى خدمة مساعدة داخلية **عبر HTTP العادي** وضمّنها سراً لواجهة برمجية. لم يُرسل السر صريحاً: فمكتبة العميل "تحميه" بإخفائه بعنوان الجهاز الذي تتحدث إليه.
+
+تحتوي اللقطة أدناه المحادثة القصيرة كلها. لا Wireshark ولا أدوات: لا تملك إلا الأرقام السداسية عشرية ومخططات الطبقات من مقرر الشبكات وقلماً (أو بضعة أسطر برمجية في Code Lab).
+
+## ما تعرفه
+
+- في اللقطة **أربعة إطارات** مرقّمة في الملف ومفرّغة بأسلوب \`hexdump -C\`: إزاحة، و16 بايتاً بالنظام السداسي عشري، والحروف القابلة للطباعة بين خطّين \`|\`. وتبدأ الإزاحات من 0 في كل إطار.
+- كل إطار معروض **تماماً كما خرج من السلك**، بما فيه **FCS الخاص بـEthernet** من 4 بايت في آخره (مجموع اختباري وليس بيانات).
+- إطار واحد بالضبط يحمل **طلب HTTP**. وفي جسم نموذجه حقل \`token=\`: وهو السر بـ**نظام سداسي عشري بأحرف صغيرة**، مقنَّع هكذا: خذ السر كبايتات ASCII واجمع (XOR) البايت *i* مع البايت *(i mod 4)* من **عنوان IPv4 الوجهة في الحزمة نفسها** (تتكرر بايتات العنوان الأربعة).
+- للعلم الشكل المعتاد \`IMB{...}\`، ويكون السر بعد كشفه بين القوسين.
+
+## ورقة غش الطبقات
+
+| الطبقة | أين البايتات المهمة |
+|---|---|
+| Ethernet II | 6 بايت لعنوان MAC الوجهة، و6 بايت لعنوان MAC المصدر، و2 بايت لـEtherType. القيمة \`81 00\` تعني أن **وسم VLAN وفق 802.1Q** يليها: 2 بايت للوسم ثم EtherType الحقيقي من 2 بايت (\`08 00\` = IPv4). |
+| IPv4 | البايت 0: الإصدار (النصف الأعلى) و**IHL** (النصف الأدنى، بكلمات 32 بت، فطول الترويسة \`IHL x 4\` بايت وقد تتضمن خيارات)؛ البايتان 2-3: **الطول الكلي** (الترويسة + البيانات)؛ البايت 9: البروتوكول (\`06\` = TCP)؛ البايتات 12-15: عنوان المصدر؛ البايتات 16-19: **عنوان الوجهة**. |
+| TCP | البايتان 0-1: منفذ المصدر؛ البايتان 2-3: منفذ الوجهة؛ البايت 12: **إزاحة البيانات** (النصف الأعلى، بكلمات 32 بت، فطول الترويسة \`offset x 4\` بايت بما فيها الخيارات). وبعدها بيانات المقطع. |
+
+## مثال محلول (ليس من اللقطة)
+
+ترويسة IPv4 تبدأ بـ\`45 00 00 28 ...\` إصدارها 4 وIHL فيها 5، فطولها 20 بايتاً وطولها الكلي 0x0028 = 40 بايتاً. وإخفاء بايتي ASCII للكلمة \`ok\` (\`6f 6b\`) بالعنوان \`10.0.0.7\` (\`0a 00 00 07\`) يعطي \`6f ^ 0a = 65\` و\`6b ^ 00 = 6b\`، أي \`656b\` بالنظام السداسي عشري بأحرف صغيرة. وكشف الإخفاء هو العملية نفسها مرة أخرى.
+
+## المطلوب
+
+جد طلب HTTP في \`capture.txt\` واكشف قيمة token فيه ثم أرسل العلم.`,
+    },
+    difficulty: 3,
+    points: 250,
+    estMinutes: 50,
+    kind: "flag",
+    flagFormat: "IMB{...}",
+    files: [
+      {
+        name: "capture.txt",
+        content: `# Mirror-port capture, 4 frames, hexdump -C style (offsets restart at every frame).
+# Every frame ends with its 4-byte Ethernet FCS, exactly as it came off the wire.
+
+frame 1 (82 bytes)
+00000000  08 00 27 a1 b2 c3 52 54  00 12 35 02 81 00 00 2a  |..'...RT..5....*|
+00000010  08 00 45 00 00 3c 3a 11  40 00 40 06 01 fb c0 00  |..E..<:.@.@.....|
+00000020  02 75 cb 00 71 3a ca 82  1f 90 00 00 03 e8 00 00  |.u..q:..........|
+00000030  00 00 a0 02 fa f0 3b 3d  00 00 02 04 05 b4 04 02  |......;=........|
+00000040  08 0a 18 9c 0c 8b 00 00  00 00 01 03 03 07 31 36  |..............16|
+00000050  46 31                                             |F1|
+
+frame 2 (82 bytes)
+00000000  52 54 00 12 35 02 08 00  27 a1 b2 c3 81 00 00 2a  |RT..5...'......*|
+00000010  08 00 45 00 00 3c 00 00  40 00 40 06 3c 0c cb 00  |..E..<..@.@.<...|
+00000020  71 3a c0 00 02 75 1f 90  ca 82 00 00 13 88 00 00  |q:...u..........|
+00000030  03 e9 a0 12 fe 88 5d 7b  00 00 02 04 05 b4 04 02  |......]{........|
+00000040  08 0a 05 e3 c0 ad 18 9c  0c 8b 01 03 03 07 9d ff  |................|
+00000050  01 ff                                             |..|
+
+frame 3 (351 bytes)
+00000000  08 00 27 a1 b2 c3 52 54  00 12 35 02 81 00 00 2a  |..'...RT..5....*|
+00000010  08 00 46 00 01 49 3a 12  40 00 40 06 6b e8 c0 00  |..F..I:.@.@.k...|
+00000020  02 75 cb 00 71 3a 94 04  00 00 ca 82 1f 90 00 00  |.u..q:..........|
+00000030  03 e9 00 00 13 89 80 18  01 f6 12 83 00 00 01 01  |................|
+00000040  08 0a 18 9c 0c 8e 05 e3  c0 ad 50 4f 53 54 20 2f  |..........POST /|
+00000050  61 70 69 2f 76 32 2f 73  75 70 70 6f 72 74 2f 74  |api/v2/support/t|
+00000060  69 63 6b 65 74 73 20 48  54 54 50 2f 31 2e 31 0d  |ickets HTTP/1.1.|
+00000070  0a 48 6f 73 74 3a 20 68  65 6c 70 64 65 73 6b 2e  |.Host: helpdesk.|
+00000080  63 6f 72 70 2e 65 78 61  6d 70 6c 65 0d 0a 55 73  |corp.example..Us|
+00000090  65 72 2d 41 67 65 6e 74  3a 20 63 75 72 6c 2f 38  |er-Agent: curl/8|
+000000a0  2e 35 2e 30 0d 0a 41 63  63 65 70 74 3a 20 2a 2f  |.5.0..Accept: */|
+000000b0  2a 0d 0a 43 6f 6e 74 65  6e 74 2d 54 79 70 65 3a  |*..Content-Type:|
+000000c0  20 61 70 70 6c 69 63 61  74 69 6f 6e 2f 78 2d 77  | application/x-w|
+000000d0  77 77 2d 66 6f 72 6d 2d  75 72 6c 65 6e 63 6f 64  |ww-form-urlencod|
+000000e0  65 64 0d 0a 43 6f 6e 74  65 6e 74 2d 4c 65 6e 67  |ed..Content-Leng|
+000000f0  74 68 3a 20 39 37 0d 0a  0d 0a 75 73 65 72 3d 61  |th: 97....user=a|
+00000100  2e 6e 61 73 73 65 72 26  73 75 62 6a 65 63 74 3d  |.nasser&subject=|
+00000110  56 50 4e 2b 6b 65 65 70  73 2b 64 72 6f 70 70 69  |VPN+keeps+droppi|
+00000120  6e 67 26 74 6f 6b 65 6e  3d 62 63 36 39 30 33 35  |ng&token=bc69035|
+00000130  66 39 34 33 33 31 34 35  65 66 39 33 32 34 37 30  |f9433145ef932470|
+00000140  62 61 66 33 36 34 39 30  65 61 66 36 34 34 35 30  |baf36490eaf64450|
+00000150  39 66 63 33 32 34 35 35  63 66 62 8c e3 8f 7e     |9fc32455cfb...~|
+
+frame 4 (235 bytes)
+00000000  52 54 00 12 35 02 08 00  27 a1 b2 c3 81 00 00 2a  |RT..5...'......*|
+00000010  08 00 45 00 00 d5 9c 40  40 00 40 06 9f 32 cb 00  |..E....@@.@..2..|
+00000020  71 3a c0 00 02 75 1f 90  ca 82 00 00 13 89 00 00  |q:...u..........|
+00000030  04 fa 80 18 01 fd b7 2e  00 00 01 01 08 0a 05 e3  |................|
+00000040  c1 29 18 9c 0c 8e 48 54  54 50 2f 31 2e 31 20 32  |.)....HTTP/1.1 2|
+00000050  30 32 20 41 63 63 65 70  74 65 64 0d 0a 43 6f 6e  |02 Accepted..Con|
+00000060  74 65 6e 74 2d 54 79 70  65 3a 20 61 70 70 6c 69  |tent-Type: appli|
+00000070  63 61 74 69 6f 6e 2f 6a  73 6f 6e 0d 0a 43 6f 6e  |cation/json..Con|
+00000080  74 65 6e 74 2d 4c 65 6e  67 74 68 3a 20 38 34 0d  |tent-Length: 84.|
+00000090  0a 0d 0a 7b 22 73 74 61  74 75 73 22 3a 22 71 75  |...{"status":"qu|
+000000a0  65 75 65 64 22 2c 22 74  69 63 6b 65 74 22 3a 22  |eued","ticket":"|
+000000b0  48 44 2d 34 38 32 31 33  22 2c 22 72 65 63 65 69  |HD-48213","recei|
+000000c0  70 74 22 3a 22 35 30 64  64 30 37 63 64 35 64 62  |pt":"50dd07cd5db|
+000000d0  39 31 37 30 33 37 30 62  30 36 30 31 61 38 36 63  |9170370b0601a86c|
+000000e0  35 33 37 35 34 22 7d b1  68 78 3f                 |53754"}.hx?|
+`,
+        description: { en: "Four frames from the mirror port, as a hex dump (hexdump -C style, one block per frame)", ar: "أربعة إطارات من منفذ المراقبة (mirror port) على شكل تفريغ سداسي عشري (بأسلوب hexdump -C، كتلة لكل إطار)" },
+      },
+    ],
+    hints: [
+      {
+        text: {
+          en: "Peel one layer at a time. An Ethernet II header is 14 bytes, but if its EtherType is `81 00` an 802.1Q VLAN tag (4 bytes: the tag itself, then the REAL EtherType) comes first. Every frame in this capture is tagged.",
+          ar: "قشّر طبقة واحدة في كل مرة. ترويسة Ethernet II من 14 بايت، لكن إن كان EtherType هو `81 00` فتسبقها وسم VLAN وفق 802.1Q (4 بايت: الوسم نفسه ثم EtherType **الحقيقي**). كل إطار في هذه اللقطة موسوم.",
+        },
+        cost: 25,
+      },
+      {
+        text: {
+          en: "The IPv4 header length is the LOW nibble of its first byte times 4 (options make it longer than 20 bytes); the TCP header length is the HIGH nibble of TCP byte 12 times 4. The data ends where the IPv4 total length says, so the 4 FCS bytes at the end of the frame are not data.",
+          ar: "طول ترويسة IPv4 هو النصف الأدنى من بايتها الأول مضروباً في 4 (والخيارات تجعلها أطول من 20 بايت)؛ وطول ترويسة TCP هو النصف الأعلى من البايت 12 في TCP مضروباً في 4. وتنتهي البيانات حيث يقول الطول الكلي في IPv4، فبايتات FCS الأربعة في آخر الإطار ليست بيانات.",
+        },
+        cost: 35,
+      },
+      {
+        text: {
+          en: "Only one frame carries the HTTP request. Its `token` is hex text: turn every two hex digits into one byte, XOR the bytes with the four bytes of the destination IPv4 address in that frame's own header (a, b, c, d, a, b, c, d, ...), and read the result as ASCII. Remember to put the secret between the braces of `IMB{...}`.",
+          ar: "إطار واحد فقط يحمل طلب HTTP. وقيمة `token` فيه نص سداسي عشري: حوّل كل رقمين إلى بايت، ثم اجمع (XOR) البايتات مع بايتات عنوان IPv4 الوجهة الأربعة في ترويسة ذلك الإطار نفسه (a وb وc وd وa وb وc وd ...)، واقرأ الناتج كنص ASCII. وتذكّر أن تضع السر بين قوسي `IMB{...}`.",
+        },
+        cost: 40,
+      },
+    ],
+    lessons: ["networking/osi-tcpip", "networking/transport-tcp-udp"],
+    tags: ["packet-analysis", "ethernet", "ipv4", "tcp", "hexdump", "xor"],
+    addedAt: "2026-10-07",
+  },
 ];
