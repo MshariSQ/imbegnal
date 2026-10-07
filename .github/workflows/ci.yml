@@ -78,8 +78,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # The Python-in-the-browser specs serve Pyodide from this install instead of jsDelivr.
+      # Same version as public/pyodide-worker.js; not a project dependency.
+      - name: Install Pyodide for the Code Lab specs
+        run: npm i --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/pyodide" pyodide@0.26.4
       - name: UI specs
         run: npm run test:e2e:ui
+        env:
+          PYODIDE_DIR: ${{ runner.temp }}/pyodide/node_modules/pyodide
 
   # Real runner + real Worker (wrangler dev, local D1, real migrations) + exported site + Chromium.
   e2e:
