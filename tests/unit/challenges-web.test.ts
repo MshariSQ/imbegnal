@@ -164,8 +164,14 @@ for (const g of webGraders) {
       }
     }
     // Visible tests are the statement's examples: the first one is spelled out in the English description.
-    assert.ok(meta.description.en.includes(visible[0].expected.trim()), "first visible expected output appears in the statement");
-    if (g.kind === "output") assert.ok(meta.description.en.includes(visible[0].stdin.trim()), "first visible input appears in the statement");
+    if (g.kind === "output") {
+      assert.ok(meta.description.en.includes(visible[0].stdin.trim()), "first visible input appears in the statement");
+      assert.ok(meta.description.en.includes(visible[0].expected.trim()), "first visible expected output appears in the statement");
+    } else {
+      // Code challenges show the calls, not the driver's stdin: every expected result line is spelled out.
+      for (const line of visible[0].expected.split("\n")) assert.ok(meta.description.en.includes(line.trim()), `statement shows the result "${line}"`);
+      assert.equal(meta.sampleInput, visible[0].stdin, "sampleInput is the first visible test's stdin");
+    }
     assert.equal(new Set(g.tests.map((t) => t.name)).size, g.tests.length, "duplicate test names");
   });
 }

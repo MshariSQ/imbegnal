@@ -189,4 +189,50 @@ for (const line of lines.slice(1, 1 + n)) {
 `,
     },
   },
+  {
+    id: "be-jwt-expiry",
+    solutions: {
+      python: String.raw`
+def _is_int(value):
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def token_status(claims, now, leeway):
+    if "exp" not in claims or not _is_int(claims["exp"]):
+        return "malformed"
+    if "nbf" in claims and not _is_int(claims["nbf"]):
+        return "malformed"
+    if claims.get("iss") != "imbegnal":
+        return "wrong_issuer"
+    aud = claims.get("aud")
+    if isinstance(aud, str):
+        audience_ok = aud == "api"
+    elif isinstance(aud, list):
+        audience_ok = "api" in aud
+    else:
+        audience_ok = False
+    if not audience_ok:
+        return "wrong_audience"
+    if "nbf" in claims and now + leeway < claims["nbf"]:
+        return "not_yet_valid"
+    if now >= claims["exp"] + leeway:
+        return "expired"
+    return "valid"
+`,
+      javascript: String.raw`
+function tokenStatus(claims, now, leeway) {
+  const has = (key) => Object.prototype.hasOwnProperty.call(claims, key);
+  if (!has("exp") || !Number.isInteger(claims.exp)) return "malformed";
+  if (has("nbf") && !Number.isInteger(claims.nbf)) return "malformed";
+  if (claims.iss !== "imbegnal") return "wrong_issuer";
+  const aud = claims.aud;
+  const audienceOk = typeof aud === "string" ? aud === "api" : Array.isArray(aud) && aud.includes("api");
+  if (!audienceOk) return "wrong_audience";
+  if (has("nbf") && now + leeway < claims.nbf) return "not_yet_valid";
+  if (now >= claims.exp + leeway) return "expired";
+  return "valid";
+}
+`,
+    },
+  },
 ];
