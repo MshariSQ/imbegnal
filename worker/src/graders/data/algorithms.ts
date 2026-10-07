@@ -161,4 +161,99 @@ console.log(_out.join("\\n"));
   ],
 };
 
-export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance];
+// ── dsa-grid-shortest-path ───────────────────────────────────────────────────
+
+function gridShortest(rows: string[]): number {
+  const R = rows.length;
+  const C = rows[0].length;
+  const dist = new Int32Array(R * C).fill(-1);
+  const queue = new Int32Array(R * C);
+  let head = 0;
+  let tail = 0;
+  for (let i = 0; i < R * C; i++) {
+    if (rows[Math.floor(i / C)][i % C] === "S") {
+      dist[i] = 0;
+      queue[tail++] = i;
+    }
+  }
+  while (head < tail) {
+    const cur = queue[head++];
+    const r = Math.floor(cur / C);
+    const c = cur % C;
+    if (rows[r][c] === "E") return dist[cur];
+    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr < 0 || nc < 0 || nr >= R || nc >= C || rows[nr][nc] === "#") continue;
+      const next = nr * C + nc;
+      if (dist[next] >= 0) continue;
+      dist[next] = dist[cur] + 1;
+      queue[tail++] = next;
+    }
+  }
+  return -1;
+}
+
+function gridTest(name: string, rows: string[], hidden = true): OutputTest {
+  return {
+    name,
+    stdin: `${rows.length} ${rows[0].length}\n${rows.join("\n")}\n`,
+    expected: String(gridShortest(rows)),
+    hidden: hidden || undefined,
+  };
+}
+
+const gridOpenField = (() => {
+  const rows = Array.from({ length: 200 }, () => ".".repeat(200));
+  rows[0] = `S${rows[0].slice(1)}`;
+  rows[199] = `${rows[199].slice(0, 199)}E`;
+  return rows;
+})();
+
+/** Full-width corridors separated by walls with one gap that alternates sides: a very long forced path. */
+const gridSerpentine = (() => {
+  const size = 199;
+  const rows: string[] = [];
+  for (let r = 0; r < size; r++) {
+    if (r % 2 === 0) rows.push(".".repeat(size));
+    else {
+      const gap = (r - 1) % 4 === 0 ? size - 1 : 0;
+      rows.push(Array.from({ length: size }, (_, c) => (c === gap ? "." : "#")).join(""));
+    }
+  }
+  rows[0] = `S${rows[0].slice(1)}`;
+  rows[size - 1] = `${rows[size - 1].slice(0, size - 1)}E`;
+  return rows;
+})();
+
+/** Random maze with the given wall density; the seed is advanced until the result is reachable (or not) as requested. */
+function randomMaze(seed: number, size: number, density: number, wantReachable: boolean): string[] {
+  for (let s = seed; ; s++) {
+    const r = rng(s);
+    const rows = Array.from({ length: size }, () => Array.from({ length: size }, () => (r() < density ? "#" : ".")));
+    rows[0][0] = "S";
+    rows[size - 1][size - 1] = "E";
+    const lines = rows.map((row) => row.join(""));
+    if ((gridShortest(lines) >= 0) === wantReachable) return lines;
+  }
+}
+
+const dsaGridShortestPath: ChallengeGrader = {
+  id: "dsa-grid-shortest-path",
+  kind: "output",
+  tests: [
+    gridTest("example", ["S..#....", ".#.#.##.", ".#...#..", ".####.#.", "......#E"], false),
+    gridTest("detour", ["S.#", ".##", "..E"], false),
+    gridTest("blocked", ["S#E"], false),
+    gridTest("adjacent", ["SE"]),
+    gridTest("single row", ["S....E"]),
+    gridTest("single column", ["S", ".", ".", ".", ".", "E"]),
+    gridTest("start walled in", ["S#.", "##.", "..E"]),
+    gridTest("open field 200x200", gridOpenField),
+    gridTest("serpentine corridor", gridSerpentine),
+    gridTest("random maze, reachable", randomMaze(11, 120, 0.3, true)),
+    gridTest("random maze, sealed", randomMaze(5, 120, 0.5, false)),
+  ],
+};
+
+export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath];

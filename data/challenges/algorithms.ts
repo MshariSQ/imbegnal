@@ -282,4 +282,148 @@ is_balanced("")         ->  True
   addedAt: ADDED,
 };
 
-export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance];
+const dsaGridShortestPath: ChallengeMeta = {
+  id: "dsa-grid-shortest-path",
+  track: "data-structures-algorithms",
+  topic: "graphs",
+  title: { en: "Warehouse Robot", ar: "روبوت المستودع" },
+  summary: {
+    en: "Find the fewest moves a robot needs to cross a warehouse floor plan full of shelving, or report that the exit is unreachable.",
+    ar: "اعثر على أقل عدد من الحركات يحتاجه روبوت لعبور مخطط مستودع مليء بالرفوف، أو أخبر أن المخرج لا يمكن بلوغه.",
+  },
+  description: {
+    en: `## Story
+
+A delivery robot starts at the loading dock \`S\` of a warehouse and must reach the exit \`E\`. Shelving units (\`#\`) block the way; the free floor (\`.\`) is where it can drive. The operator wants to know the **shortest** route, and whether a route exists at all.
+
+## Task
+
+On a grid the robot moves one cell at a time **up, down, left or right** (no diagonals), never onto a \`#\` cell and never off the grid. Print the minimum number of moves from \`S\` to \`E\`, or \`-1\` if \`E\` cannot be reached.
+
+## Input
+
+* Line 1: \`R C\`, the number of rows and columns
+* Then \`R\` lines of exactly \`C\` characters: \`.\` free, \`#\` wall, \`S\` start, \`E\` exit
+
+There is exactly one \`S\` and one \`E\`. Limits: \`1 ≤ R, C ≤ 200\` (up to 40 000 cells), so trying every possible path is hopeless.
+
+## Output
+
+One integer: the minimum number of moves, or \`-1\`.
+
+## Example
+
+\`\`\`
+5 8
+S..#....
+.#.#.##.
+.#...#..
+.####.#.
+......#E
+\`\`\`
+
+Output: \`15\`. The shelves force a long detour along the top and down the right-hand side.`,
+    ar: `## القصة
+
+يبدأ روبوت توصيل من رصيف التحميل \`S\` في مستودع، وعليه أن يصل إلى المخرج \`E\`. وحدات الرفوف (\`#\`) تسدّ الطريق، أما الأرضية الحرة (\`.\`) فيستطيع السير عليها. يريد المشغّل معرفة **أقصر** مسار، وهل يوجد مسار أصلًا.
+
+## المطلوب
+
+في شبكة يتحرك الروبوت خلية واحدة في كل مرة **إلى أعلى أو أسفل أو يمين أو يسار** (دون الحركة القطرية)، ولا يدخل خلية \`#\` ولا يخرج من الشبكة. اطبع أقل عدد من الحركات من \`S\` إلى \`E\`، أو \`-1\` إذا تعذّر الوصول إلى \`E\`.
+
+## المدخلات
+
+* السطر الأول: \`R C\` أي عدد الصفوف والأعمدة
+* ثم \`R\` سطرًا، طول كل منها \`C\` محرفًا بالضبط: \`.\` أرض حرة، \`#\` جدار، \`S\` البداية، \`E\` المخرج
+
+يوجد \`S\` واحد و\`E\` واحد بالضبط. الحدود: \`1 ≤ R, C ≤ 200\` (حتى 40 000 خلية)، لذا فتجربة كل المسارات الممكنة غير عملية.
+
+## المخرجات
+
+عدد صحيح واحد: أقل عدد من الحركات، أو \`-1\`.
+
+## مثال
+
+\`\`\`
+5 8
+S..#....
+.#.#.##.
+.#...#..
+.####.#.
+......#E
+\`\`\`
+
+الناتج: \`15\`. الرفوف تفرض التفافًا طويلًا عبر الأعلى ثم نزولًا على الجانب الأيمن.`,
+  },
+  difficulty: 2,
+  points: 150,
+  estMinutes: 30,
+  kind: "output",
+  lang: "python",
+  starterCode: {
+    python: `import sys
+
+
+def main():
+    rows, cols = map(int, sys.stdin.readline().split())
+    grid = [sys.stdin.readline().rstrip("\\n") for _ in range(rows)]
+    # Your code here: fewest moves from 'S' to 'E' (up/down/left/right), or -1
+    print(-1)
+
+
+main()
+`,
+    javascript: `const lines = require("fs").readFileSync(0, "utf8").split("\\n");
+const [rows, cols] = lines[0].split(" ").map(Number);
+const grid = lines.slice(1, 1 + rows);
+
+// Your code here: fewest moves from 'S' to 'E' (up/down/left/right), or -1
+console.log(-1);
+`,
+    cpp: `#include <iostream>
+#include <string>
+#include <vector>
+using namespace std;
+
+int main() {
+    int rows, cols;
+    cin >> rows >> cols;
+    vector<string> grid(rows);
+    for (auto &line : grid) cin >> line;
+
+    // Your code here: fewest moves from 'S' to 'E' (up/down/left/right), or -1
+    cout << -1 << endl;
+    return 0;
+}
+`,
+  },
+  sampleInput: "5 8\nS..#....\n.#.#.##.\n.#...#..\n.####.#.\n......#E\n",
+  hints: [
+    {
+      text: {
+        en: "Depth-first search finds *a* path, not the shortest one, and trying every path explodes on an open 200 × 200 floor. Think in layers: every cell 1 move away, then every cell 2 moves away…",
+        ar: "البحث بالعمق يجد مسارًا ما وليس الأقصر، وتجربة كل المسارات تنفجر على أرضية مفتوحة بحجم 200 × 200. فكّر في طبقات: كل الخلايا على بعد حركة واحدة، ثم على بعد حركتين…",
+      },
+      cost: 15,
+    },
+    {
+      text: {
+        en: "Breadth-first search with a FIFO queue visits cells in order of distance, so the first time you pop E its distance is the answer. Store the distance of every cell you reach.",
+        ar: "البحث بالعرض (BFS) مع طابور FIFO يزور الخلايا بترتيب المسافة، فأول مرة تسحب فيها E تكون مسافتها هي الجواب. خزّن مسافة كل خلية تصل إليها.",
+      },
+      cost: 20,
+    },
+    {
+      text: {
+        en: "Mark a cell as seen when you push it into the queue, not when you pop it, so every cell enters the queue once. Then the whole search costs O(R·C). If the queue empties before E appears, print -1.",
+        ar: "علّم الخلية «مرئية» عند إدخالها في الطابور لا عند سحبها، فتدخل كل خلية مرة واحدة فقط وتصبح كلفة البحث كله O(R·C). وإذا فرغ الطابور قبل ظهور E فاطبع -1.",
+      },
+      cost: 25,
+    },
+  ],
+  lessons: ["data-structures-algorithms/trees-graphs", "data-structures-algorithms/complexity-big-o"],
+  tags: ["bfs", "graph", "grid", "shortest-path"],
+  addedAt: ADDED,
+};
+
+export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath];
