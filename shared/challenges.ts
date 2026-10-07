@@ -1,15 +1,19 @@
 /**
  * Challenge (CTF) contracts.
  *
- *   data/challenges/**           PUBLIC metadata  (ChallengeMeta)   → shipped to the browser
- *   worker/src/graders/data/**   SERVER-ONLY      (ChallengeGrader) → flag hashes, hidden tests
+ *   data/challenges/**                  PUBLIC metadata  (ChallengeMeta)   → shipped to the browser
+ *   worker/src/graders/data/**          SERVER-ONLY      (ChallengeGrader) → flag hashes, hidden tests
+ *   worker/src/graders/data/hints/**    SERVER-ONLY      hint TEXTS (L10nText[] per challenge id)
  *
  * A challenge exists only when BOTH halves exist with the same `id`
  * (tests/challenges.parity.test enforces this, and that no meta field contains a
- * grader secret). The repo is public, so flags are stored as SHA-256 hashes and
- * the puzzle material (ciphertext, source, logs…) is public by design: this is
- * an open-source CTF, spoilers are possible for a determined reader. For a
- * competitive event, move the grader data to a private D1 table.
+ * grader secret). Hints cost points, so the public meta lists only each hint's COST
+ * (same order and count as the server-only texts); the text is released by
+ * POST /api/challenges/:id/hint after the cost is charged. The repo is public, so
+ * flags are stored as SHA-256 hashes and the puzzle material (ciphertext, source,
+ * logs…) is public by design: this is an open-source CTF, spoilers are possible
+ * for a determined reader. For a competitive event, move the grader data to a
+ * private D1 table.
  *
  * `track` is ALWAYS a roadmap id from data/roadmaps.ts, the same taxonomy as
  * courses and Code Lab filters, so renaming a roadmap renames it everywhere.
@@ -37,8 +41,12 @@ export interface ChallengeFile {
   description?: L10nText;
 }
 
+/**
+ * Public half of a hint: ONLY its price. The text lives in worker/src/graders/data/hints/** and is
+ * returned by POST /api/challenges/:id/hint (or as `mine.revealedHints` for hints already revealed),
+ * so reading the page, the RSC payload or any JS chunk never discloses an unpaid hint.
+ */
 export interface ChallengeHint {
-  text: L10nText;
   /** Points deducted from the award when the hint is revealed. */
   cost: number;
 }
@@ -70,6 +78,7 @@ export interface ChallengeMeta {
   sampleInput?: string;
   /** Public puzzle material. */
   files?: ChallengeFile[];
+  /** Hint prices in reveal order; the texts are Worker-only (worker/src/graders/data/hints). */
   hints?: ChallengeHint[];
   /** "track/lesson" keys of lessons that teach what is needed. */
   lessons?: string[];

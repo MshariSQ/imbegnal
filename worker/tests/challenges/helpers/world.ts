@@ -1,13 +1,13 @@
 // Test world for the Challenges handlers: D1 shim, env, fixtures, and doubles for the modules
 // another branch owns (runner/quota, abuse protection, roles). The handlers under test are the
 // real ones; only their ChallengeDeps are replaced.
-import type { ChallengeGrader, ChallengeMeta } from "../../../../shared/challenges";
+import type { ChallengeGrader, ChallengeMeta, L10nText } from "../../../../shared/challenges";
 import type { Catalog } from "../../../../shared/catalog";
 import type { QuotaInfo } from "../../../../shared/api";
 import type { LangId } from "../../../../shared/languages";
 import type { RunResult, RunStatus } from "../../../../shared/protocol";
 import { hashFlag } from "../../../src/graders/engine";
-import { createRegistry } from "../../../src/graders/registry";
+import { createRegistry, type HintTexts } from "../../../src/graders/registry";
 import { routeChallengesApi } from "../../../src/challenges/routes";
 import type { AbuseKind, ChallengeDeps, LabApi, ReservationLike } from "../../../src/challenges/types";
 import { type Env, getUser, issueToken, json } from "../../../src/util";
@@ -38,7 +38,7 @@ function meta(over: Partial<ChallengeMeta> & Pick<ChallengeMeta, "id" | "kind">)
 }
 
 export const metas: ChallengeMeta[] = [
-  meta({ id: "flag-basic", kind: "flag", points: 100, hints: [{ text: text("hint zero"), cost: 20 }, { text: text("hint one"), cost: 30 }, { text: text("hint two"), cost: 90 }] }),
+  meta({ id: "flag-basic", kind: "flag", points: 100, hints: [{ cost: 20 }, { cost: 30 }, { cost: 90 }] }),
   meta({ id: "flag-ci", kind: "flag", points: 50 }),
   meta({ id: "flag-algo", kind: "flag", track: "data-structures-algorithms", points: 40 }),
   meta({ id: "out-sum", kind: "output", track: "data-structures-algorithms", points: 60, allowedLangs: ["python", "javascript"] }),
@@ -46,6 +46,11 @@ export const metas: ChallengeMeta[] = [
   meta({ id: "code-double", kind: "code", track: "data-structures-algorithms", points: 80 }),
   meta({ id: "no-grader", kind: "flag" }), // public half only: must not be playable
 ];
+
+/** The Worker-only hint texts of the fixtures (the public metas above carry just the costs). */
+export const hintTexts: Record<string, L10nText[]> = {
+  "flag-basic": [text("hint zero"), text("hint one"), text("hint two")],
+};
 
 export async function buildGraders(): Promise<ChallengeGrader[]> {
   return [
@@ -154,6 +159,8 @@ export interface WorldOptions {
   /** Replace the metas/graders (parity and registry tests). */
   metas?: ChallengeMeta[];
   graders?: ChallengeGrader[];
+  /** Replace the Worker-only hint texts (default: `hintTexts`). */
+  hints?: HintTexts;
 }
 
 export interface World {
@@ -217,7 +224,7 @@ export async function makeWorld(opts: WorldOptions = {}): Promise<World> {
   const metasIn = opts.metas ?? metas;
   const gradersIn = opts.graders ?? (await buildGraders());
   const deps: ChallengeDeps = {
-    registry: createRegistry(metasIn, gradersIn),
+    registry: createRegistry(metasIn, gradersIn, opts.hints ?? hintTexts),
     lab,
     abuse: {
       async recordAbuseSignal(_env, userId, kind, detail) {

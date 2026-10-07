@@ -5,6 +5,7 @@
  */
 import type { ChallengeStat, ChallengesApiResponse, LeaderboardEntry, LeaderboardResponse, SubmitResponse } from "../../../shared/api";
 import { fixtureChallenges } from "./challenges";
+import { fixtureHintTexts } from "./hints";
 
 /** Fake flag accepted by the mocked Worker for "caesar-warmup" (unrelated to any real challenge). */
 export const FIXTURE_FLAG = "IMB{future_fixture}";
@@ -24,7 +25,10 @@ export function fixtureStats(signedIn: boolean): ChallengesApiResponse {
       solves: 412,
       firstBlood: { name: "Layla Hassan", username: "layla", at: ago(40 * DAY) },
       medianSolveMinutes: 8,
-      mine: signedIn ? { solved: true, points: 45, attempts: 2, solvedAt: ago(2 * DAY), hintsUsed: 1, minutesToSolve: 12 } : undefined,
+      // Solved: the Worker hands over every hint text (revealed or not) with the learner's progress.
+      mine: signedIn
+        ? { solved: true, points: 45, attempts: 2, solvedAt: ago(2 * DAY), hintsUsed: 1, minutesToSolve: 12, revealedHints: fixtureHintTexts["caesar-warmup"].map((text, index) => ({ index, text })) }
+        : undefined,
     },
     { id: "hidden-in-logs", solves: 0 },
     { id: "packet-detective", solves: 57, firstBlood: { name: "Omar", at: ago(2 * HOUR) }, medianSolveMinutes: 31 },

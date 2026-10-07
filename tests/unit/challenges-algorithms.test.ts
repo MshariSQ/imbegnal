@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { algorithmsChallenges } from "../../data/challenges/algorithms";
 import { algorithmsGraders } from "../../worker/src/graders/data/algorithms";
+import { algorithmsHints } from "../../worker/src/graders/data/hints/algorithms";
 import { algorithmsReferences, algorithmsWrongAnswers } from "../fixtures/challenge-references/algorithms";
 import { roadmaps } from "../../data/roadmaps";
 import { hasLesson } from "../../data/lessons";
@@ -125,8 +126,12 @@ test("metadata follows the authoring rubric", () => {
     assert.ok(hints.length >= 2 && hints.length <= 3, `${m.id}: 2-3 hints`);
     let total = 0;
     let prev = 0;
+    // The text of each hint is Worker-only (worker/src/graders/data/hints), parallel to the public costs.
+    const texts = algorithmsHints[m.id] ?? [];
+    assert.equal(texts.length, hints.length, `${m.id}: one Worker-only text per public hint cost`);
+    for (const t of texts) assert.ok(nonEmpty(t.en) && nonEmpty(t.ar) && hasArabic(t.ar), `${m.id}: bilingual hint`);
     for (const h of hints) {
-      assert.ok(nonEmpty(h.text.en) && nonEmpty(h.text.ar) && hasArabic(h.text.ar), `${m.id}: bilingual hint`);
+      assert.deepEqual(Object.keys(h), ["cost"], `${m.id}: the public hint carries only its cost`);
       assert.ok(Number.isInteger(h.cost) && h.cost > 0, `${m.id}: hint cost`);
       assert.ok(h.cost >= prev, `${m.id}: hint costs must not decrease`);
       prev = h.cost;

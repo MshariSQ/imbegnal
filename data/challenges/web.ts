@@ -131,27 +131,9 @@ export const webChallenges: ChallengeMeta[] = [
     },
     sampleInput: "3\n#nav a\n.menu li a\nul li a:hover\n",
     hints: [
-      {
-        text: {
-          en: "Do the first example on paper: write a triple for every selector, then compare the triples position by position.",
-          ar: "حلّ المثال الأول على الورق: اكتب ثلاثية لكل محدِّد ثم قارن الثلاثيات خانة بخانة.",
-        },
-        cost: 5,
-      },
-      {
-        text: {
-          en: "A whole attribute selector such as `a[href=\"#top\"]` is ONE class-level item. Whatever is inside the brackets (dots, hashes) must not be counted again.",
-          ar: "محدِّد السمة كاملاً مثل `a[href=\"#top\"]` عنصر واحد من مستوى الفئة. ما بداخل الأقواس (نقاط أو `#`) يجب ألا يُحسب مرة أخرى.",
-        },
-        cost: 5,
-      },
-      {
-        text: {
-          en: "Compare the triples as tuples (lexicographically), never by their sum, and keep the later rule when two triples are equal (`>=`).",
-          ar: "قارن الثلاثيات كمجموعات مرتبة (قاموسياً) وليس بمجموعها، واحتفظ بالقاعدة اللاحقة عند التساوي (`>=`).",
-        },
-        cost: 8,
-      },
+      { cost: 5 },
+      { cost: 5 },
+      { cost: 8 },
     ],
     lessons: ["frontend/html-css"],
     tags: ["css", "specificity", "parsing", "selectors"],
@@ -323,27 +305,9 @@ export const webChallenges: ChallengeMeta[] = [
     sampleInput:
       "3\nmethod=GET route=found rate=ok auth=valid perm=yes media=n/a body=n/a item=exists conflict=no\nmethod=POST route=found rate=ok auth=valid perm=yes media=json body=ok item=n/a conflict=no\nmethod=DELETE route=found rate=ok auth=none perm=no media=n/a body=n/a item=exists conflict=no\n",
     hints: [
-      {
-        text: {
-          en: "Parse each line into a key/value map first, then write the rules as an `if` / `elif` chain in exactly the order of the table.",
-          ar: "حوّل كل سطر إلى خريطة مفتاح/قيمة أولاً، ثم اكتب القواعد كسلسلة `if` / `elif` بنفس ترتيب الجدول تماماً.",
-        },
-        cost: 5,
-      },
-      {
-        text: {
-          en: "The rules for `media` and `body` apply only to POST, PUT and PATCH. A GET never answers 415, 400 or 422.",
-          ar: "قاعدتا `media` و`body` تنطبقان فقط على POST وPUT وPATCH. طلب GET لا يرد أبداً بـ 415 أو 400 أو 422.",
-        },
-        cost: 5,
-      },
-      {
-        text: {
-          en: "Return early: as soon as a rule matches you are done, so a request that is both unauthenticated and over its rate limit answers by whichever rule comes first.",
-          ar: "أنهِ الدالة مبكراً: عندما تنطبق قاعدة فقد انتهيت، لذا الطلب غير الموثّق والمتجاوز للحد معاً يُجاب بحسب القاعدة الأسبق في الجدول.",
-        },
-        cost: 8,
-      },
+      { cost: 5 },
+      { cost: 5 },
+      { cost: 8 },
     ],
     lessons: ["backend/apis-rest"],
     tags: ["http", "rest", "status-codes", "api-design"],
@@ -492,27 +456,9 @@ export const webChallenges: ChallengeMeta[] = [
     },
     sampleInput: "2\n#000000 #ffffff\n#777777 #ffffff\n",
     hints: [
-      {
-        text: {
-          en: "Write a `luminance(hex)` function first and test it by hand: white must give 1 and black must give 0.",
-          ar: "اكتب دالة `luminance(hex)` أولاً واختبرها يدوياً: الأبيض يجب أن يعطي 1 والأسود يجب أن يعطي 0.",
-        },
-        cost: 10,
-      },
-      {
-        text: {
-          en: "The numerator uses the lighter luminance whichever colour is the text, so sort the two values with `max` and `min` instead of assuming an order. Expand `#abc` to `#aabbcc` before parsing.",
-          ar: "البسط يستخدم السطوع الأكبر أياً كان لون النص، لذا رتّب القيمتين بـ`max` و`min` ولا تفترض ترتيباً. وسّع `#abc` إلى `#aabbcc` قبل التحليل.",
-        },
-        cost: 10,
-      },
-      {
-        text: {
-          en: "Some pairs print as `4.50` yet score 4.499…, which fails AA. Compare the exact ratio with the thresholds and round only for printing.",
-          ar: "بعض الأزواج تُطبع `4.50` لكن نسبتها الفعلية 4.499… فترسب في AA. قارن النسبة الدقيقة بالحدود وقرّب فقط عند الطباعة.",
-        },
-        cost: 15,
-      },
+      { cost: 10 },
+      { cost: 10 },
+      { cost: 15 },
     ],
     lessons: ["ui-ux/accessibility", "ui-ux/typography-color"],
     tags: ["wcag", "contrast", "color", "accessibility"],
@@ -621,27 +567,9 @@ export const webChallenges: ChallengeMeta[] = [
     sampleInput:
       "[{\"claims\":{\"iss\":\"imbegnal\",\"aud\":\"api\",\"exp\":1000},\"now\":999,\"leeway\":0},{\"claims\":{\"iss\":\"imbegnal\",\"aud\":\"api\",\"exp\":1000},\"now\":1000,\"leeway\":0},{\"claims\":{\"iss\":\"imbegnal\",\"aud\":[\"web\",\"api\"],\"nbf\":500,\"exp\":1000},\"now\":495,\"leeway\":4}]\n",
     hints: [
-      {
-        text: {
-          en: "Return as soon as a rule fires and keep the order of the list: a token with a wrong issuer is `wrong_issuer` even if it is also expired.",
-          ar: "أعِد النتيجة فور انطباق قاعدة وحافظ على ترتيب القائمة: الرمز ذو المُصدِر الخاطئ هو `wrong_issuer` حتى لو كان منتهياً أيضاً.",
-        },
-        cost: 10,
-      },
-      {
-        text: {
-          en: "Careful with types. In Python `True` is an `int` and `\"api\" in \"rapid-api\"` is `True`; check `isinstance(x, bool)` and compare strings with `==`. In JavaScript use `Number.isInteger` and `Array.isArray`.",
-          ar: "انتبه إلى الأنواع. في Python القيمة `True` من النوع `int` والتعبير `\"api\" in \"rapid-api\"` يعطي `True`؛ افحص `isinstance(x, bool)` وقارن النصوص بـ`==`. وفي JavaScript استخدم `Number.isInteger` و`Array.isArray`.",
-        },
-        cost: 15,
-      },
-      {
-        text: {
-          en: "With leeway the token is accepted while `nbf - leeway <= now < exp + leeway`. Remember that `nbf` can simply be absent.",
-          ar: "مع السماحية يُقبل الرمز ما دام `nbf - leeway <= now < exp + leeway`. وتذكّر أن `nbf` قد لا يكون موجوداً أصلاً.",
-        },
-        cost: 20,
-      },
+      { cost: 10 },
+      { cost: 15 },
+      { cost: 20 },
     ],
     lessons: ["backend/authentication"],
     tags: ["jwt", "tokens", "validation", "clock-skew"],
@@ -744,27 +672,9 @@ export const webChallenges: ChallengeMeta[] = [
     sampleInput:
       "[{\"capacity\":2,\"refill\":1,\"window_limit\":10,\"requests\":[[\"a\",0],[\"a\",0],[\"a\",0],[\"a\",1000],[\"a\",1500],[\"b\",1500]]}]\n",
     hints: [
-      {
-        text: {
-          en: "Keep one small state record per client: tokens, the time of the last refill, the current window number and the count used in it. Update the refill and the window before deciding, on every request.",
-          ar: "احتفظ بسجل حالة صغير لكل عميل: الرموز ووقت آخر تعبئة ورقم النافذة الحالية وما استُخدم فيها. حدّث التعبئة والنافذة قبل اتخاذ القرار، عند كل طلب.",
-        },
-        cost: 20,
-      },
-      {
-        text: {
-          en: "Floating point drifts: adding 0.1 ten times gives 0.9999999999999999, not 1, and that request would be wrongly denied. Count tokens in thousandths instead, so `refill` tokens per second is exactly `refill` thousandths per millisecond.",
-          ar: "الأعداد العشرية تنحرف: جمع 0.1 عشر مرات يعطي 0.9999999999999999 وليس 1 فيُرفض الطلب خطأً. عُدّ الرموز بالألف من الرمز بدلاً من ذلك، فيصير معدل `refill` رمزاً في الثانية هو `refill` من ألف رمز في كل مللي ثانية بالضبط.",
-        },
-        cost: 30,
-      },
-      {
-        text: {
-          en: "Decide first, charge afterwards: compute whether the bucket has a token and whether the quota allows it, and only when both hold remove one token and add one to the window count. A request denied by one limit must not use up the other.",
-          ar: "قرّر أولاً ثم احسب الكلفة: تحقق هل في الدلو رمز وهل الحصة تسمح، ولا تخصم رمزاً وتزد عدّاد النافذة إلا عند تحقق الشرطين معاً. الطلب المرفوض بسبب أحد الحدّين يجب ألا يستهلك الآخر.",
-        },
-        cost: 40,
-      },
+      { cost: 20 },
+      { cost: 30 },
+      { cost: 40 },
     ],
     lessons: ["backend/system-design", "backend/apis-rest"],
     tags: ["rate-limiting", "token-bucket", "simulation", "api"],

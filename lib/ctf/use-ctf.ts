@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { ChallengeStat, ChallengesApiResponse } from "../../shared/api";
+import type { L10nText } from "../../shared/challenges";
 import { getCurrentUser, getToken, useAuthUser } from "../auth";
 import { fetchChallenges } from "./api";
 import { indexStats, solvedSet, withAttempt, withHint, withSolve, type StatsIndex } from "./stats";
@@ -124,7 +125,8 @@ export function recordSolve(id: string, r: { awarded: number; firstBlood: boolea
   }
 }
 
-export const recordHint = (id: string, index: number) => patchStat(id, (s) => withHint(s, id, index));
+/** Reflect a hint the Worker just handed over (its text is kept so the panel can show it again). */
+export const recordHint = (id: string, index: number, text?: L10nText) => patchStat(id, (s) => withHint(s, id, index, text));
 export const recordAttempt = (id: string) => patchStat(id, (s) => withAttempt(s, id));
 
 /** Stats + the solved set (server-authoritative once loaded, local cache before that). */

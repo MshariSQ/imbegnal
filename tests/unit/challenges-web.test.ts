@@ -9,6 +9,7 @@ import { webChallenges } from "../../data/challenges/web";
 import { roadmaps } from "../../data/roadmaps";
 import { hasLesson } from "../../data/lessons";
 import { webGraders } from "../../worker/src/graders/data/web";
+import { webHints } from "../../worker/src/graders/data/hints/web";
 import { webMistakes, webReferences } from "../fixtures/challenge-references/web";
 import type { ChallengeGrader, ChallengeMeta, HarnessGrader, OutputGrader } from "../../shared/challenges";
 import { LANG_IDS, type LangId } from "../../shared/languages";
@@ -93,10 +94,14 @@ for (const c of webChallenges) {
 
     const hints = c.hints ?? [];
     assert.ok(hints.length >= 2 && hints.length <= 3, "2-3 hints");
+    // The text of each hint is Worker-only (worker/src/graders/data/hints), parallel to the public costs.
+    const texts = webHints[c.id] ?? [];
+    assert.equal(texts.length, hints.length, "one Worker-only text per public hint cost");
+    for (const t of texts) assert.ok(t.en.trim() && ARABIC.test(t.ar), "hints are bilingual");
     let total = 0;
     let previous = 0;
     for (const h of hints) {
-      assert.ok(h.text.en.trim() && ARABIC.test(h.text.ar), "hints are bilingual");
+      assert.deepEqual(Object.keys(h), ["cost"], "the public hint carries only its cost");
       assert.ok(Number.isInteger(h.cost) && h.cost > 0 && h.cost >= previous, "hint costs are positive and non-decreasing");
       previous = h.cost;
       total += h.cost;

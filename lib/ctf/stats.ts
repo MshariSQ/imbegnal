@@ -3,6 +3,8 @@
  * "solved" cache. Pure: unit-tested in tests/unit/ctf-stats.test.ts.
  */
 import type { ChallengeStat } from "../../shared/api";
+import type { L10nText } from "../../shared/challenges";
+import { mergeRevealed } from "./hints";
 
 export type StatsIndex = ReadonlyMap<string, ChallengeStat>;
 
@@ -53,14 +55,22 @@ export function withSolve(
       solvedAt: nowIso,
       hintsUsed: mine?.hintsUsed ?? 0,
       minutesToSolve: mine?.minutesToSolve,
+      ...(mine?.revealedHints ? { revealedHints: mine.revealedHints } : {}),
     },
   };
 }
 
-/** Reflect a revealed hint (hints reveal in order, so `index + 1` hints are now used). */
-export function withHint(stat: ChallengeStat | undefined, id: string, index: number): ChallengeStat {
+/**
+ * Reflect a revealed hint and keep the text the Worker answered with, so the panel can show it
+ * again without asking (and charging) twice. Without `text` hints reveal in order, so `index + 1`
+ * hints are now used. On a solved challenge nothing is charged: the counter does not move.
+ */
+export function withHint(stat: ChallengeStat | undefined, id: string, index: number, text?: L10nText): ChallengeStat {
   const base: ChallengeStat = stat ?? { id, solves: 0 };
   const m = base.mine;
+  const revealedHints = text ? mergeRevealed(m?.revealedHints, { index, text }) : m?.revealedHints;
+  const before = m?.hintsUsed ?? 0;
+  const hintsUsed = m?.solved ? before : Math.max(before, text && revealedHints ? revealedHints.length : index + 1);
   return {
     ...base,
     mine: {
@@ -68,8 +78,9 @@ export function withHint(stat: ChallengeStat | undefined, id: string, index: num
       points: m?.points ?? 0,
       attempts: m?.attempts ?? 0,
       solvedAt: m?.solvedAt,
-      hintsUsed: Math.max(m?.hintsUsed ?? 0, index + 1),
+      hintsUsed,
       minutesToSolve: m?.minutesToSolve,
+      ...(revealedHints ? { revealedHints } : {}),
     },
   };
 }
@@ -87,6 +98,7 @@ export function withAttempt(stat: ChallengeStat | undefined, id: string): Challe
       solvedAt: m?.solvedAt,
       hintsUsed: m?.hintsUsed ?? 0,
       minutesToSolve: m?.minutesToSolve,
+      ...(m?.revealedHints ? { revealedHints: m.revealedHints } : {}),
     },
   };
 }

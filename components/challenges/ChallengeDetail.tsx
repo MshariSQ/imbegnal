@@ -233,7 +233,15 @@ export default function ChallengeDetail({
         {hints.length > 0 && (
           <div className="min-w-0 lg:col-start-1">
             <Section id="ctf-hints" title={t.hints.title}>
-              <HintsPanel challengeId={challenge.id} hints={hints} points={challenge.points} hintsUsed={hintsUsed} solved={solved} />
+              <HintsPanel
+                challengeId={challenge.id}
+                hints={hints}
+                points={challenge.points}
+                hintsUsed={hintsUsed}
+                revealed={mine?.revealedHints}
+                solved={solved}
+                statsStatus={stats.status}
+              />
             </Section>
           </div>
         )}
