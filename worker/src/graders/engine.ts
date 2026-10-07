@@ -13,7 +13,7 @@ import type { GradeResult, GradeTestResult } from "../../../shared/api";
 import type { LangId } from "../../../shared/languages";
 import { matchOutput } from "../../../shared/match";
 import { RUNNER_DEFAULTS, type RunLimits, type RunResult, type RunStatus } from "../../../shared/protocol";
-import { GRADING_BUDGET_MS } from "../lab/config";
+import { GRADING_BUDGET_MS } from "../lab/budget";
 
 /** Literal marker in a harness template that receives the learner's code. */
 export const CODE_SENTINEL = "{{CODE}}";
