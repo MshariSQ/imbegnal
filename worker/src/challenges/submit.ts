@@ -10,10 +10,14 @@ import type { SubmitResponse } from "../../../shared/api";
 import { SUBMIT_LIMITS, type ChallengeMeta, type FlagGrader, type HarnessGrader, type OutputGrader } from "../../../shared/challenges";
 import { LANG_IDS, type LangId } from "../../../shared/languages";
 import { buildProgram, gradeFlag, gradeTests } from "../graders/engine";
+import { looksLikeNetworkProbe } from "../lab/suspicious";
 import { type Env, json } from "../util";
 import { apiError, parseSqlTime, readBoundedJson, requireLiveUser, sqlTime } from "./http";
 import { awardFor } from "./progress";
 import type { ChallengeDeps } from "./types";
+
+/** Run outcomes that count as resource abuse signals (same set as /api/lab/run). */
+const RESOURCE_STATUSES: ReadonlySet<string> = new Set(["timeout", "memory_limit", "output_limit"]);
 
 /** JSON escaping can inflate source code; the code itself is bounded separately (bytes). */
 const MAX_BODY_BYTES = 256 * 1024;
@@ -217,6 +221,15 @@ async function submitCode(
     if (outcome.kind === "infrastructure") {
       await settle(outcome.status); // refunds the unit
       return apiError(origin, 503, "runner_unavailable", outcome.status === "unsupported" ? "This language is not available on the runner right now." : "The code runner is unavailable. Your quota was not charged.");
+    }
+
+    // The same advisory abuse signals as /api/lab/run: a challenge must not be an unmonitored
+    // path to the sandbox (resource exhaustion, network probes). recordAbuseSignal never throws.
+    if (RESOURCE_STATUSES.has(outcome.quotaOutcome)) {
+      await deps.abuse.recordAbuseSignal(env, user.sub, "resource", `${lang} challenge run hit ${outcome.quotaOutcome}`);
+    }
+    if (looksLikeNetworkProbe(code)) {
+      await deps.abuse.recordAbuseSignal(env, user.sub, "network_probe", `${lang} challenge code matched a network-probe signature`);
     }
 
     const quota = await settle(outcome.quotaOutcome);

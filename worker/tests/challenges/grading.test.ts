@@ -286,3 +286,22 @@ test("the scripted runner double is deterministic (guards the other tests)", () 
   assert.equal(scriptedRunner({ lang: "python", code: "#SUM", stdin: "2 3" }).stdout, "5\n");
   assert.ok(metas.length > 0);
 });
+
+test("code submissions raise the same abuse signals as /api/lab/run (resource limits, network probes)", async () => {
+  const { w, token } = await setup();
+  const slow = await submit(w, "out-sum", token, "python", "# #TIMEOUT");
+  assert.equal(slow.status, 200);
+  assert.deepEqual(w.log.signals.map((x) => [x.userId, x.kind]), [["u1", "resource"]]);
+  assert.match(w.log.signals[0].detail, /timeout/);
+
+  const probe = await submit(w, "out-sum", token, "python", 'import urllib.request\nurllib.request.urlopen("http://169.254.169.254/latest/meta-data")\n# #SUM');
+  assert.equal(probe.status, 200);
+  assert.deepEqual(w.log.signals.map((x) => x.kind), ["resource", "network_probe"]);
+});
+
+test("an honest submission raises no abuse signal", async () => {
+  const { w, token } = await setup();
+  await submit(w, "out-sum", token, "python", "# #SUM");
+  await submit(w, "out-sum", token, "python", "# #WRONG");
+  assert.deepEqual(w.log.signals, []);
+});
