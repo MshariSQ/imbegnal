@@ -13,9 +13,12 @@
  *      stored one and is at most 10 minutes old. The stored nonce is deleted on every check (one use).
  *
  * Compatibility: the previous Worker never echoes a nonce. A fragment WITHOUT a nonce is accepted only
- * when the API is positively identified as that old ("legacy") Worker; with the new API, or when the
- * API generation cannot be determined, it is refused (fail closed). That residual window is listed in
- * docs/PLATFORM.md (Known gaps) and closes when the new Worker is deployed.
+ * when the API is positively identified as that old ("legacy") Worker AND this tab holds a stored nonce
+ * that is still within its 10 minutes (the old flow, too, starts with a click on the login button, so a
+ * fresh tab opened from an attacker's link is refused). With the new API, or when the API generation
+ * cannot be determined, it is refused (fail closed). The narrow residual window (a victim who is in the
+ * middle of a sign-in in this very tab) is listed in docs/PLATFORM.md (Known gaps) and closes when the
+ * new Worker is deployed.
  *
  * Pure apart from the injected storage/clock/random source, so it is unit-tested in tests/unit.
  */
@@ -97,14 +100,21 @@ export async function check(fragment: URLSearchParams, now: number, { storage, a
   const token = fragment.get("token");
   if (!token) return { ok: false, reason: "missing_token" };
 
+  const fresh = (s: { t: number }) => now >= s.t && now - s.t <= NONCE_TTL_MS;
+
   const nonce = fragment.get("nonce");
   if (nonce === null || nonce === "") {
-    // Old Worker: it cannot echo a nonce, so accept as before. Anything else fails closed.
-    return (await apiLevel()) === "legacy" ? { ok: true, token, legacy: true } : { ok: false, reason: "nonce_missing" };
+    // Only the old Worker may omit the nonce (it cannot echo one); anything else fails closed.
+    if ((await apiLevel()) !== "legacy") return { ok: false, reason: "nonce_missing" };
+    // Even then, only in a tab that just started a sign-in: the old Worker's real flow always begins
+    // with a click on the login button (begin()), whereas an attacker's link opens a tab with nothing stored.
+    if (!stored) return { ok: false, reason: "nonce_mismatch" };
+    if (!fresh(stored)) return { ok: false, reason: "nonce_expired" };
+    return { ok: true, token, legacy: true };
   }
 
   if (!stored || !NONCE_RE.test(nonce) || !same(nonce, stored.n)) return { ok: false, reason: "nonce_mismatch" };
-  if (!(now >= stored.t && now - stored.t <= NONCE_TTL_MS)) return { ok: false, reason: "nonce_expired" };
+  if (!fresh(stored)) return { ok: false, reason: "nonce_expired" };
   return { ok: true, token, legacy: false };
 }
 

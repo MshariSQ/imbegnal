@@ -100,13 +100,35 @@ describe("check", () => {
     }
   });
 
-  test("old-API compatibility: without a nonce in the fragment, the legacy Worker's token is accepted as before", async () => {
-    // With or without a stored nonce: the old Worker never echoes one.
-    assert.deepEqual(await check(frag({ token: TOKEN }), T0, { storage: new MemStorage(), apiLevel: level("legacy") }), { ok: true, token: TOKEN, legacy: true });
+  test("old-API compatibility: a nonce-less fragment from the legacy Worker is accepted only in a tab that started a sign-in", async () => {
+    // The old Worker never echoes a nonce, but its legitimate flow always starts with a click on the
+    // login button, so this tab holds a fresh nonce when the callback arrives.
     const s = new MemStorage();
     begin(s, T0);
-    assert.deepEqual(await check(frag({ token: TOKEN }), T0, { storage: s, apiLevel: () => "legacy" }), { ok: true, token: TOKEN, legacy: true });
+    assert.deepEqual(await check(frag({ token: TOKEN }), T0 + 1000, { storage: s, apiLevel: () => "legacy" }), { ok: true, token: TOKEN, legacy: true });
     assert.equal(s.getItem(NONCE_KEY), null, "still consumed");
+    // ...exactly 10 minutes old is still fine.
+    begin(s, T0);
+    assert.deepEqual(await check(frag({ token: TOKEN, nonce: "" }), T0 + NONCE_TTL_MS, { storage: s, apiLevel: level("legacy") }), { ok: true, token: TOKEN, legacy: true });
+  });
+
+  test("old-API compatibility: the attacker link in a tab that started no sign-in is refused, even with the old API", async () => {
+    // A fresh tab opened from https://<site>/auth/callback/#token=<attacker JWT>: nothing stored.
+    assert.deepEqual(await check(frag({ token: TOKEN }), T0, { storage: new MemStorage(), apiLevel: level("legacy") }), { ok: false, reason: "nonce_mismatch" });
+    // Corrupt storage counts as nothing stored.
+    const c = new MemStorage();
+    c.setItem(NONCE_KEY, "{not json");
+    assert.deepEqual(await check(frag({ token: TOKEN }), T0, { storage: c, apiLevel: level("legacy") }), { ok: false, reason: "nonce_mismatch" });
+    // A stale sign-in (older than 10 minutes, or stamped in the future) does not open the window either.
+    const s = new MemStorage();
+    begin(s, T0);
+    assert.deepEqual(await check(frag({ token: TOKEN }), T0 + NONCE_TTL_MS + 1, { storage: s, apiLevel: level("legacy") }), { ok: false, reason: "nonce_expired" });
+    begin(s, T0);
+    assert.deepEqual(await check(frag({ token: TOKEN }), T0 - 1, { storage: s, apiLevel: level("legacy") }), { ok: false, reason: "nonce_expired" });
+    // The window is single-use like the nonce: a second nonce-less fragment in the same tab is refused.
+    begin(s, T0);
+    assert.equal((await check(frag({ token: TOKEN }), T0, { storage: s, apiLevel: level("legacy") })).ok, true);
+    assert.deepEqual(await check(frag({ token: TOKEN }), T0, { storage: s, apiLevel: level("legacy") }), { ok: false, reason: "nonce_mismatch" });
   });
 
   test("expired: older than 10 minutes (or from the future) is refused", async () => {
