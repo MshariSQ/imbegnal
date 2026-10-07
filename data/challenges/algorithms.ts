@@ -149,4 +149,137 @@ int main() {
   addedAt: ADDED,
 };
 
-export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount];
+const dsaBracketBalance: ChallengeMeta = {
+  id: "dsa-bracket-balance",
+  track: "data-structures-algorithms",
+  topic: "stack",
+  title: { en: "Bracket Inspector", ar: "مفتش الأقواس" },
+  summary: {
+    en: "Write the check behind every code editor's bracket matching: three bracket types, any nesting depth, other characters ignored.",
+    ar: "اكتب الفحص الذي يعمل خلف مطابقة الأقواس في محررات الشيفرة: ثلاثة أنواع من الأقواس، وتداخل بأي عمق، مع تجاهل بقية المحارف.",
+  },
+  description: {
+    en: `## Story
+
+Your editor plugin must decide, before it reformats a file, whether the brackets in a snippet are properly nested. A single stray \`)\` or a \`]\` closing a \`(\` means the formatter must refuse to touch the file.
+
+## Task
+
+Write a function that returns whether a string is **balanced**:
+
+* the bracket pairs are \`()\`, \`[]\` and \`{}\`;
+* every opening bracket must be closed by a bracket **of the same type**, and brackets must close in the reverse order they were opened;
+* every other character (letters, digits, spaces, quotes…) is ignored and has no special meaning;
+* the empty string is balanced.
+
+Strings are at most 10 000 characters long, so a recursive solution can run out of stack: prefer a loop.
+
+## Function to implement
+
+| Language | Signature |
+|---|---|
+| Python | \`def is_balanced(s: str) -> bool\` |
+| JavaScript | \`function isBalanced(s)\` returning \`true\` or \`false\` |
+
+A hidden driver calls your function once per test string and prints \`yes\` or \`no\`. Do **not** read input or print anything yourself: just define the function (helper functions are fine).
+
+## Example
+
+\`\`\`
+is_balanced("([]{})")   ->  True
+is_balanced("a(b)c[d]") ->  True
+is_balanced("(]")       ->  False   (wrong type)
+is_balanced("([)]")     ->  False   (wrong order)
+is_balanced("((")       ->  False   (never closed)
+is_balanced("")         ->  True
+\`\`\``,
+    ar: `## القصة
+
+يجب على إضافة المحرر أن تقرر، قبل إعادة تنسيق الملف، هل أقواس المقطع متداخلة بشكل صحيح. قوس \`)\` زائد واحد، أو \`]\` يغلق \`(\`، يعني أن المنسّق يجب أن يرفض لمس الملف.
+
+## المطلوب
+
+اكتب دالة تعيد هل النص **متوازن**:
+
+* أزواج الأقواس هي \`()\` و \`[]\` و \`{}\`؛
+* كل قوس فتح يجب أن يُغلق بقوس **من النوع نفسه**، وتُغلق الأقواس بعكس ترتيب فتحها؛
+* كل محرف آخر (حروف وأرقام ومسافات وعلامات اقتباس…) يُتجاهل ولا معنى خاصًا له؛
+* النص الفارغ متوازن.
+
+طول النص لا يتجاوز 10 000 محرف، لذا قد تنفد ذاكرة المكدس في الحل التعاودي (recursive)؛ فضّل حلقة تكرار.
+
+## الدالة المطلوبة
+
+| اللغة | التوقيع |
+|---|---|
+| Python | \`def is_balanced(s: str) -> bool\` |
+| JavaScript | \`function isBalanced(s)\` وتعيد \`true\` أو \`false\` |
+
+يستدعي مشغّل خفي دالتك مرة لكل نص اختبار ويطبع \`yes\` أو \`no\`. **لا** تقرأ مدخلات ولا تطبع شيئًا بنفسك: عرّف الدالة فقط (ويمكنك تعريف دوال مساعدة).
+
+## مثال
+
+\`\`\`
+is_balanced("([]{})")   ->  True
+is_balanced("a(b)c[d]") ->  True
+is_balanced("(]")       ->  False   (wrong type)
+is_balanced("([)]")     ->  False   (wrong order)
+is_balanced("((")       ->  False   (never closed)
+is_balanced("")         ->  True
+\`\`\``,
+  },
+  difficulty: 2,
+  points: 100,
+  estMinutes: 20,
+  kind: "code",
+  lang: "python",
+  allowedLangs: ["python", "javascript"],
+  starterCode: {
+    python: `def is_balanced(s):
+    """Return True when every bracket in s is closed by the same type, in the right order."""
+    # Your code here
+    return True
+
+
+# Try it while you work (comment out or delete before submitting):
+# print(is_balanced("([)]"))
+`,
+    javascript: `function isBalanced(s) {
+  // Return true when every bracket in s is closed by the same type, in the right order.
+  // Your code here
+  return true;
+}
+
+// Try it while you work (comment out or delete before submitting):
+// console.log(isBalanced("([)]"));
+`,
+  },
+  hints: [
+    {
+      text: {
+        en: "Counting how many ( and ) you have seen is not enough: '([)]' has equal counts but is wrong. The order and the types both matter.",
+        ar: "لا يكفي عدّ الأقواس ( و ): النص '([)]' عدداهما متساويان لكنه خاطئ. الترتيب والنوع كلاهما مهم.",
+      },
+      cost: 10,
+    },
+    {
+      text: {
+        en: "The most recently opened bracket must be the first one closed. Which data structure gives you 'last in, first out'?",
+        ar: "آخر قوس فُتح يجب أن يكون أول قوس يُغلق. أي بنية بيانات تعطيك «آخر ما دخل أول ما خرج»؟",
+      },
+      cost: 15,
+    },
+    {
+      text: {
+        en: "Push every opening bracket. On a closing bracket the stack must be non-empty and its top must be the matching opener, otherwise the answer is False. At the end the stack must be empty.",
+        ar: "ضع كل قوس فتح في المكدس. عند قوس إغلاق يجب أن يكون المكدس غير فارغ وأن تكون قمته هي قوس الفتح المطابق، وإلا فالجواب False. وفي النهاية يجب أن يكون المكدس فارغًا.",
+      },
+      cost: 15,
+    },
+  ],
+  lessons: ["data-structures-algorithms/arrays-hashing", "data-structures-algorithms/complexity-big-o"],
+  tags: ["stack", "parsing", "strings"],
+  addedAt: ADDED,
+};
+
+export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance];

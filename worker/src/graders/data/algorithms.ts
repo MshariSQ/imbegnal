@@ -68,4 +68,97 @@ const dsaPairSumCount: ChallengeGrader = {
   ],
 };
 
-export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount];
+// ── dsa-bracket-balance ──────────────────────────────────────────────────────
+
+const CLOSER_TO_OPENER: Record<string, string> = { ")": "(", "]": "[", "}": "{" };
+
+function isBalanced(s: string): boolean {
+  const stack: string[] = [];
+  for (const ch of s) {
+    if (ch === "(" || ch === "[" || ch === "{") stack.push(ch);
+    else if (ch in CLOSER_TO_OPENER && stack.pop() !== CLOSER_TO_OPENER[ch]) return false;
+  }
+  return stack.length === 0;
+}
+
+function bracketsTest(name: string, strings: string[], hidden = true): OutputTest {
+  return {
+    name,
+    stdin: `${strings.length}\n${strings.join("\n")}\n`,
+    expected: strings.map((s) => (isBalanced(s) ? "yes" : "no")).join("\n"),
+    mode: "lines",
+    hidden: hidden || undefined,
+  };
+}
+
+/** A balanced bracket string of exactly `pairs` pairs, with random letters sprinkled in. */
+function randomBalanced(r: () => number, pairs: number): string {
+  const kinds = ["()", "[]", "{}"];
+  const stack: string[] = [];
+  let out = "";
+  let opened = 0;
+  while (opened < pairs || stack.length > 0) {
+    if (opened < pairs && (stack.length === 0 || r() < 0.55)) {
+      const k = kinds[randInt(r, 0, 2)];
+      out += k[0];
+      stack.push(k[1]);
+      opened++;
+    } else {
+      out += stack.pop();
+    }
+    if (r() < 0.2) out += "abc xyz 019"[randInt(r, 0, 10)];
+  }
+  return out;
+}
+
+const deepOpen = Array.from({ length: 3_000 }, (_, i) => "([{"[i % 3]);
+const deepNested = deepOpen.join("") + deepOpen.map((c) => ({ "(": ")", "[": "]", "{": "}" })[c]).reverse().join("");
+const deepBroken = `${deepNested.slice(0, 2_999)}]${deepNested.slice(3_000)}`; // one wrong closer in the middle
+const randomLong = randomBalanced(rng(4242), 2_500);
+const randomLongBroken = `${randomLong.slice(0, 2_000)}${randomLong[2_000] === ")" ? "]" : ")"}${randomLong.slice(2_001)}`;
+
+const dsaBracketBalance: ChallengeGrader = {
+  id: "dsa-bracket-balance",
+  kind: "code",
+  harness: {
+    python: `import sys
+
+{{CODE}}
+
+
+def _main():
+    lines = sys.stdin.read().split("\\n")
+    count = int(lines[0])
+    out = []
+    for i in range(1, count + 1):
+        s = lines[i].rstrip("\\r") if i < len(lines) else ""
+        out.append("yes" if is_balanced(s) else "no")
+    print("\\n".join(out))
+
+
+_main()
+`,
+    javascript: `{{CODE}}
+
+const _lines = require("fs").readFileSync(0, "utf8").split("\\n");
+const _count = parseInt(_lines[0], 10);
+const _out = [];
+for (let i = 1; i <= _count; i++) {
+  const s = i < _lines.length ? _lines[i].replace(/\\r$/, "") : "";
+  _out.push(isBalanced(s) ? "yes" : "no");
+}
+console.log(_out.join("\\n"));
+`,
+  },
+  tests: [
+    bracketsTest("example", ["()[]{}", "([{}])", "(]", "((", "a(b)c[d]{e}"], false),
+    bracketsTest("order and types", ["([)]", ")(", "{[()()]}", "]"], false),
+    bracketsTest("empty and plain text", ["", "no brackets here", "   ", "1 + 2 = 3"]),
+    bracketsTest("never closed or closed too often", ["(()", "())", "}{", "[", "]", "{{{}}"]),
+    bracketsTest("text around brackets", ["a(b[c]d)e", "((a)", 'print("(")', "if (x[i] > {y}) { return [1, 2]; }", "{[}]"]),
+    bracketsTest("deep nesting", [deepNested, deepBroken, deepNested.slice(0, -1), deepNested.slice(1)]),
+    bracketsTest("long random strings", [randomLong, randomLongBroken, randomLong + ")", "(" + randomLong]),
+  ],
+};
+
+export const algorithmsGraders: ChallengeGrader[] = [dsaPairSumCount, dsaBracketBalance];

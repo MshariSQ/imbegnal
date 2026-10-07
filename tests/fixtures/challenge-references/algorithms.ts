@@ -57,4 +57,32 @@ int main() {
 `,
     },
   },
+  {
+    id: "dsa-bracket-balance",
+    solutions: {
+      python: `def is_balanced(s):
+    pairs = {")": "(", "]": "[", "}": "{"}
+    stack = []
+    for ch in s:
+        if ch in "([{":
+            stack.append(ch)
+        elif ch in pairs:
+            if not stack or stack.pop() != pairs[ch]:
+                return False
+    return not stack
+`,
+      javascript: `function isBalanced(s) {
+  const pairs = { ")": "(", "]": "[", "}": "{" };
+  const stack = [];
+  for (const ch of s) {
+    if (ch === "(" || ch === "[" || ch === "{") stack.push(ch);
+    else if (ch in pairs) {
+      if (stack.pop() !== pairs[ch]) return false;
+    }
+  }
+  return stack.length === 0;
+}
+`,
+    },
+  },
 ];
