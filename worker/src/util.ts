@@ -172,13 +172,47 @@ export function json(data: unknown, status = 200, origin = "", extraHeaders: Rec
 
 export const NO_STORE = { "Cache-Control": "no-store" };
 
-/** Redirect back to the frontend with a freshly issued token in the URL fragment. */
-export async function redirectWithToken(user: TokenUser, env: Env, extraHeaders: Record<string, string> = {}): Promise<Response> {
+// ── Login nonce (login-CSRF protection for the last hop) ─────────────────────
+// The site generates a random per-tab nonce when the user clicks "Continue with
+// GitHub/Google" and passes it as ?nonce= to the start endpoint. It travels with
+// the OAuth state in the same HttpOnly cookie ("<state>.<nonce>") and comes back
+// in the success fragment (#token=...&nonce=...). The callback page accepts the
+// token only when that nonce matches the one its own tab stored, so a link
+// carrying somebody else's token cannot sign a victim in. The nonce is read ONLY
+// from the cookie on the callback, never from the callback query.
+
+const NONCE_RE = /^[A-Za-z0-9_-]{16,64}$/;
+
+/** A well-formed login nonce (base64url, 16-64 chars). Anything else is ignored. */
+export function isValidNonce(v: unknown): v is string {
+  return typeof v === "string" && NONCE_RE.test(v);
+}
+
+/** Cookie value for the OAuth start: the state, plus ".<nonce>" when the site sent a valid one. */
+export function stateCookieValue(state: string, nonce: string | null): string {
+  return isValidNonce(nonce) ? `${state}.${nonce}` : state;
+}
+
+/** Splits a state cookie. A malformed nonce part is dropped; the state part is compared as is. */
+export function parseStateCookie(value: string | null): { state: string | null; nonce: string | null } {
+  if (!value) return { state: null, nonce: null };
+  const dot = value.indexOf(".");
+  if (dot < 0) return { state: value, nonce: null };
+  const nonce = value.slice(dot + 1);
+  return { state: value.slice(0, dot), nonce: isValidNonce(nonce) ? nonce : null };
+}
+
+/**
+ * Redirect back to the frontend with a freshly issued token in the URL fragment.
+ * `nonce` must come from the state cookie set at the start of the flow (see above).
+ */
+export async function redirectWithToken(user: TokenUser, env: Env, extraHeaders: Record<string, string> = {}, nonce: string | null = null): Promise<Response> {
   const token = await issueToken(user, env);
+  const fragment = isValidNonce(nonce) ? `token=${token}&nonce=${nonce}` : `token=${token}`;
   // Fragments are never sent to servers, logged by proxies, or leaked via Referer.
   return new Response(null, {
     status: 302,
-    headers: { Location: `${env.FRONTEND_URL}/auth/callback/#token=${token}`, "Cache-Control": "no-store", ...extraHeaders },
+    headers: { Location: `${env.FRONTEND_URL}/auth/callback/#${fragment}`, "Cache-Control": "no-store", ...extraHeaders },
   });
 }
 
