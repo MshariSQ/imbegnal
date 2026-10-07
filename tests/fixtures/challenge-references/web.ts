@@ -136,4 +136,57 @@ for (const line of lines.slice(1, 1 + n)) {
 `,
     },
   },
+  {
+    id: "ux-contrast-ratio",
+    solutions: {
+      python: String.raw`
+import sys
+
+
+def channel(v):
+    c = v / 255
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def luminance(color):
+    h = color[1:]
+    if len(h) == 3:
+        h = "".join(ch * 2 for ch in h)
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+
+
+lines = sys.stdin.read().split("\n")
+n = int(lines[0])
+for line in lines[1:1 + n]:
+    la, lb = (luminance(c) for c in line.split())
+    ratio = (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+    verdict = lambda ok: "PASS" if ok else "FAIL"
+    print("%.2f %s %s %s" % (ratio, verdict(ratio >= 4.5), verdict(ratio >= 3), verdict(ratio >= 7)))
+`,
+      javascript: String.raw`
+const lines = require("fs").readFileSync(0, "utf8").split("\n");
+const n = parseInt(lines[0], 10);
+
+function channel(v) {
+  const c = v / 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function luminance(color) {
+  let h = color.slice(1);
+  if (h.length === 3) h = h.split("").map((ch) => ch + ch).join("");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+const verdict = (ok) => (ok ? "PASS" : "FAIL");
+for (const line of lines.slice(1, 1 + n)) {
+  const [la, lb] = line.split(" ").map(luminance);
+  const ratio = (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  console.log(ratio.toFixed(2) + " " + verdict(ratio >= 4.5) + " " + verdict(ratio >= 3) + " " + verdict(ratio >= 7));
+}
+`,
+    },
+  },
 ];
