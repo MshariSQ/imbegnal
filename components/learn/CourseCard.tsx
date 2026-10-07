@@ -2,22 +2,28 @@
 
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock } from "lucide-react";
+import { trackDescription, trackMeta, trackTitle } from "@/lib/catalog";
 import { useLang } from "@/lib/lang-context";
 import { countLabel, hoursLabel } from "@/lib/plural";
 import ProgressBar from "@/components/ui/ProgressBar";
 
 export interface CourseCardData {
+  /** Roadmap id: the name, icon and accent are read from roadmaps[], never from here. */
   id: string;
-  icon: string;
-  accent: string;
+  /** @deprecated ignored: the canonical icon comes from roadmaps[]. Kept so existing callers compile. */
+  icon?: string;
+  /** @deprecated ignored: the canonical accent comes from roadmaps[]. */
+  accent?: string;
   level: string;
   lessonCount: number;
   minutes: number;
 }
 
 export default function CourseCard({ course, done = 0 }: { course: CourseCardData; done?: number }) {
-  const { tx } = useLang();
-  const t = tx.tracks[course.id];
+  const { tx, lang } = useLang();
+  const meta = trackMeta(course.id);
+  const icon = meta?.icon ?? course.icon;
+  const accent = meta?.accent ?? course.accent;
   const pct = course.lessonCount ? done / course.lessonCount : 0;
   const hours = Math.max(1, Math.round(course.minutes / 60));
   return (
@@ -28,14 +34,14 @@ export default function CourseCard({ course, done = 0 }: { course: CourseCardDat
       <div
         aria-hidden
         className="absolute -top-16 -end-16 w-40 h-40 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"
-        style={{ background: course.accent }}
+        style={{ background: accent }}
       />
       <div className="flex items-start justify-between mb-4">
-        <span className="text-3xl leading-none">{course.icon}</span>
+        <span className="text-3xl leading-none" aria-hidden>{icon}</span>
         <span className="text-[11px] font-semibold px-2 py-1 rounded-full border border-line text-fg-muted">{tx.common.levels[course.level as keyof typeof tx.common.levels] ?? course.level}</span>
       </div>
-      <h3 className="text-lg font-bold text-fg mb-1.5">{t?.title ?? course.id}</h3>
-      <p className="text-sm text-fg-muted leading-relaxed line-clamp-2 mb-5">{t?.desc}</p>
+      <h3 className="text-lg font-bold text-fg mb-1.5">{trackTitle(course.id, lang)}</h3>
+      <p className="text-sm text-fg-muted leading-relaxed line-clamp-2 mb-5">{trackDescription(course.id, lang)}</p>
       <div className="mt-auto">
         <div className="flex items-center gap-4 text-xs text-fg-subtle mb-3">
           <span className="flex items-center gap-1.5"><BookOpen size={13} /> {countLabel(tx, "lesson", course.lessonCount)}</span>

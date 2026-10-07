@@ -196,6 +196,74 @@ The takeaway: a concept as simple as "multiply matching numbers, add them up, re
       },
     },
     {
+      type: "lab",
+      id: "gradient-descent",
+      lang: "python",
+      prompt: {
+        en: `**Walk downhill.** Gradient descent minimises a loss by repeatedly stepping against its slope. Use the loss
+
+\`f(w) = (w - 3)^2 + 1\`
+
+whose derivative is \`f'(w) = 2 * (w - 3)\`. Each step does \`w = w - lr * f'(w)\`.
+
+Read one line \`w0 lr steps\` (start value, learning rate, number of steps) from standard input. Apply the update \`steps\` times and print the final \`w\` with **4 decimals**, then on the next line the loss \`f(w)\` with **4 decimals**.`,
+        ar: `**انزل المنحدر.** يقلّل الانحدار التدريجي دالة الخسارة بالسير مراراً عكس ميلها. استخدم الخسارة
+
+\`f(w) = (w - 3)^2 + 1\`
+
+ومشتقتها \`f'(w) = 2 * (w - 3)\`. تنفّذ كل خطوة \`w = w - lr * f'(w)\`.
+
+اقرأ سطراً واحداً \`w0 lr steps\` (القيمة الابتدائية ومعدل التعلم وعدد الخطوات) من الدخل القياسي. طبّق التحديث \`steps\` مرة واطبع قيمة \`w\` النهائية بـ **4 خانات عشرية**، ثم في السطر التالي الخسارة \`f(w)\` بـ **4 خانات عشرية**.`,
+      },
+      starterCode: `w, lr, steps = input().split()
+w = float(w)
+lr = float(lr)
+steps = int(steps)
+
+def loss(w):
+    # TODO 1: return (w - 3) ** 2 + 1
+    return 0.0
+
+def gradient(w):
+    # TODO 2: return the derivative 2 * (w - 3)
+    return 0.0
+
+# TODO 3: repeat \`steps\` times: w = w - lr * gradient(w)
+
+print(f"{w:.4f}")
+print(f"{loss(w):.4f}")
+`,
+      solution: `w, lr, steps = input().split()
+w = float(w)
+lr = float(lr)
+steps = int(steps)
+
+def loss(w):
+    return (w - 3) ** 2 + 1
+
+def gradient(w):
+    return 2 * (w - 3)
+
+for _ in range(steps):
+    w = w - lr * gradient(w)
+
+print(f"{w:.4f}")
+print(f"{loss(w):.4f}")
+`,
+      hints: [
+        { en: "The loss is `(w - 3) ** 2 + 1` and its slope is `2 * (w - 3)`.", ar: "الخسارة هي `(w - 3) ** 2 + 1` وميلها `2 * (w - 3)`." },
+        { en: "A `for _ in range(steps):` loop applies the update exactly `steps` times.", ar: "تطبّق الحلقة `for _ in range(steps):` التحديث `steps` مرة بالضبط." },
+        { en: "Check by hand: from w=0 with lr=0.1 the first step gives 0 - 0.1 * (-6) = 0.6.", ar: "تحقق يدوياً: من w=0 ومعدل 0.1 تعطي الخطوة الأولى 0 - 0.1 * (-6) = 0.6." },
+      ],
+      tests: [
+        { name: { en: "One step from zero", ar: "خطوة واحدة من الصفر" }, stdin: "0 0.1 1\n", expected: "0.6000\n6.7600" },
+        { name: { en: "Converges towards the minimum at w = 3", ar: "يتقارب نحو الحد الأدنى عند w = 3" }, stdin: "0 0.1 10\n", expected: "2.6779\n1.1038" },
+        { name: { en: "A learning rate of 0.5 jumps straight to the minimum", ar: "معدل التعلم 0.5 يقفز مباشرة إلى الحد الأدنى" }, stdin: "10 0.5 1\n", expected: "3.0000\n1.0000" },
+        { name: { en: "Too large a learning rate diverges", ar: "معدل التعلم الكبير جداً يتباعد" }, stdin: "0 1.1 4\n", expected: "-3.2208\n39.6984" },
+        { name: { en: "Zero steps changes nothing", ar: "صفر خطوات لا يغيّر شيئاً" }, stdin: "5 0.1 0\n", expected: "5.0000\n5.0000" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

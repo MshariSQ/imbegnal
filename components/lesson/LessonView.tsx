@@ -5,10 +5,13 @@ import { Clock, PartyPopper } from "lucide-react";
 import type { Lesson } from "@/data/lessons/types";
 import { getLessonProgress, markSectionPassed, markLessonDone, parseLessonProgress, readLessonProgressRaw, subscribeLessonProgress, type LessonProgress } from "@/lib/lesson-progress";
 import { useLang } from "@/lib/lang-context";
+import { codeLabHref } from "@/shared/links";
+import { OpenInCodeLab } from "@/components/learn/PracticeLink";
 import TextBlock from "./TextBlock";
 import CodeDemo from "./CodeDemo";
 import ExerciseBlock from "./ExerciseBlock";
 import QuizBlock from "./QuizBlock";
+import LabExerciseBlock from "./LabExerciseBlock";
 
 /** DOM id of a lesson section — used by the "On this page" outline. */
 export const sectionId = (i: number) => `sec-${i}`;
@@ -60,6 +63,16 @@ export default function LessonView({
     let n = 0;
     lesson.sections.forEach((s, i) => {
       if (s.type === "exercise") nums.set(i, ++n);
+    });
+    return nums;
+  }, [lesson]);
+
+  // Numbering of graded lab sections (they do NOT gate completion: they need the runner).
+  const labNumbers = useMemo(() => {
+    const nums = new Map<number, number>();
+    let n = 0;
+    lesson.sections.forEach((s, i) => {
+      if (s.type === "lab") nums.set(i, ++n);
     });
     return nums;
   }, [lesson]);
@@ -123,6 +136,11 @@ export default function LessonView({
             return (
               <div key={i} id={id} className="scroll-mt-32">
                 <CodeDemo section={section} />
+                {section.runnable !== false && (
+                  <div className="-mt-3 mb-6 flex justify-end">
+                    <OpenInCodeLab href={codeLabHref({ kind: "demo", track: roadmapId, lesson: lesson.nodeId, section: i })} />
+                  </div>
+                )}
               </div>
             );
           case "exercise":
@@ -134,10 +152,17 @@ export default function LessonView({
                   passed={progress.ex.includes(i)}
                   onPass={() => handlePass("ex", i)}
                 />
+                <div className="-mt-5 mb-8 flex justify-end">
+                  <OpenInCodeLab href={codeLabHref({ kind: "demo", track: roadmapId, lesson: lesson.nodeId, section: i })} />
+                </div>
               </div>
             );
           case "lab":
-            return null; // rendered by the curriculum workstream (LabExerciseBlock)
+            return (
+              <div key={i} id={id} className="scroll-mt-32">
+                <LabExerciseBlock section={section} trackId={roadmapId} lessonId={lesson.nodeId} index={labNumbers.get(i) ?? 1} />
+              </div>
+            );
           case "quiz":
             return (
               <div key={i} id={id} className="scroll-mt-32">

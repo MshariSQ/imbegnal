@@ -155,6 +155,447 @@ export const catalog: Catalog = {
   ],
   "labs": [
     {
+      "ref": "cyber-security/linux/permission-string",
+      "track": "cyber-security",
+      "lesson": "linux",
+      "id": "permission-string",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Typical modes",
+          "stdin": "754\n644\n",
+          "expected": "754 rwxr-xr--\n644 rw-r--r--",
+          "mode": "trim"
+        },
+        {
+          "name": "Extremes: 000 and 777",
+          "stdin": "000\n777\n",
+          "expected": "000 ---------\n777 rwxrwxrwx",
+          "mode": "trim"
+        },
+        {
+          "name": "Private key mode and executable script",
+          "stdin": "600\n755\n",
+          "expected": "600 rw-------\n755 rwxr-xr-x",
+          "mode": "trim"
+        },
+        {
+          "name": "Rejects malformed modes",
+          "stdin": "789\n75\n7777\nrwx\n644\n",
+          "expected": "789 invalid\n75 invalid\n7777 invalid\nrwx invalid\n644 rw-r--r--",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "cyber-security/python/failed-logins",
+      "track": "cyber-security",
+      "lesson": "python",
+      "id": "failed-logins",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Flags the repeat offender",
+          "stdin": "3\nOct 05 03:12:01 sshd[311]: Failed password for root from 203.0.113.9 port 51022\nOct 05 03:12:03 sshd[311]: Failed password for admin from 203.0.113.9 port 51024\nOct 05 03:12:05 sshd[311]: Failed password for root from 203.0.113.9 port 51026\nOct 05 03:14:40 sshd[402]: Accepted password for alice from 198.51.100.7 port 40110\nOct 05 03:15:12 sshd[455]: Failed password for bob from 198.51.100.23 port 40300\n",
+          "expected": "203.0.113.9 3",
+          "mode": "trim"
+        },
+        {
+          "name": "Counts invalid users and sorts by count, then IP",
+          "stdin": "2\nFailed password for invalid user oracle from 10.0.0.9 port 1\nFailed password for invalid user test from 10.0.0.9 port 2\nFailed password for root from 10.0.0.12 port 3\nFailed password for root from 10.0.0.12 port 4\nFailed password for root from 10.0.0.2 port 5\nFailed password for root from 10.0.0.2 port 6\nFailed password for root from 10.0.0.2 port 7\n",
+          "expected": "10.0.0.2 3\n10.0.0.12 2\n10.0.0.9 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Prints no suspects below the threshold",
+          "stdin": "5\nFailed password for root from 192.0.2.1 port 1\nFailed password for root from 192.0.2.1 port 2\nAccepted password for root from 192.0.2.1 port 3\n",
+          "expected": "no suspects",
+          "mode": "trim"
+        },
+        {
+          "name": "Handles a log with no failures",
+          "stdin": "1\nAccepted publickey for deploy from 192.0.2.50 port 22\nsession opened for user deploy\n",
+          "expected": "no suspects",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "artificial-intelligence/python-for-ai/min-max-scale",
+      "track": "artificial-intelligence",
+      "lesson": "python-for-ai",
+      "id": "min-max-scale",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Scales a small list",
+          "stdin": "10 20 30 40 50\n",
+          "expected": "0.000 0.250 0.500 0.750 1.000",
+          "mode": "trim"
+        },
+        {
+          "name": "Handles negatives and decimals",
+          "stdin": "-5 0 2.5 5\n",
+          "expected": "0.000 0.500 0.750 1.000",
+          "mode": "trim"
+        },
+        {
+          "name": "All values equal prints zeros",
+          "stdin": "7 7 7\n",
+          "expected": "0.000 0.000 0.000",
+          "mode": "trim"
+        },
+        {
+          "name": "A single value",
+          "stdin": "42\n",
+          "expected": "0.000",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "artificial-intelligence/math-for-ml/gradient-descent",
+      "track": "artificial-intelligence",
+      "lesson": "math-for-ml",
+      "id": "gradient-descent",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "One step from zero",
+          "stdin": "0 0.1 1\n",
+          "expected": "0.6000\n6.7600",
+          "mode": "trim"
+        },
+        {
+          "name": "Converges towards the minimum at w = 3",
+          "stdin": "0 0.1 10\n",
+          "expected": "2.6779\n1.1038",
+          "mode": "trim"
+        },
+        {
+          "name": "A learning rate of 0.5 jumps straight to the minimum",
+          "stdin": "10 0.5 1\n",
+          "expected": "3.0000\n1.0000",
+          "mode": "trim"
+        },
+        {
+          "name": "Too large a learning rate diverges",
+          "stdin": "0 1.1 4\n",
+          "expected": "-3.2208\n39.6984",
+          "mode": "trim"
+        },
+        {
+          "name": "Zero steps changes nothing",
+          "stdin": "5 0.1 0\n",
+          "expected": "5.0000\n5.0000",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "data-science/python-data/group-totals",
+      "track": "data-science",
+      "lesson": "python-data",
+      "id": "group-totals",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Groups and totals",
+          "stdin": "food,5.25\ntransport,12\nfood,7.25\n",
+          "expected": "food: 12.50 2\ntransport: 12.00 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Alphabetical output with many groups",
+          "stdin": "rent,900\nfood,80.5\nfun,20\nfood,19.5\nbooks,35.99\nbooks,4.01\n",
+          "expected": "books: 40.00 2\nfood: 100.00 2\nfun: 20.00 1\nrent: 900.00 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Single row",
+          "stdin": "misc,0.5\n",
+          "expected": "misc: 0.50 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "no data",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "data-science/sql-data-science/top-customers",
+      "track": "data-science",
+      "lesson": "sql-data-science",
+      "id": "top-customers",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Customers who spent at least 100",
+          "stdin": "100\n",
+          "expected": "Chen 750\nAmal 550\nBilal 120",
+          "mode": "trim"
+        },
+        {
+          "name": "A high threshold keeps only the biggest spender",
+          "stdin": "700\n",
+          "expected": "Chen 750",
+          "mode": "trim"
+        },
+        {
+          "name": "Threshold 0 lists everyone who ordered",
+          "stdin": "0\n",
+          "expected": "Chen 750\nAmal 550\nBilal 120\nDana 99",
+          "mode": "trim"
+        },
+        {
+          "name": "No customer reaches 5000",
+          "stdin": "5000\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "cloud-computing/networking-cloud/subnet-plan",
+      "track": "cloud-computing",
+      "lesson": "networking-cloud",
+      "id": "subnet-plan",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Four /18 subnets from a /16",
+          "stdin": "10.0.0.0/16\n4\n",
+          "expected": "10.0.0.0/18\n10.0.64.0/18\n10.0.128.0/18\n10.0.192.0/18",
+          "mode": "trim"
+        },
+        {
+          "name": "Three subnets need a /26 split of a /24",
+          "stdin": "192.168.1.0/24\n3\n",
+          "expected": "192.168.1.0/26\n192.168.1.64/26\n192.168.1.128/26",
+          "mode": "trim"
+        },
+        {
+          "name": "One subnet is the block itself",
+          "stdin": "172.16.0.0/12\n1\n",
+          "expected": "172.16.0.0/12",
+          "mode": "trim"
+        },
+        {
+          "name": "A /30 cannot hold 8 subnets",
+          "stdin": "192.168.0.0/30\n8\n",
+          "expected": "impossible",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "devops/linux-devops/log-summary",
+      "track": "devops",
+      "lesson": "linux-devops",
+      "id": "log-summary",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Counts each level",
+          "stdin": "INFO service started\nWARN disk at 80%\nERROR connection refused\nINFO request ok\nERROR timeout\nERROR timeout\n",
+          "expected": "INFO 2\nWARN 1\nERROR 3\nOTHER 0\nTOTAL 6",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown levels are OTHER, blank lines ignored",
+          "stdin": "DEBUG verbose\n\nINFO ok\nFATAL out of memory\n\n",
+          "expected": "INFO 1\nWARN 0\nERROR 0\nOTHER 2\nTOTAL 3",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input prints zeros",
+          "stdin": "",
+          "expected": "INFO 0\nWARN 0\nERROR 0\nOTHER 0\nTOTAL 0",
+          "mode": "trim"
+        },
+        {
+          "name": "A message that contains other level words",
+          "stdin": "INFO retry after ERROR 500\nWARN INFO banner changed\n",
+          "expected": "INFO 1\nWARN 1\nERROR 0\nOTHER 0\nTOTAL 2",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "frontend/javascript/top-words",
+      "track": "frontend",
+      "lesson": "javascript",
+      "id": "top-words",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Counts words case-insensitively",
+          "stdin": "The cat and the hat. THE END, and that's it!\n",
+          "expected": "the 3\nand 2\ncat 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties are broken alphabetically",
+          "stdin": "pear apple banana pear apple banana cherry\n",
+          "expected": "apple 2\nbanana 2\npear 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Fewer than three distinct words",
+          "stdin": "Go go GO\nstop\n",
+          "expected": "go 3\nstop 1",
+          "mode": "trim"
+        },
+        {
+          "name": "No words at all",
+          "stdin": "...  ---  !!!\n",
+          "expected": "no words",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "frontend/typescript/typed-scores",
+      "track": "frontend",
+      "lesson": "typescript",
+      "id": "typed-scores",
+      "lang": "typescript",
+      "tests": [
+        {
+          "name": "Best, average and pass count",
+          "stdin": "amal:90\nbilal:55\nchen:72\n",
+          "expected": "best: amal (90)\naverage: 72.3\npassed: 2/3",
+          "mode": "trim"
+        },
+        {
+          "name": "The first entry wins a tie",
+          "stdin": "x:80\ny:80\nz:10\n",
+          "expected": "best: x (80)\naverage: 56.7\npassed: 2/3",
+          "mode": "trim"
+        },
+        {
+          "name": "A single entry at the pass mark",
+          "stdin": "solo:60\n",
+          "expected": "best: solo (60)\naverage: 60.0\npassed: 1/1",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "no entries",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "backend/databases/discount-update",
+      "track": "backend",
+      "lesson": "databases",
+      "id": "discount-update",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Discounts the paper category only",
+          "stdin": "paper\n",
+          "expected": "Backpack 4999\nMarker 179\nNotebook 1799\nPen 225\nPencil case 1299\nStapler 899",
+          "mode": "trim"
+        },
+        {
+          "name": "Discounts the bags category",
+          "stdin": "bags\n",
+          "expected": "Backpack 4499\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1169\nStapler 899",
+          "mode": "trim"
+        },
+        {
+          "name": "A category with one product",
+          "stdin": "office\n",
+          "expected": "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 809",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown category changes nothing",
+          "stdin": "toys\n",
+          "expected": "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 899",
+          "mode": "trim"
+        },
+        {
+          "name": "SQL-injection text is treated as a plain value",
+          "stdin": "x' OR '1'='1\n",
+          "expected": "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 899",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "backend/apis-rest/validate-user",
+      "track": "backend",
+      "lesson": "apis-rest",
+      "id": "validate-user",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "A valid request and a missing name",
+          "stdin": "{\"name\":\"Amal\",\"email\":\"amal@example.com\",\"age\":30}\n{\"email\":\"a@b.co\"}\n",
+          "expected": "201\n400 name",
+          "mode": "trim"
+        },
+        {
+          "name": "Reports the first failing field in order",
+          "stdin": "{\"name\":\"  \",\"email\":\"bad\"}\n{\"name\":\"Sam\",\"email\":\"sam@nodot\"}\n{\"name\":\"Sam\",\"email\":\"@example.com\"}\n{\"name\":\"Sam\",\"email\":\"a@@b.co\"}\n",
+          "expected": "400 name\n400 email\n400 email\n400 email",
+          "mode": "trim"
+        },
+        {
+          "name": "Age is optional but strict",
+          "stdin": "{\"name\":\"Kid\",\"email\":\"k@x.io\",\"age\":12}\n{\"name\":\"Old\",\"email\":\"o@x.io\",\"age\":121}\n{\"name\":\"Str\",\"email\":\"s@x.io\",\"age\":\"30\"}\n{\"name\":\"Flt\",\"email\":\"f@x.io\",\"age\":30.5}\n{\"name\":\"Ok\",\"email\":\"ok@x.io\",\"age\":13}\n",
+          "expected": "400 age\n400 age\n400 age\n400 age\n201",
+          "mode": "trim"
+        },
+        {
+          "name": "Not JSON, not an object",
+          "stdin": "not json\n[1,2,3]\nnull\n\"text\"\n",
+          "expected": "400 body\n400 body\n400 body\n400 body",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "ui-ux/accessibility/contrast-ratio",
+      "track": "ui-ux",
+      "lesson": "accessibility",
+      "id": "contrast-ratio",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Black on white is the maximum ratio",
+          "stdin": "#000000 #ffffff\n",
+          "expected": "21.00 PASS",
+          "mode": "trim"
+        },
+        {
+          "name": "#767676 on white is the lightest grey that passes",
+          "stdin": "#767676 #ffffff\n#777777 #ffffff\n",
+          "expected": "4.54 PASS\n4.48 FAIL",
+          "mode": "trim"
+        },
+        {
+          "name": "Order of the colours does not matter",
+          "stdin": "#ffffff #1a73e8\n#1a73e8 #ffffff\n",
+          "expected": "4.51 PASS\n4.51 PASS",
+          "mode": "trim"
+        },
+        {
+          "name": "Identical colours have a ratio of 1",
+          "stdin": "#336699 #336699\n",
+          "expected": "1.00 FAIL",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
       "ref": "networking/osi-tcpip/layer-lookup",
       "track": "networking",
       "lesson": "osi-tcpip",

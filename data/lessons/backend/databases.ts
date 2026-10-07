@@ -287,6 +287,71 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
       },
     },
     {
+      type: "lab",
+      id: "discount-update",
+      lang: "python",
+      prompt: {
+        en: `**Change data safely.** The script builds a small \`products\` table in SQLite (\`id\`, \`name\`, \`category\`, \`price_cents\`). Standard input has one line: a category name.
+
+Write **one parameterised \`UPDATE\`** that gives every product in that category a **10% discount**: \`price_cents\` becomes \`price_cents * 90 / 100\` (integer maths: SQLite truncates the division). Then the script prints every product ordered by \`name\` as \`name price_cents\`.
+
+Never paste the category into the SQL text: bind it with \`?\`. A category with no products must change nothing.`,
+        ar: `**عدّل البيانات بأمان.** ينشئ السكربت جدول \`products\` صغيراً في SQLite (\`id\` و\`name\` و\`category\` و\`price_cents\`). يحتوي الدخل القياسي سطراً واحداً: اسم فئة.
+
+اكتب **أمر \`UPDATE\` واحداً مُعاملاً** يمنح كل منتج في تلك الفئة **خصم 10%**: تصبح \`price_cents\` تساوي \`price_cents * 90 / 100\` (حساب بأعداد صحيحة: يقتطع SQLite ناتج القسمة). بعدها يطبع السكربت كل المنتجات مرتبة حسب \`name\` بالصيغة \`name price_cents\`.
+
+لا تلصق الفئة داخل نص SQL أبداً: اربطها بـ \`?\`. الفئة التي لا منتجات فيها يجب ألا تغيّر شيئاً.`,
+      },
+      starterCode: `import sqlite3
+
+category = input().strip()
+
+db = sqlite3.connect(":memory:")
+db.executescript('''
+CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, category TEXT, price_cents INTEGER);
+INSERT INTO products (name, category, price_cents) VALUES
+  ('Notebook','paper',1999), ('Pen','paper',250), ('Backpack','bags',4999),
+  ('Pencil case','bags',1299), ('Stapler','office',899), ('Marker','paper',199);
+''')
+
+# TODO: UPDATE products SET price_cents = price_cents * 90 / 100 WHERE category = ?
+#       Run it with db.execute(sql, (category,)): never build the SQL with an f-string.
+
+for name, price in db.execute("SELECT name, price_cents FROM products ORDER BY name"):
+    print(name, price)
+`,
+      solution: `import sqlite3
+
+category = input().strip()
+
+db = sqlite3.connect(":memory:")
+db.executescript('''
+CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, category TEXT, price_cents INTEGER);
+INSERT INTO products (name, category, price_cents) VALUES
+  ('Notebook','paper',1999), ('Pen','paper',250), ('Backpack','bags',4999),
+  ('Pencil case','bags',1299), ('Stapler','office',899), ('Marker','paper',199);
+''')
+
+db.execute("UPDATE products SET price_cents = price_cents * 90 / 100 WHERE category = ?", (category,))
+db.commit()
+
+for name, price in db.execute("SELECT name, price_cents FROM products ORDER BY name"):
+    print(name, price)
+`,
+      hints: [
+        { en: "The statement is `UPDATE products SET price_cents = price_cents * 90 / 100 WHERE category = ?`.", ar: "الأمر هو `UPDATE products SET price_cents = price_cents * 90 / 100 WHERE category = ?`." },
+        { en: "Pass the value as a one-item tuple: `db.execute(sql, (category,))`. The trailing comma matters.", ar: "مرّر القيمة في صف من عنصر واحد: `db.execute(sql, (category,))`. الفاصلة الأخيرة مهمة." },
+        { en: "Without a `WHERE` clause the update would hit every row. Check the other categories stay unchanged.", ar: "بلا جملة `WHERE` سيطال التحديث كل الصفوف. تحقق أن الفئات الأخرى لم تتغير." },
+      ],
+      tests: [
+        { name: { en: "Discounts the paper category only", ar: "يخفّض فئة paper فقط" }, stdin: "paper\n", expected: "Backpack 4999\nMarker 179\nNotebook 1799\nPen 225\nPencil case 1299\nStapler 899" },
+        { name: { en: "Discounts the bags category", ar: "يخفّض فئة bags" }, stdin: "bags\n", expected: "Backpack 4499\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1169\nStapler 899" },
+        { name: { en: "A category with one product", ar: "فئة فيها منتج واحد" }, stdin: "office\n", expected: "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 809" },
+        { name: { en: "Unknown category changes nothing", ar: "فئة مجهولة لا تغيّر شيئاً" }, stdin: "toys\n", expected: "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 899" },
+        { name: { en: "SQL-injection text is treated as a plain value", ar: "نص حقن SQL يُعامل كقيمة عادية" }, stdin: "x' OR '1'='1\n", expected: "Backpack 4999\nMarker 199\nNotebook 1999\nPen 250\nPencil case 1299\nStapler 899" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

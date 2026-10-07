@@ -223,6 +223,85 @@ The lesson connects directly to this lesson's themes: a single manually-typed sh
       },
     },
     {
+      type: "lab",
+      id: "log-summary",
+      lang: "bash",
+      prompt: {
+        en: `**Summarise a log in Bash.** Each input line starts with a level (\`INFO\`, \`WARN\` or \`ERROR\`) followed by a message. Read standard input and count the lines per level.
+
+Print exactly these five lines, in this order, even when a count is zero:
+
+\`\`\`
+INFO <n>
+WARN <n>
+ERROR <n>
+OTHER <n>
+TOTAL <n>
+\`\`\`
+
+Lines that start with any other word (and blank lines are ignored) count as \`OTHER\`. \`TOTAL\` is the number of non-blank lines.`,
+        ar: `**لخّص سجلاً بلغة Bash.** يبدأ كل سطر دخل بمستوى (\`INFO\` أو \`WARN\` أو \`ERROR\`) تليه رسالة. اقرأ الدخل القياسي وعُدَّ الأسطر لكل مستوى.
+
+اطبع هذه الأسطر الخمسة بالضبط وبهذا الترتيب حتى لو كان العدد صفراً:
+
+\`\`\`
+INFO <n>
+WARN <n>
+ERROR <n>
+OTHER <n>
+TOTAL <n>
+\`\`\`
+
+الأسطر التي تبدأ بأي كلمة أخرى تُحتسب \`OTHER\` (وتُتجاهل الأسطر الفارغة). و\`TOTAL\` هو عدد الأسطر غير الفارغة.`,
+      },
+      starterCode: `#!/bin/bash
+info=0; warn=0; error=0; other=0
+
+while read -r level rest || [ -n "$level" ]; do
+  # TODO 1: skip blank lines (when $level is empty)
+  # TODO 2: use \`case "$level" in INFO) ... ;; WARN) ... ;; ERROR) ... ;; *) ... ;; esac\`
+  #         to increase the right counter, e.g. info=$((info + 1))
+  :
+done
+
+echo "INFO $info"
+echo "WARN $warn"
+echo "ERROR $error"
+echo "OTHER $other"
+# TODO 3: print "TOTAL <sum of the four counters>"
+`,
+      solution: `#!/bin/bash
+info=0; warn=0; error=0; other=0
+
+while read -r level rest || [ -n "$level" ]; do
+  [ -z "$level" ] && continue
+  case "$level" in
+    INFO)  info=$((info + 1)) ;;
+    WARN)  warn=$((warn + 1)) ;;
+    ERROR) error=$((error + 1)) ;;
+    *)     other=$((other + 1)) ;;
+  esac
+done
+
+echo "INFO $info"
+echo "WARN $warn"
+echo "ERROR $error"
+echo "OTHER $other"
+echo "TOTAL $((info + warn + error + other))"
+`,
+      hints: [
+        { en: "`read -r level rest` puts the first word into `level` and the remainder into `rest`.", ar: "يضع `read -r level rest` الكلمة الأولى في `level` والباقي في `rest`." },
+        { en: "`[ -z \"$level\" ] && continue` skips blank lines.", ar: "يتخطى `[ -z \"$level\" ] && continue` الأسطر الفارغة." },
+        { en: "`case` is the tidy way to branch on a word: one pattern per level and `*)` for everything else.", ar: "`case` هي الطريقة المرتبة للتفرع حسب كلمة: نمط لكل مستوى و`*)` لكل ما سواه." },
+      ],
+      tests: [
+        { name: { en: "Counts each level", ar: "يعدّ كل مستوى" }, stdin: "INFO service started\nWARN disk at 80%\nERROR connection refused\nINFO request ok\nERROR timeout\nERROR timeout\n", expected: "INFO 2\nWARN 1\nERROR 3\nOTHER 0\nTOTAL 6" },
+        { name: { en: "Unknown levels are OTHER, blank lines ignored", ar: "المستويات المجهولة OTHER والأسطر الفارغة تُتجاهل" }, stdin: "DEBUG verbose\n\nINFO ok\nFATAL out of memory\n\n", expected: "INFO 1\nWARN 0\nERROR 0\nOTHER 2\nTOTAL 3" },
+        { name: { en: "Empty input prints zeros", ar: "الدخل الفارغ يطبع أصفاراً" }, expected: "INFO 0\nWARN 0\nERROR 0\nOTHER 0\nTOTAL 0" },
+        { name: { en: "A message that contains other level words", ar: "رسالة تحتوي كلمات مستويات أخرى" }, stdin: "INFO retry after ERROR 500\nWARN INFO banner changed\n", expected: "INFO 1\nWARN 1\nERROR 0\nOTHER 0\nTOTAL 2" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {
