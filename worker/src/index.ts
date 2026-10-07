@@ -8,17 +8,19 @@ import { handleStateGet, handleStatePut } from "./state";
 import { handleTutor } from "./ai";
 import { handleAccountDelete, handleEvent } from "./account";
 import { handleLab } from "./lab/handlers";
+import { positiveInt } from "./lab/config";
 import { handleChallengesApi } from "./challenges";
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // Best-effort per-isolate sliding window. Not global (each Worker isolate has
-// its own memory) but free and good enough at this scale.
-const RATE_GENERAL = { limit: 60, windowMs: 60_000 };
-const RATE_AUTH = { limit: 10, windowMs: 60_000 };
+// its own memory) but free and good enough at this scale. RATE_LIMIT_PER_MIN /
+// RATE_LIMIT_AUTH_PER_MIN override the per-IP limits (the full-stack E2E raises them).
+const RATE_WINDOW_MS = 60_000;
 const rateBuckets = new Map<string, number[]>();
 
-function rateLimited(ip: string, isAuth: boolean): boolean {
-  const { limit, windowMs } = isAuth ? RATE_AUTH : RATE_GENERAL;
+function rateLimited(env: Env, ip: string, isAuth: boolean): boolean {
+  const limit = isAuth ? positiveInt(env.RATE_LIMIT_AUTH_PER_MIN, 10) : positiveInt(env.RATE_LIMIT_PER_MIN, 60);
+  const windowMs = RATE_WINDOW_MS;
   const now = Date.now();
   const key = `${isAuth ? "a" : "g"}:${ip}`;
   if (rateBuckets.size > 10_000) rateBuckets.clear(); // memory cap
@@ -294,7 +296,7 @@ export default {
 
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
     const isAuthPath = pathname.startsWith("/api/auth/");
-    if (rateLimited(ip, isAuthPath)) {
+    if (rateLimited(env, ip, isAuthPath)) {
       return json({ error: "Too many requests" }, 429, origin, { "Retry-After": "60" });
     }
 

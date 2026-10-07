@@ -16,6 +16,8 @@ export interface Env {
   AI_DAILY_LIMIT_FREE?: string; // per user per day (default 20)
   AI_DAILY_LIMIT_PRO?: string; // (default 200)
   AI_DAILY_LIMIT_GLOBAL?: string; // all users combined per day (default 600) — spend kill switch
+  RATE_LIMIT_PER_MIN?: string; // API requests per IP per minute, per isolate (default 60)
+  RATE_LIMIT_AUTH_PER_MIN?: string; // /api/auth/* requests per IP per minute, per isolate (default 10)
   // Code Lab — see worker/README-lab.md. All optional strings; defaults live in worker/src/lab/config.ts.
   RUNNER_URL?: string; // base URL of the runner service (https; http only for loopback)
   RUNNER_SECRET?: string; // HMAC secret shared with the runner (`wrangler secret put RUNNER_SECRET`)
