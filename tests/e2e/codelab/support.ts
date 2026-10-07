@@ -5,7 +5,7 @@
  *    tiny static server (no extra dependency, honours trailing-slash routes);
  *  - launches Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE, or the bundled/installed one);
  *  - mocks the Worker with `page.route`, using the exact shapes of shared/api.ts;
- *  - optionally serves a local Pyodide (PYODIDE_DIR) in place of the jsDelivr CDN so
+ *  - optionally serves a local Pyodide (PYODIDE_DIR) in place of the jsDelivr CDN (context route) so
  *    the Python runner executes for real without internet access.
  */
 import { createServer, type Server } from "node:http";
@@ -143,18 +143,37 @@ export async function newHarness(browser: Browser, site: Site, opts: PageOptions
     if (s.fixtures) (window as unknown as { __IMB_LAB_FIXTURES__: unknown }).__IMB_LAB_FIXTURES__ = s.fixtures;
   }, seed);
   await api.install(page);
-  await installPyodide(page);
+  await installPyodide(context);
   return { page, context, errors, api };
 }
 
 // ── Pyodide from a local npm install (the sandbox has no CDN access) ─────────
+// Routed on the context, not the page: the runtime is loaded by public/pyodide-worker.js
+// (importScripts + fetch of the wasm/stdlib from inside a dedicated Web Worker), and a
+// context route covers every page of the context and the workers they start.
 
 export const PYODIDE_DIR = process.env.PYODIDE_DIR ?? "";
-export const hasPyodide = () => !!PYODIDE_DIR && existsSync(join(PYODIDE_DIR, "pyodide.asm.wasm"));
+/** The version the site's runner pins (its jsDelivr URL); the local install must match it. */
+const PYODIDE_VERSION = readFileSync(join(ROOT, "public/pyodide-worker.js"), "utf8").match(/\/pyodide\/v([\d.]+)\//)?.[1] ?? "?";
+/**
+ * Whether the Pyodide specs can run. Unset PYODIDE_DIR skips them; a PYODIDE_DIR that does not
+ * hold a Pyodide distribution is a setup error (CI sets it) and fails loudly instead of skipping.
+ */
+export const hasPyodide = (): boolean => {
+  if (!PYODIDE_DIR) return false;
+  if (!existsSync(join(PYODIDE_DIR, "pyodide.asm.wasm"))) {
+    throw new Error(`PYODIDE_DIR=${PYODIDE_DIR} has no pyodide.asm.wasm: point it at <prefix>/node_modules/pyodide of an \`npm i pyodide@${PYODIDE_VERSION}\``);
+  }
+  const { version } = JSON.parse(readFileSync(join(PYODIDE_DIR, "package.json"), "utf8")) as { version?: string };
+  if (version !== PYODIDE_VERSION) {
+    throw new Error(`PYODIDE_DIR holds pyodide@${version}, but public/pyodide-worker.js loads v${PYODIDE_VERSION}: install pyodide@${PYODIDE_VERSION}`);
+  }
+  return true;
+};
 
-async function installPyodide(page: Page) {
+async function installPyodide(context: BrowserContext) {
   if (!hasPyodide()) return;
-  await page.route("https://cdn.jsdelivr.net/pyodide/**", async (route) => {
+  await context.route("https://cdn.jsdelivr.net/pyodide/**", async (route) => {
     const name = new URL(route.request().url()).pathname.split("/").pop() ?? "";
     const file = join(PYODIDE_DIR, name);
     if (!existsSync(file)) return route.fulfill({ status: 404 });
