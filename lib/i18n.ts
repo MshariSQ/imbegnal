@@ -2,6 +2,7 @@ import { platformEn, platformAr } from "./i18n-platform";
 import { codelabEn, codelabAr } from "./i18n-codelab";
 import { ctfEn, ctfAr } from "./i18n-ctf";
 import { curriculumEn, curriculumAr } from "./i18n-curriculum";
+import { phase3En, phase3Ar } from "./i18n-phase3";
 
 export type Lang = "en" | "ar";
 
@@ -221,6 +222,7 @@ export const translations = {
     ...codelabEn,
     ...ctfEn,
     ...curriculumEn,
+    ...phase3En,
   },
 
   ar: {
@@ -438,6 +440,7 @@ export const translations = {
     ...codelabAr,
     ...ctfAr,
     ...curriculumAr,
+    ...phase3Ar,
   },
 } as const;
 
