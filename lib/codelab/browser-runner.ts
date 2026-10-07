@@ -5,7 +5,10 @@
  *
  * Hard limits (all enforced here, not trusted to the program):
  *  - wall-clock timeout that TERMINATES the worker (JS, Python) or removes the
- *    iframe (Web), so an infinite loop cannot outlive the run;
+ *    iframe (Web), so an infinite loop cannot outlive the run. For Web the loop
+ *    guards inserted into the page's scripts (loop-guard.ts) stop a runaway loop
+ *    inside the frame too, for browsers where the frame shares this page's thread
+ *    and this timer could never fire;
  *  - output cap: we keep the first `keepChars` of each stream and abort the run
  *    when a stream passes `killChars`;
  *  - Stop (AbortSignal) terminates the same way.
@@ -13,7 +16,7 @@
 import type { PublicRunResult } from "../../shared/api";
 import { RuntimeLoadError } from "./errors";
 import { buildPythonProgram, parsePythonOutput } from "./py-wrapper";
-import { WEB_LIMITS, buildPreviewDocument, parseWebMessage } from "./web-sandbox";
+import { WEB_LIMITS, buildPreviewDocument, loopGuardName, parseWebMessage } from "./web-sandbox";
 import type { JsRunRequest, JsWorkerMessage } from "./js-worker";
 
 export type BrowserLang = "javascript" | "python" | "web";
@@ -21,7 +24,8 @@ export type BrowserLang = "javascript" | "python" | "web";
 export const BROWSER_LIMITS = {
   jsTimeoutMs: 5_000,
   pythonTimeoutMs: 10_000,
-  webTimeoutMs: 5_000,
+  /** Also the loop guard's budget inside the preview frame. */
+  webTimeoutMs: WEB_LIMITS.loopMs,
   /** Download + start-up of Pyodide (~10 MB) on a slow connection. */
   pythonLoadTimeoutMs: 120_000,
   keepChars: 64 * 1024,
@@ -349,15 +353,31 @@ export function pythonErrorLine(stderr: string): number | undefined {
 
 // ── Web (HTML/CSS/JS) ────────────────────────────────────────────────────────
 
-function runWeb(opts: BrowserRunOptions): Promise<BrowserRunOutcome> {
+/**
+ * Inserts the loop guards. acorn is loaded only now, so pages that never run Web
+ * code do not download it. If the chunk cannot load (offline, stale deploy) the
+ * page runs unguarded: the parent watchdog still applies where it can.
+ */
+async function guardLoops(code: string, token: string): Promise<string> {
+  try {
+    const { guardPreviewScripts } = await import("./loop-guard");
+    return guardPreviewScripts(code, loopGuardName(token));
+  } catch {
+    return code;
+  }
+}
+
+async function runWeb(opts: BrowserRunOptions): Promise<BrowserRunOutcome> {
+  if (!opts.web) throw new Error("The web runner needs a preview host");
+  const token = randomToken();
+  const code = await guardLoops(opts.code, token);
+  if (opts.signal?.aborted) throw abortError();
+  return runWebPage(opts, opts.web, token, code);
+}
+
+function runWebPage(opts: BrowserRunOptions, web: WebHost, token: string, code: string): Promise<BrowserRunOutcome> {
   return new Promise((resolve, reject) => {
-    if (!opts.web) {
-      reject(new Error("The web runner needs a preview host"));
-      return;
-    }
-    const web: WebHost = opts.web;
     const timeoutMs = opts.timeoutMs ?? BROWSER_LIMITS.webTimeoutMs;
-    const token = randomToken();
     const stdout = newBuf();
     const stderr = newBuf();
     const t0 = performance.now();
@@ -397,6 +417,15 @@ function runWeb(opts: BrowserRunOptions): Promise<BrowserRunOutcome> {
         sawError = true;
         if (firstErrorLine === undefined && m.line) firstErrorLine = m.line;
         appendCapped(stderr, `${m.line ? `Line ${m.line}: ` : ""}${m.message}\n`, WEB_LIMITS.keepChars);
+      } else if (m.t === "loop") {
+        // A loop guard fired inside the frame: the same outcome as the watchdog,
+        // but it also knows which loop. Stop the page like the watchdog does.
+        cleanup();
+        web.unmount();
+        resolve({
+          ...resultOf({ status: "timeout", exitCode: null, signal: "SIGKILL", stdout, stderr, runMs: performance.now() - t0 }),
+          errorLine: m.line,
+        });
       } else if (m.t === "done") {
         // The page stays mounted so the learner can use it; only the run is over.
         cleanup();
@@ -407,7 +436,7 @@ function runWeb(opts: BrowserRunOptions): Promise<BrowserRunOutcome> {
       }
     }
     window.addEventListener("message", onMessage);
-    web.mount(buildPreviewDocument(opts.code, token));
+    web.mount(buildPreviewDocument(code, token, { ...WEB_LIMITS, loopMs: timeoutMs }));
     opts.onPhase?.("running");
   });
 }
