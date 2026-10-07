@@ -5,4 +5,5 @@ export const dataStructuresAlgorithmsLessons: Record<string, () => Promise<{ les
   "data-structures-algorithms/complexity-big-o": () => import("./complexity-big-o"),
   "data-structures-algorithms/arrays-hashing": () => import("./arrays-hashing"),
   "data-structures-algorithms/sorting-searching": () => import("./sorting-searching"),
+  "data-structures-algorithms/trees-graphs": () => import("./trees-graphs"),
 };
