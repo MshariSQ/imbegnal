@@ -698,4 +698,196 @@ for (const [first, last] of intervals) console.log(first, last);
     tags: ["cidr", "route-summarization", "aggregation", "ipv4"],
     addedAt: "2026-10-07",
   },
+  {
+    id: "os-mlfq",
+    track: "operating-systems",
+    topic: "scheduling",
+    title: { en: "Multilevel Feedback Queue", ar: "طوابير التغذية الراجعة متعددة المستويات" },
+    summary: {
+      en: "Simulate an MLFQ scheduler where jobs that burn their whole time slice sink to slower, longer-slice queues, and report each job's waiting time.",
+      ar: "حاكِ مُجدوِل MLFQ حيث تنزل المهام التي تستهلك شريحتها كاملة إلى طوابير أبطأ بشرائح أطول، واحسب زمن انتظار كل مهمة.",
+    },
+    description: {
+      en: `## The story
+
+A plain Round Robin scheduler treats a quick keystroke handler and a week-long simulation the same. The **Multilevel Feedback Queue (MLFQ)** fixes that without knowing the job lengths in advance: every new job starts in the **top queue** with a **short** time slice. A job that uses its whole slice and still wants more is probably CPU-bound, so it is **demoted** to a lower queue with a longer slice; a job that finishes early stays responsive. The CPU always serves the highest non-empty queue first.
+
+You are asked to simulate a small MLFQ and report how long each job waited.
+
+## The rules
+
+There are \`k\` queues, numbered \`0\` (top, highest priority) to \`k-1\` (bottom). Queue \`i\` has the time quantum \`q[i]\`. Every process has an \`arrival\` time and a CPU \`burst\` (no I/O). Time is in whole units.
+
+1. A process enters **queue 0** at its arrival time. Processes with the same arrival time enter in input order.
+2. Whenever the CPU is free, it takes the **first process of the highest-priority non-empty queue** (queues are FIFO) and runs it for \`min(q[level], remaining burst)\` units. Nothing interrupts a slice: a process that arrives meanwhile has to wait for it to end.
+3. When a slice ends at time \`t\`:
+   - first, every process with \`arrival <= t\` that has not entered yet is added to queue 0;
+   - then, if the running process finished, record \`finish = t\`; otherwise it used its **whole** quantum, so it moves to the **tail of the next queue down** (a process in the bottom queue goes back to the tail of the bottom queue).
+4. If every queue is empty, the CPU idles until the next arrival.
+
+\`waiting = finish - arrival - burst\`.
+
+## Input and output
+
+**Input:** \`k\`; then the \`k\` quanta on one line; then \`n\`; then \`n\` lines \`name arrival burst\` (integers, \`burst >= 1\`; names have no spaces; the lines are in any order).
+
+**Output:** one line \`name finish waiting\` per process **in input order**, then a last line \`average_wait <value>\` with the average waiting time to two decimals (the checker allows a tolerance of half a cent).
+
+## Example
+
+\`\`\`text
+3
+2 4 8
+3
+A 0 7
+B 1 3
+C 2 1
+\`\`\`
+
+Output:
+
+\`\`\`text
+A 11 4
+B 10 6
+C 5 2
+average_wait 4.00
+\`\`\`
+
+How it unfolds: \`A\` runs alone at first and uses its whole quantum of 2 (time 0 to 2); \`B\` and \`C\` have arrived by then, so they join queue 0 and \`A\` drops to queue 1. \`B\` runs 2 to 4 and drops. \`C\` needs only 1 unit and finishes at 5. Queue 0 is empty, so queue 1 is served: \`A\` runs 5 to 9 (quantum 4) and drops to queue 2, \`B\` runs its last unit from 9 to 10, and \`A\` finishes its last unit at 11.`,
+      ar: `## القصة
+
+مُجدوِل Round Robin العادي يعامل معالج ضغطة مفتاح سريعاً ومحاكاة تستمر أسبوعاً بالطريقة نفسها. أما **طوابير التغذية الراجعة متعددة المستويات (MLFQ)** فتعالج ذلك دون معرفة أطوال المهام مسبقاً: كل مهمة جديدة تبدأ في **الطابور الأعلى** بشريحة زمنية **قصيرة**. والمهمة التي تستهلك شريحتها كاملة وما زالت تريد المزيد غالباً ما تكون كثيفة المعالج، فتُخفَّض إلى طابور أدنى بشريحة أطول؛ أما المهمة التي تنتهي مبكراً فتبقى سريعة الاستجابة. ويخدم المعالج دائماً أعلى طابور غير فارغ أولاً.
+
+المطلوب أن تحاكي MLFQ صغيراً وتُبلغ كم انتظرت كل مهمة.
+
+## القواعد
+
+هناك \`k\` طابوراً مرقّمة من \`0\` (الأعلى وصاحب أعلى أولوية) إلى \`k-1\` (الأدنى). وللطابور \`i\` شريحة زمنية \`q[i]\`. ولكل عملية زمن وصول \`arrival\` وانفجار معالج \`burst\` (بلا إدخال/إخراج). والزمن بوحدات صحيحة.
+
+1. تدخل العملية **الطابور 0** عند وقت وصولها. والعمليات المتساوية في وقت الوصول تدخل بترتيب الإدخال.
+2. كلما فرغ المعالج أخذ **أول عملية في أعلى طابور غير فارغ** (الطوابير FIFO) وشغّلها \`min(q[level], الانفجار المتبقي)\` من الوحدات. لا شيء يقاطع الشريحة: العملية التي تصل أثناءها تنتظر انتهاءها.
+3. عند انتهاء شريحة في الزمن \`t\`:
+   - أولاً، تُضاف إلى الطابور 0 كل عملية \`arrival <= t\` لم تدخل بعد؛
+   - ثم إن انتهت العملية الجارية سجّل \`finish = t\`؛ وإلا فقد استهلكت الشريحة **كاملة**، فتنتقل إلى **ذيل الطابور التالي نزولاً** (والعملية في الطابور الأدنى تعود إلى ذيل الطابور الأدنى نفسه).
+4. إن كانت كل الطوابير فارغة يبقى المعالج خاملاً حتى الوصول التالي.
+
+\`waiting = finish - arrival - burst\`.
+
+## المدخل والمخرج
+
+**المدخل:** \`k\`؛ ثم الشرائح الـ\`k\` في سطر واحد؛ ثم \`n\`؛ ثم \`n\` من الأسطر بصيغة \`name arrival burst\` (أعداد صحيحة، \`burst >= 1\`؛ والأسماء بلا مسافات؛ والأسطر بأي ترتيب).
+
+**المخرج:** سطر \`name finish waiting\` لكل عملية **بترتيب الإدخال**، ثم سطر أخير \`average_wait <القيمة>\` بمتوسط زمن الانتظار لمنزلتين عشريتين (يسمح المصحّح بتسامح نصف سنت).
+
+## مثال
+
+\`\`\`text
+3
+2 4 8
+3
+A 0 7
+B 1 3
+C 2 1
+\`\`\`
+
+المخرج:
+
+\`\`\`text
+A 11 4
+B 10 6
+C 5 2
+average_wait 4.00
+\`\`\`
+
+كيف تجري الأمور: تعمل \`A\` وحدها في البداية وتستهلك شريحتها كاملة وهي 2 (من 0 إلى 2)؛ وقد وصلت \`B\` و\`C\` حينها فتنضمان إلى الطابور 0 وتنزل \`A\` إلى الطابور 1. تعمل \`B\` من 2 إلى 4 ثم تنزل. وتحتاج \`C\` وحدة واحدة فقط فتنتهي عند 5. الطابور 0 فارغ فيُخدم الطابور 1: تعمل \`A\` من 5 إلى 9 (الشريحة 4) وتنزل إلى الطابور 2، وتعمل \`B\` وحدتها الأخيرة من 9 إلى 10، وتنهي \`A\` وحدتها الأخيرة عند 11.`,
+    },
+    difficulty: 2,
+    points: 150,
+    estMinutes: 45,
+    kind: "output",
+    lang: "python",
+    starterCode: {
+      python: `import sys
+
+tokens = sys.stdin.read().split()
+pos = 0
+levels = int(tokens[pos])
+pos += 1
+quanta = [int(tokens[pos + i]) for i in range(levels)]
+pos += levels
+count = int(tokens[pos])
+pos += 1
+names, arrival, burst = [], [], []
+for _ in range(count):
+    names.append(tokens[pos])
+    arrival.append(int(tokens[pos + 1]))
+    burst.append(int(tokens[pos + 2]))
+    pos += 3
+
+finish = [0] * count
+# Your turn: simulate the queues and fill in finish[i] for every process.
+
+total = 0
+for i in range(count):
+    wait = finish[i] - arrival[i] - burst[i]
+    total += wait
+    print(names[i], finish[i], wait)
+print(f"average_wait {total / count:.2f}")
+`,
+      javascript: `const tokens = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+let pos = 0;
+const levels = Number(tokens[pos++]);
+const quanta = [];
+for (let i = 0; i < levels; i++) quanta.push(Number(tokens[pos++]));
+const count = Number(tokens[pos++]);
+const names = [];
+const arrival = [];
+const burst = [];
+for (let i = 0; i < count; i++) {
+  names.push(tokens[pos]);
+  arrival.push(Number(tokens[pos + 1]));
+  burst.push(Number(tokens[pos + 2]));
+  pos += 3;
+}
+
+const finish = new Array(count).fill(0);
+// Your turn: simulate the queues and fill in finish[i] for every process.
+
+let total = 0;
+for (let i = 0; i < count; i++) {
+  const wait = finish[i] - arrival[i] - burst[i];
+  total += wait;
+  console.log(names[i], finish[i], wait);
+}
+console.log(\`average_wait \${(total / count).toFixed(2)}\`);
+`,
+    },
+    sampleInput: "3\n2 4 8\n3\nA 0 7\nB 1 3\nC 2 1\n",
+    hints: [
+      {
+        text: {
+          en: "Keep `k` FIFO queues of process indexes, `remaining[]` burst times and a clock `t`. Each step: take the head of the first non-empty queue, run it for `min(quantum[level], remaining)` and advance `t`.",
+          ar: "احتفظ بـ`k` طابوراً FIFO لفهارس العمليات، ومصفوفة `remaining[]` للأزمنة المتبقية، وساعة `t`. في كل خطوة: خذ رأس أول طابور غير فارغ وشغّله `min(quantum[level], remaining)` وقدّم `t`.",
+        },
+        cost: 12,
+      },
+      {
+        text: {
+          en: "Admit arrivals (`arrival <= t`) into queue 0 BEFORE you re-queue the job that just ran, and again after every slice. If every queue is empty, jump `t` to the next arrival instead of looping.",
+          ar: "أدخل الواصلين (`arrival <= t`) إلى الطابور 0 قبل إعادة إدراج المهمة التي انتهت شريحتها، وكرّر ذلك بعد كل شريحة. وإن كانت كل الطوابير فارغة فاقفز بـ`t` إلى الوصول التالي بدل الدوران.",
+        },
+        cost: 20,
+      },
+      {
+        text: {
+          en: "A job is demoted only if it used its FULL quantum and still has work left; a job that finishes inside its slice is done. In the last queue a job stays where it is (re-queued at the tail). Waiting time is `finish - arrival - burst`.",
+          ar: "تُخفَّض المهمة فقط إن استهلكت الشريحة **كاملة** وبقي لها عمل؛ والمهمة التي تنتهي داخل شريحتها تكون قد انتهت. في الطابور الأخير تبقى المهمة مكانها (وتُعاد إلى الذيل). زمن الانتظار هو `finish - arrival - burst`.",
+        },
+        cost: 28,
+      },
+    ],
+    lessons: ["operating-systems/cpu-scheduling"],
+    tags: ["scheduler", "mlfq", "simulation", "round-robin"],
+    addedAt: "2026-10-07",
+  },
 ];

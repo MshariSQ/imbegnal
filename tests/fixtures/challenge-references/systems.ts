@@ -269,4 +269,121 @@ console.log(lines.join("\\n"));
 `,
     },
   },
+  {
+    id: "os-mlfq",
+    solutions: {
+      python: `import sys
+from collections import deque
+
+tokens = sys.stdin.read().split()
+pos = 0
+levels = int(tokens[pos]); pos += 1
+quanta = [int(tokens[pos + i]) for i in range(levels)]; pos += levels
+count = int(tokens[pos]); pos += 1
+names, arrival, burst = [], [], []
+for _ in range(count):
+    names.append(tokens[pos])
+    arrival.append(int(tokens[pos + 1]))
+    burst.append(int(tokens[pos + 2]))
+    pos += 3
+
+order = sorted(range(count), key=lambda i: (arrival[i], i))  # arrival order, ties by input order
+queues = [deque() for _ in range(levels)]
+remaining = burst[:]
+finish = [0] * count
+clock, next_arrival, done = 0, 0, 0
+
+
+def admit(until):
+    global next_arrival
+    while next_arrival < count and arrival[order[next_arrival]] <= until:
+        queues[0].append(order[next_arrival])
+        next_arrival += 1
+
+
+while done < count:
+    admit(clock)
+    level = next((i for i, q in enumerate(queues) if q), None)
+    if level is None:
+        clock = arrival[order[next_arrival]]  # idle until the next arrival
+        continue
+    proc = queues[level].popleft()
+    run = min(quanta[level], remaining[proc])
+    clock += run
+    remaining[proc] -= run
+    admit(clock)  # arrivals during the slice enter BEFORE the preempted job is re-queued
+    if remaining[proc] == 0:
+        finish[proc] = clock
+        done += 1
+    else:
+        queues[min(level + 1, levels - 1)].append(proc)  # used its whole quantum: demote
+
+total = 0
+for i in range(count):
+    wait = finish[i] - arrival[i] - burst[i]
+    total += wait
+    print(names[i], finish[i], wait)
+print(f"average_wait {total / count:.2f}")
+`,
+      javascript: `const tokens = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+let pos = 0;
+const levels = Number(tokens[pos++]);
+const quanta = [];
+for (let i = 0; i < levels; i++) quanta.push(Number(tokens[pos++]));
+const count = Number(tokens[pos++]);
+const names = [];
+const arrival = [];
+const burst = [];
+for (let i = 0; i < count; i++) {
+  names.push(tokens[pos]);
+  arrival.push(Number(tokens[pos + 1]));
+  burst.push(Number(tokens[pos + 2]));
+  pos += 3;
+}
+
+// arrival order, ties by input order
+const order = [...Array(count).keys()].sort((a, b) => arrival[a] - arrival[b] || a - b);
+const queues = Array.from({ length: levels }, () => []);
+const remaining = burst.slice();
+const finish = new Array(count).fill(0);
+let clock = 0;
+let nextArrival = 0;
+let done = 0;
+
+function admit(until) {
+  while (nextArrival < count && arrival[order[nextArrival]] <= until) queues[0].push(order[nextArrival++]);
+}
+
+while (done < count) {
+  admit(clock);
+  const level = queues.findIndex((q) => q.length > 0);
+  if (level === -1) {
+    clock = arrival[order[nextArrival]]; // idle until the next arrival
+    continue;
+  }
+  const proc = queues[level].shift();
+  const run = Math.min(quanta[level], remaining[proc]);
+  clock += run;
+  remaining[proc] -= run;
+  admit(clock); // arrivals during the slice enter BEFORE the preempted job is re-queued
+  if (remaining[proc] === 0) {
+    finish[proc] = clock;
+    done += 1;
+  } else {
+    queues[Math.min(level + 1, levels - 1)].push(proc); // used its whole quantum: demote
+  }
+}
+
+let total = 0;
+const lines = [];
+for (let i = 0; i < count; i++) {
+  const wait = finish[i] - arrival[i] - burst[i];
+  total += wait;
+  lines.push(names[i] + " " + finish[i] + " " + wait);
+}
+lines.push("average_wait " + (total / count).toFixed(2));
+console.log(lines.join("\\n"));
+`,
+    },
+  },
 ];
