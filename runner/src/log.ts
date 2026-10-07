@@ -88,9 +88,29 @@ export function buildRecord(level: LogLevel, msg: string, fields?: LogFields, no
 
 export type LogSink = (line: string) => void;
 
+let stdoutBroken = false;
+let stdoutWatched = false;
+
+/**
+ * Writes to stdout until stdout fails, then drops lines. When the reader of the pipe goes away
+ * (supervisor restart, closed terminal) every write fails with EPIPE; without an 'error' listener
+ * that becomes an uncaught exception, whose handler logs, whose write fails again: a loop that
+ * pins a CPU and can stall shutdown. Losing log lines is the lesser evil.
+ */
+function stdoutSink(line: string): void {
+  if (!stdoutWatched) {
+    stdoutWatched = true;
+    process.stdout.on("error", () => {
+      stdoutBroken = true;
+    });
+  }
+  if (stdoutBroken) return;
+  process.stdout.write(`${line}\n`);
+}
+
 export function createLogger(opts: { level?: LogLevel; sink?: LogSink } = {}): Logger {
   const min = LEVEL_RANK[opts.level ?? "info"];
-  const sink: LogSink = opts.sink ?? ((line) => process.stdout.write(`${line}\n`));
+  const sink: LogSink = opts.sink ?? stdoutSink;
   const emit = (level: LogLevel, msg: string, fields?: LogFields) => {
     if (LEVEL_RANK[level] < min) return;
     sink(JSON.stringify(buildRecord(level, msg, fields)));

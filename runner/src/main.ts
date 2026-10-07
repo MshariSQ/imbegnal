@@ -22,6 +22,8 @@ async function main(): Promise<void> {
     if (stopping) return;
     stopping = true;
     logger.info("shutting down", { reason: signal });
+    // Backstop: whatever close() waits on, the process is gone shortly after the grace period.
+    setTimeout(() => process.exit(0), config.shutdownGraceMs + 15_000).unref();
     service
       .close()
       .catch((e: unknown) => logger.error("shutdown failed", { error: e instanceof Error ? e.name : "error" }))

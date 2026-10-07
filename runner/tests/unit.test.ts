@@ -1,5 +1,7 @@
 /** Pure-logic tests: no Docker, no network. */
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { join } from "node:path";
 import { describe, test } from "node:test";
 import { ReplayGuard, sign, verifyRequest } from "../src/auth";
 import { ConfigError, loadConfig } from "../src/config";
@@ -475,6 +477,32 @@ describe("structured logging", () => {
     log.warn("shown");
     assert.equal(out.length, 1);
     assert.equal(JSON.parse(out[0]).msg, "shown");
+  });
+  test("a broken stdout (EPIPE) silences logging instead of looping through uncaughtException", async () => {
+    // Regression: when the reader of stdout went away (supervisor restart, closed pipe), each write
+    // error became an uncaught exception, whose handler logged, whose write failed again: thousands
+    // of cycles per second at 100% CPU, and a runner that never finished its SIGTERM shutdown.
+    const child = spawn(process.execPath, ["--import", "tsx", join(__dirname, "fixtures", "broken-stdout.ts")], {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.on("data", (d) => (stderr += String(d)));
+    await new Promise<void>((ok) => child.stdout.once("data", () => ok()));
+    child.stdout.destroy(); // close the read end: the child's next writes hit EPIPE
+    await new Promise((ok) => setTimeout(ok, 100));
+    child.stdin.write("go\n");
+    const code = await new Promise<number | null>((ok) => {
+      const killer = setTimeout(() => {
+        child.kill("SIGKILL");
+        ok(null);
+      }, 10_000);
+      child.on("exit", (c) => {
+        clearTimeout(killer);
+        ok(c);
+      });
+    });
+    assert.equal(code, 0, `the child must exit by itself (stderr: ${stderr.slice(0, 300)})`);
+    assert.match(stderr, /done uncaught=0\b/);
   });
 });
 
