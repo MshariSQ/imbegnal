@@ -8,7 +8,7 @@ import { matchOutput } from "../../../shared/match";
 import type { RunResult } from "../../../shared/protocol";
 import { catalog } from "../generated/catalog";
 import type { Env } from "../util";
-import { GRADE_TEXT_CHARS, MAX_GRADED_TESTS } from "./config";
+import { GRADE_TEXT_CHARS, GRADING_BUDGET_MS, MAX_GRADED_TESTS } from "./config";
 import { runOnRunner } from "./runner";
 
 /** The lab exercise for `track/lesson/exercise`, or null when the catalog has none. */
@@ -31,13 +31,26 @@ export interface GradedRun {
   runs: RunResult[];
 }
 
-export async function gradeLab(env: Env, lab: CatalogLab, code: string): Promise<GradedRun> {
+export interface GradeLabOptions {
+  now?: () => number;
+  budgetMs?: number;
+}
+
+/**
+ * Runs the program once per test. No test is started after the wall-clock budget
+ * (GRADING_BUDGET_MS): the rest are reported as not_run, which bounds how long the
+ * quota reservation lasts (RUNNING_STALE_SECONDS).
+ */
+export async function gradeLab(env: Env, lab: CatalogLab, code: string, opts: GradeLabOptions = {}): Promise<GradedRun> {
   const tests = lab.tests.slice(0, MAX_GRADED_TESTS);
   const results: GradeTestResult[] = [];
   const runs: RunResult[] = []; // runs[i] belongs to tests[i]; tests after an abort have no run
+  const now = opts.now ?? Date.now;
+  const deadline = now() + (opts.budgetMs ?? GRADING_BUDGET_MS);
   let aborted = false;
 
   for (const test of tests) {
+    if (!aborted && now() > deadline) aborted = true;
     if (aborted) {
       results.push({ name: test.name, passed: false, message: "not_run" });
       continue;

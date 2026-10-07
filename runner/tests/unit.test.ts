@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { describe, test } from "node:test";
 import { ReplayGuard, sign, verifyRequest } from "../src/auth";
-import { Availability } from "../src/availability";
+import { Availability, UNKNOWN_RECHECK_MS } from "../src/availability";
 import type { JobExecutor } from "../src/executor";
 import { ConfigError, loadConfig } from "../src/config";
 import { buildCreateArgs, cliEnvironment, containerName } from "../src/docker";
@@ -561,11 +561,16 @@ describe("slot queue", () => {
 });
 
 describe("language availability", () => {
-  /** Executor stub: each smoke test pops the next outcome for its language. */
-  function stubExecutor(outcomes: Record<string, RunStatus[]>): JobExecutor {
+  /** Executor stub: each smoke test pops the next outcome for its language ("infra" = docker failed). */
+  function stubExecutor(outcomes: Record<string, (RunStatus | "infra")[]>, calls?: string[]): JobExecutor {
     return {
       async execute(req: { jobId: string; lang: string }) {
-        const status = outcomes[req.lang]?.shift() ?? "ok";
+        calls?.push(req.lang);
+        const next = outcomes[req.lang]?.shift() ?? "ok";
+        if (next === "infra") {
+          return { infra: true, result: { jobId: req.jobId, status: "internal_error", exitCode: null, stdout: "", stderr: "", stdoutBytes: 0, stderrBytes: 0, truncated: { stdout: false, stderr: false }, runMs: 0, compileMs: 0 } };
+        }
+        const status = next;
         const stdout = status === "ok" ? "Hello, World!\n" : "";
         return { infra: false, version: "1.0", result: { jobId: req.jobId, status, exitCode: status === "ok" ? 0 : 1, stdout, stderr: "", stdoutBytes: stdout.length, stderrBytes: 0, truncated: { stdout: false, stderr: false }, runMs: 1, compileMs: 1 } };
       },
@@ -592,6 +597,56 @@ describe("language availability", () => {
     const a = new Availability(["kotlin"], stubExecutor({ kotlin: ["timeout"] }), new SlotQueue(1, 1, 5000), silentLogger, 60_000, true);
     await a.refreshNow();
     assert.equal(a.isUnsupported("kotlin"), true);
+  });
+
+  test("a docker failure during the smoke tests is re-checked soon, not after the full TTL", async () => {
+    const TTL = 15 * 60_000;
+    let clock = 1_000_000;
+    const calls: string[] = [];
+    const outcomes: Record<string, (RunStatus | "infra")[]> = { go: ["ok", "infra", "ok", "ok"], python: ["ok", "ok", "ok", "ok"] };
+    const a = new Availability(["go", "python"], stubExecutor(outcomes, calls), new SlotQueue(2, 2, 5000), silentLogger, TTL, true, () => clock);
+    await a.refreshNow();
+    assert.equal(calls.length, 2);
+
+    // All known: the normal TTL applies.
+    clock += UNKNOWN_RECHECK_MS + 1;
+    await a.refreshIfStale();
+    assert.equal(calls.length, 2, "fresh measurement within the TTL is not repeated");
+
+    // Docker blips during the next refresh: go's state becomes unknown.
+    clock += TTL;
+    await a.refreshIfStale();
+    assert.equal(calls.length, 4);
+    assert.deepEqual(a.state("go"), { available: false, reason: "docker", version: undefined });
+    assert.equal(a.isUnsupported("go"), false, "runs are still attempted while the state is unknown");
+
+    clock += UNKNOWN_RECHECK_MS - 1;
+    await a.refreshIfStale();
+    assert.equal(calls.length, 4, "not before the short re-check delay");
+
+    clock += 2;
+    await a.refreshIfStale();
+    assert.equal(calls.length, 6, "re-measured after the short delay");
+    assert.equal(a.state("go").available, true);
+
+    // Everything known again: back to the full TTL.
+    clock += UNKNOWN_RECHECK_MS + 1;
+    await a.refreshIfStale();
+    assert.equal(calls.length, 6);
+    clock += TTL;
+    await a.refreshIfStale();
+    assert.equal(calls.length, 8);
+  });
+
+  test("a toolchain failure is not re-checked early", async () => {
+    let clock = 1_000_000;
+    const calls: string[] = [];
+    const a = new Availability(["rust"], stubExecutor({ rust: ["compile_error"] }, calls), new SlotQueue(1, 1, 5000), silentLogger, 15 * 60_000, true, () => clock);
+    await a.refreshNow();
+    assert.equal(a.isUnsupported("rust"), true);
+    clock += UNKNOWN_RECHECK_MS + 1;
+    await a.refreshIfStale();
+    assert.equal(calls.length, 1);
   });
 });
 

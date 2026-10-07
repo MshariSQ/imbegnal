@@ -6,6 +6,8 @@ import type { GradeResult, QuotaError, RunApiResponse } from "../../shared/api";
 import type { CatalogLab } from "../../shared/catalog";
 import type { RunResult } from "../../shared/protocol";
 import { catalog } from "../src/generated/catalog";
+import { GRADING_BUDGET_MS } from "../src/lab/config";
+import { gradeLab } from "../src/lab/grade";
 import type { Env } from "../src/util";
 import { TestD1 } from "./helpers/d1";
 import { RUNNER_SECRET, type RunnerStub, addUser, call, jsonOf, makeEnv, okResult, stubRunner, tokenFor } from "./helpers/harness";
@@ -428,6 +430,20 @@ describe("lesson lab grading", () => {
     assert.equal(body.grade.score, 0);
     assert.equal(body.result.status, "compile_error");
     assert.equal(body.quota.used, 1);
+  });
+
+  test("no test is started after the grading budget; the rest are not_run (bounds the reservation)", async () => {
+    stub!.restore();
+    let clock = 0;
+    stub = stubRunner((job) => {
+      clock += GRADING_BUDGET_MS / 2 + 1; // each run takes just over half the budget
+      return sumRunner(job);
+    });
+    const graded = await gradeLab(env, LAB, "CORRECT", { now: () => clock });
+    assert.equal(stub!.seen.length, 2, "the third test would start after the budget");
+    assert.deepEqual(graded.grade.tests.map((t) => [t.passed, t.message]), [[true, undefined], [true, undefined], [false, "not_run"]]);
+    assert.equal(graded.grade.passed, false);
+    assert.equal(graded.runs.length, 2);
   });
 
   test("a runtime error on one test does not stop the others", async () => {

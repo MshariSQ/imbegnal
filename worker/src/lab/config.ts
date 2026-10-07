@@ -26,8 +26,7 @@ export const SNIPPET_TITLE_CHARS = 80;
 
 export const GLOBAL_BUCKET = "_global"; // lab_usage row that counts every user's runs
 
-/** A 'running' reservation older than this no longer counts toward concurrency. */
-export const RUNNING_STALE_SECONDS = 60;
+export { GRADING_BUDGET_MS } from "./budget";
 export const RATE_WINDOW_SECONDS = 60;
 
 /** Parses a positive integer env value; anything else falls back to the default. */

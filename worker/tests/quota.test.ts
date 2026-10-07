@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { beforeEach, describe, test } from "node:test";
 import type { QuotaError } from "../../shared/api";
 import type { RunStatus } from "../../shared/protocol";
-import { getQuotaInfo, recordRun, reserveQuota, settleQuota, type Reservation } from "../src/lab/execute";
+import { DEFAULT_BUDGET_MS, gradeTests } from "../src/graders/engine";
+import { GRADING_BUDGET_MS, MAX_GRADED_TESTS } from "../src/lab/config";
+import { RUNNING_STALE_SECONDS, getQuotaInfo, recordRun, reserveQuota, settleQuota, type Reservation } from "../src/lab/execute";
+import { runTimeoutBudgetMs } from "../src/lab/runner";
 import type { Env } from "../src/util";
 import { TestD1 } from "./helpers/d1";
 import { addUser, jsonOf, makeEnv, okResult } from "./helpers/harness";
@@ -251,12 +254,42 @@ describe("limits", () => {
     assert.ok((await reserveQuota(env, { sub: "u1" })).ok);
   });
 
-  test("a stuck 'running' row expires after 60 seconds", async () => {
+  test("the stale window covers the longest reserved job: the grading budget plus one runner call", () => {
+    assert.equal(RUNNING_STALE_SECONDS, Math.ceil((GRADING_BUDGET_MS + runTimeoutBudgetMs(undefined)) / 1000));
+    assert.equal(DEFAULT_BUDGET_MS, GRADING_BUDGET_MS, "challenge submissions use the same budget");
+    assert.ok(RUNNING_STALE_SECONDS > 90, "longer than a single graded job may run");
+    assert.ok(RUNNING_STALE_SECONDS <= 300, "a leaked reservation blocks a slot for minutes, not an hour");
+  });
+
+  test("a 'running' row younger than the stale window still counts (a long graded job is still in flight)", async () => {
     const env = make({ RUN_PER_MINUTE_FREE: "100", RUN_MAX_CONCURRENT: "1" });
     seedRun("u1", "running", 30);
     assert.equal((await deny(env, "u1")).body.scope, "concurrency");
-    db.execute("UPDATE lab_runs SET created_at = datetime('now', '-90 seconds') WHERE user_id = 'u1'");
+    // Older than the old 60 s window: a graded lesson run or challenge submission can still be running.
+    db.execute("UPDATE lab_runs SET created_at = datetime('now', ?) WHERE user_id = 'u1'", `-${RUNNING_STALE_SECONDS - 5} seconds`);
+    assert.equal((await deny(env, "u1")).body.scope, "concurrency");
+  });
+
+  test("a stuck 'running' row expires after the stale window", async () => {
+    const env = make({ RUN_PER_MINUTE_FREE: "100", RUN_MAX_CONCURRENT: "1" });
+    seedRun("u1", "running", RUNNING_STALE_SECONDS + 5);
     assert.ok((await reserveQuota(env, { sub: "u1" })).ok);
+  });
+
+  test("a challenge submission never starts a test after the budget, so it fits the stale window", async () => {
+    let clock = 0;
+    const started: number[] = [];
+    const tests = Array.from({ length: 10 }, (_, i) => ({ name: `t${i}`, stdin: "", expected: "x", mode: "trim" as const }));
+    await gradeTests({ id: "g", kind: "output", tests }, "python", "print('x')", async (r) => {
+      started.push(clock);
+      clock += runTimeoutBudgetMs(r.limits); // every call uses its whole wait
+      return okResult({ stdout: "x\n" });
+    }, { now: () => clock });
+    const last = started[started.length - 1];
+    assert.ok(started.length < tests.length, "later tests were skipped");
+    assert.ok(last <= GRADING_BUDGET_MS);
+    assert.ok(last + runTimeoutBudgetMs(undefined) <= RUNNING_STALE_SECONDS * 1000);
+    assert.ok(MAX_GRADED_TESTS * runTimeoutBudgetMs(undefined) > RUNNING_STALE_SECONDS * 1000, "without the budget a graded lab could outlive the window");
   });
 
   test("parallel requests cannot all slip under the concurrency cap", async () => {

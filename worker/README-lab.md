@@ -30,7 +30,7 @@ because every deploy overwrites `[vars]` and would silently undo a dashboard edi
 | `RUN_DAILY_LIMIT_GLOBAL` | 20000 | All users combined per UTC day: the cost kill switch. |
 | `RUN_PER_MINUTE_FREE` | 10 | Burst limit per free user (rolling 60 s). |
 | `RUN_PER_MINUTE_PRO` | 30 | Burst limit per pro user. |
-| `RUN_MAX_CONCURRENT` | 2 | Simultaneous runs per user. A reservation stuck in `running` stops counting after 60 s. |
+| `RUN_MAX_CONCURRENT` | 2 | Simultaneous runs per user. A reservation stuck in `running` stops counting after about 175 s (the 90 s grading budget plus one runner call: the longest a graded lesson run or challenge submission may take). |
 | `ABUSE_WINDOW_MIN` | 10 | Sliding window for abuse signals, in minutes. |
 | `ABUSE_SUSPEND_HOURS` | 24 | Length of an automatic suspension. |
 | `ABUSE_RESOURCE_MAX` | 8 | Timeout / memory / output-limit runs inside the window before suspension. |

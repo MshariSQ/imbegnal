@@ -96,6 +96,9 @@ that tier. Env vars (defaults): `RUN_DAILY_LIMIT_FREE=50`, `RUN_DAILY_LIMIT_PRO=
 daily user quota → global cap. Quota is **reserved before** the run and **refunded** when the
 outcome is `internal_error`, the runner is unreachable, or the request is rejected before
 execution. User-caused outcomes (compile/runtime error, timeout, memory) consume quota.
+A graded lesson run or challenge submission is one reservation; it starts no test after a 90 s
+budget, and an unsettled reservation stops counting toward the concurrency cap after that budget
+plus one runner call (about 175 s).
 
 ### Logging
 
@@ -120,6 +123,18 @@ Untrusted code runs **only** inside a fresh container per run:
   loopback, bounded concurrency + queue, orphan-container reaper, never exposes env/paths in
   errors, runs as an unprivileged user that can reach Docker (operators: rootless Docker or a
   dedicated VM recommended; see deployment notes)
+
+**Residual risks** (accepted, documented):
+
+* Hidden-test inputs can in principle be inferred from the per-test pass/fail, exit codes and
+  timings of one's own submissions. This is inherent to output judging; it is slowed down by the
+  per-minute limits, daily quotas and the bruteforce-style abuse signals, not prevented.
+* Runs share the host kernel: a kernel or container-runtime exploit from inside a job is out of
+  scope of the container hardening (gVisor and rootless Docker narrow it; see
+  [runner/README.md, Honest limitations](../runner/README.md#honest-limitations)).
+* Author-written `regex`-mode expected patterns run against up to 64 KiB of learner output in the
+  Worker; `tests/unit/regex-patterns.test.ts` checks every one compiles, has no nested unbounded
+  quantifiers and stays fast on adversarial input.
 
 ## 5. Conventions for contributors
 

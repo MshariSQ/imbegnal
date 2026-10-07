@@ -7,7 +7,9 @@
  * /v1/languages says so and /v1/run answers `unsupported` instead of failing at run time.
  *
  * A language is only declared unusable when the TOOLCHAIN failed its test. When docker itself
- * is down the state is "unknown": /v1/run then tries anyway and reports internal_error.
+ * is down the state is "unknown": /v1/run then tries anyway and reports internal_error, and the
+ * smoke tests are repeated after UNKNOWN_RECHECK_MS instead of the full TTL, so a short Docker
+ * blip does not show working languages as unavailable for the whole cache lifetime.
  */
 import { LANG_IDS, getLanguage, type LangId } from "../../shared/languages";
 import type { LanguageStatus } from "../../shared/protocol";
@@ -27,6 +29,12 @@ export interface LangState {
 const EXPECTED = "Hello, World!";
 /** Smoke-test outcomes caused by load rather than by a missing or broken toolchain. */
 const TRANSIENT = new Set(["timeout", "memory_limit", "output_limit", "internal_error"]);
+/**
+ * Re-check delay while any enabled language's state is unknown (docker failed during its smoke
+ * test). Short, because the state shown is a guess; not zero, so a Docker outage does not turn
+ * every /v1/languages call into a fresh round of smoke tests.
+ */
+export const UNKNOWN_RECHECK_MS = 30_000;
 
 export class Availability {
   private readonly states = new Map<LangId, LangState>();
@@ -41,6 +49,8 @@ export class Availability {
     private readonly ttlMs: number,
     /** When false no smoke tests run: every enabled language is assumed to work. */
     private readonly measure: boolean,
+    /** Clock (tests). */
+    private readonly now: () => number = Date.now,
   ) {
     for (const id of LANG_IDS) {
       if (!enabled.includes(id)) this.states.set(id, { available: false, reason: "disabled" });
@@ -55,11 +65,17 @@ export class Availability {
   refreshIfStale(): Promise<void> {
     if (!this.measure) return Promise.resolve();
     if (this.inflight) return this.inflight;
-    if (this.measuredAt > 0 && Date.now() - this.measuredAt < this.ttlMs) return Promise.resolve();
+    if (this.measuredAt > 0 && this.now() - this.measuredAt < this.maxAgeMs()) return Promise.resolve();
     this.inflight = this.refresh().finally(() => {
       this.inflight = null;
     });
     return this.inflight;
+  }
+
+  /** How long the last measurement stays fresh: the TTL, or much less while a state is unknown. */
+  private maxAgeMs(): number {
+    const unknown = this.enabled.some((l) => this.states.get(l)?.reason === "docker");
+    return unknown ? Math.min(UNKNOWN_RECHECK_MS, this.ttlMs) : this.ttlMs;
   }
 
   /** Force a full refresh (start-up). */
@@ -72,7 +88,7 @@ export class Availability {
   }
 
   private async refresh(): Promise<void> {
-    const t0 = Date.now();
+    const t0 = this.now();
     const queue = [...this.enabled];
     const workers = Array.from({ length: Math.min(3, queue.length) }, async () => {
       for (let id = queue.shift(); id; id = queue.shift()) {
@@ -80,12 +96,12 @@ export class Availability {
       }
     });
     await Promise.all(workers);
-    this.measuredAt = Date.now();
+    this.measuredAt = this.now();
     const ok = this.enabled.filter((l) => this.states.get(l)?.available);
     this.log.info("language smoke tests finished", {
       available: ok.join(","),
       unavailable: this.enabled.filter((l) => !ok.includes(l)).join(","),
-      totalMs: Date.now() - t0,
+      totalMs: this.now() - t0,
     });
   }
 
