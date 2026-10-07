@@ -890,4 +890,218 @@ console.log(\`average_wait \${(total / count).toFixed(2)}\`);
     tags: ["scheduler", "mlfq", "simulation", "round-robin"],
     addedAt: "2026-10-07",
   },
+  {
+    id: "cloud-iam-evaluate",
+    track: "cloud-computing",
+    topic: "iam",
+    title: { en: "Who Can Do What? IAM Policy Evaluator", ar: "من يستطيع فعل ماذا؟ مُقيِّم سياسات IAM" },
+    summary: {
+      en: "Implement the core of cloud access control: wildcard matching, conditions, explicit deny that always wins and default deny.",
+      ar: "نفّذ جوهر التحكم في الوصول السحابي: مطابقة الرموز العامة والشروط، والرفض الصريح الذي يغلب دائماً، والرفض الافتراضي.",
+    },
+    description: {
+      en: `## The story
+
+Every cloud request ("may \`alice\` read this bucket?") is answered by an **authorisation engine** that looks at the attached policies. The rules are simple to say and easy to get wrong, and getting them wrong is how data leaks happen:
+
+1. Everything is **denied by default** (an *implicit deny*).
+2. A matching \`Allow\` statement can open a door.
+3. A matching \`Deny\` statement **always wins**, wherever it is written and however many allows match.
+
+You are going to build that engine for a tiny policy language.
+
+## The task
+
+Read some policy statements, then a list of requests, and print the decision for each request.
+
+**Input:**
+
+- Lines starting with \`#\` and blank lines are ignored.
+- **Statements**, one per line: \`EFFECT principal action resource\`, optionally followed by \`when key=pattern ...\`. \`EFFECT\` is \`ALLOW\` or \`DENY\`. All tokens are separated by spaces.
+- A line containing only \`---\` ends the statements.
+- **Requests**, one per line: \`principal action resource\`, optionally followed by attributes \`key=value ...\`.
+
+**Patterns** (principal, action, resource and condition values) are matched against the **whole** text, **case-sensitively**, with two wildcards: \`*\` matches any run of characters (including none, and including \`/\` and \`:\`), and \`?\` matches exactly one character. **Every other character is literal**, including \`.\`, \`+\`, \`(\` and \`[\`. Policies may contain many \`*\`, so your matcher must stay fast.
+
+A statement **applies** to a request when its principal, action and resource patterns all match **and** every \`key=pattern\` condition is met: the request carries an attribute \`key\` and its value matches the pattern. A request without that attribute does not meet the condition.
+
+**Decision**, per request, one line:
+
+- \`DENY explicit\`: at least one applicable \`DENY\` statement;
+- else \`ALLOW\`: at least one applicable \`ALLOW\` statement;
+- else \`DENY implicit\`.
+
+## Example
+
+\`\`\`text
+ALLOW * s3:GetObject arn:aws:s3:::reports/*
+ALLOW alice s3:PutObject arn:aws:s3:::reports/drafts/*
+DENY * s3:* arn:aws:s3:::reports/secret/*
+---
+alice s3:GetObject arn:aws:s3:::reports/q1.csv
+alice s3:GetObject arn:aws:s3:::reports/secret/plan.txt
+bob s3:PutObject arn:aws:s3:::reports/drafts/a.txt
+\`\`\`
+
+Output:
+
+\`\`\`text
+ALLOW
+DENY explicit
+DENY implicit
+\`\`\`
+
+The first request matches the first allow. The second also matches the allow, but the \`DENY\` on \`reports/secret/*\` wins. The third is a \`PutObject\` by \`bob\`, and the only statement that covers it names \`alice\`, so nothing allows it.`,
+      ar: `## القصة
+
+كل طلب سحابي ("هل يستطيع \`alice\` قراءة هذه الحاوية؟") يجيب عنه **محرك تفويض** ينظر في السياسات المرتبطة. القواعد سهلة القول وسهلة الخطأ، والخطأ فيها هو ما يسبب تسرب البيانات:
+
+1. كل شيء **مرفوض افتراضياً** (*رفض ضمني*).
+2. عبارة \`Allow\` مطابقة قد تفتح باباً.
+3. عبارة \`Deny\` مطابقة **تغلب دائماً**، أينما كُتبت ومهما بلغ عدد عبارات السماح المطابقة.
+
+ستبني هذا المحرك للغة سياسات صغيرة.
+
+## المطلوب
+
+اقرأ بعض عبارات السياسة ثم قائمة طلبات، واطبع القرار لكل طلب.
+
+**المدخل:**
+
+- الأسطر التي تبدأ بـ\`#\` والأسطر الفارغة تُتجاهل.
+- **العبارات**، واحدة في كل سطر: \`EFFECT principal action resource\`، ويتبعها اختيارياً \`when key=pattern ...\`. والتأثير \`EFFECT\` هو \`ALLOW\` أو \`DENY\`. وتفصل المسافات بين كل الرموز.
+- سطر فيه \`---\` فقط ينهي العبارات.
+- **الطلبات**، واحد في كل سطر: \`principal action resource\`، ويتبعه اختيارياً خصائص \`key=value ...\`.
+
+**الأنماط** (الجهة والإجراء والمورد وقيم الشروط) تُطابَق مع النص **كاملاً** و**مع حساسية حالة الأحرف**، وفيها رمزان عامان: \`*\` يطابق أي سلسلة من الأحرف (بما فيها الفارغة، وبما فيها \`/\` و\`:\`)، و\`?\` يطابق حرفاً واحداً بالضبط. و**كل حرف آخر حرفي**، ومنه \`.\` و\`+\` و\`(\` و\`[\`. وقد تحتوي السياسات على كثير من \`*\`، فيجب أن تبقى دالة المطابقة سريعة.
+
+تنطبق العبارة على الطلب حين تتطابق أنماط الجهة والإجراء والمورد كلها **ويتحقق** كل شرط \`key=pattern\`: أي يحمل الطلب خاصية \`key\` وتطابق قيمتها النمط. والطلب الذي لا يحمل تلك الخاصية لا يحقق الشرط.
+
+**القرار**، لكل طلب سطر واحد:
+
+- \`DENY explicit\`: توجد عبارة \`DENY\` منطبقة واحدة على الأقل؛
+- وإلا \`ALLOW\`: توجد عبارة \`ALLOW\` منطبقة واحدة على الأقل؛
+- وإلا \`DENY implicit\`.
+
+## مثال
+
+\`\`\`text
+ALLOW * s3:GetObject arn:aws:s3:::reports/*
+ALLOW alice s3:PutObject arn:aws:s3:::reports/drafts/*
+DENY * s3:* arn:aws:s3:::reports/secret/*
+---
+alice s3:GetObject arn:aws:s3:::reports/q1.csv
+alice s3:GetObject arn:aws:s3:::reports/secret/plan.txt
+bob s3:PutObject arn:aws:s3:::reports/drafts/a.txt
+\`\`\`
+
+المخرج:
+
+\`\`\`text
+ALLOW
+DENY explicit
+DENY implicit
+\`\`\`
+
+الطلب الأول يطابق عبارة السماح الأولى. والثاني يطابق عبارة السماح أيضاً، لكن \`DENY\` على \`reports/secret/*\` تغلب. والثالث \`PutObject\` من \`bob\`، والعبارة الوحيدة التي تغطيه تذكر \`alice\`، فلا شيء يسمح به.`,
+    },
+    difficulty: 2,
+    points: 150,
+    estMinutes: 40,
+    kind: "output",
+    lang: "python",
+    starterCode: {
+      python: `import sys
+
+
+def matches(pattern, text):
+    # Your turn: '*' matches any run of characters (even none), '?' exactly one, the rest literally.
+    return pattern == text
+
+
+statements = []  # (effect, principal, action, resource, [(key, pattern), ...])
+requests = []    # (principal, action, resource, {key: value})
+in_requests = False
+for raw in sys.stdin.read().splitlines():
+    line = raw.strip()
+    if not line or line.startswith("#"):
+        continue
+    if line == "---":
+        in_requests = True
+        continue
+    parts = line.split()
+    if in_requests:
+        attrs = dict(token.split("=", 1) for token in parts[3:])
+        requests.append((parts[0], parts[1], parts[2], attrs))
+    else:
+        conditions = [tuple(token.split("=", 1)) for token in parts[5:]] if len(parts) > 4 and parts[4] == "when" else []
+        statements.append((parts[0], parts[1], parts[2], parts[3], conditions))
+
+for principal, action, resource, attrs in requests:
+    # Your turn: look at every statement, then print ALLOW, DENY explicit or DENY implicit.
+    print("DENY implicit")
+`,
+      javascript: `function matches(pattern, text) {
+  // Your turn: '*' matches any run of characters (even none), '?' exactly one, the rest literally.
+  return pattern === text;
+}
+
+const split = (token) => {
+  const at = token.indexOf("=");
+  return [token.slice(0, at), token.slice(at + 1)];
+};
+
+const statements = []; // { effect, principal, action, resource, conditions: [[key, pattern], ...] }
+const requests = []; // { principal, action, resource, attrs: Map }
+let inRequests = false;
+for (const raw of require("fs").readFileSync(0, "utf8").split(/\\r?\\n/)) {
+  const line = raw.trim();
+  if (!line || line.startsWith("#")) continue;
+  if (line === "---") {
+    inRequests = true;
+    continue;
+  }
+  const parts = line.split(/\\s+/);
+  if (inRequests) {
+    requests.push({ principal: parts[0], action: parts[1], resource: parts[2], attrs: new Map(parts.slice(3).map(split)) });
+  } else {
+    const conditions = parts.length > 4 && parts[4] === "when" ? parts.slice(5).map(split) : [];
+    statements.push({ effect: parts[0], principal: parts[1], action: parts[2], resource: parts[3], conditions });
+  }
+}
+
+for (const request of requests) {
+  // Your turn: look at every statement, then print ALLOW, DENY explicit or DENY implicit.
+  console.log("DENY implicit");
+}
+`,
+    },
+    sampleInput: "ALLOW * s3:GetObject arn:aws:s3:::reports/*\nALLOW alice s3:PutObject arn:aws:s3:::reports/drafts/*\nDENY * s3:* arn:aws:s3:::reports/secret/*\n---\nalice s3:GetObject arn:aws:s3:::reports/q1.csv\nalice s3:GetObject arn:aws:s3:::reports/secret/plan.txt\nbob s3:PutObject arn:aws:s3:::reports/drafts/a.txt\n",
+    hints: [
+      {
+        text: {
+          en: "Evaluate each request against EVERY statement and remember two booleans: did a matching DENY exist, did a matching ALLOW exist. The order of statements must not matter.",
+          ar: "قيّم كل طلب مقابل **كل** عبارة واحتفظ بقيمتين منطقيتين: هل وُجدت عبارة DENY مطابقة، وهل وُجدت عبارة ALLOW مطابقة. ترتيب العبارات يجب ألا يهم.",
+        },
+        cost: 12,
+      },
+      {
+        text: {
+          en: "Write a small `matches(pattern, text)` that handles only `*` and `?`. Do not feed policies to a regex or to `fnmatch` unescaped: `.`, `+`, `(` and `[` are plain characters here (and `fnmatch` gives `[...]` a special meaning).",
+          ar: "اكتب دالة صغيرة `matches(pattern, text)` تتعامل مع `*` و`?` فقط. لا تمرّر السياسات إلى regex أو `fnmatch` بلا تهريب: الرموز `.` و`+` و`(` و`[` حروف عادية هنا (و`fnmatch` تعطي `[...]` معنى خاصاً).",
+        },
+        cost: 20,
+      },
+      {
+        text: {
+          en: "A pattern such as `*a*a*a*a*a*b` can make a naive regex take forever. Match with two indices and remember the position of the last `*`; on a mismatch, retry from just after it (one more character swallowed by the star).",
+          ar: "نمط مثل `*a*a*a*a*a*b` قد يجعل regex ساذجاً يدور إلى الأبد. طابق بمؤشرين وتذكّر موضع آخر `*`؛ وعند عدم التطابق أعد المحاولة من بعده مباشرة (حرف إضافي تبتلعه النجمة).",
+        },
+        cost: 28,
+      },
+    ],
+    lessons: ["cloud-computing/cloud-security"],
+    tags: ["iam", "policy", "least-privilege", "wildcards"],
+    addedAt: "2026-10-07",
+  },
 ];

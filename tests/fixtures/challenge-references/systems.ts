@@ -386,4 +386,129 @@ console.log(lines.join("\\n"));
 `,
     },
   },
+  {
+    id: "cloud-iam-evaluate",
+    solutions: {
+      python: `import sys
+
+
+def matches(pattern, text):
+    """Glob match: '*' = any run of characters (even empty), '?' = exactly one, all else literal."""
+    p = s = 0
+    star = -1  # index of the last '*' seen in the pattern
+    mark = 0   # where in the text that star currently stops swallowing
+    while s < len(text):
+        if p < len(pattern) and pattern[p] == "*":
+            star, mark = p, s
+            p += 1
+        elif p < len(pattern) and (pattern[p] == "?" or pattern[p] == text[s]):
+            p += 1
+            s += 1
+        elif star != -1:
+            mark += 1  # let the star swallow one more character and retry
+            p, s = star + 1, mark
+        else:
+            return False
+    while p < len(pattern) and pattern[p] == "*":
+        p += 1
+    return p == len(pattern)
+
+
+statements = []  # (effect, principal, action, resource, [(key, pattern)])
+requests = []    # (principal, action, resource, {key: value})
+in_requests = False
+for raw in sys.stdin.read().splitlines():
+    line = raw.strip()
+    if not line or line.startswith("#"):
+        continue
+    if line == "---":
+        in_requests = True
+        continue
+    parts = line.split()
+    if in_requests:
+        attrs = dict(token.split("=", 1) for token in parts[3:])
+        requests.append((parts[0], parts[1], parts[2], attrs))
+    else:
+        conditions = [tuple(token.split("=", 1)) for token in parts[5:]] if len(parts) > 4 and parts[4] == "when" else []
+        statements.append((parts[0], parts[1], parts[2], parts[3], conditions))
+
+for principal, action, resource, attrs in requests:
+    allowed = denied = False
+    for effect, p_pat, a_pat, r_pat, conditions in statements:
+        if not (matches(p_pat, principal) and matches(a_pat, action) and matches(r_pat, resource)):
+            continue
+        if not all(key in attrs and matches(pat, attrs[key]) for key, pat in conditions):
+            continue
+        if effect == "DENY":
+            denied = True
+        else:
+            allowed = True
+    print("DENY explicit" if denied else "ALLOW" if allowed else "DENY implicit")
+`,
+      javascript: `// Glob match: '*' = any run of characters (even empty), '?' = exactly one, all else literal.
+function matches(pattern, text) {
+  let p = 0;
+  let s = 0;
+  let star = -1; // index of the last '*' seen in the pattern
+  let mark = 0; // where in the text that star currently stops swallowing
+  while (s < text.length) {
+    if (p < pattern.length && pattern[p] === "*") {
+      star = p;
+      mark = s;
+      p += 1;
+    } else if (p < pattern.length && (pattern[p] === "?" || pattern[p] === text[s])) {
+      p += 1;
+      s += 1;
+    } else if (star !== -1) {
+      mark += 1; // let the star swallow one more character and retry
+      p = star + 1;
+      s = mark;
+    } else {
+      return false;
+    }
+  }
+  while (p < pattern.length && pattern[p] === "*") p += 1;
+  return p === pattern.length;
+}
+
+const split = (token) => {
+  const at = token.indexOf("=");
+  return [token.slice(0, at), token.slice(at + 1)];
+};
+
+const statements = [];
+const requests = [];
+let inRequests = false;
+for (const raw of require("fs").readFileSync(0, "utf8").split(/\\r?\\n/)) {
+  const line = raw.trim();
+  if (!line || line.startsWith("#")) continue;
+  if (line === "---") {
+    inRequests = true;
+    continue;
+  }
+  const parts = line.split(/\\s+/);
+  if (inRequests) {
+    requests.push({ principal: parts[0], action: parts[1], resource: parts[2], attrs: new Map(parts.slice(3).map(split)) });
+  } else {
+    const conditions = parts.length > 4 && parts[4] === "when" ? parts.slice(5).map(split) : [];
+    statements.push({ effect: parts[0], principal: parts[1], action: parts[2], resource: parts[3], conditions });
+  }
+}
+
+const out = [];
+for (const req of requests) {
+  let allowed = false;
+  let denied = false;
+  for (const st of statements) {
+    if (!(matches(st.principal, req.principal) && matches(st.action, req.action) && matches(st.resource, req.resource))) continue;
+    if (!st.conditions.every(([key, pat]) => req.attrs.has(key) && matches(pat, req.attrs.get(key)))) continue;
+    if (st.effect === "DENY") denied = true;
+    else allowed = true;
+  }
+  out.push(denied ? "DENY explicit" : allowed ? "ALLOW" : "DENY implicit");
+}
+console.log(out.join("\\n"));
+`,
+    },
+  },
 ];
