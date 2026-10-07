@@ -7,6 +7,17 @@ import type { LabExerciseSection } from "../../data/lessons/types";
 import { matchOutput } from "../../shared/match";
 import { localSupports, runLocal } from "../helpers/exec-local";
 
+// runLocal measures compile + run on the host (a cold `go run` alone is ~4 s);
+// the runner compiles separately, so only the run itself must stay fast.
+const COMPILE_ALLOWANCE_MS: Partial<Record<string, number>> = {
+  typescript: 1500,
+  c: 2500,
+  cpp: 4000,
+  java: 5000,
+  rust: 6000,
+  go: 10000,
+};
+
 /** The eight tracks that existed before the specialty tracks; each must ship at least one graded lab. */
 const LEGACY_TRACKS = ["cyber-security", "artificial-intelligence", "data-science", "cloud-computing", "devops", "frontend", "backend", "ui-ux"];
 
@@ -71,7 +82,7 @@ test("lab exercises", async (t) => {
           matchOutput(r.stdout, test.expected, test.mode ?? "trim", test.epsilon),
           `${test.name.en}\nexpected: ${JSON.stringify(test.expected)}\nactual:   ${JSON.stringify(r.stdout)}`
         );
-        assert.ok(ms < 2000 + (lab.lang === "typescript" ? 1500 : 0), `${test.name.en}: took ${ms} ms (limit 2 s)`);
+        assert.ok(ms < 2000 + (COMPILE_ALLOWANCE_MS[lab.lang] ?? 0), `${test.name.en}: took ${ms} ms (limit 2 s + compile allowance)`);
       }
     });
 
