@@ -372,3 +372,31 @@ test("sec-crypto-ladder: exactly one Caesar shift reads as English and the state
   const raw = Buffer.from(puzzleFile("sec-crypto-ladder", "stage3.txt").trim(), "hex").toString("latin1");
   assert.ok(!/FLAG=/.test(raw));
 });
+
+test("sec-password-strength: expected outputs match an independent implementation and every rating band is exercised", () => {
+  const g = securityGraders.find((x) => x.id === "sec-password-strength");
+  assert.ok(g && g.kind === "output");
+  const COMMON = new Set(["password", "123456", "12345678", "qwerty", "abc123", "letmein", "iloveyou", "admin"]);
+  const band = (b: number) => (b < 28 ? "very weak" : b < 36 ? "weak" : b < 60 ? "reasonable" : b < 128 ? "strong" : "very strong");
+  const seen = new Set<string>();
+  for (const t of g.tests) {
+    const [count, ...pws] = t.stdin.split("\n");
+    assert.equal(pws.length - 1, Number(count), `${t.name}: N matches the number of lines (plus the final newline)`);
+    const want = pws.slice(0, Number(count)).map((pw) => {
+      let pool = 0;
+      if (/[a-z]/.test(pw)) pool += 26;
+      if (/[A-Z]/.test(pw)) pool += 26;
+      if (/\d/.test(pw)) pool += 10;
+      if (/[^A-Za-z0-9]/.test(pw)) pool += 33;
+      const bits = COMMON.has(pw.toLowerCase()) || pool === 0 ? 0 : pw.length * Math.log2(pool);
+      seen.add(band(bits));
+      return `${bits.toFixed(1)} ${band(bits)}`;
+    });
+    // same words, numbers within the grader's tolerance
+    assert.ok(matchOutput(want.join("\n"), t.expected, "float", t.epsilon), `${t.name}: expected output disagrees with the independent implementation`);
+    for (const pw of pws.slice(0, Number(count))) {
+      assert.ok(pw === pw.trim() && pw.length <= 200 && /^[\x20-\x7e]*$/.test(pw), `${t.name}: password obeys the input rules`);
+    }
+  }
+  assert.deepEqual([...seen].sort(), ["reasonable", "strong", "very strong", "very weak", "weak"]);
+});

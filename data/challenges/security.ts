@@ -479,4 +479,223 @@ Everything can be done with a few lines of Python or JavaScript in Code Lab.`,
   addedAt: "2026-10-07",
 };
 
-export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder];
+const passwordStrength: ChallengeMeta = {
+  id: "sec-password-strength",
+  track: "cyber-security",
+  topic: "authentication",
+  title: { en: "Password Strength Meter", ar: "مقياس قوة كلمة المرور" },
+  summary: {
+    en: "Turn character pools and length into entropy bits, add a common-password blacklist, and rate each password like a real sign-up form would.",
+    ar: "حوّل حجم مجموعة الأحرف والطول إلى بتّات إنتروبيا، وأضف قائمة حظر لكلمات المرور الشائعة، ثم قيّم كل كلمة مرور كما يفعل نموذج تسجيل حقيقي.",
+  },
+  description: {
+    en: `## The story
+
+The sign-up form of your startup needs a strength meter, and the security lead wants one that is based on **entropy** rather than "has a symbol". You are writing the scoring engine as a standalone program: passwords in, scores out.
+
+## Input
+
+The first line is \`N\` (1 ≤ N ≤ 100). Then come \`N\` lines, one password per line. Passwords are printable ASCII (letters, digits, punctuation and spaces inside the text), are at most 200 characters long and never start or end with a space. A password **can be empty** (an empty line).
+
+## Rules
+
+1. **Pool size.** Start at 0 and add 26 if the password contains a lowercase letter, 26 for an uppercase letter, 10 for a digit and 33 if it contains any other character (punctuation or a space; those count once, together).
+2. **Entropy** in bits is \`length × log2(pool)\`. An empty password has 0 bits.
+3. **Blacklist.** If the password, compared case-insensitively, is one of \`password\`, \`123456\`, \`12345678\`, \`qwerty\`, \`abc123\`, \`letmein\`, \`iloveyou\`, \`admin\`, its entropy is 0 whatever rule 2 says: attackers try these first.
+4. **Rating** from the exact (unrounded) entropy: below 28 is \`very weak\`, below 36 \`weak\`, below 60 \`reasonable\`, below 128 \`strong\`, otherwise \`very strong\`.
+
+## Output
+
+For each password print one line: the entropy rounded to **one decimal place**, a space, and the rating.
+
+## Examples
+
+Input:
+
+\`\`\`
+3
+hunter2
+correct horse battery staple
+PASSWORD
+\`\`\`
+
+Output:
+
+\`\`\`
+36.2 reasonable
+164.7 very strong
+0.0 very weak
+\`\`\`
+
+\`hunter2\` uses lowercase and a digit (pool 36), so 7 × log2(36) ≈ 36.2. The passphrase uses lowercase letters and spaces (pool 59), so 28 × log2(59) ≈ 164.7. \`PASSWORD\` is blacklisted.
+
+Input:
+
+\`\`\`
+2
+Tr0ub4dor&3
+abc
+\`\`\`
+
+Output:
+
+\`\`\`
+72.3 strong
+14.1 very weak
+\`\`\`
+
+Input:
+
+\`\`\`
+1
+123456789012
+\`\`\`
+
+Output:
+
+\`\`\`
+39.9 reasonable
+\`\`\`
+
+Entropy assumes every character is drawn uniformly at random from the pool, which people never do. That is why real systems also check blacklists, and why **length** buys more than "complexity" rules.`,
+    ar: `## القصة
+
+يحتاج نموذج التسجيل في شركتك الناشئة إلى مقياس للقوة، ويريده مسؤول الأمن مبنياً على **الإنتروبيا** لا على "يحتوي رمزاً". أنت تكتب محرّك التقييم كبرنامج مستقل: كلمات مرور تدخل ودرجات تخرج.
+
+## الدخل
+
+السطر الأول هو \`N\` (1 ≤ N ≤ 100). ثم \`N\` سطراً، في كل سطر كلمة مرور. كلمات المرور من محارف ASCII القابلة للطباعة (حروف وأرقام وعلامات ترقيم ومسافات داخل النص)، لا يزيد طولها على 200 محرف، ولا تبدأ بمسافة ولا تنتهي بها. ويمكن أن تكون كلمة المرور **فارغة** (سطر فارغ).
+
+## القواعد
+
+1. **حجم المجموعة.** ابدأ من 0 وأضف 26 إن احتوت كلمة المرور حرفاً صغيراً، و26 لحرف كبير، و10 لرقم، و33 إن احتوت أي محرف آخر (علامة ترقيم أو مسافة؛ وهذه تُحسب مرة واحدة معاً).
+2. **الإنتروبيا** بالبت هي \`length × log2(pool)\`. وكلمة المرور الفارغة إنتروبياها 0.
+3. **قائمة الحظر.** إن كانت كلمة المرور، بمقارنة غير حسّاسة لحالة الأحرف، إحدى \`password\` و\`123456\` و\`12345678\` و\`qwerty\` و\`abc123\` و\`letmein\` و\`iloveyou\` و\`admin\` فإنتروبياها 0 مهما قالت القاعدة 2: فالمهاجمون يجرّبونها أولاً.
+4. **التقييم** من الإنتروبيا الدقيقة (قبل التقريب): أقل من 28 هو \`very weak\`، وأقل من 36 هو \`weak\`، وأقل من 60 هو \`reasonable\`، وأقل من 128 هو \`strong\`، وغير ذلك \`very strong\`.
+
+## الخرج
+
+لكل كلمة مرور اطبع سطراً: الإنتروبيا مقرَّبة إلى **منزلة عشرية واحدة**، ثم مسافة، ثم التقييم.
+
+## أمثلة
+
+الدخل:
+
+\`\`\`
+3
+hunter2
+correct horse battery staple
+PASSWORD
+\`\`\`
+
+الخرج:
+
+\`\`\`
+36.2 reasonable
+164.7 very strong
+0.0 very weak
+\`\`\`
+
+تستخدم \`hunter2\` حروفاً صغيرة ورقماً (المجموعة 36) فيكون 7 × log2(36) ≈ 36.2. وتستخدم عبارة المرور حروفاً صغيرة ومسافات (المجموعة 59) فيكون 28 × log2(59) ≈ 164.7. أما \`PASSWORD\` فمحظورة.
+
+الدخل:
+
+\`\`\`
+2
+Tr0ub4dor&3
+abc
+\`\`\`
+
+الخرج:
+
+\`\`\`
+72.3 strong
+14.1 very weak
+\`\`\`
+
+الدخل:
+
+\`\`\`
+1
+123456789012
+\`\`\`
+
+الخرج:
+
+\`\`\`
+39.9 reasonable
+\`\`\`
+
+تفترض الإنتروبيا أن كل محرف يُسحب عشوائياً بانتظام من المجموعة، وهذا ما لا يفعله الناس أبداً. لذلك تفحص الأنظمة الحقيقية قوائم الحظر أيضاً، ولذلك يمنحك **الطول** أكثر مما تمنحه قواعد "التعقيد".`,
+  },
+  difficulty: 2,
+  points: 100,
+  estMinutes: 20,
+  kind: "output",
+  lang: "python",
+  sampleInput: "3\nhunter2\ncorrect horse battery staple\nPASSWORD\n",
+  starterCode: {
+    python: `import math
+import sys
+
+lines = sys.stdin.read().split("\\n")
+n = int(lines[0])
+for password in lines[1:1 + n]:
+    # Your turn: pool size, entropy in bits, rating.
+    print("?")
+`,
+    javascript: `const lines = require("fs").readFileSync(0, "utf8").split("\\n");
+const n = parseInt(lines[0], 10);
+for (const password of lines.slice(1, 1 + n)) {
+  // Your turn: pool size, entropy in bits, rating.
+  console.log("?");
+}
+`,
+    c: `#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(void) {
+    char line[512];
+    if (!fgets(line, sizeof line, stdin)) return 0;
+    int n = atoi(line);
+    for (int i = 0; i < n; i++) {
+        if (!fgets(line, sizeof line, stdin)) line[0] = '\\0';
+        line[strcspn(line, "\\r\\n")] = '\\0';
+        /* Your turn: pool size, entropy in bits, rating. */
+        printf("?\\n");
+    }
+    return 0;
+}
+`,
+  },
+  hints: [
+    {
+      text: {
+        en: "Find the pool by checking which character classes appear at all (lowercase, uppercase, digit, other) and adding their sizes. Punctuation and spaces share one class of 33.",
+        ar: "اعثر على حجم المجموعة بفحص أي أصناف الأحرف تظهر أصلاً (صغيرة، كبيرة، رقم، آخر) وجمع أحجامها. علامات الترقيم والمسافات تشترك في صنف واحد حجمه 33.",
+      },
+      cost: 8,
+    },
+    {
+      text: {
+        en: "Rate with the exact value and round only when printing (`f\"{bits:.1f}\"` in Python, `bits.toFixed(1)` in JavaScript). Rounding first can push a password into the wrong band.",
+        ar: "قيّم بالقيمة الدقيقة ولا تقرّب إلا عند الطباعة (`f\"{bits:.1f}\"` في بايثون، `bits.toFixed(1)` في جافاسكربت). التقريب أولاً قد ينقل كلمة المرور إلى الفئة الخطأ.",
+      },
+      cost: 12,
+    },
+    {
+      text: {
+        en: "Test the blacklist first, on the lower-cased password. An empty password has pool 0 and `log2(0)` is undefined, so handle that case explicitly and print `0.0 very weak`.",
+        ar: "اختبر قائمة الحظر أولاً على كلمة المرور بعد تحويلها إلى أحرف صغيرة. كلمة المرور الفارغة مجموعتها 0 و`log2(0)` غير معرّفة، فعالج هذه الحالة صراحة واطبع `0.0 very weak`.",
+      },
+      cost: 15,
+    },
+  ],
+  lessons: ["cyber-security/cyber-basics", "cyber-security/python"],
+  tags: ["entropy", "passwords", "authentication", "python", "math"],
+  addedAt: "2026-10-07",
+};
+
+export const securityChallenges: ChallengeMeta[] = [authLogHunt, saltedWordlist, cryptoLadder, passwordStrength];

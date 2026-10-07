@@ -72,6 +72,73 @@ export function solveCryptoLadder(stage1: string, stage2: string, stage3: string
   return plain.slice("FLAG=".length);
 }
 
+// ── sec-password-strength ─────────────────────────────────────────────────────
+
+const PASSWORD_STRENGTH_PY = String.raw`import math
+import sys
+
+COMMON = {"password", "123456", "12345678", "qwerty", "abc123", "letmein", "iloveyou", "admin"}
+
+
+def rate(bits):
+    if bits < 28:
+        return "very weak"
+    if bits < 36:
+        return "weak"
+    if bits < 60:
+        return "reasonable"
+    if bits < 128:
+        return "strong"
+    return "very strong"
+
+
+lines = sys.stdin.read().split("\n")
+n = int(lines[0])
+for pw in lines[1:1 + n]:
+    if pw.lower() in COMMON:
+        bits = 0.0
+    else:
+        pool = 0
+        if any("a" <= c <= "z" for c in pw):
+            pool += 26
+        if any("A" <= c <= "Z" for c in pw):
+            pool += 26
+        if any("0" <= c <= "9" for c in pw):
+            pool += 10
+        if any(not c.isascii() or not c.isalnum() for c in pw):
+            pool += 33
+        bits = len(pw) * math.log2(pool) if pool else 0.0
+    print(f"{bits:.1f} {rate(bits)}")
+`;
+
+const PASSWORD_STRENGTH_JS = String.raw`const lines = require("fs").readFileSync(0, "utf8").split("\n");
+const n = parseInt(lines[0], 10);
+const COMMON = new Set(["password", "123456", "12345678", "qwerty", "abc123", "letmein", "iloveyou", "admin"]);
+
+function rate(bits) {
+  if (bits < 28) return "very weak";
+  if (bits < 36) return "weak";
+  if (bits < 60) return "reasonable";
+  if (bits < 128) return "strong";
+  return "very strong";
+}
+
+const out = [];
+for (const pw of lines.slice(1, 1 + n)) {
+  let bits = 0;
+  if (!COMMON.has(pw.toLowerCase())) {
+    let pool = 0;
+    if (/[a-z]/.test(pw)) pool += 26;
+    if (/[A-Z]/.test(pw)) pool += 26;
+    if (/[0-9]/.test(pw)) pool += 10;
+    if (/[^A-Za-z0-9]/.test(pw)) pool += 33;
+    if (pool > 0) bits = pw.length * Math.log2(pool);
+  }
+  out.push(bits.toFixed(1) + " " + rate(bits));
+}
+console.log(out.join("\n"));
+`;
+
 export const securityReferences: ChallengeReference[] = [
   { id: "sec-auth-log-hunt", flag: solveAuthLogHunt(puzzleFile("sec-auth-log-hunt", "auth.log")) },
   { id: "sec-salted-wordlist", flag: solveSaltedWordlist(puzzleFile("sec-salted-wordlist", "shadow.txt"), puzzleFile("sec-salted-wordlist", "wordlist.txt")) },
@@ -83,4 +150,5 @@ export const securityReferences: ChallengeReference[] = [
       puzzleFile("sec-crypto-ladder", "stage3.txt"),
     ),
   },
+  { id: "sec-password-strength", solutions: { python: PASSWORD_STRENGTH_PY, javascript: PASSWORD_STRENGTH_JS } },
 ];
