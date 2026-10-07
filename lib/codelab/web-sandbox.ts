@@ -59,17 +59,26 @@ export function loopGuardName(token: string): string {
  * The loop guard. `g(line)` is called at the top of every loop body. It reads the
  * clock on an adaptive stride (every call while iterations are slow, up to every
  * 1024th while they are fast) and throws once the page has been busy for more than
- * `loopMs` since its first check in this stretch. A zero-delay timer, which only
- * runs once the page returns to the event loop, starts a new stretch.
- * ES5, one line (see `harness`).
+ * `loopMs` since its first check in this stretch. A message on a private
+ * MessageChannel, which is a task and so only arrives once the page returns to the
+ * event loop, starts a new stretch. Not a timer: the page can clear timers (a
+ * "clear every timer" loop would leave the stretch open forever, so every later
+ * loop would be stopped at once) and browsers throttle them (a hidden tab's idle
+ * time would count as busy time). Microtasks are not tasks, so a loop that only
+ * awaits promises is still stopped. Browsers without MessageChannel fall back to a
+ * timer. ES5, one line (see `harness`).
  */
 function loopGuard(name: string, loopMs: number): string {
   return [
-    `var P=window.performance,PN=P&&P.now,DN=Date.now,ST=setTimeout,LIM=${loopMs};`,
+    `var P=window.performance,PN=P&&P.now,DN=Date.now,LIM=${loopMs};`,
     `var now=PN?function(){return PN.call(P)}:function(){return DN.call(Date)};`,
     `var k=0,stride=1,since=0,last=0,armed=false,told=false;`,
+    `function idle(){armed=false;k=0}`,
+    `var tick,MC=window.MessageChannel;`,
+    `try{var mc=new MC();mc.port1.onmessage=idle;tick=mc.port2.postMessage.bind(mc.port2,0)}`,
+    `catch(e){var ST=setTimeout;tick=function(){ST(idle,0)}}`,
     `function g(l){if(--k>0)return;var n=now();`,
-    `if(!armed){armed=true;told=false;since=last=n;stride=1;ST(function(){armed=false;k=0},0)}`,
+    `if(!armed){armed=true;told=false;since=last=n;stride=1;tick()}`,
     `else{stride=n-last<2?Math.min(stride*2,1024):1;last=n}`,
     `k=stride;`,
     `if(n-since>LIM){k=0;if(!told){told=true;send({t:"loop",line:l})}`,

@@ -1,4 +1,4 @@
-import { test } from "node:test";
+import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { guardPreviewScripts, guardScript, scriptKind } from "../../lib/codelab/loop-guard";
@@ -185,23 +185,72 @@ test("a page's inline scripts get guards with document line numbers; everything 
 
 // ── The harness's guard, for real ───────────────────────────────────────────
 
+/**
+ * Browser-style timers for the vm "window": numeric ids, one id pool shared by
+ * timeouts and intervals, so the page's "clear every timer" idioms work as in a
+ * browser. `minDelay` clamps every delay, like a browser throttling a hidden tab.
+ */
+function browserTimers(minDelay = 0) {
+  let next = 1;
+  const live = new Map<number, ReturnType<typeof setTimeout>>();
+  const clear = (id: unknown) => {
+    const t = live.get(Number(id));
+    if (t !== undefined) clearTimeout(t);
+    live.delete(Number(id));
+  };
+  return {
+    setTimeout(fn: (...a: unknown[]) => void, ms = 0, ...args: unknown[]) {
+      const id = next++;
+      live.set(id, setTimeout(() => (live.delete(id), fn(...args)), Math.max(Number(ms) || 0, minDelay)));
+      return id;
+    },
+    setInterval(fn: (...a: unknown[]) => void, ms = 0, ...args: unknown[]) {
+      const id = next++;
+      live.set(id, setInterval(() => fn(...args), Math.max(Number(ms) || 0, minDelay)));
+      return id;
+    },
+    clearTimeout: clear,
+    clearInterval: clear,
+    dispose: () => [...live.keys()].forEach(clear),
+  };
+}
+
+/** Every MessageChannel a vm "window" opened, closed after the tests so node can exit. */
+const channels: MessageChannel[] = [];
+after(() => channels.forEach((c) => (c.port1.close(), c.port2.close())));
+class TrackedChannel extends MessageChannel {
+  constructor() {
+    super();
+    channels.push(this);
+  }
+}
+
 /** Runs the harness of a built preview document in a vm "window", then `userCode`. */
-function runPreview(userCode: string, loopMs: number) {
+function runPreview(userCode: string, loopMs: number, opts: { minTimerDelay?: number } = {}) {
   const token = "abc123";
   const doc = buildPreviewDocument(guardPreviewScripts(`<script>${userCode}</script>`, loopGuardName(token)), token, { keepChars: 1024, loopMs });
   const scripts = [...doc.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
   assert.equal(scripts.length, 2, "harness + the user's script");
   const sent: unknown[] = [];
+  const timers = browserTimers(opts.minTimerDelay);
+  after(timers.dispose);
   const ctx = vm.createContext({
     parent: { postMessage: (m: unknown) => sent.push(m) },
     performance,
-    setTimeout,
+    MessageChannel: TrackedChannel,
+    setTimeout: timers.setTimeout,
+    setInterval: timers.setInterval,
+    clearTimeout: timers.clearTimeout,
+    clearInterval: timers.clearInterval,
     console: { log() {}, info() {}, debug() {}, warn() {}, error() {} },
   });
   vm.runInContext("var window = globalThis; window.addEventListener = function () {};", ctx);
   vm.runInContext(scripts[0], ctx);
   return { sent, run: () => vm.runInContext(scripts[1], ctx, { timeout: 10_000 }), ctx, token };
 }
+
+const loopReports = (p: ReturnType<typeof runPreview>) => p.sent.map((m) => parseWebMessage(m, p.token)).filter((m) => m?.t === "loop");
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 test("the harness guard throws inside the page once a loop keeps it busy past the limit, and tells the parent", () => {
   const p = runPreview("var spins = 0;\nwhile (true) { spins++; }", 150);
@@ -239,6 +288,40 @@ test("a loop that awaits a timer between steps is never stopped; one that only a
   const r = (await vm.runInContext("window.result", p.ctx)) as { steps: number; error: string };
   assert.ok(r.steps > 5, `the timer loop ran for 400 ms past a 150 ms budget (${r.steps} steps)`);
   assert.match(r.error, /ran longer than 0\.15 s \(line 6\)/);
+});
+
+test("clearing every timer on the page does not leave the guard counting idle time as busy time", async () => {
+  // Both idioms clear the guard's own reset if it is a timer: the first counts down
+  // from a fresh id, the second's first iteration starts a busy stretch it then clears.
+  for (const clearAll of [
+    "function clearAllTimers() { var id = setTimeout(function () {}, 0); while (id--) clearTimeout(id); }",
+    "function clearAllTimers() { for (let i = 1; i < 99999; i++) clearInterval(i); }",
+  ]) {
+    const p = runPreview(
+      [
+        clearAll,
+        "for (var i = 0; i < 3; i++) {}",
+        "clearAllTimers();",
+        // Long enough to read the clock however far the guard's stride has grown.
+        "window.later = function () { var s = 0; for (var j = 0; j < 5000; j++) s += j; return s; };",
+      ].join("\n"),
+      150
+    );
+    p.run();
+    await sleep(400);
+    assert.equal(vm.runInContext("later()", p.ctx), 12_497_500, clearAll);
+    assert.deepEqual(loopReports(p), [], clearAll);
+  }
+});
+
+test("idle time is not counted as busy time while the page's timers are throttled (a hidden tab)", async () => {
+  const p = runPreview("for (var i = 0; i < 3; i++) {}\nwindow.onclick = function () { var s = 0; for (var j = 0; j < 3; j++) s += j; return s; };", 150, {
+    minTimerDelay: 2_000,
+  });
+  p.run();
+  await sleep(400);
+  assert.equal(vm.runInContext("onclick()", p.ctx), 3);
+  assert.deepEqual(loopReports(p), []);
 });
 
 // ── The runner turns the guard's report into a timeout ────────────────────────
