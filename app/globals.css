@@ -492,7 +492,7 @@ html.font-arabic body {
   width: calc(var(--u) * 32);
   height: calc(var(--u) * 32);
 }
-.cert-seal svg {
+.cert-seal > svg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -534,7 +534,7 @@ html.font-arabic body {
   font-weight: 800;
   line-height: 1;
 }
-.cert-seal-center svg {
+.cert-seal-center > svg {
   width: calc(var(--u) * 8);
   height: calc(var(--u) * 8);
   color: var(--cert-green);
