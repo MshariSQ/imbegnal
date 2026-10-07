@@ -79,9 +79,8 @@ function passes(lab: LabExerciseSection, code: string): { failed: string[]; unsu
   const failed: string[] = [];
   let slowMs = 0;
   for (const t of lab.tests) {
-    const started = Date.now();
     const r = runLocal(lab.lang, code, t.stdin ?? "");
-    slowMs = Math.max(slowMs, Date.now() - started);
+    slowMs = Math.max(slowMs, r.runMs ?? 0); // the run step alone, like the runner
     if (r.unsupported) return { failed, unsupported: true, slowMs };
     const ok = r.exitCode === 0 && !r.timedOut && matchOutput(r.stdout, t.expected, t.mode, t.epsilon);
     if (!ok) failed.push(t.name.en);
