@@ -46,8 +46,8 @@ Quota tuning example: raise the free allowance without a deploy by setting `RUN_
 
 ```sh
 cd worker
-npx wrangler secret put RUNNER_SECRET     # paste the same value the runner is started with (RUNNER_SECRET)
-npx wrangler secret put RUNNER_URL        # e.g. https://runner.example.com  (a secret works too; the Worker only reads env.RUNNER_URL)
+npx wrangler secret put RUNNER_SECRET --config wrangler.toml     # paste the same value the runner is started with (RUNNER_SECRET)
+npx wrangler secret put RUNNER_URL --config wrangler.toml        # e.g. https://runner.example.com  (a secret works too; the Worker only reads env.RUNNER_URL)
 ```
 
 Every request to the runner is signed: `x-imb-signature = hex(HMAC-SHA256(secret, "<x-imb-timestamp>.<raw body>"))`
@@ -60,7 +60,7 @@ Migration `migrations/0004_code_lab.sql` adds `users.role/status/suspended_until
 `lab_snippets`, `lab_progress`, `audit_log` and `abuse_signals`. Apply it like the earlier ones:
 
 ```sh
-npx wrangler d1 migrations apply skillforge-db --remote
+npx wrangler d1 migrations apply skillforge-db --remote --config wrangler.toml
 ```
 
 `lab_runs` keeps the learner's own copy of code, stdin and output (size-capped: 64 KiB code, 16 KiB each for stdin/stdout/stderr).
@@ -71,9 +71,9 @@ npx wrangler d1 migrations apply skillforge-db --remote
 Roles are `student` (default), `instructor` and `admin`. They are granted by an operator with SQL, never through the API:
 
 ```sh
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "UPDATE users SET role = 'instructor' WHERE username = 'someone'"      # or 'admin'; 'student' demotes
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "INSERT INTO audit_log (user_id, action, detail) SELECT github_id, 'role.change', 'set to instructor by operator' FROM users WHERE username = 'someone'"
 ```
 
@@ -91,29 +91,29 @@ suspends the account for `ABUSE_SUSPEND_HOURS` and writes an `abuse.auto_suspend
 Lift one early:
 
 ```sh
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "UPDATE users SET status = 'active', suspended_until = NULL WHERE username = 'someone'"
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "DELETE FROM abuse_signals WHERE user_id = (SELECT github_id FROM users WHERE username = 'someone')"
 ```
 
 Suspend manually (indefinitely: leave `suspended_until` NULL):
 
 ```sh
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "UPDATE users SET status = 'suspended', suspended_until = datetime('now', '+7 days') WHERE username = 'someone'"
 ```
 
 ## Reading the audit log and the run log
 
 ```sh
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "SELECT at, user_id, action, detail FROM audit_log ORDER BY id DESC LIMIT 50"
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "SELECT kind, COUNT(*) n FROM abuse_signals WHERE at >= datetime('now','-1 day') GROUP BY kind"
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "SELECT status, COUNT(*) n, ROUND(AVG(run_ms)) avg_ms FROM lab_runs WHERE created_at >= datetime('now','-1 day') GROUP BY status"
-npx wrangler d1 execute skillforge-db --remote --command \
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
   "SELECT first_error, COUNT(*) n FROM lab_runs WHERE success = 0 AND first_error IS NOT NULL GROUP BY first_error ORDER BY n DESC LIMIT 20"
 ```
 
