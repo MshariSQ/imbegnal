@@ -1,6 +1,8 @@
 // POST /api/challenges/:id/open   stamps the first-open time (time-to-solve starts here)
 // POST /api/challenges/:id/hint   reveals a hint once; its cost comes off THIS learner's award
+import type { RevealedHint } from "../../../shared/api";
 import { SUBMIT_LIMITS, type ChallengeHintResponse, type ChallengeMeta, type ChallengeOpenResponse } from "../../../shared/challenges";
+import type { ChallengeEntry } from "../graders/registry";
 import { type Env, json } from "../util";
 import { apiError, readBoundedJson, requireLiveUser, sqlTime, toIso } from "./http";
 import type { ChallengeDeps } from "./types";
@@ -24,6 +26,22 @@ const revealedIndexes = (mask: number, count: number): number[] => {
   for (let i = 0; i < Math.min(count, SUBMIT_LIMITS.maxHints); i++) if (mask & (1 << i)) out.push(i);
   return out;
 };
+
+/**
+ * The hint texts this learner is entitled to read: the ones whose bit is set in `mask`, or every
+ * hint once the challenge is solved (the award is booked by then). The ONLY place hint text leaves
+ * the Worker besides the reveal response below; an unrevealed hint of an unsolved challenge is
+ * never returned. A hint whose text is missing (count mismatch) is skipped, never invented.
+ */
+export function readableHints(entry: ChallengeEntry, mask: number, solved: boolean): RevealedHint[] {
+  const count = Math.min(entry.meta.hints?.length ?? 0, SUBMIT_LIMITS.maxHints);
+  const out: RevealedHint[] = [];
+  for (let i = 0; i < count; i++) {
+    const text = entry.hints[i];
+    if (text && (solved || (mask & (1 << i)) !== 0)) out.push({ index: i, text });
+  }
+  return out;
+}
 
 interface ProgressRow {
   first_opened_at: string | null;
@@ -64,6 +82,13 @@ export async function handleHint(req: Request, env: Env, origin: string, id: str
   if (typeof index !== "number" || !Number.isInteger(index) || index < 0 || index >= hints.length) {
     return apiError(origin, 400, "invalid_request", "index must be the position of an existing hint");
   }
+  // Fail closed BEFORE charging anything when the Worker-only text of a public hint is missing
+  // (the parity test makes this unreachable in a deployed build).
+  const text = entry.hints[index];
+  if (!text) {
+    console.error("challenge hint text missing", id, index);
+    return apiError(origin, 500, "internal_error");
+  }
 
   const userId = auth.user.sub;
   const before = await env.DB.prepare("SELECT first_opened_at, hint_mask, solved_at FROM challenge_progress WHERE user_id = ? AND challenge_id = ?")
@@ -94,7 +119,7 @@ export async function handleHint(req: Request, env: Env, origin: string, id: str
   const revealed = revealedIndexes(mask, hints.length);
   const body: ChallengeHintResponse = {
     index,
-    text: hints[index].text,
+    text,
     cost: Math.max(0, Math.floor(hints[index].cost)),
     revealed,
     hintsUsed: revealed.length,

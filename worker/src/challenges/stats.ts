@@ -5,6 +5,7 @@ import type { ChallengeMine } from "../../../shared/challenges";
 import { type Env, json } from "../util";
 import { optionalUser, round1, toIso } from "./http";
 import { loadLeaderboard } from "./leaderboard";
+import { readableHints } from "./progress";
 import type { ChallengeDeps } from "./types";
 
 /** A median needs a few data points before it says anything about difficulty. */
@@ -81,6 +82,11 @@ export async function handleChallengeList(req: Request, env: Env, origin: string
         hintsUsed: r.hints_used,
         hintMask: r.hint_mask,
       };
+      // Only the hints this learner revealed (all of them once solved): the text of an unrevealed
+      // hint of an unsolved challenge must never leave the Worker.
+      const entry = deps.registry.entry(r.challenge_id);
+      const revealedHints = entry ? readableHints(entry, r.hint_mask, solved) : [];
+      if (revealedHints.length > 0) m.revealedHints = revealedHints;
       const at = toIso(r.s_at ?? r.solved_at);
       if (at) m.solvedAt = at;
       if (r.s_minutes !== null) m.minutesToSolve = round1(r.s_minutes);
