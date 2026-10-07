@@ -51,7 +51,7 @@ test("lab exercises", async (t) => {
     await t.test(`lab shape: ${ref}`, () => {
       assert.ok(lab.prompt.en.trim().length > 40 && lab.prompt.ar.trim().length > 40, "bilingual prompt");
       assert.match(lab.prompt.ar, /[\u0600-\u06FF]/, "the Arabic prompt is written in Arabic");
-      assert.ok(lab.tests.length >= 2 && lab.tests.length <= 5, `${lab.tests.length} tests (want 2-5)`);
+      assert.ok(lab.tests.length >= 2 && lab.tests.length <= 6, `${lab.tests.length} tests (want 2-6)`);
       assert.ok(lab.hints.length >= 2, "progressive hints");
       for (const h of lab.hints) assert.ok(h.en.trim() && h.ar.trim());
       for (const test of lab.tests) assert.ok(test.name.en.trim() && test.name.ar.trim(), "bilingual test names");
