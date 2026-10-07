@@ -19,6 +19,7 @@
  */
 import type { LangId } from "./languages";
 import type { RunStatus } from "./protocol";
+import type { L10nText } from "./challenges";
 
 export interface ApiErrorBody {
   error: string;
@@ -176,6 +177,12 @@ export interface LabProgressResponse {
 
 // ── Challenges ───────────────────────────────────────────────────────────────
 
+/** A hint the caller is entitled to read: `index` is its position in the challenge's hint list. */
+export interface RevealedHint {
+  index: number;
+  text: L10nText;
+}
+
 export interface ChallengeStat {
   id: string;
   solves: number;
@@ -184,7 +191,20 @@ export interface ChallengeStat {
   /** Median minutes from first open to solve across solvers, when >= 3 solves. */
   medianSolveMinutes?: number;
   /** Signed-in only. */
-  mine?: { solved: boolean; points: number; attempts: number; solvedAt?: string; hintsUsed: number; minutesToSolve?: number };
+  mine?: {
+    solved: boolean;
+    points: number;
+    attempts: number;
+    solvedAt?: string;
+    hintsUsed: number;
+    minutesToSolve?: number;
+    /**
+     * Texts of the hints THIS learner already revealed (and paid for), or of every hint once the
+     * challenge is solved. Never contains an unrevealed hint of an unsolved challenge. Additive and
+     * optional: an older Worker omits it.
+     */
+    revealedHints?: RevealedHint[];
+  };
 }
 
 export interface ChallengesApiResponse {
