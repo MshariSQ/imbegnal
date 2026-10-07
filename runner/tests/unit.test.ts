@@ -410,7 +410,8 @@ describe("docker create flags", () => {
   test("every isolation flag is present", () => {
     assert.ok(pair("--network", "none"));
     assert.ok(args.includes("--read-only"));
-    assert.ok(pair("--user", "65534:65534"));
+    // The container's init/keeper runs as a different uid than the job steps (exec --user 65534).
+    assert.ok(pair("--user", "65533:65533"));
     assert.ok(pair("--cap-drop", "ALL"));
     assert.ok(pair("--security-opt", "no-new-privileges"));
     assert.ok(pair("--pids-limit", "64"));
@@ -591,5 +592,21 @@ describe("language availability", () => {
     const a = new Availability(["kotlin"], stubExecutor({ kotlin: ["timeout"] }), new SlotQueue(1, 1, 5000), silentLogger, 60_000, true);
     await a.refreshNow();
     assert.equal(a.isUnsupported("kotlin"), true);
+  });
+});
+
+describe("java class detection", () => {
+  test("still finds the public class behind several modifiers", () => {
+    const t = detectJavaTarget("public final strictfp class Greeter { public static void main(String[] a) {} }");
+    assert.ok(!("error" in t) && t.fileClass === "Greeter" && t.mainClass === "Greeter", JSON.stringify(t));
+  });
+
+  test("a 64 KiB run of modifiers is linear, not quadratic", () => {
+    for (const payload of ["final ".repeat(10_900), "\nfinal".repeat(10_900), "public static ".repeat(4_600)]) {
+      const t0 = performance.now();
+      detectJavaTarget(payload);
+      const ms = performance.now() - t0;
+      assert.ok(ms < 100, `took ${ms.toFixed(0)} ms (the unbounded pattern took ~800 ms)`);
+    }
   });
 });

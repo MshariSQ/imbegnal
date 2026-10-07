@@ -136,7 +136,9 @@ export function stripJavaNoise(src: string): string {
 }
 
 const TYPE_DECL_RE =
-  /(?:^|[\s;}])((?:(?:public|protected|private|static|final|abstract|sealed|non-sealed|strictfp)\s+)*)(?:class|interface|enum|record|@\s*interface)\s+([^\s{<(;,=]+)/g;
+  // At most 8 modifiers: an unbounded `(...\s+)*` made a 64 KiB run of modifiers quadratic
+  // (~0.8 s of blocked event loop per request).
+  /(?:^|[\s;}])((?:(?:public|protected|private|static|final|abstract|sealed|non-sealed|strictfp)\s+){0,8})(?:class|interface|enum|record|@\s*interface)\s+([^\s{<(;,=]+)/g;
 const MAIN_RE = /\bvoid\s+main\s*\(/;
 
 /**

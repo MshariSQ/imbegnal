@@ -3,9 +3,9 @@
  * flags of the container itself via `docker inspect`.
  */
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { after, before, describe, test } from "node:test";
-import { SKIP, ownedContainers, run, sleep, startServer, type TestServer } from "./helpers";
+import { SKIP, TEST_IMAGE, ownedContainers, run, sleep, startServer, type TestServer } from "./helpers";
 
 const CANARY = `host-canary-${process.pid}-${Date.now()}`;
 
@@ -314,7 +314,8 @@ describe("isolation", { skip: SKIP }, () => {
       assert.ok(!h.CapAdd || h.CapAdd.length === 0);
       assert.ok(h.SecurityOpt?.includes("no-new-privileges"));
       assert.ok(!h.SecurityOpt?.some((o) => /unconfined|seccomp=/.test(o)), "default seccomp profile only");
-      assert.equal(info.Config.User, "65534:65534");
+      // init + keeper run as 65533; every job step is `docker exec --user 65534:65534`.
+      assert.equal(info.Config.User, "65533:65533");
       assert.equal(h.Memory, 256 * 1024 * 1024);
       assert.equal(h.MemorySwap, h.Memory, "swap must equal memory (no swap)");
       assert.equal(h.PidsLimit, 64);
@@ -337,6 +338,46 @@ describe("isolation", { skip: SKIP }, () => {
       assert.ok(info.Config.Env.every((e) => !/RUNNER|SECRET|CANARY|AWS/.test(e)), "no host env in the container config");
       assert.deepEqual(info.Config.Cmd, ["sleep", "infinity"]);
       assert.equal((await job).stdout, "done\n");
+    });
+  });
+
+  describe("a job cannot turn its own run into a refunded infrastructure failure", () => {
+    test("the container's init and keeper belong to another uid: kill attempts are denied", async () => {
+      const code = [
+        "import os",
+        "for pid in sorted(int(p) for p in os.listdir('/proc') if p.isdigit()):",
+        "    try:",
+        "        comm = open('/proc/%d/comm' % pid).read().strip()",
+        "    except OSError:",
+        "        continue",
+        "    if comm in ('sleep', 'docker-init', 'tini'):",
+        "        try:",
+        "            os.kill(pid, 9); print('KILLED', comm)",
+        "        except PermissionError:",
+        "            print('denied', comm)",
+        "print('still running')",
+      ].join("\n");
+      const r = await run(srv, "python", code);
+      assert.equal(r.status, "ok", JSON.stringify(r));
+      assert.doesNotMatch(r.stdout, /KILLED/);
+      assert.match(r.stdout, /denied sleep/);
+      assert.match(r.stdout, /still running/);
+    });
+
+    test("kill -9 -1 reaches nothing outside the job: the container survives and the run completes", async () => {
+      // kill(-1) signals every process the caller may signal except itself; the keeper belongs to
+      // another uid, so nothing is killed (before the fix this stopped the container -> refund).
+      const r = await run(srv, "python", "import os\nos.kill(-1, 9)\nprint('still here')\n");
+      assert.equal(r.status, "ok", JSON.stringify(r));
+      assert.equal(r.stdout, "still here\n");
+    });
+
+    const hasGo = !SKIP && spawnSync("docker", ["run", "--rm", "--network", "none", "--entrypoint", "sh", TEST_IMAGE, "-c", "command -v go || test -x /usr/local/go/bin/go"], { encoding: "utf8", timeout: 60_000 }).status === 0;
+    test("a Go build bigger than the run memory is a charged memory_limit, not internal_error", { skip: hasGo ? false : `go not in ${TEST_IMAGE}` }, async () => {
+      const code = 'package main\n\nimport "fmt"\n\nvar big = [210 << 20]byte{1: 1, 100: 2}\n\nfunc main() { fmt.Println(big[1]) }\n';
+      const r = await run(srv, "go", code, { limits: { compileTimeoutMs: 20_000 } });
+      assert.notEqual(r.status, "internal_error", JSON.stringify(r));
+      assert.ok(["memory_limit", "runtime_error", "compile_error"].includes(r.status), r.status);
     });
   });
 });

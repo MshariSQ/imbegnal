@@ -15,8 +15,14 @@ import { spawn } from "node:child_process";
 import { OutputCollector } from "./output";
 import type { Logger } from "./log";
 
-/** Unprivileged uid:gid every job runs as ("nobody"). */
+/** Unprivileged uid:gid every job step runs as ("nobody"). */
 export const JOB_USER = "65534:65534";
+/**
+ * uid:gid of the container's init and its idle keeper (`sleep infinity`). Deliberately NOT the
+ * job's uid: without CAP_KILL a job cannot signal another uid's processes, so learner code
+ * cannot stop the container from inside (which used to look like an infrastructure failure).
+ */
+export const KEEPER_USER = "65533:65533";
 export const RUNNER_LABEL = "imbegnal.runner=1";
 export const CONTAINER_PREFIX = "imb-run-";
 export const WORKDIR = "/work";
@@ -127,7 +133,7 @@ export function buildCreateArgs(i: CreateArgsInput): string[] {
     "--shm-size",
     "8m",
     "--user",
-    JOB_USER,
+    KEEPER_USER,
     "--cap-drop",
     "ALL",
     "--security-opt",
@@ -370,7 +376,7 @@ export class Docker {
       const stdout = new OutputCollector(spec.keepBytes, spec.killBytes);
       const stderr = new OutputCollector(spec.keepBytes, spec.killBytes);
       const combined = new OutputCollector(spec.keepBytes, Number.MAX_SAFE_INTEGER);
-      const args = ["exec"];
+      const args = ["exec", "--user", JOB_USER];
       if (spec.stdin) args.push("-i");
       args.push("--workdir", WORKDIR);
       for (const k of Object.keys(spec.env ?? {}).sort()) args.push("-e", `${k}=${spec.env?.[k] ?? ""}`);

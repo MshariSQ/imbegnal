@@ -189,10 +189,10 @@ export class JobExecutor {
         { exitCode: c.exitCode, timedOut: c.timedOut, outputLimit: c.outputLimit, oomKilled: state?.oomKilled ?? false },
         { step: "compile", timeoutMs: limits.compileTimeoutMs, memoryMb: limits.compileMemoryMb, outputKillBytes: kill },
       );
-      if (v.status !== "ok" && state && !state.running && !state.oomKilled) {
-        throw new DockerError("exec", "container stopped during compilation");
-      }
       const diagnostics = c.combined.text();
+      if (v.status !== "ok" && state && !state.running && !state.oomKilled) {
+        return this.stoppedUnderJob(req, { ...result, compileOutput: diagnostics }, "compile");
+      }
       if (v.status !== "ok") {
         return {
           infra: false,
@@ -208,7 +208,28 @@ export class JobExecutor {
       if (plan.keepCompileOutput && diagnostics.trim() !== "") result.compileOutput = diagnostics;
 
       // The run step gets the learner's memory budget, which may be lower than the compiler's.
-      if (limits.compileMemoryMb !== limits.memoryMb) await this.docker.setMemory(name, limits.memoryMb);
+      if (limits.compileMemoryMb !== limits.memoryMb) {
+        try {
+          await this.docker.setMemory(name, limits.memoryMb);
+        } catch (e) {
+          // The kernel refuses to lower the cap below what the job already holds: the build output
+          // (tmpfs pages are charged to the container) does not fit the run budget. That is the
+          // program's doing, so it is charged like any memory_limit. A container that is gone or a
+          // daemon that does not answer stays an infrastructure failure.
+          const now = await this.docker.inspectState(name);
+          if (!now?.running) throw e;
+          return {
+            infra: false,
+            result: {
+              ...result,
+              status: "memory_limit",
+              exitCode: null,
+              compileOutput: result.compileOutput ?? diagnostics,
+              message: `The compiled program and its files need more than the ${limits.memoryMb} MiB memory limit for running.`,
+            },
+          };
+        }
+      }
     }
 
     // 3. Run: stdin through the exec pipe, own wall-clock limit, host-side output caps.
@@ -223,8 +244,7 @@ export class JobExecutor {
       { step: "run", timeoutMs: limits.runTimeoutMs, memoryMb: limits.memoryMb, outputKillBytes: kill },
     );
     if (state && !state.running && !state.oomKilled) {
-      // The container vanished under a running job without our doing: infrastructure, not the user.
-      throw new DockerError("exec", "container stopped during the run");
+      return this.stoppedUnderJob(req, { ...result, stdout: r.stdout.text(), stderr: r.stderr.text() }, "run");
     }
 
     const status: RunStatus = verdict.status;
@@ -251,6 +271,21 @@ export class JobExecutor {
    * Container state after a failed step. The kernel's OOM event reaches the daemon a moment
    * after the process dies, so exit codes that look like SIGKILL are polled briefly.
    */
+  /**
+   * The container stopped while a job step ran, and neither our kill nor the OOM killer did it.
+   * The job cannot reach the keeper process (different uid), so the likely cause is the job
+   * itself; it is reported and charged as a killed program, never refunded as infrastructure
+   * (refunds are what made "kill the container" worth trying). Logged so operators can spot a
+   * daemon problem behind repeated occurrences.
+   */
+  private stoppedUnderJob(req: RunRequest, result: RunResult, step: "compile" | "run"): ExecOutcome {
+    this.log.warn("container stopped during a job step", { jobId: req.jobId, lang: req.lang, reason: step });
+    return {
+      infra: false,
+      result: { ...result, status: "runtime_error", exitCode: null, signal: "SIGKILL", message: "The sandbox stopped while your program was running." },
+    };
+  }
+
   private async stateAfterFailure(name: string, exitCode: number | null): Promise<ContainerState | null> {
     let state = await this.docker.inspectState(name);
     if (state && !state.oomKilled && exitCode === 137) {
