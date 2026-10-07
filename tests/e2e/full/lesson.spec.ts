@@ -31,7 +31,9 @@ describe("lesson → Code Lab → pass", { timeout: 180_000 }, () => {
 
       await s.page.waitForURL(/\/code-lab\/\?ex=/);
       await s.page.waitForFunction((needle) => document.querySelector(".cm-content")?.textContent?.includes(needle), lab.starterCode.trim().split("\n")[0]);
-      assert.equal((await getEditorCode(s.page)).trim(), lab.starterCode.trim(), "starter code preloaded");
+      // innerText renders each empty CodeMirror line as two newlines: compare non-blank lines.
+      const lines = (code: string) => code.split("\n").map((l) => l.trimEnd()).filter(Boolean);
+      assert.deepEqual(lines(await getEditorCode(s.page)), lines(lab.starterCode), "starter code preloaded");
       // Canonical name: the track chip shows the roadmap title from data/roadmaps.ts
       const title = roadmaps.find((r) => r.id === TRACK)!.title;
       assert.match(await s.page.getByTestId("task-panel").first().innerText(), new RegExp(title));
