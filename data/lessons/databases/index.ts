@@ -4,4 +4,5 @@ import type { Lesson } from "../types";
 export const databasesLessons: Record<string, () => Promise<{ lesson: Lesson }>> = {
   "databases/relational-sql-basics": () => import("./relational-sql-basics"),
   "databases/data-modeling-normalization": () => import("./data-modeling-normalization"),
+  "databases/joins-aggregation": () => import("./joins-aggregation"),
 };
