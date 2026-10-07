@@ -1,7 +1,7 @@
 /**
- * Builds a static export of the site with the Challenges FIXTURES temporarily
- * swapped into data/challenges/security.ts, then restores that file (also on
- * failure / Ctrl-C). The fixtures are never committed into data/.
+ * Builds a static export of the site whose challenge registry is ONLY the
+ * fixtures: data/challenges/index.ts is temporarily swapped, then restored (also
+ * on failure / Ctrl-C). The fixtures are never committed into data/.
  *
  *   node tests/e2e/challenges/build-fixture-site.mjs [outDir]
  *
@@ -15,7 +15,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-const target = resolve(root, "data/challenges/security.ts");
+const target = resolve(root, "data/challenges/index.ts");
 const outDir = resolve(process.argv[2] ?? resolve(root, "node_modules/.cache/ctf-e2e-site"));
 const original = readFileSync(target, "utf8");
 
@@ -29,7 +29,10 @@ try {
     `import type { ChallengeMeta } from "../../shared/challenges";\n` +
       `import { fixtureChallenges } from "../../tests/fixtures/challenges/challenges";\n\n` +
       `// TEMPORARY: written by tests/e2e/challenges/build-fixture-site.mjs, restored after the build.\n` +
-      `export const securityChallenges: ChallengeMeta[] = fixtureChallenges;\n`
+      `export const challenges: ChallengeMeta[] = fixtureChallenges;\n\n` +
+      `export function getChallenge(id: string): ChallengeMeta | undefined {\n` +
+      `  return challenges.find((c) => c.id === id);\n` +
+      `}\n`
   );
   const r = spawnSync("npx", ["next", "build"], {
     cwd: root,
