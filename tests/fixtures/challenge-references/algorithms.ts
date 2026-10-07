@@ -6,6 +6,7 @@
  * the Worker or the runner.
  */
 import type { ChallengeReference } from "../../../shared/challenges";
+import type { LangId } from "../../../shared/languages";
 
 export const algorithmsReferences: ChallengeReference[] = [
   {
@@ -180,5 +181,261 @@ int main() {
 }
 `,
     },
+  },
+  {
+    id: "db-low-stock-report",
+    // SQL is delivered through the python harness.
+    solutions: {
+      python: `SELECT title, published_year, stock
+FROM books
+WHERE genre IN ('Fiction', 'Science')
+  AND published_year >= 2015
+  AND stock < 5
+ORDER BY stock ASC, published_year DESC, title ASC
+LIMIT 5;
+`,
+    },
+  },
+  {
+    id: "db-loyal-customers",
+    solutions: {
+      python: `SELECT c.name,
+       c.country,
+       COUNT(DISTINCT o.id) AS delivered_orders,
+       COALESCE(SUM(i.quantity * i.unit_price_cents), 0) AS total_cents
+FROM customers AS c
+JOIN orders AS o ON o.customer_id = c.id
+LEFT JOIN order_items AS i ON i.order_id = o.id
+WHERE o.status = 'delivered'
+GROUP BY c.id, c.name, c.country
+HAVING COUNT(DISTINCT o.id) >= 2
+ORDER BY total_cents DESC, c.name ASC;
+`,
+    },
+  },
+];
+
+/**
+ * Plausible-but-wrong submissions that the graders MUST reject: they prove the hidden tests are
+ * discriminating (each one targets a specific trap) and not just satisfiable.
+ */
+export interface WrongAnswer {
+  id: string;
+  lang: LangId;
+  /** The trap this submission falls into. */
+  name: string;
+  code: string;
+}
+
+export const algorithmsWrongAnswers: WrongAnswer[] = [
+  {
+    id: "dsa-pair-sum-count",
+    lang: "python",
+    name: "quadratic scan (too slow)",
+    code: `import sys
+
+data = sys.stdin.read().split()
+n, target = int(data[0]), int(data[1])
+a = list(map(int, data[2:2 + n]))
+total = 0
+for i in range(n):
+    for j in range(i + 1, n):
+        if a[i] + a[j] == target:
+            total += 1
+print(total)
+`,
+  },
+  {
+    id: "dsa-pair-sum-count",
+    lang: "python",
+    name: "counts distinct values only",
+    code: `import sys
+
+data = sys.stdin.read().split()
+n, target = int(data[0]), int(data[1])
+values = set(map(int, data[2:2 + n]))
+print(sum(1 for v in values if target - v in values and v < target - v))
+`,
+  },
+  {
+    id: "dsa-pair-sum-count",
+    lang: "javascript",
+    name: "pairs a card with itself",
+    code: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean).map(Number);
+const n = data[0];
+const target = data[1];
+const seen = new Map();
+let total = 0;
+for (const v of data.slice(2, 2 + n)) {
+  seen.set(v, (seen.get(v) || 0) + 1);
+  total += seen.get(target - v) || 0;
+}
+console.log(total);
+`,
+  },
+  {
+    id: "dsa-bracket-balance",
+    lang: "python",
+    name: "counts each bracket type separately (ignores order)",
+    code: `def is_balanced(s):
+    return s.count("(") == s.count(")") and s.count("[") == s.count("]") and s.count("{") == s.count("}")
+`,
+  },
+  {
+    id: "dsa-bracket-balance",
+    lang: "python",
+    name: "recursive reduction (stack overflow on deep nesting)",
+    code: `def is_balanced(s):
+    t = "".join(ch for ch in s if ch in "()[]{}")
+    if not t:
+        return True
+    for pair in ("()", "[]", "{}"):
+        if pair in t:
+            return is_balanced(t.replace(pair, "", 1))
+    return False
+`,
+  },
+  {
+    id: "dsa-bracket-balance",
+    lang: "javascript",
+    name: "single depth counter for all bracket types",
+    code: `function isBalanced(s) {
+  let depth = 0;
+  for (const ch of s) {
+    if ("([{".includes(ch)) depth++;
+    else if (")]}".includes(ch)) depth--;
+    if (depth < 0) return false;
+  }
+  return depth === 0;
+}
+`,
+  },
+  {
+    id: "dsa-grid-shortest-path",
+    lang: "python",
+    name: "depth-first search returns some path, not the shortest",
+    code: `import sys
+
+sys.setrecursionlimit(1_000_000)
+rows, cols = map(int, sys.stdin.readline().split())
+grid = [sys.stdin.readline().rstrip("\\n") for _ in range(rows)]
+start = next((r, c) for r in range(rows) for c in range(cols) if grid[r][c] == "S")
+seen = set()
+best = [-1]
+
+
+def dfs(r, c, d):
+    if (r, c) in seen or not (0 <= r < rows and 0 <= c < cols) or grid[r][c] == "#":
+        return False
+    if grid[r][c] == "E":
+        best[0] = d
+        return True
+    seen.add((r, c))
+    return dfs(r + 1, c, d + 1) or dfs(r, c + 1, d + 1) or dfs(r - 1, c, d + 1) or dfs(r, c - 1, d + 1)
+
+
+import threading
+
+threading.stack_size(512 * 1024 * 1024)
+t = threading.Thread(target=lambda: dfs(*start, 0))
+t.start()
+t.join()
+print(best[0])
+`,
+  },
+  {
+    id: "dsa-grid-shortest-path",
+    lang: "python",
+    name: "breadth-first search that also allows diagonal moves",
+    code: `import sys
+from collections import deque
+
+rows, cols = map(int, sys.stdin.readline().split())
+grid = [sys.stdin.readline().rstrip("\\n") for _ in range(rows)]
+start = next((r, c) for r in range(rows) for c in range(cols) if grid[r][c] == "S")
+dist = {start: 0}
+queue = deque([start])
+answer = -1
+while queue:
+    r, c = queue.popleft()
+    if grid[r][c] == "E":
+        answer = dist[(r, c)]
+        break
+    for dr in (-1, 0, 1):
+        for dc in (-1, 0, 1):
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] != "#" and (nr, nc) not in dist:
+                dist[(nr, nc)] = dist[(r, c)] + 1
+                queue.append((nr, nc))
+print(answer)
+`,
+  },
+  {
+    id: "db-low-stock-report",
+    lang: "python",
+    name: "stock <= 5 (off by one)",
+    code: `SELECT title, published_year, stock FROM books
+WHERE genre IN ('Fiction', 'Science') AND published_year >= 2015 AND stock <= 5
+ORDER BY stock ASC, published_year DESC, title ASC LIMIT 5;
+`,
+  },
+  {
+    id: "db-low-stock-report",
+    lang: "python",
+    name: "treats unknown stock as zero",
+    code: `SELECT title, published_year, COALESCE(stock, 0) FROM books
+WHERE genre IN ('Fiction', 'Science') AND published_year >= 2015 AND COALESCE(stock, 0) < 5
+ORDER BY COALESCE(stock, 0) ASC, published_year DESC, title ASC LIMIT 5;
+`,
+  },
+  {
+    id: "db-low-stock-report",
+    lang: "python",
+    name: "forgets the title tie-break",
+    code: `SELECT title, published_year, stock FROM books
+WHERE genre IN ('Fiction', 'Science') AND published_year >= 2015 AND stock < 5
+ORDER BY stock ASC, published_year DESC LIMIT 5;
+`,
+  },
+  {
+    id: "db-low-stock-report",
+    lang: "python",
+    name: "forgets LIMIT",
+    code: `SELECT title, published_year, stock FROM books
+WHERE genre IN ('Fiction', 'Science') AND published_year >= 2015 AND stock < 5
+ORDER BY stock ASC, published_year DESC, title ASC;
+`,
+  },
+  {
+    id: "db-loyal-customers",
+    lang: "python",
+    name: "COUNT(*) counts item rows instead of orders",
+    code: `SELECT c.name, c.country, COUNT(*) AS delivered_orders, COALESCE(SUM(i.quantity * i.unit_price_cents), 0) AS total_cents
+FROM customers c JOIN orders o ON o.customer_id = c.id LEFT JOIN order_items i ON i.order_id = o.id
+WHERE o.status = 'delivered'
+GROUP BY c.id HAVING COUNT(*) >= 2
+ORDER BY total_cents DESC, c.name ASC;
+`,
+  },
+  {
+    id: "db-loyal-customers",
+    lang: "python",
+    name: "inner join drops delivered orders without items",
+    code: `SELECT c.name, c.country, COUNT(DISTINCT o.id) AS delivered_orders, SUM(i.quantity * i.unit_price_cents) AS total_cents
+FROM customers c JOIN orders o ON o.customer_id = c.id JOIN order_items i ON i.order_id = o.id
+WHERE o.status = 'delivered'
+GROUP BY c.id HAVING COUNT(DISTINCT o.id) >= 2
+ORDER BY total_cents DESC, c.name ASC;
+`,
+  },
+  {
+    id: "db-loyal-customers",
+    lang: "python",
+    name: "counts every order status",
+    code: `SELECT c.name, c.country, COUNT(DISTINCT o.id) AS delivered_orders, COALESCE(SUM(i.quantity * i.unit_price_cents), 0) AS total_cents
+FROM customers c JOIN orders o ON o.customer_id = c.id LEFT JOIN order_items i ON i.order_id = o.id
+GROUP BY c.id HAVING COUNT(DISTINCT o.id) >= 2
+ORDER BY total_cents DESC, c.name ASC;
+`,
   },
 ];

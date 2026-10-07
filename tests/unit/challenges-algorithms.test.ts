@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { algorithmsChallenges } from "../../data/challenges/algorithms";
 import { algorithmsGraders } from "../../worker/src/graders/data/algorithms";
-import { algorithmsReferences } from "../fixtures/challenge-references/algorithms";
+import { algorithmsReferences, algorithmsWrongAnswers } from "../fixtures/challenge-references/algorithms";
 import { roadmaps } from "../../data/roadmaps";
 import { hasLesson } from "../../data/lessons";
 import { LANG_IDS, type LangId } from "../../shared/languages";
@@ -152,7 +152,7 @@ test("metadata follows the authoring rubric", () => {
       const allowed = m.allowedLangs ?? LANG_IDS;
       assert.ok(allowed.includes(m.lang), `${m.id}: lang must be allowed`);
       const starter = Object.keys(m.starterCode ?? {}) as LangId[];
-      assert.ok(starter.length >= 2, `${m.id}: starter code for python + one more language`);
+      assert.ok(starter.length >= Math.min(2, allowed.length), `${m.id}: starter code for python + one more language`);
       assert.ok(m.starterCode?.python, `${m.id}: python starter`);
       for (const l of starter) {
         assert.ok(allowed.includes(l), `${m.id}: starter language ${l} not allowed`);
@@ -203,10 +203,16 @@ test("hidden tests and harnesses are not copied into the public meta", () => {
       if (expected.length >= 12) assert.ok(!publicText.includes(expected), `${g.id}/${t.name}: hidden expected output copied into meta`);
     }
     if (g.kind === "code") {
+      // Harnesses may declare datasets with "# dataset: <name>" markers; datasets that are not a visible test
+      // must not be readable in the public statement.
+      const visibleNames = new Set(g.tests.filter((t) => t.hidden !== true).map((t) => t.stdin.trim()));
       for (const template of Object.values(g.harness)) {
-        const body = (template ?? "").split("{{CODE}}")[1]?.trim() ?? "";
-        const firstLines = body.split("\n").filter((l) => l.trim().length > 20).slice(0, 3);
-        for (const l of firstLines) assert.ok(!publicText.includes(l.trim()), `${g.id}: harness line leaked into meta`);
+        const sections = (template ?? "").split(/^# dataset: (\S+)$/m);
+        for (let i = 1; i < sections.length; i += 2) {
+          if (visibleNames.has(sections[i])) continue;
+          const rows = sections[i + 1].split("\n").map((l) => l.trim()).filter((l) => l.length >= 24);
+          for (const l of rows) assert.ok(!publicText.includes(l), `${g.id}: hidden dataset ${sections[i]} leaks into meta`);
+        }
       }
     }
   }
@@ -221,7 +227,9 @@ test("test graders are well formed: visible examples, hidden tests, sizes, harne
     assert.ok(g.tests.length <= SUBMIT_LIMITS.maxTests, `${m.id}: more tests than maxTests`);
     const visible = g.tests.filter((t) => t.hidden !== true);
     const hidden = g.tests.filter((t) => t.hidden === true);
-    assert.ok(visible.length >= 2 && visible.length <= 3, `${m.id}: 2-3 visible tests`);
+    // SQL challenges show ONE dataset (the playground in the statement); the others are hidden datasets.
+    const isSql = m.tags?.includes("sql") === true;
+    assert.ok(visible.length >= (isSql ? 1 : 2) && visible.length <= 3, `${m.id}: visible tests`);
     assert.ok(hidden.length >= 3, `${m.id}: at least 3 hidden tests`);
     assert.equal(new Set(g.tests.map((t) => t.name)).size, g.tests.length, `${m.id}: unique test names`);
     for (const t of g.tests) {
@@ -251,8 +259,9 @@ for (const ref of algorithmsReferences) {
   const grader = testGraderOf(ref.id);
   const solutions = Object.entries(ref.solutions ?? {}) as [LangId, string][];
 
-  test(`${ref.id}: reference solutions exist (python + javascript at least)`, () => {
-    assert.ok(ref.solutions?.python && ref.solutions.javascript, "python and javascript solutions");
+  test(`${ref.id}: reference solutions exist for every allowed core language`, () => {
+    assert.ok(ref.solutions?.python, "python solution");
+    if (!meta.allowedLangs || meta.allowedLangs.includes("javascript")) assert.ok(ref.solutions?.javascript, "javascript solution");
     for (const [lang] of solutions) assert.ok((meta.allowedLangs ?? LANG_IDS).includes(lang), `${lang} allowed`);
     if (grader.kind === "code") for (const [lang] of solutions) assert.ok(grader.harness[lang], `${lang} has a harness`);
   });
@@ -284,6 +293,23 @@ for (const ref of algorithmsReferences) {
     });
   }
 }
+
+// ── 6. the hidden tests are discriminating ───────────────────────────────────
+
+for (const wrong of algorithmsWrongAnswers) {
+  test(`${wrong.id}: rejects "${wrong.name}"`, { skip: localSupports(wrong.lang) ? false : `${wrong.lang} toolchain not installed` }, async () => {
+    const grader = testGraderOf(wrong.id);
+    const built = buildProgram(grader, wrong.lang, wrong.code);
+    assert.ok(built.ok, "program builds");
+    const out = await gradeTests(grader, wrong.lang, built.program, localRun);
+    assert.equal(out.kind, "graded");
+    if (out.kind === "graded") assert.equal(out.grade.passed, false, "a wrong submission must not pass");
+  });
+}
+
+test("every challenge has at least one wrong-answer probe", () => {
+  for (const m of metas) assert.ok(algorithmsWrongAnswers.some((w) => w.id === m.id), `${m.id}: add a wrong-answer probe`);
+});
 
 test("unsupported-language and sentinel guards behave for the code graders", () => {
   for (const g of graders) {

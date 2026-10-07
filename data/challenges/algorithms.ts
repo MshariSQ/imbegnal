@@ -426,4 +426,400 @@ int main() {
   addedAt: ADDED,
 };
 
-export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath];
+// ── databases ─────────────────────────────────────────────────────────────────
+// SQL challenges are delivered through Python: the grader's harness builds a seeded in-memory SQLite
+// database (different data on every test), runs the learner's statement read-only and prints the rows.
+
+const dbLowStockReport: ChallengeMeta = {
+  id: "db-low-stock-report",
+  track: "databases",
+  topic: "sql-select",
+  title: { en: "The Reorder List", ar: "قائمة إعادة الطلب" },
+  summary: {
+    en: "Write one SELECT that filters a bookshop's catalogue, handles unknown stock correctly and sorts ties the way the manager wants.",
+    ar: "اكتب استعلام SELECT واحدًا يصفّي كتالوج مكتبة، ويتعامل مع المخزون المجهول بشكل صحيح، ويرتّب التعادلات كما يريد المدير.",
+  },
+  description: {
+    en: `## Story
+
+Every Monday the bookshop manager wants a short **reorder list**: the recent fiction and science titles that are almost sold out. The catalogue lives in one table and you are the person who knows SQL.
+
+## Task
+
+Write **one SQL \`SELECT\` statement** over the table \`books\`:
+
+| column | type | meaning |
+|---|---|---|
+| \`id\` | INTEGER | primary key |
+| \`title\` | TEXT | book title |
+| \`genre\` | TEXT | e.g. \`Fiction\`, \`Science\`, \`Travel\` |
+| \`published_year\` | INTEGER | year of publication |
+| \`price_cents\` | INTEGER | price in cents |
+| \`stock\` | INTEGER | copies on the shelf; \`NULL\` means "not counted yet" |
+
+List the books that satisfy **all** of these:
+
+* \`genre\` is \`Fiction\` or \`Science\`
+* published in **2015 or later**
+* \`stock\` is **below 5** (a book with 5 copies is fine; books whose stock was never counted are not on the list)
+
+Return the columns \`title\`, \`published_year\`, \`stock\` in that order, sorted by \`stock\` ascending, then \`published_year\` descending, then \`title\` ascending. Return **at most 5 rows**.
+
+## How your answer is graded
+
+Submit **only the SQL** (one statement, a trailing \`;\` is fine; do not use three double quotes in a row). A hidden Python program creates the \`books\` table with different data for each test, runs your statement read-only and prints every row with \`|\` between the values. When nothing matches it prints \`(no rows)\`. That is why the language is **Python** here, and why you cannot run your SQL directly in Code Lab: use the playground below to experiment.
+
+## Example
+
+Playground (paste into Code Lab, change \`query\`, run):
+
+\`\`\`python
+import sqlite3
+
+db = sqlite3.connect(":memory:")
+db.executescript("""
+CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT NOT NULL, genre TEXT NOT NULL,
+                    published_year INTEGER NOT NULL, price_cents INTEGER NOT NULL, stock INTEGER);
+INSERT INTO books VALUES
+  (1, 'The Silent Orchard', 'Fiction', 2019, 1599, 3),
+  (2, 'Quantum Gardens', 'Science', 2021, 2499, 0),
+  (3, 'Atlas of Small Rivers', 'Travel', 2018, 1999, 2),
+  (4, 'Salt and Ember', 'Fiction', 2016, 1299, 4),
+  (5, 'Letters to a Young Coder', 'Science', 2012, 1799, 1),
+  (6, 'The Clockmaker''s Daughter', 'Fiction', 2022, 1499, 5),
+  (7, 'Deep Time', 'Science', 2020, 2199, NULL),
+  (8, 'Harbor Lights', 'Fiction', 2019, 1399, 3),
+  (9, 'Cooking with Fire', 'Cooking', 2021, 2899, 1),
+  (10, 'Orbit Notes', 'Science', 2015, 1899, 2),
+  (11, 'Paper Cities', 'Fiction', 2023, 1699, 4),
+  (12, 'The Last Lighthouse', 'Fiction', 2014, 999, 0);
+""")
+
+query = """
+SELECT title, published_year, stock
+FROM books;
+"""
+for row in db.execute(query):
+    print("|".join(map(str, row)))
+\`\`\`
+
+The correct statement prints exactly:
+
+\`\`\`
+Quantum Gardens|2021|0
+Orbit Notes|2015|2
+Harbor Lights|2019|3
+The Silent Orchard|2019|3
+Paper Cities|2023|4
+\`\`\`
+
+("Salt and Ember" also qualifies but is cut off by the 5-row limit.)`,
+    ar: `## القصة
+
+كل يوم اثنين يريد مدير المكتبة **قائمة إعادة طلب** قصيرة: عناوين الروايات والعلوم الحديثة التي أوشكت على النفاد. الكتالوج في جدول واحد، وأنت من يعرف SQL.
+
+## المطلوب
+
+اكتب **استعلام \`SELECT\` واحدًا** على الجدول \`books\`:
+
+| العمود | النوع | المعنى |
+|---|---|---|
+| \`id\` | INTEGER | المفتاح الأساسي |
+| \`title\` | TEXT | عنوان الكتاب |
+| \`genre\` | TEXT | مثل \`Fiction\` و \`Science\` و \`Travel\` |
+| \`published_year\` | INTEGER | سنة النشر |
+| \`price_cents\` | INTEGER | السعر بالسنت |
+| \`stock\` | INTEGER | عدد النسخ على الرف؛ \`NULL\` تعني «لم يُجرَد بعد» |
+
+اعرض الكتب التي تحقق **كل** الشروط التالية:
+
+* \`genre\` هو \`Fiction\` أو \`Science\`
+* نُشر في **2015 أو بعدها**
+* \`stock\` **أقل من 5** (كتاب بخمس نسخ لا بأس به؛ والكتب التي لم يُجرَد مخزونها لا تظهر في القائمة)
+
+أعد الأعمدة \`title\` ثم \`published_year\` ثم \`stock\` بهذا الترتيب، مرتبة حسب \`stock\` تصاعديًا، ثم \`published_year\` تنازليًا، ثم \`title\` تصاعديًا. أعد **5 صفوف على الأكثر**.
+
+## كيف يُقيَّم جوابك
+
+أرسل **الاستعلام فقط** (جملة واحدة، ويجوز وضع \`;\` في آخرها؛ لا تستخدم ثلاث علامات اقتباس مزدوجة متتالية). برنامج Python خفي ينشئ جدول \`books\` ببيانات مختلفة لكل اختبار، ثم ينفذ استعلامك بصلاحية القراءة فقط ويطبع كل صف مع \`|\` بين القيم. وإذا لم يتطابق أي صف يطبع \`(no rows)\`. لهذا اللغة هنا **Python**، ولهذا لا يمكنك تشغيل الـ SQL مباشرة في Code Lab؛ استخدم ملعب التجربة أدناه.
+
+## مثال
+
+ملعب التجربة (الصقه في Code Lab، وغيّر \`query\`، ثم شغّله):
+
+\`\`\`python
+import sqlite3
+
+db = sqlite3.connect(":memory:")
+db.executescript("""
+CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT NOT NULL, genre TEXT NOT NULL,
+                    published_year INTEGER NOT NULL, price_cents INTEGER NOT NULL, stock INTEGER);
+INSERT INTO books VALUES
+  (1, 'The Silent Orchard', 'Fiction', 2019, 1599, 3),
+  (2, 'Quantum Gardens', 'Science', 2021, 2499, 0),
+  (3, 'Atlas of Small Rivers', 'Travel', 2018, 1999, 2),
+  (4, 'Salt and Ember', 'Fiction', 2016, 1299, 4),
+  (5, 'Letters to a Young Coder', 'Science', 2012, 1799, 1),
+  (6, 'The Clockmaker''s Daughter', 'Fiction', 2022, 1499, 5),
+  (7, 'Deep Time', 'Science', 2020, 2199, NULL),
+  (8, 'Harbor Lights', 'Fiction', 2019, 1399, 3),
+  (9, 'Cooking with Fire', 'Cooking', 2021, 2899, 1),
+  (10, 'Orbit Notes', 'Science', 2015, 1899, 2),
+  (11, 'Paper Cities', 'Fiction', 2023, 1699, 4),
+  (12, 'The Last Lighthouse', 'Fiction', 2014, 999, 0);
+""")
+
+query = """
+SELECT title, published_year, stock
+FROM books;
+"""
+for row in db.execute(query):
+    print("|".join(map(str, row)))
+\`\`\`
+
+الاستعلام الصحيح يطبع بالضبط:
+
+\`\`\`
+Quantum Gardens|2021|0
+Orbit Notes|2015|2
+Harbor Lights|2019|3
+The Silent Orchard|2019|3
+Paper Cities|2023|4
+\`\`\`
+
+(الكتاب "Salt and Ember" مؤهل أيضًا لكنه خرج بسبب حد الصفوف الخمسة.)`,
+  },
+  difficulty: 1,
+  points: 50,
+  estMinutes: 15,
+  kind: "code",
+  lang: "python",
+  allowedLangs: ["python"],
+  starterCode: {
+    python: `-- Write ONE SELECT statement. Submit only SQL: no Python code here.
+-- Columns: title, published_year, stock
+SELECT title, published_year, stock
+FROM books;
+`,
+  },
+  hints: [
+    {
+      text: {
+        en: "Filter rows with WHERE and join the conditions with AND. `genre IN ('Fiction', 'Science')` is shorter than two OR comparisons.",
+        ar: "صفِّ الصفوف بـ WHERE واربط الشروط بـ AND. العبارة `genre IN ('Fiction', 'Science')` أقصر من مقارنتين مربوطتين بـ OR.",
+      },
+      cost: 5,
+    },
+    {
+      text: {
+        en: "A comparison with NULL is never true, so think about what `stock < 5` does to books with an unknown stock. ORDER BY accepts several keys, each with its own ASC or DESC.",
+        ar: "أي مقارنة مع NULL لا تكون صحيحة أبدًا، فتأمل ماذا يفعل الشرط `stock < 5` بالكتب ذات المخزون المجهول. ويقبل ORDER BY عدة مفاتيح، لكل منها ASC أو DESC خاص به.",
+      },
+      cost: 5,
+    },
+    {
+      text: {
+        en: "Clause order is WHERE, then ORDER BY stock ASC, published_year DESC, title ASC, and LIMIT 5 comes last.",
+        ar: "ترتيب الجمل هو WHERE ثم ORDER BY stock ASC, published_year DESC, title ASC، وتأتي LIMIT 5 في النهاية.",
+      },
+      cost: 10,
+    },
+  ],
+  lessons: ["databases/relational-sql-basics"],
+  tags: ["sql", "where", "order-by", "null"],
+  addedAt: ADDED,
+};
+
+const dbLoyalCustomers: ChallengeMeta = {
+  id: "db-loyal-customers",
+  track: "databases",
+  topic: "joins-aggregation",
+  title: { en: "Loyal Customers", ar: "العملاء المخلصون" },
+  summary: {
+    en: "Join three tables, aggregate per customer and keep only the repeat buyers. The row fan-out of a join is the trap.",
+    ar: "اربط ثلاثة جداول، وجمّع لكل عميل، وأبقِ المشترين المتكررين فقط. والفخ هنا هو تضاعف الصفوف الناتج عن الربط.",
+  },
+  description: {
+    en: `## Story
+
+Marketing wants to thank customers who keep coming back. You get the shop's three tables and must produce the **loyalty report**: every customer with at least two delivered orders, and how much they spent on them.
+
+## Task
+
+Write **one SQL \`SELECT\` statement** over these tables:
+
+| table | columns |
+|---|---|
+| \`customers\` | \`id\`, \`name\`, \`country\` |
+| \`orders\` | \`id\`, \`customer_id\` → customers, \`status\` (\`delivered\`, \`cancelled\` or \`pending\`) |
+| \`order_items\` | \`id\`, \`order_id\` → orders, \`quantity\`, \`unit_price_cents\` |
+
+Rules:
+
+* Only orders with status \`delivered\` count, both for the number of orders and for the money. Cancelled and pending orders are ignored completely.
+* An order is worth the sum of \`quantity * unit_price_cents\` over its items. A delivered order **with no item rows** still counts as a delivered order, worth 0.
+* Report only customers with **at least 2 delivered orders**.
+
+Return one row per customer with the columns \`name\`, \`country\`, \`delivered_orders\`, \`total_cents\` (in that order), sorted by \`total_cents\` descending, then \`name\` ascending.
+
+## How your answer is graded
+
+Submit **only the SQL** (one statement, a trailing \`;\` is fine; no three double quotes in a row). A hidden Python program builds the three tables with different data for each test, runs your statement read-only and prints every row with \`|\` between the values (\`(no rows)\` when the result is empty). The language is **Python** because of that wrapper; experiment with the playground below.
+
+## Example
+
+Playground (paste into Code Lab, change \`query\`, run):
+
+\`\`\`python
+import sqlite3
+
+db = sqlite3.connect(":memory:")
+db.executescript("""
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, country TEXT NOT NULL);
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), status TEXT NOT NULL);
+CREATE TABLE order_items (id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL REFERENCES orders(id),
+                          quantity INTEGER NOT NULL, unit_price_cents INTEGER NOT NULL);
+INSERT INTO customers VALUES
+  (1, 'Amira Hassan', 'Egypt'), (2, 'Ben Carter', 'UK'), (3, 'Chiyo Tanaka', 'Japan'),
+  (4, 'Diego Alves', 'Brazil'), (5, 'Esther Kamau', 'Kenya'), (6, 'Farid Nasser', 'Egypt');
+INSERT INTO orders VALUES
+  (101, 1, 'delivered'), (102, 1, 'delivered'), (103, 1, 'cancelled'), (104, 2, 'delivered'),
+  (105, 2, 'pending'), (106, 3, 'delivered'), (107, 3, 'delivered'), (108, 3, 'delivered'),
+  (109, 4, 'cancelled'), (110, 4, 'cancelled'), (111, 5, 'delivered'), (112, 5, 'delivered'),
+  (113, 6, 'delivered'), (114, 6, 'delivered');
+INSERT INTO order_items VALUES
+  (1, 101, 2, 1500), (2, 101, 1, 2500), (3, 102, 1, 4000), (4, 103, 5, 1000), (5, 104, 3, 1000),
+  (6, 106, 1, 9900), (7, 107, 2, 1200), (8, 107, 1, 300), (9, 107, 4, 250), (10, 108, 1, 5000),
+  (11, 111, 10, 200), (12, 112, 1, 1000), (13, 113, 2, 2750);
+""")
+
+query = """
+SELECT name, country FROM customers;
+"""
+for row in db.execute(query):
+    print("|".join(map(str, row)))
+\`\`\`
+
+The correct statement prints exactly:
+
+\`\`\`
+Chiyo Tanaka|Japan|3|18600
+Amira Hassan|Egypt|2|9500
+Farid Nasser|Egypt|2|5500
+Esther Kamau|Kenya|2|3000
+\`\`\`
+
+Ben has only one delivered order and Diego none, so they are left out. Farid's second order (114) has no items but still counts.`,
+    ar: `## القصة
+
+يريد فريق التسويق شكر العملاء الذين يعودون باستمرار. بين يديك جداول المتجر الثلاثة، وعليك إنتاج **تقرير الولاء**: كل عميل لديه طلبان مُسلَّمان على الأقل، ومقدار ما أنفقه عليهما.
+
+## المطلوب
+
+اكتب **استعلام \`SELECT\` واحدًا** على هذه الجداول:
+
+| الجدول | الأعمدة |
+|---|---|
+| \`customers\` | \`id\` و \`name\` و \`country\` |
+| \`orders\` | \`id\` و \`customer_id\` → customers و \`status\` (‏\`delivered\` أو \`cancelled\` أو \`pending\`) |
+| \`order_items\` | \`id\` و \`order_id\` → orders و \`quantity\` و \`unit_price_cents\` |
+
+القواعد:
+
+* تُحتسب فقط الطلبات ذات الحالة \`delivered\`، سواء في عدد الطلبات أو في المبلغ. أما الطلبات الملغاة والمعلّقة فتُهمل تمامًا.
+* قيمة الطلب هي مجموع \`quantity * unit_price_cents\` لبنوده. والطلب المُسلَّم **الذي ليس له صفوف بنود** يُحتسب طلبًا مسلّمًا قيمته 0.
+* اعرض فقط العملاء الذين لديهم **طلبان مسلّمان على الأقل**.
+
+أعد صفًا واحدًا لكل عميل بالأعمدة \`name\` و \`country\` و \`delivered_orders\` و \`total_cents\` (بهذا الترتيب)، مرتبة حسب \`total_cents\` تنازليًا ثم \`name\` تصاعديًا.
+
+## كيف يُقيَّم جوابك
+
+أرسل **الاستعلام فقط** (جملة واحدة، ويجوز وضع \`;\` في آخرها؛ ولا ثلاث علامات اقتباس مزدوجة متتالية). برنامج Python خفي ينشئ الجداول الثلاثة ببيانات مختلفة لكل اختبار، وينفذ استعلامك بصلاحية القراءة فقط ويطبع كل صف مع \`|\` بين القيم (و\`(no rows)\` إذا كانت النتيجة فارغة). اللغة **Python** بسبب هذا الغلاف؛ جرّب في ملعب التجربة أدناه.
+
+## مثال
+
+ملعب التجربة (الصقه في Code Lab، وغيّر \`query\`، ثم شغّله):
+
+\`\`\`python
+import sqlite3
+
+db = sqlite3.connect(":memory:")
+db.executescript("""
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, country TEXT NOT NULL);
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), status TEXT NOT NULL);
+CREATE TABLE order_items (id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL REFERENCES orders(id),
+                          quantity INTEGER NOT NULL, unit_price_cents INTEGER NOT NULL);
+INSERT INTO customers VALUES
+  (1, 'Amira Hassan', 'Egypt'), (2, 'Ben Carter', 'UK'), (3, 'Chiyo Tanaka', 'Japan'),
+  (4, 'Diego Alves', 'Brazil'), (5, 'Esther Kamau', 'Kenya'), (6, 'Farid Nasser', 'Egypt');
+INSERT INTO orders VALUES
+  (101, 1, 'delivered'), (102, 1, 'delivered'), (103, 1, 'cancelled'), (104, 2, 'delivered'),
+  (105, 2, 'pending'), (106, 3, 'delivered'), (107, 3, 'delivered'), (108, 3, 'delivered'),
+  (109, 4, 'cancelled'), (110, 4, 'cancelled'), (111, 5, 'delivered'), (112, 5, 'delivered'),
+  (113, 6, 'delivered'), (114, 6, 'delivered');
+INSERT INTO order_items VALUES
+  (1, 101, 2, 1500), (2, 101, 1, 2500), (3, 102, 1, 4000), (4, 103, 5, 1000), (5, 104, 3, 1000),
+  (6, 106, 1, 9900), (7, 107, 2, 1200), (8, 107, 1, 300), (9, 107, 4, 250), (10, 108, 1, 5000),
+  (11, 111, 10, 200), (12, 112, 1, 1000), (13, 113, 2, 2750);
+""")
+
+query = """
+SELECT name, country FROM customers;
+"""
+for row in db.execute(query):
+    print("|".join(map(str, row)))
+\`\`\`
+
+الاستعلام الصحيح يطبع بالضبط:
+
+\`\`\`
+Chiyo Tanaka|Japan|3|18600
+Amira Hassan|Egypt|2|9500
+Farid Nasser|Egypt|2|5500
+Esther Kamau|Kenya|2|3000
+\`\`\`
+
+لدى Ben طلب مسلَّم واحد فقط ولا شيء لدى Diego، فاستُبعدا. وطلب Farid الثاني (114) بلا بنود لكنه يُحتسب.`,
+  },
+  difficulty: 2,
+  points: 150,
+  estMinutes: 30,
+  kind: "code",
+  lang: "python",
+  allowedLangs: ["python"],
+  starterCode: {
+    python: `-- Write ONE SELECT statement. Submit only SQL: no Python code here.
+-- Columns: name, country, delivered_orders, total_cents
+SELECT c.name, c.country
+FROM customers AS c;
+`,
+  },
+  hints: [
+    {
+      text: {
+        en: "You need all three tables: customers → orders → order_items. Decide what belongs in WHERE (rows removed before grouping) and what in HAVING (groups removed after).",
+        ar: "تحتاج الجداول الثلاثة: customers ثم orders ثم order_items. حدّد ما مكانه WHERE (صفوف تُحذف قبل التجميع) وما مكانه HAVING (مجموعات تُحذف بعد التجميع).",
+      },
+      cost: 15,
+    },
+    {
+      text: {
+        en: "Joining the items repeats an order once per item row, so COUNT(*) counts items, not orders. Count distinct order ids instead.",
+        ar: "ربط البنود يكرر الطلب مرة لكل صف بند، لذا COUNT(*) تعدّ البنود لا الطلبات. عُدّ معرّفات الطلبات المميزة بدلًا من ذلك.",
+      },
+      cost: 20,
+    },
+    {
+      text: {
+        en: "An INNER JOIN to order_items silently drops delivered orders that have no items. Use a LEFT JOIN there and COALESCE(SUM(...), 0) so those orders still count.",
+        ar: "الربط الداخلي INNER JOIN مع order_items يُسقط بصمت الطلبات المسلَّمة التي لا بنود لها. استخدم LEFT JOIN هناك مع COALESCE(SUM(...), 0) كي تبقى محتسبة.",
+      },
+      cost: 25,
+    },
+  ],
+  lessons: ["databases/joins-aggregation", "data-science/sql-data-science"],
+  tags: ["sql", "join", "group-by", "having"],
+  addedAt: ADDED,
+};
+
+export const algorithmsChallenges: ChallengeMeta[] = [dsaPairSumCount, dsaBracketBalance, dsaGridShortestPath, dbLowStockReport, dbLoyalCustomers];
