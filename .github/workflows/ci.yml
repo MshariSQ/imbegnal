@@ -61,6 +61,23 @@ jobs:
         env:
           RUNNER_TEST_IMAGE: imbegnal-runner:slim
 
+  # The site's UI against a mocked Worker: Code Lab, Challenges (fixture export), course pages,
+  # certificate and instructor pages; RTL, mobile widths, axe-core and hydration checks.
+  ui:
+    name: UI specs (mocked API, Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: UI specs
+        run: npm run test:e2e:ui
+
   # Real runner + real Worker (wrangler dev, local D1, real migrations) + exported site + Chromium.
   e2e:
     name: Full-stack E2E
