@@ -123,3 +123,48 @@ export interface LanguagesResponse {
   driver: string;
   limits: typeof RUNNER_DEFAULTS;
 }
+
+/** Endpoint paths of the runner service. */
+export const RUNNER_PATHS = {
+  health: "/healthz",
+  languages: "/v1/languages",
+  run: "/v1/run",
+} as const;
+
+/**
+ * `RunRequest.jobId` shape: a uuid, or anything uuid-like (letters, digits, dashes; 8-64 chars,
+ * starting with a letter or digit). The runner uses it in container names, so nothing else passes.
+ */
+export const JOB_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{7,63}$/;
+
+/**
+ * HTTP-level failures of the runner. A job that RAN, whatever its outcome, is always HTTP 200
+ * with a `RunResult`; these are the cases where no job was executed.
+ *
+ *   400 bad_request      malformed JSON / field validation failed (`message` names the field)
+ *   401 unauthorized     missing/invalid signature or stale timestamp
+ *   404 not_found
+ *   405 method_not_allowed
+ *   409 duplicate_job    `jobId` already seen inside the replay window
+ *   413 too_large        body, code or stdin above RUNNER_CEILING
+ *   415 unsupported_media_type   body is not application/json
+ *   500 internal_error   unexpected runner failure (the result is lost)
+ *   503 busy             all slots busy and the queue is full (or the queue wait expired)
+ *   503 shutting_down    the runner is stopping
+ */
+export type RunnerErrorCode =
+  | "bad_request"
+  | "unauthorized"
+  | "not_found"
+  | "method_not_allowed"
+  | "duplicate_job"
+  | "too_large"
+  | "unsupported_media_type"
+  | "internal_error"
+  | "busy"
+  | "shutting_down";
+
+export interface RunnerErrorBody {
+  error: RunnerErrorCode;
+  message?: string;
+}
