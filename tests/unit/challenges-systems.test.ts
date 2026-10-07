@@ -207,7 +207,8 @@ test("no hidden test data is copied into the public metadata", () => {
     for (const t of grader.tests.filter((x) => x.hidden)) {
       assert.ok(t.stdin.trim().length > 0, `${meta.id}/${t.name}: hidden tests need input`);
       assert.ok(!pub.includes(t.stdin.trim()) || t.stdin.trim().length < 12, `${meta.id}: hidden stdin of "${t.name}" is in the meta`);
-      assert.ok(!pub.includes(t.expected.trim()) || t.expected.trim().length < 12, `${meta.id}: hidden expectation of "${t.name}" is in the meta`);
+      const shownByVisible = grader.tests.some((v) => !v.hidden && v.expected.trim() === t.expected.trim()); // e.g. a fixed error line
+      assert.ok(!pub.includes(t.expected.trim()) || t.expected.trim().length < 12 || shownByVisible, `${meta.id}: hidden expectation of "${t.name}" is in the meta`);
     }
     // The statement and sampleInput show the visible tests, which are public by design.
     const first = grader.tests.find((t) => !t.hidden);

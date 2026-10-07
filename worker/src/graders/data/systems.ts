@@ -51,4 +51,20 @@ console.log(String(clockFaults(_tokens[0], _tokens.slice(1))));
       { name: "Large page numbers, 4 frames", stdin: "4\n100000 7 100000 2147483647 7 9 100000 8 2147483647 9 7\n", expected: "5\n", hidden: true },
     ],
   },
+  {
+    id: "devops-pipeline-order",
+    kind: "output",
+    tests: [
+      { name: "Lint must run before test, even though test is listed first", stdin: "pipeline:\n  build:\n    needs: []\n    script: make build\n  test:\n    needs: [build, lint]\n    script: make test\n  lint:\n    script: make lint\n  deploy:\n    needs: [test]\n    script: ./deploy.sh\n", expected: "build\nlint\ntest\ndeploy\n" },
+      { name: "Diamond with several ready jobs", stdin: "pipeline:\n  package:\n    needs: [unit, integration]\n  unit:\n    needs: [compile]\n  integration:\n    needs: [compile]\n  compile:\n  docs:\n", expected: "compile\nunit\nintegration\npackage\ndocs\n" },
+      { name: "A dependency cycle", stdin: "pipeline:\n  a:\n    needs: [c]\n  b:\n    needs: [a]\n  c:\n    needs: [b]\n", expected: "error: cycle\n" },
+      { name: "Long chain defined in reverse", stdin: "pipeline:\n  step-12:\n    needs: [step-11]\n  step-11:\n    needs: [step-10]\n  step-10:\n    needs: [step-9]\n  step-9:\n    needs: [step-8]\n  step-8:\n    needs: [step-7]\n  step-7:\n    needs: [step-6]\n  step-6:\n    needs: [step-5]\n  step-5:\n    needs: [step-4]\n  step-4:\n    needs: [step-3]\n  step-3:\n    needs: [step-2]\n  step-2:\n    needs: [step-1]\n  step-1:\n", expected: "step-1\nstep-2\nstep-3\nstep-4\nstep-5\nstep-6\nstep-7\nstep-8\nstep-9\nstep-10\nstep-11\nstep-12\n", hidden: true },
+      { name: "Unknown dependency is reported, not a cycle", stdin: "pipeline:\n  deploy-prod:\n    needs: [smoke-test, approval]\n  smoke-test:\n    needs: [deploy-stage]\n  deploy-stage:\n    needs: [smoke-tests]\n", expected: "error: unknown job approval\n", hidden: true },
+      { name: "Comments, blank lines and unrelated properties", stdin: "# nightly pipeline\npipeline:\n\n  fetch:   # first\n    image: alpine:3.20\n    needs-review: [ghost]\n  scan:\n    when: manual\n    script: echo needs: [nope]\n    needs: [ fetch,fetch ]   # duplicates are harmless\n\n  report:\n    needs: [scan,fetch]\n", expected: "fetch\nscan\nreport\n", hidden: true },
+      { name: "Self dependency is a cycle", stdin: "pipeline:\n  loop:\n    needs: [loop]\n  other:\n", expected: "error: cycle\n", hidden: true },
+      { name: "Earliest defined ready job goes first", stdin: "pipeline:\n  z-last-alpha:\n  m-middle:\n    needs: [z-last-alpha]\n  a-first-alpha:\n  b-second:\n    needs: [a-first-alpha]\n  k-free:\n  release:\n    needs: [m-middle, b-second, k-free]\n", expected: "z-last-alpha\nm-middle\na-first-alpha\nb-second\nk-free\nrelease\n", hidden: true },
+      { name: "Cycle hidden behind valid jobs", stdin: "pipeline:\n  setup:\n  api:\n    needs: [setup, worker]\n  worker:\n    needs: [queue]\n  queue:\n    needs: [api]\n  web:\n    needs: [setup]\n", expected: "error: cycle\n", hidden: true },
+      { name: "Tight list syntax and many independent jobs", stdin: "pipeline:\n  j1:\n  j2:\n  j3:\n    needs: [j1,j2]\n  j4:\n    needs: []\n  j5:\n    needs: [j4,j3]\n  j6:\n    needs: [j5]\n  j7:\n    needs: [   j6   ]\n  j8:\n    needs: [j2]\n", expected: "j1\nj2\nj3\nj4\nj5\nj6\nj7\nj8\n", hidden: true },
+    ],
+  },
 ];

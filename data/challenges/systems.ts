@@ -319,4 +319,206 @@ function clockFaults(k, refs) {
     tags: ["page-replacement", "clock", "second-chance", "simulation"],
     addedAt: "2026-10-07",
   },
+  {
+    id: "devops-pipeline-order",
+    track: "devops",
+    topic: "ci-cd",
+    title: { en: "Pipeline Run Order", ar: "ترتيب تنفيذ خط الأنابيب" },
+    summary: {
+      en: "Parse a tiny CI pipeline file and print the order in which its jobs can run, honouring every `needs:` dependency and spotting cycles.",
+      ar: "حلّل ملف خط أنابيب CI صغيراً واطبع الترتيب الذي يمكن به تنفيذ مهامه مع احترام كل تبعية `needs:` وكشف الحلقات.",
+    },
+    description: {
+      en: `## The story
+
+Your CI server reads a small pipeline file and has to decide **in which order to run the jobs**. Some jobs \`needs:\` the output of others (the tests need the build, the deploy needs the tests), and the file lists them in whatever order the author felt like. A job may only start after every job it needs has finished.
+
+The platform team wants a quick checker that prints the run order for a pipeline file, or says why there is none.
+
+## The file format
+
+A hand-rolled, YAML-like format (do not use a YAML library: your program has to parse these few rules itself):
+
+\`\`\`text
+pipeline:
+  build:
+    needs: []
+    script: make build
+  test:
+    needs: [build, lint]
+  lint:
+\`\`\`
+
+- Everything after a \`#\` is a comment. Blank and comment-only lines are ignored.
+- The \`pipeline:\` line is only a header.
+- A line indented by **exactly 2 spaces** that ends with \`:\` defines a job; the name is the text before the colon.
+- Lines indented by **4 or more spaces** are properties of the most recent job. The only property you care about is \`needs:\`, a list in square brackets (\`[]\`, \`[a]\`, \`[a, b]\`, spaces are free). Every other property (\`script:\`, \`image:\`, \`needs-review:\`, ...) is ignored, whatever its value looks like.
+- A job without \`needs:\` depends on nothing. Job names are unique.
+
+## The task
+
+Read the pipeline from stdin and print the job names, one per line, in this order: **repeatedly pick, among the jobs not yet run whose needs have all been run, the one that is defined EARLIEST in the file**, until all jobs have run.
+
+Two error cases print a single line and nothing else:
+
+- \`error: unknown job <name>\`: a \`needs:\` list names a job that is not defined. Report the first one found, going through the jobs in definition order and through each list from left to right. This check comes first.
+- \`error: cycle\`: no unknown jobs, but at some point nothing can run while jobs remain (including a job that needs itself).
+
+## Example
+
+\`\`\`text
+pipeline:
+  build:
+    needs: []
+    script: make build
+  test:
+    needs: [build, lint]
+    script: make test
+  lint:
+    script: make lint
+  deploy:
+    needs: [test]
+    script: ./deploy.sh
+\`\`\`
+
+Output:
+
+\`\`\`text
+build
+lint
+test
+deploy
+\`\`\`
+
+\`build\` is the earliest defined job that is ready. \`test\` is defined before \`lint\` but has to wait for it, so \`lint\` runs second; then \`test\` and \`deploy\` follow.`,
+      ar: `## القصة
+
+يقرأ خادم CI ملف خط أنابيب صغيراً ويجب أن يقرر **بأي ترتيب يشغّل المهام**. بعض المهام تحتاج (\`needs:\`) نتائج مهام أخرى (الاختبارات تحتاج البناء، والنشر يحتاج الاختبارات)، والملف يسردها بالترتيب الذي راق لكاتبه. لا يجوز أن تبدأ المهمة إلا بعد انتهاء كل مهمة تحتاجها.
+
+يريد فريق المنصة مدقّقاً سريعاً يطبع ترتيب التشغيل لملف خط الأنابيب، أو يقول لماذا لا يوجد ترتيب.
+
+## صيغة الملف
+
+صيغة مصنوعة يدوياً تشبه YAML (لا تستخدم مكتبة YAML: على برنامجك أن يحلّل هذه القواعد القليلة بنفسه):
+
+\`\`\`text
+pipeline:
+  build:
+    needs: []
+    script: make build
+  test:
+    needs: [build, lint]
+  lint:
+\`\`\`
+
+- كل ما بعد \`#\` تعليق. الأسطر الفارغة وأسطر التعليق وحدها تُتجاهل.
+- سطر \`pipeline:\` مجرد ترويسة.
+- السطر المزاح بمسافتين **بالضبط** والمنتهي بـ\`:\` يعرّف مهمة؛ واسمها هو النص قبل النقطتين.
+- الأسطر المزاحة بـ**4 مسافات أو أكثر** هي خصائص آخر مهمة معرَّفة. والخاصية الوحيدة التي تهمك هي \`needs:\`، وهي قائمة بين قوسين مربعين (\`[]\` أو \`[a]\` أو \`[a, b]\` والمسافات حرة). وكل خاصية أخرى (\`script:\` و\`image:\` و\`needs-review:\` ...) تُتجاهل مهما بدت قيمتها.
+- المهمة بلا \`needs:\` لا تعتمد على شيء. وأسماء المهام فريدة.
+
+## المطلوب
+
+اقرأ خط الأنابيب من stdin واطبع أسماء المهام، اسماً في كل سطر، بهذا الترتيب: **كرّر اختيار المهمة التي عُرّفت أولاً في الملف من بين المهام التي لم تُشغَّل بعد وكل ما تحتاجه قد شُغّل**، حتى تُشغَّل كل المهام.
+
+حالتا خطأ تطبعان سطراً واحداً فقط ولا شيء غيره:
+
+- \`error: unknown job <name>\`: قائمة \`needs:\` تذكر مهمة غير معرَّفة. أبلغ عن أول واحدة تجدها بالمرور على المهام بترتيب التعريف وعلى كل قائمة من اليسار إلى اليمين. هذا الفحص يأتي أولاً.
+- \`error: cycle\`: لا مهام مجهولة، لكن في لحظة ما لا يمكن تشغيل شيء بينما بقيت مهام (ويشمل ذلك مهمة تحتاج نفسها).
+
+## مثال
+
+\`\`\`text
+pipeline:
+  build:
+    needs: []
+    script: make build
+  test:
+    needs: [build, lint]
+    script: make test
+  lint:
+    script: make lint
+  deploy:
+    needs: [test]
+    script: ./deploy.sh
+\`\`\`
+
+المخرج:
+
+\`\`\`text
+build
+lint
+test
+deploy
+\`\`\`
+
+\`build\` هي أول مهمة معرَّفة وجاهزة. و\`test\` معرَّفة قبل \`lint\` لكنها يجب أن تنتظرها، فتعمل \`lint\` ثانياً؛ ثم تأتي \`test\` ثم \`deploy\`.`,
+    },
+    difficulty: 2,
+    points: 100,
+    estMinutes: 30,
+    kind: "output",
+    lang: "python",
+    starterCode: {
+      python: `import sys
+
+jobs = []  # [name, needs] in the order the jobs are defined
+for raw in sys.stdin.read().splitlines():
+    line = raw.split("#", 1)[0].rstrip()  # '#' starts a comment
+    text = line.strip()
+    if not text:
+        continue
+    indent = len(line) - len(line.lstrip(" "))
+    if indent == 2 and text.endswith(":"):
+        jobs.append([text[:-1], []])
+    # Your turn: when a deeper line starts with "needs:", store its list in jobs[-1][1]
+
+# Your turn: report unknown jobs, then print the run order (or "error: cycle").
+for name, needs in jobs:
+    print(name)
+`,
+      javascript: `const jobs = []; // { name, needs } in the order the jobs are defined
+for (const raw of require("fs").readFileSync(0, "utf8").split(/\\r?\\n/)) {
+  const line = raw.split("#")[0].trimEnd(); // '#' starts a comment
+  const text = line.trim();
+  if (!text) continue;
+  const indent = line.length - line.trimStart().length;
+  if (indent === 2 && text.endsWith(":")) {
+    jobs.push({ name: text.slice(0, -1), needs: [] });
+  }
+  // Your turn: when a deeper line starts with "needs:", store its list in the last job
+}
+
+// Your turn: report unknown jobs, then print the run order (or "error: cycle").
+for (const job of jobs) console.log(job.name);
+`,
+    },
+    sampleInput: "pipeline:\n  build:\n    needs: []\n    script: make build\n  test:\n    needs: [build, lint]\n    script: make test\n  lint:\n    script: make lint\n  deploy:\n    needs: [test]\n    script: ./deploy.sh\n",
+    hints: [
+      {
+        text: {
+          en: "Parse first, schedule second. Collect `(name, needs)` pairs in definition order. A job line is indented by exactly 2 spaces and ends with `:`; the line that starts with `needs:` (and no other `needs...` key) holds its list.",
+          ar: "حلّل أولاً ثم جدول. اجمع أزواج `(name, needs)` بترتيب التعريف. سطر المهمة مزاح بمسافتين بالضبط وينتهي بـ`:`؛ والسطر الذي يبدأ بـ`needs:` (وليس أي مفتاح آخر يبدأ بـ`needs`) يحمل القائمة.",
+        },
+        cost: 8,
+      },
+      {
+        text: {
+          en: "Repeat: scan the jobs in definition order, run the first one that is not done yet and whose needs are all done, then rescan from the top. If a full scan finds nothing while jobs remain, there is a cycle.",
+          ar: "كرّر: امسح المهام بترتيب التعريف، ونفّذ أول مهمة لم تُنفَّذ بعد وكل ما تحتاجه منفَّذ، ثم أعد المسح من البداية. وإن لم يجد مسح كامل شيئاً بينما بقيت مهام فهناك حلقة.",
+        },
+        cost: 14,
+      },
+      {
+        text: {
+          en: "Check unknown dependencies BEFORE scheduling, scanning jobs in definition order and each `needs` list left to right. A missing job is an `error: unknown job`, never a `error: cycle`.",
+          ar: "افحص التبعيات المجهولة قبل الجدولة، بمسح المهام بترتيب التعريف وكل قائمة `needs` من اليسار إلى اليمين. المهمة المفقودة هي `error: unknown job` وليست `error: cycle` أبداً.",
+        },
+        cost: 18,
+      },
+    ],
+    lessons: ["devops/cicd"],
+    tags: ["ci-cd", "pipeline", "topological-sort", "parsing"],
+    addedAt: "2026-10-07",
+  },
 ];

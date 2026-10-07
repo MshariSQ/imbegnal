@@ -124,4 +124,81 @@ for (let i = 0; i < customers; i++) {
 `,
     },
   },
+  {
+    id: "devops-pipeline-order",
+    solutions: {
+      python: `import sys
+
+jobs = []  # [name, needs] in definition order
+for raw in sys.stdin.read().splitlines():
+    line = raw.split("#", 1)[0].rstrip()
+    text = line.strip()
+    if not text:
+        continue
+    indent = len(line) - len(line.lstrip(" "))
+    if indent == 2 and text.endswith(":"):
+        jobs.append([text[:-1], []])
+    elif indent >= 4 and jobs and text.startswith("needs:"):
+        inner = text[len("needs:"):].strip().strip("[]")
+        jobs[-1][1] = [part.strip() for part in inner.split(",") if part.strip()]
+
+known = {name for name, _ in jobs}
+for name, needs in jobs:
+    for dep in needs:
+        if dep not in known:
+            print(f"error: unknown job {dep}")
+            sys.exit(0)
+
+done, order = set(), []
+while len(order) < len(jobs):
+    for name, needs in jobs:
+        if name not in done and all(dep in done for dep in needs):
+            done.add(name)
+            order.append(name)
+            break  # rescan from the top: the earliest defined ready job always wins
+    else:
+        print("error: cycle")
+        sys.exit(0)
+print("\\n".join(order))
+`,
+      javascript: `const jobs = []; // { name, needs } in definition order
+for (const raw of require("fs").readFileSync(0, "utf8").split(/\\r?\\n/)) {
+  const line = raw.split("#")[0].trimEnd();
+  const text = line.trim();
+  if (!text) continue;
+  const indent = line.length - line.trimStart().length;
+  if (indent === 2 && text.endsWith(":")) {
+    jobs.push({ name: text.slice(0, -1), needs: [] });
+  } else if (indent >= 4 && jobs.length > 0 && text.startsWith("needs:")) {
+    const inner = text.slice("needs:".length).trim().replace(/^\\[|\\]$/g, "");
+    jobs[jobs.length - 1].needs = inner.split(",").map((part) => part.trim()).filter(Boolean);
+  }
+}
+
+const known = new Set(jobs.map((job) => job.name));
+for (const job of jobs) {
+  for (const dep of job.needs) {
+    if (!known.has(dep)) {
+      console.log("error: unknown job " + dep);
+      process.exit(0);
+    }
+  }
+}
+
+const done = new Set();
+const order = [];
+while (order.length < jobs.length) {
+  // the earliest defined ready job always wins
+  const next = jobs.find((job) => !done.has(job.name) && job.needs.every((dep) => done.has(dep)));
+  if (!next) {
+    console.log("error: cycle");
+    process.exit(0);
+  }
+  done.add(next.name);
+  order.push(next.name);
+}
+console.log(order.join("\\n"));
+`,
+    },
+  },
 ];
