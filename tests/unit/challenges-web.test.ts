@@ -9,7 +9,7 @@ import { webChallenges } from "../../data/challenges/web";
 import { roadmaps } from "../../data/roadmaps";
 import { hasLesson } from "../../data/lessons";
 import { webGraders } from "../../worker/src/graders/data/web";
-import { webReferences } from "../fixtures/challenge-references/web";
+import { webMistakes, webReferences } from "../fixtures/challenge-references/web";
 import type { ChallengeGrader, ChallengeMeta, HarnessGrader, OutputGrader } from "../../shared/challenges";
 import { LANG_IDS, type LangId } from "../../shared/languages";
 import { matchOutput } from "../../shared/match";
@@ -244,5 +244,28 @@ for (const ref of webReferences) {
     const expected = new Set(grader.tests.map((t) => t.expected.trim()));
     assert.ok(expected.size >= Math.min(3, grader.tests.length), "several distinct expected outputs");
     for (const t of grader.tests) assert.ok(t.expected.trim().length > 0, `${t.name}: empty expectation`);
+  });
+}
+
+// ── The hidden tests discriminate: classic mistakes must fail ─────────────────
+
+for (const m of webMistakes) {
+  const grader = graderOf(m.id);
+  const reference = referenceOf(m.id)?.solutions?.python;
+  test(`${m.id}: the mistake "${m.label}" is caught`, { skip: localSupports("python") ? false : "no python toolchain on this machine" }, async () => {
+    assert.ok(grader && isTestGrader(grader) && reference, "known challenge with a python reference");
+    let mutated = reference;
+    for (const [from, to] of m.edits) {
+      assert.ok(mutated.includes(from), `edit target not found in the reference: ${from}`);
+      mutated = mutated.replace(from, () => to);
+    }
+    assert.notEqual(mutated, reference);
+    const built = buildProgram(grader, "python", mutated);
+    assert.ok(built.ok);
+    const outcome = await gradeTests(grader, "python", built.program, localRun);
+    assert.equal(outcome.kind, "graded");
+    if (outcome.kind !== "graded") return;
+    assert.equal(outcome.grade.passed, false, `"${m.label}" must not pass the grader`);
+    assert.ok(outcome.grade.tests.some((t) => t.hidden && !t.passed) || outcome.grade.tests.some((t) => !t.passed));
   });
 }

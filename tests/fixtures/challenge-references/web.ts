@@ -7,6 +7,64 @@
  */
 import type { ChallengeReference } from "../../../shared/challenges";
 
+/**
+ * Plausible WRONG solutions, derived from the Python reference by textual edits. The suite proves every one of them FAILS
+ * the grader, i.e. the hidden tests really discriminate between the intended rules and the classic mistakes.
+ */
+export interface ChallengeMistake {
+  id: string;
+  label: string;
+  /** Exact `[from, to]` replacements applied, in order, to the python reference solution. */
+  edits: [from: string, to: string][];
+}
+
+export const webMistakes: ChallengeMistake[] = [
+  { id: "fe-specificity-duel", label: "compares the SUM of the triple", edits: [["best is None or s >= best", "best is None or sum(s) >= sum(best)"]] },
+  { id: "fe-specificity-duel", label: "the first of two equal rules wins", edits: [["best is None or s >= best", "best is None or s > best"]] },
+  { id: "fe-specificity-duel", label: "pseudo-elements counted like pseudo-classes", edits: [["token[0] in '.[' or (token[0] == ':' and token[1] != ':')", "token[0] in '.[:'"]] },
+  { id: "fe-specificity-duel", label: "scans inside attribute selectors", edits: [["r'\\[[^\\]]*\\]|::", "r'::"]] },
+  {
+    id: "be-http-status",
+    label: "403 checked before 401",
+    edits: [['    if f["auth"] != "valid":\n        return 401\n    if f["perm"] == "no":\n        return 403\n', '    if f["perm"] == "no":\n        return 403\n    if f["auth"] != "valid":\n        return 401\n']],
+  },
+  {
+    id: "be-http-status",
+    label: "authentication checked before the rate limit",
+    edits: [['    if f["rate"] == "exceeded":\n        return 429\n    if f["auth"] != "valid":\n        return 401\n', '    if f["auth"] != "valid":\n        return 401\n    if f["rate"] == "exceeded":\n        return 429\n']],
+  },
+  { id: "be-http-status", label: "a deleted item answers 404", edits: [["return 410", "return 404"]] },
+  { id: "ux-contrast-ratio", label: "verdicts from the rounded ratio", edits: [["    verdict = lambda", '    ratio = round(ratio, 2)\n    verdict = lambda']] },
+  { id: "ux-contrast-ratio", label: "assumes the foreground is the lighter colour", edits: [["(max(la, lb) + 0.05) / (min(la, lb) + 0.05)", "(la + 0.05) / (lb + 0.05)"]] },
+  { id: "ux-contrast-ratio", label: "no linearisation threshold branch", edits: [["return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4", "return ((c + 0.055) / 1.055) ** 2.4"]] },
+  { id: "be-jwt-expiry", label: "True/False accepted as an integer exp", edits: [["return isinstance(value, int) and not isinstance(value, bool)", "return isinstance(value, int)"]] },
+  { id: "be-jwt-expiry", label: "substring audience match", edits: [["audience_ok = aud == \"api\"", "audience_ok = \"api\" in aud"]] },
+  { id: "be-jwt-expiry", label: "expiry second is still valid", edits: [["now >= claims[\"exp\"] + leeway", "now > claims[\"exp\"] + leeway"]] },
+  { id: "be-jwt-expiry", label: "leeway ignored for nbf", edits: [["now + leeway < claims[\"nbf\"]", "now < claims[\"nbf\"]"]] },
+  { id: "be-jwt-expiry", label: "a null nbf is treated as absent", edits: [['"nbf" in claims and not _is_int(claims["nbf"])', 'claims.get("nbf") is not None and not _is_int(claims["nbf"])']] },
+  {
+    id: "be-rate-limiter",
+    label: "floating point token arithmetic",
+    edits: [
+      ["full = capacity * 1000", "full = float(capacity)"],
+      ['(t - s["last"]) * refill)', '(t - s["last"]) * refill / 1000)'],
+      [">= 1000", ">= 1"],
+      ["-= 1000", "-= 1"],
+    ],
+  },
+  {
+    id: "be-rate-limiter",
+    label: "a window denial still consumes a token",
+    edits: [['        if allowed:\n            s["tokens"] -= 1000\n', '        if s["tokens"] >= 1000:\n            s["tokens"] -= 1000\n        if allowed:\n']],
+  },
+  {
+    id: "be-rate-limiter",
+    label: "every request counts against the window quota",
+    edits: [['        if allowed:\n            s["tokens"] -= 1000\n            s["used"] += 1\n', '        s["used"] += 1\n        if allowed:\n            s["tokens"] -= 1000\n']],
+  },
+  { id: "be-rate-limiter", label: "the bucket can overfill while idle", edits: [['min(full, s["tokens"] + (t - s["last"]) * refill)', 's["tokens"] + (t - s["last"]) * refill']] },
+];
+
 export const webReferences: ChallengeReference[] = [
   {
     id: "fe-specificity-duel",
@@ -231,6 +289,63 @@ function tokenStatus(claims, now, leeway) {
   if (has("nbf") && now + leeway < claims.nbf) return "not_yet_valid";
   if (now >= claims.exp + leeway) return "expired";
   return "valid";
+}
+`,
+    },
+  },
+  {
+    id: "be-rate-limiter",
+    solutions: {
+      python: String.raw`
+WINDOW_MS = 60000
+
+
+def rate_limit(capacity, refill, window_limit, requests):
+    full = capacity * 1000  # tokens are counted in thousandths: refill tokens/s == refill thousandths/ms
+    clients = {}
+    decisions = []
+    for client, t in requests:
+        if client not in clients:
+            clients[client] = {"tokens": full, "last": t, "window": t // WINDOW_MS, "used": 0}
+        s = clients[client]
+        s["tokens"] = min(full, s["tokens"] + (t - s["last"]) * refill)
+        s["last"] = t
+        if t // WINDOW_MS != s["window"]:
+            s["window"] = t // WINDOW_MS
+            s["used"] = 0
+        allowed = s["tokens"] >= 1000 and s["used"] < window_limit
+        if allowed:
+            s["tokens"] -= 1000
+            s["used"] += 1
+        decisions.append(allowed)
+    return decisions
+`,
+      javascript: String.raw`
+const WINDOW_MS = 60000;
+
+function rateLimit(capacity, refill, windowLimit, requests) {
+  const full = capacity * 1000; // tokens in thousandths: refill tokens/s == refill thousandths/ms
+  const clients = new Map();
+  return requests.map(([client, t]) => {
+    let s = clients.get(client);
+    if (!s) {
+      s = { tokens: full, last: t, window: Math.floor(t / WINDOW_MS), used: 0 };
+      clients.set(client, s);
+    }
+    s.tokens = Math.min(full, s.tokens + (t - s.last) * refill);
+    s.last = t;
+    const window = Math.floor(t / WINDOW_MS);
+    if (window !== s.window) {
+      s.window = window;
+      s.used = 0;
+    }
+    const allowed = s.tokens >= 1000 && s.used < windowLimit;
+    if (allowed) {
+      s.tokens -= 1000;
+      s.used += 1;
+    }
+    return allowed;
+  });
 }
 `,
     },
