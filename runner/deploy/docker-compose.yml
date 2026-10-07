@@ -1,0 +1,100 @@
+# IMBEGNAL runner as a compose stack.
+#
+#   cp .env.example .env && $EDITOR .env          # set RUNNER_SECRET, DOCKER_GID
+#   docker compose --profile build build toolchain # builds the toolchain image (once, slow)
+#   docker compose up -d --build runner            # the service itself
+#   docker compose --profile tunnel up -d          # + Cloudflare Tunnel (or: --profile caddy)
+#
+# SECURITY TRADE-OFF (read this): the runner creates sibling containers through the Docker API,
+# so this stack mounts /var/run/docker.sock into the service container. Whoever controls the
+# runner process controls the host's Docker daemon, which is root on the host. The service is
+# small, authenticated, and never executes user code itself, but a bug in it would be serious.
+# Mitigations, from cheapest to strongest:
+#   1. run this stack on a dedicated VM that holds nothing else (the recommended setup);
+#   2. use the systemd install (install.sh) with a dedicated user instead of a socket mount;
+#   3. use rootless Docker (DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock): a socket takeover is
+#      then a takeover of an unprivileged user, not of root;
+#   4. add gVisor (RUNNER_DOCKER_RUNTIME=runsc) so a kernel exploit from a job needs a gVisor escape.
+name: imbegnal-runner
+
+services:
+  runner:
+    build:
+      context: ../..
+      dockerfile: runner/deploy/Dockerfile.service
+    image: imbegnal-runner-service:local
+    restart: always
+    env_file: .env
+    environment:
+      # Fixed inside the container; the host side is RUNNER_PUBLISH_PORT.
+      RUNNER_HOST: 0.0.0.0
+      RUNNER_PORT: "4242"
+      RUNNER_IMAGE: ${RUNNER_IMAGE:-imbegnal-runner:full}
+    ports:
+      - "127.0.0.1:${RUNNER_PUBLISH_PORT:-4242}:4242"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "${DOCKER_GID:-999}"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 768m
+    stop_grace_period: 30s
+
+  # `docker compose --profile build build toolchain` produces the image jobs run in.
+  toolchain:
+    profiles: [build]
+    image: ${RUNNER_IMAGE:-imbegnal-runner:full}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        PROFILE: full
+        # Swift needs a checksum from swift.org: WITH_SWIFT=0 builds without it (Swift then reports unavailable).
+        WITH_SWIFT: ${WITH_SWIFT:-0}
+        SWIFT_SHA256: ${SWIFT_SHA256:-}
+    command: ["true"]
+
+  # Public HTTPS without opening any inbound port: a remotely managed Cloudflare Tunnel whose public
+  # hostname points at http://runner:4242. Pin an image version for production.
+  cloudflared:
+    profiles: [tunnel]
+    image: cloudflare/cloudflared:latest
+    restart: always
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on: [runner]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  # Public HTTPS with automatic certificates (ports 80/443 must be reachable).
+  caddy:
+    profiles: [caddy]
+    image: caddy:2
+    restart: always
+    environment:
+      RUNNER_DOMAIN: ${RUNNER_DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [runner]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  caddy_data:
+  caddy_config:
