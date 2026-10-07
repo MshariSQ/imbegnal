@@ -7,15 +7,11 @@ import type { LabExerciseSection } from "../../data/lessons/types";
 import { matchOutput } from "../../shared/match";
 import { localSupports, runLocal } from "../helpers/exec-local";
 
-// runLocal measures compile + run on the host (a cold `go run` alone is ~4 s);
-// the runner compiles separately, so only the run itself must stay fast.
-const COMPILE_ALLOWANCE_MS: Partial<Record<string, number>> = {
+// runLocal reports the run step alone (runMs), like the runner. Java (single-file source
+// launch) and TypeScript (type stripping) still translate the program inside that step.
+const IN_RUN_COMPILE_MS: Partial<Record<string, number>> = {
   typescript: 1500,
-  c: 2500,
-  cpp: 4000,
   java: 5000,
-  rust: 6000,
-  go: 10000,
 };
 
 /** The eight tracks that existed before the specialty tracks; each must ship at least one graded lab. */
@@ -73,16 +69,15 @@ test("lab exercises", async (t) => {
 
     await t.test(`reference solution passes every test: ${ref}`, { skip: !localSupports(lab.lang) }, () => {
       for (const test of lab.tests) {
-        const started = Date.now();
         const r = runLocal(lab.lang, lab.solution, test.stdin ?? "");
-        const ms = Date.now() - started;
+        const ms = r.runMs ?? 0;
         assert.equal(r.exitCode, 0, `${test.name.en}: exit ${r.exitCode}\n${r.stderr}`);
         assert.ok(!r.timedOut, `${test.name.en}: timed out`);
         assert.ok(
           matchOutput(r.stdout, test.expected, test.mode ?? "trim", test.epsilon),
           `${test.name.en}\nexpected: ${JSON.stringify(test.expected)}\nactual:   ${JSON.stringify(r.stdout)}`
         );
-        assert.ok(ms < 2000 + (COMPILE_ALLOWANCE_MS[lab.lang] ?? 0), `${test.name.en}: took ${ms} ms (limit 2 s + compile allowance)`);
+        assert.ok(ms < 2000 + (IN_RUN_COMPILE_MS[lab.lang] ?? 0), `${test.name.en}: ran for ${ms} ms (limit 2 s)`);
       }
     });
 

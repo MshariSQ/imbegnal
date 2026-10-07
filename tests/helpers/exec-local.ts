@@ -19,7 +19,15 @@ export interface LocalResult {
   stdout: string;
   stderr: string;
   timedOut: boolean;
+  /** Wall time of the program run alone (compilation excluded), like the runner's runMs. */
+  runMs?: number;
 }
+
+/**
+ * One Go build cache for every call (test code only): with a fresh cache per call each Go run
+ * rebuilt the standard library first, 4-10 s on a busy machine.
+ */
+const GOCACHE = join(tmpdir(), "imb-local-gocache");
 
 function has(cmd: string): boolean {
   return spawnSync("sh", ["-c", `command -v ${cmd}`], { encoding: "utf8" }).status === 0;
@@ -32,7 +40,7 @@ const RECIPES: Partial<Record<LangId, { needs: string; compile?: (f: string) => 
   java: { needs: "java", run: (f) => ["java", f] }, // single-file source-launch mode
   c: { needs: "gcc", compile: (f) => ["gcc", "-O2", "-std=c17", "-o", "prog", f, "-lm"], run: () => ["./prog"] },
   cpp: { needs: "g++", compile: (f) => ["g++", "-O2", "-std=c++20", "-o", "prog", f], run: () => ["./prog"] },
-  go: { needs: "go", run: (f) => ["go", "run", f] },
+  go: { needs: "go", compile: (f) => ["go", "build", "-o", "prog", f], run: () => ["./prog"] },
   rust: { needs: "rustc", compile: (f) => ["rustc", "-O", "-o", "prog", f], run: () => ["./prog"] },
   ruby: { needs: "ruby", run: (f) => ["ruby", f] },
   php: { needs: "php", run: (f) => ["php", f] },
@@ -51,15 +59,17 @@ export function runLocal(lang: LangId, code: string, stdin = "", timeoutMs = 20_
   const dir = mkdtempSync(join(tmpdir(), "imb-local-"));
   try {
     writeFileSync(join(dir, spec.filename), code);
-    const env = { ...process.env, HOME: dir, GOCACHE: join(dir, ".gocache"), GOFLAGS: "-mod=mod" };
+    const env = { ...process.env, HOME: dir, GOCACHE, GOFLAGS: "-mod=mod" };
     if (r.compile) {
       const [cmd, ...args] = r.compile(spec.filename);
       const c = spawnSync(cmd, args, { cwd: dir, encoding: "utf8", timeout: timeoutMs, env });
       if (c.status !== 0) return { exitCode: c.status, stdout: "", stderr: c.stderr ?? "", timedOut: c.error?.name === "Error" && (c.error as NodeJS.ErrnoException).code === "ETIMEDOUT" };
     }
     const [cmd, ...args] = r.run(spec.filename);
+    const started = Date.now();
     const p = spawnSync(cmd, args, { cwd: dir, input: stdin, encoding: "utf8", timeout: timeoutMs, env, maxBuffer: 8 * 1024 * 1024 });
     return {
+      runMs: Date.now() - started,
       exitCode: p.status,
       stdout: p.stdout ?? "",
       stderr: p.stderr ?? "",
