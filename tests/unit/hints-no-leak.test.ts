@@ -1,7 +1,7 @@
 // Hints cost points, so their TEXT must never reach the browser except through the Worker
 // (POST /api/challenges/:id/hint, or `mine.revealedHints` for hints already revealed). These checks
 // look for every Worker-only hint text in: the public challenge data, every source file the site is
-// built from, and (when present) the static export in out/. In CI the "checks" job runs this file
+// built from, and the static export in out/ (opt-in, see below). In CI the "checks" job runs this file
 // again right after `npm run build` with HINT_LEAK_REQUIRE_OUT=1, so the export is always scanned.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -86,10 +86,12 @@ test("no file the site is built from contains a hint text or imports the Worker-
   assert.deepEqual(leaks, []);
 });
 
-const requireOut = process.env.HINT_LEAK_REQUIRE_OUT === "1";
+// Opt-in: an out/ left over from an older build would report texts that are no longer shipped, so the
+// export is scanned only when asked to, right after a fresh `npm run build` (CI does exactly that).
+const scanOut = process.env.HINT_LEAK_REQUIRE_OUT === "1";
 test(
   "the static export (out/) contains no hint text: HTML, RSC payloads and JS chunks",
-  { skip: !requireOut && !existsSync(join(OUT, "challenges", "index.html")) ? "no out/ build here (CI scans it after `npm run build`)" : false },
+  { skip: scanOut ? false : "set HINT_LEAK_REQUIRE_OUT=1 right after `npm run build` to scan out/ (CI does)" },
   () => {
     assert.ok(existsSync(join(OUT, "challenges", "index.html")), "out/ must hold a full build of the site (npm run build)");
     let scanned = 0;
