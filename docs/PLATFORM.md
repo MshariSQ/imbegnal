@@ -249,7 +249,10 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
 - Runner: one VM is a single point of failure for server runs (the browser fallback covers JS/Python); add a
   second VM behind the tunnel (Cloudflare load-balances connectors) before large launches. gVisor is recommended there.
 - Swift needs a checksum-pinned toolchain download (`SWIFT_SHA256`); it is reported unavailable until then.
-- Code Lab's Web (HTML/CSS/JS) preview stops a never-yielding script with a watchdog in the parent page. That works
-  where the browser runs the sandboxed preview frame in its own process (desktop Chrome and Edge). In browsers that keep
-  it in the page's process (Firefox and Safari today) `while(true){}` in the preview freezes the tab until it is closed.
-  Next step: instrument loops in preview scripts (time-checked loop guards) before they run.
+- Code Lab's Web (HTML/CSS/JS) preview stops runaway code two ways: a watchdog in the parent page (works where the
+  browser runs the sandboxed frame in its own process, desktop Chrome and Edge) and time-checked loop guards inserted
+  into the page's inline scripts before they run (`lib/codelab/loop-guard.ts`, acorn loaded only for Web runs), which
+  throw inside the frame once a loop keeps the page busy for longer than the Web limit (5 s), so `while(true){}` no
+  longer freezes the tab in Firefox or Safari. Still not covered there: recursion without loops (the browser's stack
+  limit ends it), code built from strings (`eval`, `new Function`, inline `on*=` attributes), and scripts acorn cannot
+  parse (left unchanged, the browser reports the syntax error).
