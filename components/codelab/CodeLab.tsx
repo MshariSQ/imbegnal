@@ -203,9 +203,13 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
     };
   }, [ready]);
 
-  const updatePrefs = useCallback((p: LabPrefs) => {
-    setPrefsState(p);
-    savePrefs(browserStorage(), p);
+  // Functional updates: two quick clicks on "Larger" must add 2, not apply the same stale copy twice.
+  const updatePrefs = useCallback((update: (p: LabPrefs) => LabPrefs) => {
+    setPrefsState((prev) => {
+      const next = update(prev);
+      savePrefs(browserStorage(), next); // idempotent, so a repeated updater call is harmless
+      return next;
+    });
   }, []);
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -319,9 +323,9 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
       setSubmitRes(null);
       runner.clear();
       setNote(plan.source === "carried" ? fill(t.lang.switchedKeep, { lang: getLabLanguage(lang).label }) : null);
-      updatePrefs({ ...prefs, lastLang: to });
+      updatePrefs((p) => ({ ...p, lastLang: to }));
     },
-    [lang, ctx, home, code, stdin, template, runner, t.lang.switchedKeep, prefs, updatePrefs]
+    [lang, ctx, home, code, stdin, template, runner, t.lang.switchedKeep, updatePrefs]
   );
 
   const reset = useCallback(() => {

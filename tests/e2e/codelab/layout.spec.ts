@@ -165,8 +165,14 @@ describe("Code Lab: layout, RTL, mobile, accessibility", () => {
       const size = () => h.page.locator(".cm-content").first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
       const before = await size();
       await h.page.getByTestId("settings-trigger").click();
-      await h.page.getByRole("button", { name: "Larger" }).click();
-      await h.page.getByRole("button", { name: "Larger" }).click();
+      await h.page.getByRole("button", { name: "Larger" }).waitFor();
+      // Two clicks in the same task (before React re-renders): each must count. A stale-closure
+      // update applied the same old value twice and gained only 1px.
+      await h.page.getByRole("button", { name: "Larger" }).evaluate((b: HTMLButtonElement) => {
+        b.click();
+        b.click();
+      });
+      await h.page.waitForFunction((want) => parseFloat(getComputedStyle(document.querySelector(".cm-content")!).fontSize) === want, before + 2);
       await h.page.keyboard.press("Escape");
       assert.equal(await size(), before + 2);
       await h.page.reload();

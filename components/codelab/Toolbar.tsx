@@ -66,7 +66,7 @@ function SettingsPopover({
   canReset,
 }: {
   prefs: LabPrefs;
-  onPrefs: (p: LabPrefs) => void;
+  onPrefs: (update: (p: LabPrefs) => LabPrefs) => void;
   onReset: () => void;
   showRunOn: boolean;
   canReset: boolean;
@@ -82,11 +82,11 @@ function SettingsPopover({
           <div>
             <p id="fs-label" className="text-xs font-bold uppercase tracking-wider text-fg-subtle">{t.editor.fontSize}</p>
             <div role="group" aria-labelledby="fs-label" className="mt-2 flex items-center gap-2">
-              <button type="button" aria-label={t.editor.smaller} disabled={prefs.fontSize <= FONT_MIN} onClick={() => onPrefs({ ...prefs, fontSize: prefs.fontSize - 1 })} className={`${btnGhost} !px-0 size-10`}>
+              <button type="button" aria-label={t.editor.smaller} disabled={prefs.fontSize <= FONT_MIN} onClick={() => onPrefs((p) => ({ ...p, fontSize: Math.max(FONT_MIN, p.fontSize - 1) }))} className={`${btnGhost} !px-0 size-10`}>
                 <Minus size={16} aria-hidden="true" />
               </button>
               <output aria-live="polite" className="min-w-14 text-center font-mono text-sm text-fg">{prefs.fontSize}px</output>
-              <button type="button" aria-label={t.editor.larger} disabled={prefs.fontSize >= FONT_MAX} onClick={() => onPrefs({ ...prefs, fontSize: prefs.fontSize + 1 })} className={`${btnGhost} !px-0 size-10`}>
+              <button type="button" aria-label={t.editor.larger} disabled={prefs.fontSize >= FONT_MAX} onClick={() => onPrefs((p) => ({ ...p, fontSize: Math.min(FONT_MAX, p.fontSize + 1) }))} className={`${btnGhost} !px-0 size-10`}>
                 <Plus size={16} aria-hidden="true" />
               </button>
             </div>
@@ -94,17 +94,17 @@ function SettingsPopover({
 
           <label className="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-sm text-fg-soft">
             <span className="inline-flex items-center gap-2"><WrapText size={16} aria-hidden="true" />{t.editor.wrap}</span>
-            <input type="checkbox" role="switch" checked={prefs.wrap} onChange={(e) => onPrefs({ ...prefs, wrap: e.target.checked })} className={`size-5 accent-[var(--brand)] ${focusRing}`} />
+            <input type="checkbox" role="switch" checked={prefs.wrap} onChange={(e) => { const wrap = e.target.checked; onPrefs((p) => ({ ...p, wrap })); }} className={`size-5 accent-[var(--brand)] ${focusRing}`} />
           </label>
 
           {showRunOn && (
             <div>
               <p id="runon-label" className="text-xs font-bold uppercase tracking-wider text-fg-subtle">{t.toolbar.runIn}</p>
               <div role="radiogroup" aria-labelledby="runon-label" className="mt-2 flex gap-1 rounded-lg border border-line bg-bg p-1">
-                <button type="button" role="radio" aria-checked={!prefs.preferBrowser} onClick={() => onPrefs({ ...prefs, preferBrowser: false })} className={seg(!prefs.preferBrowser)}>
+                <button type="button" role="radio" aria-checked={!prefs.preferBrowser} onClick={() => onPrefs((p) => ({ ...p, preferBrowser: false }))} className={seg(!prefs.preferBrowser)}>
                   <Server size={14} aria-hidden="true" />{t.toolbar.runServer}
                 </button>
-                <button type="button" role="radio" aria-checked={prefs.preferBrowser} onClick={() => onPrefs({ ...prefs, preferBrowser: true })} className={seg(prefs.preferBrowser)}>
+                <button type="button" role="radio" aria-checked={prefs.preferBrowser} onClick={() => onPrefs((p) => ({ ...p, preferBrowser: true }))} className={seg(prefs.preferBrowser)}>
                   <Globe size={14} aria-hidden="true" />{t.toolbar.runBrowser}
                 </button>
               </div>
@@ -150,7 +150,7 @@ export default function Toolbar({
   onHistory?: () => void;
   onShare?: () => void;
   prefs: LabPrefs;
-  onPrefs: (p: LabPrefs) => void;
+  onPrefs: (update: (p: LabPrefs) => LabPrefs) => void;
   onReset: () => void;
   showRunOn: boolean;
   canReset: boolean;
