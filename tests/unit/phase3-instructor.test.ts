@@ -7,6 +7,7 @@ import {
   formatCount,
   formatPercent,
   humanizeKey,
+  normalizeAnalytics,
   parseExerciseRef,
   sortExercisesByPassRate,
   successRate,
@@ -99,4 +100,39 @@ test("humanizeKey", () => {
   assert.equal(humanizeKey("wrong_output"), "Wrong output");
   assert.equal(humanizeKey("out-of-memory"), "Out of memory");
   assert.equal(humanizeKey(""), "");
+});
+
+test("normalizeAnalytics passes a well-formed payload through unchanged", () => {
+  const payload: InstructorAnalytics = {
+    generatedAt: "2026-06-15T10:00:00.000Z",
+    days: 30,
+    runs: { total: 10, success: 7, byLang: { python: 6, go: 4 }, byStatus: { ok: 7, timeout: 3 } },
+    tracks: [{ track: "frontend", learners: 5, completed: 2, completionRate: 0.4, medianMinutesToComplete: 12.5 }],
+    exercises: [{ exercise: "frontend/a/b", attempts: 9, learners: 3, passRate: 0.5, medianRunMs: 120, failures: { wrong_output: 4 }, commonErrors: [{ text: "boom", count: 2 }] }],
+    challenges: [{ id: "caesar-warmup", solves: 1, attempts: 3, medianMinutesToSolve: 4 }],
+  };
+  assert.deepEqual(normalizeAnalytics(JSON.parse(JSON.stringify(payload))), payload);
+});
+
+test("normalizeAnalytics turns a partial or hostile answer into safe empty blocks", () => {
+  assert.equal(normalizeAnalytics(null), null);
+  assert.equal(normalizeAnalytics("oops"), null);
+  assert.equal(normalizeAnalytics([]), null);
+  assert.equal(normalizeAnalytics({}), null);
+  assert.equal(normalizeAnalytics({ runs: 5 }), null);
+  const partial = normalizeAnalytics({
+    runs: { total: "12", success: 3, byLang: { python: 2, bad: "x", worse: null }, byStatus: [] },
+    tracks: [{ track: "" }, { track: "devops", learners: 2 }, 7, null],
+    exercises: [{ exercise: "a/b/c", commonErrors: [{ text: "", count: 1 }, { text: "ok", count: 2 }, "junk"], failures: { timeout: Number.NaN } }, { attempts: 4 }],
+    challenges: "nope",
+  });
+  assert.ok(partial);
+  assert.equal(partial.runs.total, 0, "non-numeric totals become 0");
+  assert.deepEqual(partial.runs.byLang, { python: 2 });
+  assert.deepEqual(partial.runs.byStatus, {});
+  assert.deepEqual(partial.tracks, [{ track: "devops", learners: 2, completed: 0, completionRate: 0, medianMinutesToComplete: undefined }]);
+  assert.equal(partial.exercises.length, 1);
+  assert.deepEqual(partial.exercises[0].commonErrors, [{ text: "ok", count: 2 }]);
+  assert.deepEqual(partial.exercises[0].failures, {});
+  assert.deepEqual(partial.challenges, []);
 });
