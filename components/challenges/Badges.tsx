@@ -13,10 +13,11 @@ import type { TrackInfo } from "@/lib/ctf/types";
 // Difficulty is never conveyed by color alone: the label is always visible and
 // the pips show the level (1-4 filled) as a second, non-color cue.
 const DIFF_STYLE: Record<Difficulty, string> = {
-  1: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
-  2: "text-amber-400 border-amber-500/30 bg-amber-500/10",
-  3: "text-orange-400 border-orange-500/30 bg-orange-500/10",
-  4: "text-red-400 border-red-500/30 bg-red-500/10",
+  // Light theme uses the -800 shades: the tinted pill background needs more contrast than plain text does.
+  1: "text-emerald-400 [[data-theme=light]_&]:text-emerald-800 border-emerald-500/30 bg-emerald-500/10",
+  2: "text-amber-400 [[data-theme=light]_&]:text-amber-800 border-amber-500/30 bg-amber-500/10",
+  3: "text-orange-400 [[data-theme=light]_&]:text-orange-800 border-orange-500/30 bg-orange-500/10",
+  4: "text-red-400 [[data-theme=light]_&]:text-red-800 border-red-500/30 bg-red-500/10",
 };
 
 export function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {

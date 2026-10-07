@@ -2,7 +2,7 @@ import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Server } from "node:http";
 import type { Browser } from "playwright";
-import { API_ORIGIN, cardTitles, collectErrors, defaultMock, eventually, launchBrowser, mockApi, newContext, openPage, startSite } from "./harness";
+import { API_ORIGIN, card, cardTitles, collectErrors, defaultMock, eventually, launchBrowser, mockApi, newContext, openPage, startSite } from "./harness";
 import { fixtureStats } from "../../fixtures/challenges/api";
 
 let server: Server;
@@ -30,9 +30,10 @@ describe("challenge list", () => {
       await t.page.getByTestId("ctf-grid").waitFor();
       assert.equal((await cardTitles(t.page)).length, 9);
       assert.match(await count(t.page), /9 challenges/);
-      const card = t.page.getByRole("link", { name: "Needle in the Logs" });
-      assert.equal(await card.getAttribute("href"), "/challenges/hidden-in-logs/");
-      const text = await card.innerText();
+      const needle = card(t.page, "Needle in the Logs");
+      assert.equal(await needle.getByRole("link").getAttribute("href"), "/challenges/hidden-in-logs/");
+      assert.equal(await needle.getByRole("link").count(), 1, "one focus stop per card");
+      const text = await needle.innerText();
       assert.match(text, /Cyber Security/);
       assert.match(text, /Medium/);
       assert.match(text, /Flag/);
@@ -40,8 +41,7 @@ describe("challenge list", () => {
       assert.match(text, /25 min/);
       assert.match(text, /Forensics/);
       assert.equal(await t.page.locator("h1").innerText(), "Challenges");
-      const links = await t.page.getByRole("link", { name: "Practice in Code Lab" }).getAttribute("href");
-      assert.equal(links, "/code-lab/");
+      assert.equal(await t.page.getByRole("link", { name: "Practice in Code Lab" }).getAttribute("href"), "/code-lab/");
       assert.deepEqual(t.errors, []);
     } finally {
       await t.close();
@@ -66,16 +66,16 @@ describe("challenge list", () => {
   it("shows live stats: solve counts, first blood and the signed-in solved state", async () => {
     const t = await openPage(browser, origin, LIST, { signedIn: true });
     try {
-      const caesar = t.page.getByRole("link", { name: "Caesar's Warm-up" });
+      const caesar = card(t.page, "Caesar's Warm-up");
       await eventually(async () => assert.match(await caesar.innerText(), /412 solves/));
       const text = plain(await caesar.innerText());
       assert.match(text, /First blood: Layla Hassan, last month/);
       assert.match(text, /Solved/);
       assert.match(text, /\+45 pts/);
       // first blood 2 hours ago on another card, relative to the fixed test clock
-      assert.match(plain(await t.page.getByRole("link", { name: "Packet Detective" }).innerText()), /First blood: Omar, 2 hours ago/);
-      assert.match(await t.page.getByRole("link", { name: "Needle in the Logs" }).innerText(), /0 solves/);
-      assert.doesNotMatch(await t.page.getByRole("link", { name: "Needle in the Logs" }).innerText(), /First blood/);
+      assert.match(plain(await card(t.page, "Packet Detective").innerText()), /First blood: Omar, 2 hours ago/);
+      assert.match(await card(t.page, "Needle in the Logs").innerText(), /0 solves/);
+      assert.doesNotMatch(await card(t.page, "Needle in the Logs").innerText(), /First blood/);
       // header summary from `me`
       const header = await t.page.locator("dl").first().innerText();
       assert.match(header, /45/);
@@ -90,8 +90,8 @@ describe("challenge list", () => {
     const t = await openPage(browser, origin, LIST);
     try {
       await t.page.getByTestId("ctf-grid").waitFor();
-      await eventually(async () => assert.match(await t.page.getByRole("link", { name: "Caesar's Warm-up" }).innerText(), /412 solves/));
-      assert.doesNotMatch(await t.page.getByRole("link", { name: "Caesar's Warm-up" }).innerText(), /Solved/);
+      await eventually(async () => assert.match(await card(t.page, "Caesar's Warm-up").innerText(), /412 solves/));
+      assert.doesNotMatch(await card(t.page, "Caesar's Warm-up").innerText(), /Solved/);
       assert.equal(t.api.callsTo("GET", "/api/challenges")[0].auth, null);
       const signIn = t.page.getByRole("link", { name: "Sign in", exact: true });
       assert.match((await signIn.getAttribute("href")) ?? "", /^\/login\/\?next=%2Fchallenges%2F/);
@@ -133,7 +133,7 @@ describe("challenge list", () => {
       assert.equal(new URL(t.page.url()).search, "");
 
       // status comes from the server stats (only caesar-warmup is solved)
-      await eventually(async () => assert.match(await t.page.getByRole("link", { name: "Caesar's Warm-up" }).innerText(), /Solved/));
+      await eventually(async () => assert.match(await card(t.page, "Caesar's Warm-up").innerText(), /Solved/));
       await t.page.locator("label", { hasText: /^\s*Solved\s*$/ }).click();
       await eventually(async () => assert.deepEqual(await cardTitles(t.page), ["Caesar's Warm-up"]));
       await t.page.locator("label", { hasText: /^\s*Unsolved\s*$/ }).click();
@@ -221,12 +221,12 @@ describe("challenge list", () => {
       await t.page.getByTestId("ctf-grid").waitFor();
       await t.page.getByText(/Live stats .* are unavailable right now/).waitFor();
       assert.equal((await cardTitles(t.page)).length, 9);
-      assert.doesNotMatch(await t.page.getByRole("link", { name: "Caesar's Warm-up" }).innerText(), /solves/);
+      assert.doesNotMatch(await card(t.page, "Caesar's Warm-up").innerText(), /solves/);
       assert.deepEqual(t.errors, []);
       // Retry recovers once the API is back
       api.stats = (s) => fixtureStats(s);
       await t.page.getByRole("button", { name: "Retry" }).click();
-      await eventually(async () => assert.match(await t.page.getByRole("link", { name: "Caesar's Warm-up" }).innerText(), /412 solves/));
+      await eventually(async () => assert.match(await card(t.page, "Caesar's Warm-up").innerText(), /412 solves/));
       assert.equal(await t.page.getByText(/are unavailable right now/).count(), 0);
     } finally {
       await t.close();
@@ -248,12 +248,12 @@ describe("challenge list", () => {
     const errors = collectErrors(page);
     try {
       await page.goto(origin + LIST);
-      const fizz = page.getByRole("link", { name: "FizzBuzz Sum" });
+      const fizz = card(page, "FizzBuzz Sum");
       await eventually(async () => assert.match(await fizz.innerText(), /Solved/));
       release();
       // the server is authoritative once it answers: fizzbuzz-sum is NOT solved there, caesar-warmup is
       await eventually(async () => assert.doesNotMatch(await fizz.innerText(), /Solved/));
-      assert.match(await page.getByRole("link", { name: "Caesar's Warm-up" }).innerText(), /Solved/);
+      assert.match(await card(page, "Caesar's Warm-up").innerText(), /Solved/);
       const cached = await page.evaluate(() => localStorage.getItem("imb-ctf-solved:u-test"));
       assert.equal(cached, '["caesar-warmup"]');
       assert.deepEqual(errors, []);

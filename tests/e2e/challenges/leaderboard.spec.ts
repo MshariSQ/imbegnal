@@ -20,14 +20,14 @@ after(async () => {
 
 const PATH = "/challenges/leaderboard/";
 const rows = (page: import("playwright").Page) => page.locator('[role="table"] [role="row"]');
-const names = (page: import("playwright").Page) => page.locator('[role="table"] ol[role="rowgroup"] > [role="row"]').evaluateAll((els) => els.map((e) => e.textContent ?? ""));
+const names = (page: import("playwright").Page) => page.locator('[data-testid="lb-rows"] > [role="row"]').evaluateAll((els) => els.map((e) => e.textContent ?? ""));
 
 describe("leaderboard", () => {
   it("renders ranks, avatars, points, solves, first bloods and last solve", async () => {
     const t = await openPage(browser, origin, PATH);
     try {
       await t.page.getByRole("table", { name: "Leaderboard table" }).waitFor();
-      const first = t.page.locator('[role="table"] ol[role="rowgroup"] > [role="row"]').first();
+      const first = t.page.locator('[data-testid="lb-rows"] > [role="row"]').first();
       const text = await first.innerText();
       for (const s of ["1", "Layla Hassan", "@layla", "2,450", "14", "3", "ago"]) assert.ok(text.includes(s), s);
       assert.equal(await first.locator("img, [aria-hidden]").count() > 0, true);
@@ -44,7 +44,7 @@ describe("leaderboard", () => {
     const t = await openPage(browser, origin, PATH);
     try {
       await t.page.getByRole("table").waitFor();
-      const podium = await t.page.locator('[role="table"] ol[role="rowgroup"] > [role="row"]').evaluateAll((els) => els.slice(0, 4).map((e) => e.textContent ?? ""));
+      const podium = await t.page.locator('[data-testid="lb-rows"] > [role="row"]').evaluateAll((els) => els.slice(0, 4).map((e) => e.textContent ?? ""));
       assert.match(podium[0], /1st place/);
       assert.match(podium[1], /2nd place/);
       assert.match(podium[2], /3rd place/);

@@ -34,7 +34,7 @@ export function ChallengeListFallback() {
 
 function ChallengeListSkeleton() {
   return (
-    <div aria-hidden className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div aria-hidden className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }, (_, i) => (
         <div key={i} className="card h-56 animate-pulse p-5">
           <div className="mb-4 h-4 w-1/3 rounded bg-line" />
@@ -226,7 +226,7 @@ export default function ChallengeList({ items, tracks }: { items: ChallengeListI
               </button>
             </div>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="ctf-grid">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="ctf-grid">
               {visible.map((c) => (
                 <li key={c.id}>
                   <ChallengeCard item={c} track={trackById.get(c.track)} stat={stats.index.get(c.id)} solved={stats.solved.has(c.id)} statsLoading={statsLoading && !stats.index.has(c.id)} />

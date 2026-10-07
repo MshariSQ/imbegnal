@@ -39,7 +39,7 @@ function Row({ entry, me, now }: { entry: LeaderboardEntry; me: boolean; now: nu
   // Podium rows get a medal icon and the spelled-out place for assistive tech: color alone never carries rank.
   const podium = top ? ["border-amber-400/50 bg-amber-400/10", "border-slate-400/50 bg-slate-400/10", "border-orange-500/50 bg-orange-500/10"][entry.rank - 1] : "border-line bg-surface";
   return (
-    <li
+    <div
       role="row"
       aria-current={me ? "true" : undefined}
       data-me={me ? "true" : undefined}
@@ -85,7 +85,7 @@ function Row({ entry, me, now }: { entry: LeaderboardEntry; me: boolean; now: nu
           {last}
         </span>
       </span>
-    </li>
+    </div>
   );
 }
 
@@ -261,20 +261,20 @@ export default function Leaderboard({ tracks }: { tracks: TrackInfo[] }) {
                 <span role="columnheader">{t.lastSolve}</span>
               </div>
             </div>
-            <ol role="rowgroup" className="space-y-2">
+            <div role="rowgroup" className="space-y-2" data-testid="lb-rows">
               {entries.map((e) => (
                 <Row key={`${e.rank}-${e.username ?? e.name}`} entry={e} me={isMe(e, me, user?.username)} now={now} />
               ))}
-            </ol>
+            </div>
             {me && !meInList && (
-              <div role="rowgroup" className="pt-1" data-testid="lb-me-pinned">
-                <p className="mb-2 mt-3 text-center text-xs font-semibold uppercase tracking-wider text-fg-subtle" aria-hidden>
+              <>
+                <p className="pt-2 text-center text-xs font-semibold uppercase tracking-wider text-fg-subtle" aria-hidden>
                   ⋯
                 </p>
-                <ol className="space-y-2" aria-label={t.yourPosition}>
+                <div role="rowgroup" aria-label={t.yourPosition} data-testid="lb-me-pinned">
                   <Row entry={me} me now={now} />
-                </ol>
-              </div>
+                </div>
+              </>
             )}
           </div>
         )}

@@ -104,7 +104,7 @@ export default function ChallengeDetail({
 
       <header className="mb-8 max-w-4xl">
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Link href={challengesHref(challenge.track)} className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-xs font-semibold text-fg-muted hover:border-line-strong hover:text-fg">
+          <Link href={challengesHref(challenge.track)} className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-xs font-semibold text-fg-muted hover:border-line-strong hover:text-fg">
             <span aria-hidden>{track?.icon ?? "🏁"}</span>
             {title}
           </Link>
@@ -241,7 +241,7 @@ export default function ChallengeDetail({
         {lessonRows.length > 0 && (
           <div className="min-w-0 lg:col-start-1">
             <Section id="ctf-lessons" title={t.detail.lessons} intro={t.detail.lessonsIntro}>
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {lessonRows.map((l) => (
                   <li key={l.key}>
                     <Link href={lessonHref(l.track, l.lesson)} className="card card-hover flex min-h-14 items-center gap-3 px-4 py-3">
@@ -279,7 +279,7 @@ export default function ChallengeDetail({
 
       {related.length > 0 && (
         <Section id="ctf-related" title={t.detail.related}>
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {related.slice(0, 3).map((r) => (
               <li key={r.id}>
                 <Link href={challengeHref(r.id)} className="card card-hover flex h-full flex-col gap-2 p-4">

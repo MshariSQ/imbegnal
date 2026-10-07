@@ -12,9 +12,9 @@ import type { ChallengeListItem, TrackInfo } from "@/lib/ctf/types";
 import { DifficultyBadge, FirstBlood, KindBadge, TrackChip } from "./Badges";
 
 /**
- * One challenge in the list. The whole card is a single link (one focus stop,
- * like CourseCard); its accessible name is the title and the summary + facts
- * are exposed as its description.
+ * One challenge in the list. The title is the only link and it is stretched
+ * over the whole card (one focus stop, whole card clickable), so its accessible
+ * name is exactly the visible title; the summary + facts are its description.
  */
 export default function ChallengeCard({
   item,
@@ -37,11 +37,9 @@ export default function ChallengeCard({
   const solves = stat?.solves ?? 0;
 
   return (
-    <Link
-      href={challengeHref(item.id)}
-      aria-labelledby={titleId}
-      aria-describedby={descId}
-      className={`group card card-hover relative flex h-full flex-col overflow-hidden p-5 ${solved ? "border-emerald-500/40" : ""}`}
+    <article
+      data-testid="ctf-card"
+      className={`group card card-hover relative flex h-full flex-col overflow-hidden p-5 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-brand ${solved ? "border-emerald-500/40" : ""}`}
     >
       <div
         aria-hidden
@@ -56,8 +54,15 @@ export default function ChallengeCard({
         </span>
       </div>
 
-      <h3 id={titleId} className="mb-1.5 text-lg font-bold leading-snug text-fg">
-        {item.title[lang]}
+      <h3 className="mb-1.5 text-lg font-bold leading-snug text-fg">
+        <Link
+          id={titleId}
+          href={challengeHref(item.id)}
+          aria-describedby={descId}
+          className="outline-none after:absolute after:inset-0 after:z-10 after:content-['']"
+        >
+          {item.title[lang]}
+        </Link>
       </h3>
 
       <div id={descId} className="flex flex-1 flex-col">
@@ -105,6 +110,6 @@ export default function ChallengeCard({
           )}
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

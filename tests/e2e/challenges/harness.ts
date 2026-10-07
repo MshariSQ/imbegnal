@@ -249,6 +249,9 @@ export async function eventually<T>(fn: () => T | Promise<T>, timeoutMs = 8000):
   }
 }
 
+/** The list card whose (single) link has exactly this accessible name. */
+export const card = (page: Page, name: string) => page.getByTestId("ctf-card").filter({ has: page.getByRole("link", { name, exact: true }) });
+
 /** Titles of the visible challenge cards, in DOM order. */
 export const cardTitles = (page: Page) => page.locator('[data-testid="ctf-grid"] h3').allTextContents();
 
