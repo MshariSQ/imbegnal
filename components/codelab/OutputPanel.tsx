@@ -150,7 +150,12 @@ function ResultBody({ view, limitsHint }: { view: RunView; limitsHint?: { runTim
   const { tx } = useLang();
   const o = tx.codelab.output;
   const r: PublicRunResult = view.result;
-  const explain = describeRunStatus(r.status, tx.codelab, { browser: view.source === "browser", limits: limitsHint });
+  const explain = describeRunStatus(r.status, tx.codelab, {
+    browser: view.source === "browser",
+    limits: limitsHint,
+    // A browser timeout with a line comes from the Web preview's loop guard.
+    line: r.status === "timeout" ? view.errorLine : undefined,
+  });
   const tone = statusTone(r.status);
   const compileFirst = r.status === "compile_error";
   const compile = r.compileOutput ? (

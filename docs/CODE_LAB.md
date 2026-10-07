@@ -35,6 +35,10 @@ Toolchain image (runner/Dockerfile: full | slim profile)
 The browser can also run **JavaScript, Python and HTML/CSS locally** (no server) as an offline
 fallback when the runner is unreachable or the visitor is signed out; the 14-language server
 runner requires sign-in (cost control + abuse protection).
+Browser runs have the same hard limits: a JS or Python worker is terminated at its time limit; a
+Web page runs in a sandboxed iframe (`lib/codelab/web-sandbox.ts`) whose inline scripts first get
+time-checked loop guards (`lib/codelab/loop-guard.ts`, acorn loaded lazily), so a runaway loop is
+stopped inside the frame even in browsers where the parent's watchdog timer cannot fire.
 
 ### Canonical data (single source of truth)
 

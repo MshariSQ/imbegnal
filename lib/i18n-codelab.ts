@@ -135,6 +135,7 @@ export const codelabEn = {
       unsupported: "This language isn’t installed on the runner. Pick another language.",
       internal_error: "Something failed on our side, not in your code. Try again in a moment; this run wasn’t counted.",
       browserTimeout: "Your program ran longer than {seconds} s and was stopped. Look for an infinite loop or a missing exit condition.",
+      browserLoop: "The loop on line {line} kept the page busy for longer than {seconds} s and was stopped. Check its exit condition: does something inside the loop change it?",
       browserFlood: "Your program printed far more than the lab can show and was stopped. Look for a loop that prints forever.",
     },
     problems: {
@@ -451,6 +452,7 @@ export const codelabAr: CodelabTx = {
       unsupported: "هذه اللغة غير مثبّتة على المشغّل. اختر لغة أخرى.",
       internal_error: "حدث خلل من جهتنا وليس في كودك. جرّب بعد قليل؛ ولم يُحتسب هذا التشغيل.",
       browserTimeout: "استغرق برنامجك أكثر من {seconds} ث فتم إيقافه. ابحث عن حلقة لا نهائية أو شرط خروج مفقود.",
+      browserLoop: "أبقت الحلقة في السطر {line} الصفحة مشغولة أكثر من {seconds} ث فتم إيقافها. راجع شرط خروجها: هل يتغيّر شيء داخل الحلقة يجعله يتحقق؟",
       browserFlood: "طبع برنامجك أكثر بكثير مما يستطيع المختبر عرضه فتم إيقافه. ابحث عن حلقة تطبع إلى ما لا نهاية.",
     },
     problems: {

@@ -175,7 +175,12 @@ export interface StatusExplanation {
 export function describeRunStatus(
   status: RunStatus,
   tx: CodelabDict,
-  opts: { browser?: boolean; limits?: { runTimeoutMs?: number; memoryMb?: number } } = {}
+  opts: {
+    browser?: boolean;
+    limits?: { runTimeoutMs?: number; memoryMb?: number };
+    /** For a browser timeout: the line of the loop the in-page loop guard stopped. */
+    line?: number;
+  } = {}
 ): StatusExplanation {
   const label = tx.runStatus[status];
   const seconds = Math.round((opts.limits?.runTimeoutMs ?? RUNNER_DEFAULTS.runTimeoutMs) / 100) / 10;
@@ -184,6 +189,7 @@ export function describeRunStatus(
     case "ok":
       return { label, help: null };
     case "timeout":
+      if (opts.browser && opts.line) return { label, help: fill(tx.runHelp.browserLoop, { seconds, line: opts.line }) };
       return { label, help: fill(opts.browser ? tx.runHelp.browserTimeout : tx.runHelp.timeout, { seconds }) };
     case "memory_limit":
       return { label, help: fill(tx.runHelp.memory_limit, { mb }) };

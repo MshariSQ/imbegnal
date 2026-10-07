@@ -115,6 +115,32 @@ console.log("parent=" + (function(){ try { return typeof parent.document; } catc
     });
   });
 
+  it("Web: a comment that mentions <head> cannot switch off the CSP, the console capture or the loop guard", async () => {
+    await withPage(s, { signedIn: false }, async (h) => {
+      await openLab(h, s.site, "lang=web");
+      await setEditor(
+        h.page,
+        `<!-- Tip: styles belong in <head> -->
+<!doctype html>
+<html lang="ar" dir="rtl"><head><title>t</title></head><body>
+<ul id="l"></ul>
+<script>
+for (var i = 0; i < 3; i++) document.getElementById("l").innerHTML += "<li>" + i + "</li>";
+fetch("https://example.com/x").then(() => console.log("net=open"), () => console.log("net=blocked"));
+console.log("lang=" + document.documentElement.lang + " dir=" + document.documentElement.dir + " mode=" + document.compatMode);
+</script></body></html>`
+      );
+      await runButton(h.page).click();
+      await resultPanel(h.page).waitFor();
+      await h.page.waitForFunction(() => /net=/.test(document.querySelector('[data-testid="run-result"]')?.textContent ?? ""), null, { timeout: 8000 });
+      const t = await resultPanel(h.page).innerText();
+      assert.match(t, /net=blocked/, "the CSP still applies");
+      // The page renders as written: standards mode and the <html> tag's own lang/dir.
+      assert.match(t, /lang=ar dir=rtl mode=CSS1Compat/);
+      assert.equal(await h.page.frameLocator('iframe[title="Preview"]').locator("#l li").count(), 3, "the guarded loop ran");
+    });
+  });
+
   it("Web: a script error is reported with its line number", async () => {
     await withPage(s, { signedIn: false }, async (h) => {
       await openLab(h, s.site, "lang=web");
@@ -133,6 +159,47 @@ console.log("parent=" + (function(){ try { return typeof parent.document; } catc
       await runButton(h.page).click();
       await resultPanel(h.page).waitFor({ timeout: 20_000 });
       assert.equal(await resultPanel(h.page).getAttribute("data-status"), "timeout");
+      // Whichever fires first (the parent watchdog or the in-page loop guard), the learner gets the timeout explanation.
+      assert.match(await resultPanel(h.page).innerText(), /longer than 5 s and was stopped/);
+      // The page did not freeze: the next run works.
+      await setEditor(h.page, '<script>console.log("alive")</script>');
+      await runButton(h.page).click();
+      await h.page.getByText("alive").first().waitFor();
+    });
+  });
+
+  it("Web: the in-page loop guard alone stops a runaway loop (no parent watchdog involved)", async () => {
+    await withPage(s, { signedIn: false }, async (h) => {
+      await openLab(h, s.site, "lang=web");
+      // The loop starts well after the run finished ("done" follows the load event), so the parent's watchdog is
+      // already cleared: in a browser that keeps the frame on the page's thread this used to freeze the tab for good.
+      await setEditor(
+        h.page,
+        [
+          "<!doctype html><html><head></head><body>",
+          '<p id="out">waiting</p>',
+          "<script>",
+          'window.addEventListener("load", function () {',
+          "  setTimeout(function () {",
+          "    var started = Date.now(), spins = 0;",
+          "    try { while (true) { spins++; } }",
+          '    catch (e) { document.getElementById("out").textContent = e.name + " after " + Math.round((Date.now() - started) / 1000) + " s: " + e.message; }',
+          "  }, 500);",
+          "});",
+          "</script>",
+          "</body></html>",
+        ].join("\n")
+      );
+      await runButton(h.page).click();
+      await resultPanel(h.page).waitFor();
+      assert.equal(await resultPanel(h.page).getAttribute("data-status"), "ok", "the run itself finished normally");
+      const out = h.page.frameLocator('iframe[title="Preview"]').locator("#out");
+      await out.filter({ hasText: /RangeError/ }).waitFor({ timeout: 20_000 });
+      assert.match(await out.innerText(), /^RangeError after 5 s: Code Lab stopped a loop that ran longer than 5 s \(line 7\)$/);
+      // The tab stayed usable: the editor still takes a new program and runs it.
+      await setEditor(h.page, '<script>console.log("still alive")</script>');
+      await runButton(h.page).click();
+      await h.page.getByText("still alive").first().waitFor();
     });
   });
 

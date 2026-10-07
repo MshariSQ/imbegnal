@@ -24,11 +24,56 @@ test("the harness and CSP come before any user markup, in a document, a head-les
   assert.ok(frag.indexOf("Content-Security-Policy") < frag.indexOf("<h1>hi"));
 });
 
-test("the harness does not shift the user's line numbers", () => {
-  const code = "<!doctype html>\n<html>\n<head>\n<script>\nconsole.log(1)\n</script>\n</head></html>";
+/** True when `index` in `doc` sits inside an HTML comment (an unclosed `<!--` before it). */
+const inComment = (doc: string, index: number) => {
+  const before = doc.slice(0, index);
+  return before.lastIndexOf("<!--") > before.lastIndexOf("-->");
+};
+
+test("a <head> mentioned in a comment, a string or a script cannot push the CSP and harness into it", () => {
+  const cases = [
+    "<!-- Tip: styles belong in <head> -->\n<ul id=\"l\"></ul>\n<script>for (var i = 0; i < 3; i++) l.innerHTML += i</script>",
+    "<!doctype html>\n<!-- <head> --><html><head><title>t</title></head><body>x</body></html>",
+    "<html><body><script>var s = \"<head>\";</script></body></html>",
+    "<textarea><head></textarea><p>hi</p>",
+  ];
+  for (const code of cases) {
+    const doc = buildPreviewDocument(code, "tok");
+    const csp = doc.indexOf("Content-Security-Policy");
+    assert.ok(csp >= 0 && !inComment(doc, csp), `CSP outside any comment: ${code}`);
+    assert.ok(!inComment(doc, doc.indexOf("<script>(function(){")), `harness outside any comment: ${code}`);
+    assert.ok(csp < doc.indexOf("<script>", csp + 1) || !code.includes("<script>"), `CSP before the learner's scripts: ${code}`);
+  }
+});
+
+test("a learner script before <head> still runs after the CSP and the harness", () => {
+  const code = "<!doctype html>\n<script>for (;;) {}</script>\n<html><head><title>t</title></head><body></body></html>";
   const doc = buildPreviewDocument(code, "tok");
+  assert.ok(doc.indexOf("Content-Security-Policy") < doc.indexOf("for (;;)"));
+  assert.ok(doc.indexOf("<script>(function(){") < doc.indexOf("for (;;)"));
+});
+
+test("a leading doctype (even after comments) stays first, so the page keeps its rendering mode", () => {
+  for (const code of ["<!DOCTYPE html>\n<html><head></head><body>x</body></html>", "<!-- page -->\n<!doctype html>\n<html><body>x</body></html>"]) {
+    const doc = buildPreviewDocument(code, "tok");
+    const doctypeEnd = code.toLowerCase().indexOf("<!doctype html>") + "<!doctype html>".length;
+    assert.equal(doc.slice(0, doctypeEnd), code.slice(0, doctypeEnd), "nothing is inserted before the doctype");
+    assert.ok(doc.indexOf("Content-Security-Policy") >= doctypeEnd);
+  }
+  // A document without a doctype is not given one (it would change how the learner's page renders).
+  assert.doesNotMatch(buildPreviewDocument("<html><body>x</body></html>", "tok"), /<!doctype/i);
+});
+
+test("the harness does not shift the user's line numbers", () => {
   const lineOf = (s: string, needle: string) => s.slice(0, s.indexOf(needle)).split("\n").length;
-  assert.equal(lineOf(doc, "console.log(1)"), lineOf(code, "console.log(1)"));
+  for (const code of [
+    "<!doctype html>\n<html>\n<head>\n<script>\nconsole.log(1)\n</script>\n</head></html>",
+    "<!-- a\nmulti-line\ncomment -->\n<!doctype html>\n<script>\nconsole.log(1)\n</script>",
+    "\n\n<html>\n<body>\n<script>console.log(1)</script></body></html>",
+  ]) {
+    const doc = buildPreviewDocument(code, "tok");
+    assert.equal(lineOf(doc, "console.log(1)"), lineOf(code, "console.log(1)"), code);
+  }
 });
 
 test("only messages carrying this run's token are accepted", () => {
