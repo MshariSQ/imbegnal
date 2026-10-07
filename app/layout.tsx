@@ -5,7 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { LangProvider } from "@/lib/lang-context";
 import { PRE_PAINT_SCRIPT } from "@/lib/theme";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, buildCsp } from "@/lib/site";
 import ClientLayout from "./ClientLayout";
 
 const geist = Geist({
@@ -54,18 +54,9 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-// Best-effort CSP via meta tag (GitHub Pages cannot set response headers).
-// 'unsafe-inline'/'unsafe-eval' are required by Next hydration, the pre-paint
-// theme script, the exercise test harness (new Function) and Pyodide (wasm).
-// Production only — in dev it would block the local worker on localhost:8787.
-const CSP =
-  "default-src 'self'; " +
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-  "font-src 'self' https://fonts.gstatic.com; " +
-  "img-src * data:; " +
-  "connect-src 'self' https://cdn.jsdelivr.net https://*.workers.dev; " +
-  "object-src 'none'; base-uri 'self'";
+// Best-effort CSP via meta tag (see buildCsp). Production only: in dev it would
+// block the local worker on localhost:8787.
+const CSP = buildCsp();
 
 export default function RootLayout({
   children,
