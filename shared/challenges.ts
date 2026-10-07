@@ -76,6 +76,8 @@ export interface ChallengeMeta {
   tags?: string[];
   /** Required format hint shown to the user for flag challenges, e.g. "IMB{...}". */
   flagFormat?: string;
+  /** ISO date (YYYY-MM-DD) the challenge was published; drives the "Newest" sort (registry order is the fallback). */
+  addedAt?: string;
 }
 
 // ── Server-only grader configuration ─────────────────────────────────────────
