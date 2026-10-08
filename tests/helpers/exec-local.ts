@@ -8,6 +8,7 @@
  * and committed, in a temp dir, with a timeout.
  */
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
@@ -38,6 +39,19 @@ const TOOLCHAIN_HOMES = {
   RUSTUP_HOME: process.env.RUSTUP_HOME || join(homedir(), ".rustup"),
   CARGO_HOME: process.env.CARGO_HOME || join(homedir(), ".cargo"),
 };
+
+/**
+ * Compiled programs, built once per (language, source) and reused for every test case of that
+ * source. Rebuilding for each case put the compiler inside every case's time limit: `rustc -O`
+ * alone can take longer than an 8 s case limit on a loaded CI runner, so a correct reference
+ * solution was reported as "timed out". Compilation gets its own, generous limit
+ * (COMPILE_TIMEOUT_MS); the case limit applies to the run only, like the runner's runMs.
+ */
+const COMPILE_TIMEOUT_MS = 180_000;
+const BUILD_ROOT = mkdtempSync(join(tmpdir(), "imb-local-builds-"));
+process.on("exit", () => rmSync(BUILD_ROOT, { recursive: true, force: true }));
+type Build = { ok: true; dir: string } | { ok: false; result: LocalResult };
+const builds = new Map<string, Build>();
 
 const working = new Map<string, boolean>();
 
@@ -83,22 +97,44 @@ export function localSupports(lang: LangId): boolean {
   return !!r && has(r.needs);
 }
 
+const envFor = (dir: string) => ({ ...process.env, ...TOOLCHAIN_HOMES, HOME: dir, GOCACHE, GOFLAGS: "-mod=mod" });
+
+/** Compiles `code` once per (language, source); later calls reuse the program (or the compile error). */
+function build(lang: LangId, filename: string, code: string, compile: (f: string) => string[]): Build {
+  const key = `${lang}:${createHash("sha256").update(code).digest("hex")}`;
+  const cached = builds.get(key);
+  if (cached) return cached;
+  const dir = mkdtempSync(join(BUILD_ROOT, `${lang}-`));
+  writeFileSync(join(dir, filename), code);
+  const [cmd, ...args] = compile(filename);
+  const c = spawnSync(cmd, args, { cwd: dir, encoding: "utf8", timeout: COMPILE_TIMEOUT_MS, env: envFor(dir) });
+  const out: Build =
+    c.status === 0
+      ? { ok: true, dir }
+      : { ok: false, result: { exitCode: c.status, stdout: "", stderr: c.stderr ?? "", timedOut: (c.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT" } };
+  builds.set(key, out);
+  return out;
+}
+
 export function runLocal(lang: LangId, code: string, stdin = "", timeoutMs = 20_000): LocalResult {
   const r = RECIPES[lang];
   const spec = getLanguage(lang);
   if (!r || !spec || !has(r.needs)) return { unsupported: true, exitCode: null, stdout: "", stderr: "", timedOut: false };
   const dir = mkdtempSync(join(tmpdir(), "imb-local-"));
   try {
-    writeFileSync(join(dir, spec.filename), code);
-    const env = { ...process.env, ...TOOLCHAIN_HOMES, HOME: dir, GOCACHE, GOFLAGS: "-mod=mod" };
+    let argv: string[];
     if (r.compile) {
-      const [cmd, ...args] = r.compile(spec.filename);
-      const c = spawnSync(cmd, args, { cwd: dir, encoding: "utf8", timeout: timeoutMs, env });
-      if (c.status !== 0) return { exitCode: c.status, stdout: "", stderr: c.stderr ?? "", timedOut: c.error?.name === "Error" && (c.error as NodeJS.ErrnoException).code === "ETIMEDOUT" };
+      const b = build(lang, spec.filename, code, r.compile);
+      if (!b.ok) return b.result;
+      // The recipe runs "./prog" from the build directory; each case still gets its own fresh cwd.
+      argv = r.run(spec.filename).map((a) => (a.startsWith("./") ? join(b.dir, a.slice(2)) : a));
+    } else {
+      writeFileSync(join(dir, spec.filename), code);
+      argv = r.run(spec.filename);
     }
-    const [cmd, ...args] = r.run(spec.filename);
+    const [cmd, ...args] = argv;
     const started = Date.now();
-    const p = spawnSync(cmd, args, { cwd: dir, input: stdin, encoding: "utf8", timeout: timeoutMs, env, maxBuffer: 8 * 1024 * 1024 });
+    const p = spawnSync(cmd, args, { cwd: dir, input: stdin, encoding: "utf8", timeout: timeoutMs, env: envFor(dir), maxBuffer: 8 * 1024 * 1024 });
     return {
       runMs: Date.now() - started,
       exitCode: p.status,
