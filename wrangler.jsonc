@@ -12,5 +12,8 @@
   "assets": {
     "directory": "./out",
     "not_found_handling": "404-page"
-  }
+  },
+  // Non-production branches are deployed with `npx wrangler preview`, which
+  // refuses to run without this block. Empty = inherit everything above.
+  "previews": {}
 }

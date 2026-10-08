@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, CheckCircle2, Circle, Clock, Code2, HelpCircle, M
 import type { L10n } from "@/data/lessons/types";
 import { MODULE_ORDER, type ModuleKey } from "@/lib/catalog";
 import { useLang } from "@/lib/lang-context";
-import { countLabel } from "@/lib/plural";
+import { countLabel, hoursLabel } from "@/lib/plural";
 import { useStudy } from "@/lib/study-store";
 import ProgressRing from "@/components/ui/ProgressRing";
 
@@ -56,8 +56,8 @@ export default function CourseOverview({
             <p className="text-lg text-fg-muted leading-relaxed max-w-2xl">{t?.desc}</p>
             <div className="flex flex-wrap gap-x-6 gap-y-2 mt-6 text-sm text-fg-muted">
               <span className="flex items-center gap-1.5"><BookOpen size={15} /> {countLabel(tx, "lesson", outline.length)}</span>
-              <span className="flex items-center gap-1.5"><Clock size={15} /> ~{Math.round(totalMin / 60)}h</span>
-              <span className="flex items-center gap-1.5"><BarChart3 size={15} /> {course.level}</span>
+              <span className="flex items-center gap-1.5"><Clock size={15} /> {hoursLabel(tx, Math.max(1, Math.round(totalMin / 60)))}</span>
+              <span className="flex items-center gap-1.5"><BarChart3 size={15} /> {tx.common.levels[course.level as keyof typeof tx.common.levels] ?? course.level}</span>
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-8">
               {resume && (

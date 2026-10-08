@@ -38,13 +38,13 @@ Merging to `main` runs `.github/workflows/deploy.yml`, in this order:
 
 1. **Verify** — lint, type-check and build the site (no external effects; a broken frontend stops here).
 2. **API** — `wrangler d1 migrations apply --remote` (only migrations not yet applied, tracked in D1's `d1_migrations` table), then `wrangler deploy`. Main branch only.
-3. **Site** — the build from step 1 is published to GitHub Pages, only if step 2 succeeded.
+3. **Site** — the build from step 1 is published to GitHub Pages, only if step 2 succeeded (or was skipped because the Cloudflare secrets are not set — see *frontend-only mode* below).
 
 The site is also built by Cloudflare's Git integration (Workers Builds, project `imbegnal`) using the root
 `wrangler.jsonc` (`npm run build` → `npx wrangler deploy` publishes `./out` as static assets, with `public/_headers`
 for long-lived caching). That path is independent of the workflow above, so on merge the frontend can go live a
 minute or two before the API deploy finishes; the old and new API/frontend are compatible in both directions
-(new site + old API: email sign-up, sync and tutor show an error until the API is deployed; everything else works).
+(new site + old API = frontend-only mode, below: the dashboard says progress is saved on this device, and features that need the new API show friendly errors).
 `NEXT_PUBLIC_API_URL` defaults to the live Worker in production builds, so a build without env vars cannot ship a localhost URL.
 Cloudflare project settings that match the repo: root directory `/`, build command `npm run build` (optional — `wrangler.jsonc`
 builds `./out` itself when it is missing), deploy command `npx wrangler deploy`, Node version from `.node-version` (22).
@@ -64,7 +64,12 @@ builds `./out` itself when it is missing), deploy command `npx wrangler deploy`,
    **only in the dashboard** survive deploys. Variables listed in `wrangler.toml [vars]` (`GITHUB_CLIENT_ID`, `FRONTEND_URL`,
    `WORKER_URL`) are re-applied from the file on every deploy, so edit those in the file, not the dashboard.
 
-Without the two GitHub secrets the API job fails with a clear message and **nothing** is deployed (the live site stays as it was).
+**Without the two GitHub secrets** the API job passes with a warning and deploys **nothing** (API and database untouched); the site still
+publishes — *frontend-only mode*. In this mode GitHub sign-in, lessons, quizzes, notes and progress (saved on this device) keep working; email sign-up, Google sign-in, cloud sync, the AI tutor and account deletion need the new API.
+The dashboard detects the old API (`GET /api/state` answers 404; the new Worker answers 401) and says so instead of claiming sync; it
+points to a GitHub request for data deletion. Once the secrets exist, the next run (or "Re-run all jobs") applies migrations, deploys
+the Worker, then publishes the site. If the secrets exist but a step fails, the pipeline stops and the site is **not** published.
+Deleting or rotating the secrets later silently returns the pipeline to frontend-only mode (watch for the warning annotation).
 
 > **Rollbacks:** do not roll the Worker back to a version older than the email-accounts release once anyone has signed up
 > with email: the old `/api/auth/me` returned every column (including `password_hash`). Roll forward with a fix instead.
@@ -76,7 +81,9 @@ Database changes go in `worker/migrations/NNNN_name.sql` (never edit an applied 
 Local dev against a database created by hand from the old `schema*.sql` files: delete `worker/.wrangler/state` first
 (migrations would otherwise fail with "duplicate column"), then re-run the commands below.
 Local dev: secrets in `worker/.dev.vars` (git-ignored), then in `worker/`:
-`npx wrangler d1 migrations apply skillforge-db --local && npx wrangler dev`, and `npm run dev` at the root.
+`npx wrangler d1 migrations apply skillforge-db --local --config wrangler.toml && npm run dev`, and `npm run dev` at the root.
+Always pass `--config wrangler.toml` to `wrangler` inside `worker/` (`npm run dev` / `npm run deploy` there do it for you):
+wrangler finds the site's root `wrangler.jsonc` before `worker/wrangler.toml` and would act on the wrong project.
 
 ### AI tutor cost controls (set these in the Cloudflare dashboard only — Worker → Settings → Variables; do not add them to `wrangler.toml [vars]`, a deploy would reset them)
 
@@ -93,7 +100,7 @@ Also set a monthly spend limit in the Anthropic Console as the last line of defe
 ## Launch metrics (D1)
 
 ```bash
-npx wrangler d1 execute skillforge-db --remote --command "<SQL>"
+cd worker && npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command "<SQL>"
 ```
 
 ```sql

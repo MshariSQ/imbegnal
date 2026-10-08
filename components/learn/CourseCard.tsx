@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
-import { countLabel } from "@/lib/plural";
+import { countLabel, hoursLabel } from "@/lib/plural";
 import ProgressBar from "@/components/ui/ProgressBar";
 
 export interface CourseCardData {
@@ -32,14 +32,14 @@ export default function CourseCard({ course, done = 0 }: { course: CourseCardDat
       />
       <div className="flex items-start justify-between mb-4">
         <span className="text-3xl leading-none">{course.icon}</span>
-        <span className="text-[11px] font-semibold px-2 py-1 rounded-full border border-line text-fg-muted">{course.level}</span>
+        <span className="text-[11px] font-semibold px-2 py-1 rounded-full border border-line text-fg-muted">{tx.common.levels[course.level as keyof typeof tx.common.levels] ?? course.level}</span>
       </div>
       <h3 className="text-lg font-bold text-fg mb-1.5">{t?.title ?? course.id}</h3>
       <p className="text-sm text-fg-muted leading-relaxed line-clamp-2 mb-5">{t?.desc}</p>
       <div className="mt-auto">
         <div className="flex items-center gap-4 text-xs text-fg-subtle mb-3">
           <span className="flex items-center gap-1.5"><BookOpen size={13} /> {countLabel(tx, "lesson", course.lessonCount)}</span>
-          <span className="flex items-center gap-1.5"><Clock size={13} /> ~{hours}h</span>
+          <span className="flex items-center gap-1.5"><Clock size={13} /> {hoursLabel(tx, hours)}</span>
         </div>
         {done > 0 ? (
           <div className="flex items-center gap-3">

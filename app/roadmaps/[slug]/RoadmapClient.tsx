@@ -19,7 +19,7 @@ const ROADMAP_CERT_FIELD: Record<string, string> = {
   "data-science": "Data Science",
   "ui-ux": "UI/UX",
 };
-import { getToken, getCurrentUser } from "@/lib/auth";
+import { getToken, useAuthUser } from "@/lib/auth";
 import { getProgress, markNodeDone, markNodeUndone } from "@/lib/api";
 import { useLang } from "@/lib/lang-context";
 
@@ -122,7 +122,7 @@ export default function RoadmapClient({
   const selected = nodeData.find((n) => n.id === selectedId) ?? nodeData[0];
   const selectedIndex = nodeData.findIndex((n) => n.id === (selected?.id ?? ""));
   const nextNode = nodeData[selectedIndex + 1] ?? null;
-  const user = getCurrentUser();
+  const user = useAuthUser();
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   const s = STATUS_COLORS[selected?.status ?? "required"];

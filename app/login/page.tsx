@@ -41,7 +41,7 @@ function AuthForm() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(params.get("error") ? a.errorAuthFailed : null);
-  const next = params.get("next")?.startsWith("/") ? params.get("next")! : "/dashboard/";
+  const nextParam = params.get("next");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +51,7 @@ function AuthForm() {
       const { token } = mode === "login" ? await loginWithEmail(email, password) : await registerWithEmail(name, email, password);
       saveToken(token);
       track("auth");
-      router.replace(next);
+      router.replace(safeNext(nextParam));
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
       const status = err instanceof ApiError ? err.status : 0;
@@ -137,12 +137,24 @@ function AuthForm() {
   );
 }
 
+/** Only same-origin paths: blocks "//evil.com", "/\\evil.com" and tab/newline tricks. */
+function safeNext(raw: string | null): string {
+  const fallback = "/dashboard/";
+  if (!raw) return fallback;
+  try {
+    const u = new URL(raw, window.location.origin);
+    return u.origin === window.location.origin ? u.pathname + u.search + u.hash : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function LoginPage() {
   const { tx } = useLang();
   return (
     <main className="relative min-h-[100dvh] pt-24 pb-16 px-4 overflow-hidden">
       <div aria-hidden className="absolute inset-0 bg-grid opacity-70" />
-      <div aria-hidden className="absolute -top-40 start-1/2 -translate-x-1/2 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-brand" />
+      <div aria-hidden className="absolute -top-40 left-1/2 -translate-x-1/2 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-brand" />
       <div className="relative max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
         <section className="hidden lg:block">
           <span className="w-12 h-12 rounded-2xl bg-brand/15 border border-brand/30 grid place-items-center mb-6">

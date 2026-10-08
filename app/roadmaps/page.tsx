@@ -26,7 +26,7 @@ function RoadmapGrid({ items }: { items: typeof roadmaps }) {
             <h3 className="font-bold text-fg mb-2 group-hover:text-emerald-400 transition-colors">{r.title}</h3>
             <p className="text-sm text-fg-subtle mb-4 leading-relaxed">{r.description}</p>
             <div className="flex items-center justify-between mb-3">
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${levelColors[r.level]}`}>{r.level}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${levelColors[r.level]}`}>{tx.common.levels[r.level as keyof typeof tx.common.levels] ?? r.level}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-fg-faint mb-3">
               <Clock size={11} /><span>{r.duration}</span>

@@ -6,11 +6,33 @@ export interface LessonProgress {
 
 const key = (roadmapId: string, nodeId: string) => `sf-lesson:${roadmapId}:${nodeId}`;
 
-export function getLessonProgress(roadmapId: string, nodeId: string): LessonProgress {
-  if (typeof window === "undefined") return { ex: [], quiz: [] };
+const listeners = new Set<() => void>();
+// Latest progress per lesson when localStorage rejects writes (full / blocked),
+// so the UI still reflects what the student just passed in this session.
+const memory = new Map<string, string>();
+
+/** For useSyncExternalStore — re-renders subscribers whenever progress is saved. */
+export function subscribeLessonProgress(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+/** Raw stored string ("" when none) — a stable primitive snapshot. */
+export function readLessonProgressRaw(roadmapId: string, nodeId: string): string {
+  if (typeof window === "undefined") return "";
+  const k = key(roadmapId, nodeId);
+  const pending = memory.get(k);
+  if (pending !== undefined) return pending;
   try {
-    const raw = localStorage.getItem(key(roadmapId, nodeId));
-    if (!raw) return { ex: [], quiz: [] };
+    return localStorage.getItem(k) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function parseLessonProgress(raw: string): LessonProgress {
+  if (!raw) return { ex: [], quiz: [] };
+  try {
     const p = JSON.parse(raw) as LessonProgress;
     return { ex: p.ex ?? [], quiz: p.quiz ?? [], done: p.done };
   } catch {
@@ -18,12 +40,20 @@ export function getLessonProgress(roadmapId: string, nodeId: string): LessonProg
   }
 }
 
+export function getLessonProgress(roadmapId: string, nodeId: string): LessonProgress {
+  return parseLessonProgress(readLessonProgressRaw(roadmapId, nodeId));
+}
+
 export function saveLessonProgress(roadmapId: string, nodeId: string, p: LessonProgress): void {
+  const k = key(roadmapId, nodeId);
+  const raw = JSON.stringify(p);
   try {
-    localStorage.setItem(key(roadmapId, nodeId), JSON.stringify(p));
+    localStorage.setItem(k, raw);
+    memory.delete(k);
   } catch {
-    // storage full or blocked — progress just won't persist
+    memory.set(k, raw); // storage full or blocked — keep it for this session only
   }
+  listeners.forEach((l) => l());
 }
 
 export function markSectionPassed(

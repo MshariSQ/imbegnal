@@ -9,6 +9,9 @@ type Widen<T> = T extends string ? string : T extends readonly (infer U)[] ? rea
 
 export const platformEn = {
   common: {
+    levels: { Beginner: "Beginner", Intermediate: "Intermediate", Advanced: "Advanced", "All Levels": "All levels" },
+    approxHours: "~{n}h",
+    approxHoursOne: "~{n}h",
     loading: "Loading…",
     minutes: "min",
     lessons: "lessons",
@@ -92,6 +95,10 @@ export const platformEn = {
     goalDone: "Goal reached today — great work! 🔥",
     syncGuest: "Sign in to back up your progress and use the AI tutor.",
     syncOn: "Progress synced to your account",
+    syncLocal: "Your progress is saved on this device. Cloud backup and sync are coming soon.",
+    syncGuestLocal: "Your progress is saved on this device.",
+    deleteLegacy: "Account deletion is coming soon. To have your data deleted now,",
+    deleteLegacyLink: "open a request on GitHub",
     deleteAccount: "Delete account",
     deleteConfirm: "Delete your account and all synced data? This can't be undone. Progress saved on this device is kept.",
     viewAll: "View all",
@@ -231,6 +238,9 @@ export type PlatformTx = Widen<typeof platformEn>;
 
 export const platformAr: PlatformTx = {
   common: {
+    levels: { Beginner: "مبتدئ", Intermediate: "متوسط", Advanced: "متقدم", "All Levels": "كل المستويات" },
+    approxHours: "حوالي {n} ساعات",
+    approxHoursOne: "حوالي ساعة",
     loading: "جارٍ التحميل…",
     minutes: "دقيقة",
     lessons: "دروس",
@@ -314,6 +324,10 @@ export const platformAr: PlatformTx = {
     goalDone: "حققت هدف اليوم — عمل رائع! 🔥",
     syncGuest: "سجّل الدخول لحفظ تقدمك احتياطياً واستخدام المدرّس الذكي.",
     syncOn: "تقدمك متزامن مع حسابك",
+    syncLocal: "تقدمك محفوظ على هذا الجهاز. النسخ الاحتياطي والمزامنة السحابية قريباً.",
+    syncGuestLocal: "تقدمك محفوظ على هذا الجهاز.",
+    deleteLegacy: "حذف الحساب سيتوفر قريباً. ولحذف بياناتك الآن،",
+    deleteLegacyLink: "افتح طلباً على GitHub",
     deleteAccount: "حذف الحساب",
     deleteConfirm: "هل تريد حذف حسابك وكل بياناتك المتزامنة؟ لا يمكن التراجع عن ذلك. يبقى التقدم المحفوظ على هذا الجهاز.",
     viewAll: "عرض الكل",

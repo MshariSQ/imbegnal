@@ -53,9 +53,13 @@ jobs:
           path: out
 
   # 2) API: database migrations, then the Cloudflare Worker. Runs only after the
-  #    site verified/built, and BEFORE the site is published, so the frontend
-  #    never ships ahead of the API it calls. Needs repo secrets
-  #    CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID.
+  #    site verified/built, and BEFORE the site is published, so with credentials
+  #    present the frontend never ships ahead of the API it calls. Needs repo
+  #    secrets CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID.
+  #    Without them this job passes with a warning and deploys NOTHING, so the
+  #    site still publishes ("frontend-only"). Then: GitHub sign-in, lessons, quizzes, notes and progress (saved on this device) keep working; email sign-up, Google sign-in, cloud sync, the AI tutor and account deletion need the new API
+  #    (friendly errors until it is deployed). If the secrets exist but a step
+  #    FAILS, the pipeline stops and the site is not published.
   #    Production only: a manual run from another branch skips this job (and so
   #    the publish job) instead of migrating the production database.
   worker:
@@ -75,34 +79,52 @@ jobs:
           cache: "npm"
           cache-dependency-path: worker/package-lock.json
 
-      - run: npm ci
-
-      # The token is given only to the three steps that need it, not to `npm ci`
-      # (dependency install scripts must never see it).
+      # The token is given only to the steps that need it, never to `npm ci`
+      # (dependency install scripts must never see it). Secrets cannot be used
+      # in `if:` directly, so this step turns "are they set?" into an output.
       - name: Check Cloudflare credentials
+        id: creds
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::Add repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see docs/PLATFORM.md). Nothing was deployed."
-            exit 1
+          missing=""
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && missing="CLOUDFLARE_API_TOKEN"
+          [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && missing="${missing:+$missing, }CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=API not deployed::Missing repository secret(s): $missing. The API and database were NOT touched; the site will be published without them (frontend-only). See docs/PLATFORM.md."
+            {
+              echo "### API not deployed"
+              echo "Missing repository secret(s): \`$missing\`. The API and database were not touched, and the site is published without them (frontend-only)."
+              echo "Add the secret(s) (see docs/PLATFORM.md) and re-run to deploy the API and database migrations."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Install worker dependencies
+        if: steps.creds.outputs.ready == 'true'
+        run: npm ci
+
       - name: Type-check worker
+        if: steps.creds.outputs.ready == 'true'
         run: npx tsc --noEmit -p .
 
       - name: Apply D1 migrations (only new ones run)
+        if: steps.creds.outputs.ready == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler d1 migrations apply skillforge-db --remote
+        # --config: the site's ../wrangler.jsonc would otherwise win wrangler's config lookup.
+        run: npx wrangler d1 migrations apply skillforge-db --remote --config wrangler.toml
 
       - name: Deploy worker
+        if: steps.creds.outputs.ready == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler deploy
+        run: npx wrangler deploy --config wrangler.toml
 
   # 3) Publish the site (GitHub Pages)
   deploy:
