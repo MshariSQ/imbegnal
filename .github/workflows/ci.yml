@@ -1,0 +1,114 @@
+name: CI
+
+# Quality gates for pull requests and main. Deployment stays in deploy.yml.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Types, lint, unit + Worker tests, generated-catalog freshness, production build.
+  checks:
+    name: Typecheck, lint, unit and Worker tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22" # node:sqlite (Worker test shim) and native type stripping
+          cache: npm
+      - run: npm ci
+      - run: npm ci
+        working-directory: worker
+      # The image's rustup has no default toolchain; the Rust labs need a working rustc.
+      - name: Rust toolchain for the lab reference checks
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+      - name: Generated catalog is current
+        run: npm run check:catalog
+      - name: Typecheck (site, Worker, runner)
+        run: npm run typecheck
+      - name: Lint
+        run: npx eslint .
+      - name: Unit tests (contracts, curricula, lessons, labs, challenges)
+        # Lab and challenge reference solutions run on the host toolchains that
+        # ubuntu-latest ships (Python, Node, Java, GCC, Go, Ruby, PHP, Bash) plus the
+        # Rust installed above; missing or broken ones are skipped by tests/helpers/exec-local.ts.
+        run: npm run test:unit
+      - name: Worker tests (D1 shim over node:sqlite, stubbed runner)
+        run: npm run test:worker
+      - name: Build
+        run: npm run build
+      - name: No hint text in the static export (hints are Worker-only)
+        run: node --import tsx --test tests/unit/hints-no-leak.test.ts
+        env:
+          HINT_LEAK_REQUIRE_OUT: "1"
+
+  # The sandbox is the riskiest component: its isolation tests run against a real Docker daemon.
+  runner:
+    name: Runner isolation tests (Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Build the slim toolchain image
+        run: BASE_IMAGE=ubuntu:24.04 runner/image/build.sh slim
+      - name: Runner tests
+        run: npm run test:runner
+        env:
+          RUNNER_TEST_IMAGE: imbegnal-runner:slim
+
+  # The site's UI against a mocked Worker: Code Lab, Challenges (fixture export), course pages,
+  # certificate and instructor pages; RTL, mobile widths, axe-core and hydration checks.
+  ui:
+    name: UI specs (mocked API, Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # The Python-in-the-browser specs serve Pyodide from this install instead of jsDelivr.
+      # Same version as public/pyodide-worker.js; not a project dependency.
+      - name: Install Pyodide for the Code Lab specs
+        run: npm i --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/pyodide" pyodide@0.26.4
+      - name: UI specs
+        run: npm run test:e2e:ui
+        env:
+          PYODIDE_DIR: ${{ runner.temp }}/pyodide/node_modules/pyodide
+
+  # Real runner + real Worker (wrangler dev, local D1, real migrations) + exported site + Chromium.
+  e2e:
+    name: Full-stack E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm ci
+        working-directory: worker
+      - run: npx playwright install --with-deps chromium
+      - name: Build the slim toolchain image
+        run: BASE_IMAGE=ubuntu:24.04 runner/image/build.sh slim
+      - name: E2E
+        run: npm run test:e2e
+        env:
+          E2E_RUNNER_IMAGE: imbegnal-runner:slim

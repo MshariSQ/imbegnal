@@ -226,6 +226,52 @@ That single design decision — trade some flexibility for raw speed on numeric 
       },
     },
     {
+      type: "lab",
+      id: "min-max-scale",
+      lang: "python",
+      prompt: {
+        en: `**Normalise a feature.** Models train better when numeric features share a scale. *Min-max scaling* maps the smallest value to 0 and the largest to 1:
+
+\`scaled = (x - min) / (max - min)\`
+
+Read one line of space-separated numbers from standard input and print the scaled values on **one line, separated by single spaces, each with exactly 3 decimals** (\`0.250\`).
+
+If every number is identical (\`max == min\`) there is nothing to scale: print \`0.000\` for each value. Do not use external libraries.`,
+        ar: `**طبّع إحدى الخصائص.** تتدرّب النماذج بصورة أفضل حين تتشارك الخصائص الرقمية مقياساً واحداً. يحوّل *التحجيم الأدنى-الأقصى* أصغر قيمة إلى 0 وأكبرها إلى 1:
+
+\`scaled = (x - min) / (max - min)\`
+
+اقرأ سطراً واحداً من أرقام تفصل بينها مسافات من الدخل القياسي واطبع القيم بعد التحجيم **في سطر واحد تفصل بينها مسافة واحدة، لكل منها 3 خانات عشرية بالضبط** (\`0.250\`).
+
+إذا تطابقت كل الأرقام (\`max == min\`) فلا شيء يُحجَّم: اطبع \`0.000\` لكل قيمة. لا تستخدم مكتبات خارجية.`,
+      },
+      starterCode: `values = [float(token) for token in input().split()]
+
+# TODO 1: find the smallest and largest value
+# TODO 2: handle the "all values equal" case (avoid dividing by zero)
+# TODO 3: scale each value and print them on one line with 3 decimals, e.g. f"{x:.3f}"
+print(" ".join(f"{v:.3f}" for v in values))
+`,
+      solution: `values = [float(token) for token in input().split()]
+
+low, high = min(values), max(values)
+span = high - low
+scaled = [0.0 if span == 0 else (v - low) / span for v in values]
+print(" ".join(f"{v:.3f}" for v in scaled))
+`,
+      hints: [
+        { en: "`min(values)` and `max(values)` give the two ends of the range.", ar: "تعطيك `min(values)` و`max(values)` طرفَي المدى." },
+        { en: "Compute `span = high - low` once. If it is 0, every scaled value is 0.0.", ar: "احسب `span = high - low` مرة واحدة. إن كانت 0 فكل قيمة محجَّمة تساوي 0.0." },
+        { en: "Build the list with a comprehension, then join the formatted strings with spaces.", ar: "ابنِ القائمة بتعبير شمولي ثم اجمع النصوص المنسَّقة بمسافات." },
+      ],
+      tests: [
+        { name: { en: "Scales a small list", ar: "يحجّم قائمة صغيرة" }, stdin: "10 20 30 40 50\n", expected: "0.000 0.250 0.500 0.750 1.000" },
+        { name: { en: "Handles negatives and decimals", ar: "يتعامل مع السالب والكسور" }, stdin: "-5 0 2.5 5\n", expected: "0.000 0.500 0.750 1.000" },
+        { name: { en: "All values equal prints zeros", ar: "تساوي كل القيم يطبع أصفاراً" }, stdin: "7 7 7\n", expected: "0.000 0.000 0.000" },
+        { name: { en: "A single value", ar: "قيمة واحدة" }, stdin: "42\n", expected: "0.000" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

@@ -8,6 +8,7 @@ import { useLang } from "@/lib/lang-context";
 import { getToken, useAuthUser } from "@/lib/auth";
 import { ApiError, streamTutor, type TutorMessage } from "@/lib/api";
 import { track as trackEvent } from "@/lib/track";
+import { domProps } from "@/lib/markdown";
 
 const MAX_TURNS = 9; // last few turns only (odd count, ending with the student) — keeps requests small and cheap
 
@@ -150,8 +151,8 @@ export default function AiTutor({
                 {m.content ? (
                   <ReactMarkdown
                     components={{
-                      pre: (props) => <pre dir="ltr" {...props} />,
-                      a: (props) => <a target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline" {...props} />,
+                      pre: (props) => <pre dir="ltr" {...domProps(props)} />,
+                      a: (props) => <a target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline" {...domProps(props)} />,
                     }}
                   >
                     {m.content}

@@ -5,7 +5,7 @@
  * is a compile error.
  */
 
-type Widen<T> = T extends string ? string : T extends readonly (infer U)[] ? readonly Widen<U>[] : { [K in keyof T]: Widen<T[K]> };
+import type { Widen } from "./i18n-types";
 
 export const platformEn = {
   common: {
@@ -69,6 +69,8 @@ export const platformEn = {
     errorExists: "An account with this email already exists.",
     errorRateLimited: "Too many attempts — wait a minute and try again.",
     errorAuthFailed: "Sign-in was cancelled or failed. Please try again.",
+    errorLoginUntrusted: "This sign-in link was not started from this browser tab, so we did not sign you in. If you meant to sign in, use the buttons below.",
+    errorLoginExpired: "That sign-in took too long and expired. Please sign in again.",
     guestNote: "You can also keep learning without an account — progress is saved on this device.",
     noResetNote: "No password reset yet — choose a password you'll remember, or continue with GitHub.",
     perks: ["Sync progress across devices", "Daily streaks & XP", "AI tutor on every lesson"],
@@ -101,6 +103,7 @@ export const platformEn = {
     deleteLegacyLink: "open a request on GitHub",
     deleteAccount: "Delete account",
     deleteConfirm: "Delete your account and all synced data? This can't be undone. Progress saved on this device is kept.",
+    deleteSuspended: "This account is suspended right now, so it can't be deleted yet. Try again when the suspension ends, or ask us to delete it.",
     viewAll: "View all",
   },
   learn: {
@@ -298,6 +301,8 @@ export const platformAr: PlatformTx = {
     errorExists: "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
     errorRateLimited: "محاولات كثيرة — انتظر دقيقة ثم حاول مجدداً.",
     errorAuthFailed: "أُلغي تسجيل الدخول أو فشل. حاول مرة أخرى.",
+    errorLoginUntrusted: "لم يبدأ رابط تسجيل الدخول هذا من علامة التبويب هذه، لذلك لم نُسجّل دخولك. إن كنت تريد تسجيل الدخول فاستخدم الأزرار أدناه.",
+    errorLoginExpired: "استغرق تسجيل الدخول وقتاً طويلاً وانتهت صلاحيته. يُرجى تسجيل الدخول من جديد.",
     guestNote: "يمكنك أيضاً متابعة التعلم بدون حساب — يُحفظ تقدمك على هذا الجهاز.",
     noResetNote: "لا يوجد استرجاع لكلمة المرور بعد — اختر كلمة مرور تتذكرها، أو تابع عبر GitHub.",
     perks: ["مزامنة التقدم عبر الأجهزة", "سلسلة أيام ونقاط خبرة", "مدرّس ذكي في كل درس"],
@@ -330,6 +335,7 @@ export const platformAr: PlatformTx = {
     deleteLegacyLink: "افتح طلباً على GitHub",
     deleteAccount: "حذف الحساب",
     deleteConfirm: "هل تريد حذف حسابك وكل بياناتك المتزامنة؟ لا يمكن التراجع عن ذلك. يبقى التقدم المحفوظ على هذا الجهاز.",
+    deleteSuspended: "هذا الحساب موقوف حاليًا، لذلك لا يمكن حذفه الآن. حاول مرة أخرى بعد انتهاء الإيقاف، أو اطلب منا حذفه.",
     viewAll: "عرض الكل",
   },
   learn: {

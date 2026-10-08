@@ -154,6 +154,60 @@ The attack is one of the clearest illustrations of why networking infrastructure
       },
     },
     {
+      type: "lab",
+      id: "subnet-plan",
+      lang: "python",
+      prompt: {
+        en: `**Plan the subnets.** You are given a VPC address block and the number of equal-sized subnets you need. Split the block evenly: the new prefix length is the original prefix plus the number of extra bits needed to fit the subnet count (\`ceil(log2(count))\`).
+
+Standard input: line 1 is the block in CIDR notation (for example \`10.0.0.0/16\`), line 2 is the number of subnets. Print the **first \`count\` subnets in address order**, one CIDR per line.
+
+If the required prefix would be longer than \`/32\`, print \`impossible\` instead. The \`ipaddress\` module from the standard library is allowed.`,
+        ar: `**خطّط الشبكات الفرعية.** لديك كتلة عناوين لشبكة VPC وعدد الشبكات الفرعية المتساوية الحجم التي تحتاجها. قسّم الكتلة بالتساوي: طول البادئة الجديد هو طول البادئة الأصلي مضافاً إليه عدد البتات الإضافية اللازمة لاستيعاب عدد الشبكات (\`ceil(log2(count))\`).
+
+الدخل القياسي: السطر الأول هو الكتلة بصيغة CIDR (مثل \`10.0.0.0/16\`) والسطر الثاني عدد الشبكات الفرعية. اطبع **أول \`count\` شبكة فرعية بترتيب العناوين**، كل CIDR في سطر.
+
+إذا كان طول البادئة المطلوب أكبر من \`/32\` فاطبع \`impossible\`. يُسمح باستخدام وحدة \`ipaddress\` من المكتبة القياسية.`,
+      },
+      starterCode: `import ipaddress
+
+block = ipaddress.ip_network(input().strip())
+count = int(input())
+
+# TODO 1: extra_bits = number of bits needed to count \`count\` subnets
+#         (hint: (count - 1).bit_length() is 0 for 1, 1 for 2, 2 for 3-4, ...)
+# TODO 2: new_prefix = block.prefixlen + extra_bits; if it is above 32 print "impossible"
+# TODO 3: otherwise print the first \`count\` networks from block.subnets(new_prefix=new_prefix)
+print(block)
+`,
+      solution: `import ipaddress
+
+block = ipaddress.ip_network(input().strip())
+count = int(input())
+
+extra_bits = (count - 1).bit_length()
+new_prefix = block.prefixlen + extra_bits
+if new_prefix > 32:
+    print("impossible")
+else:
+    for i, net in enumerate(block.subnets(new_prefix=new_prefix)):
+        if i >= count:
+            break
+        print(net)
+`,
+      hints: [
+        { en: "Splitting into 4 subnets takes 2 extra bits, into 8 takes 3. `(count - 1).bit_length()` computes that.", ar: "التقسيم إلى 4 شبكات يحتاج بتين إضافيين وإلى 8 ثلاثة. يحسب `(count - 1).bit_length()` ذلك." },
+        { en: "`block.subnets(new_prefix=...)` yields the subnets lazily, in order.", ar: "تُنتج `block.subnets(new_prefix=...)` الشبكات الفرعية تدريجياً وبالترتيب." },
+        { en: "Stop after `count` subnets: you may need 3 of the 4 available.", ar: "توقف بعد `count` شبكة: قد تحتاج 3 من 4 متاحة." },
+      ],
+      tests: [
+        { name: { en: "Four /18 subnets from a /16", ar: "أربع شبكات /18 من /16" }, stdin: "10.0.0.0/16\n4\n", expected: "10.0.0.0/18\n10.0.64.0/18\n10.0.128.0/18\n10.0.192.0/18" },
+        { name: { en: "Three subnets need a /26 split of a /24", ar: "ثلاث شبكات تحتاج تقسيم /26 لشبكة /24" }, stdin: "192.168.1.0/24\n3\n", expected: "192.168.1.0/26\n192.168.1.64/26\n192.168.1.128/26" },
+        { name: { en: "One subnet is the block itself", ar: "شبكة فرعية واحدة هي الكتلة نفسها" }, stdin: "172.16.0.0/12\n1\n", expected: "172.16.0.0/12" },
+        { name: { en: "A /30 cannot hold 8 subnets", ar: "شبكة /30 لا تتسع لثماني شبكات فرعية" }, stdin: "192.168.0.0/30\n8\n", expected: "impossible" },
+      ],
+    },
+    {
       type: "quiz",
       questions: [
         {

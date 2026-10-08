@@ -16,6 +16,25 @@ export interface Env {
   AI_DAILY_LIMIT_FREE?: string; // per user per day (default 20)
   AI_DAILY_LIMIT_PRO?: string; // (default 200)
   AI_DAILY_LIMIT_GLOBAL?: string; // all users combined per day (default 600) — spend kill switch
+  RATE_LIMIT_PER_MIN?: string; // API requests per IP per minute, per isolate (default 60)
+  RATE_LIMIT_AUTH_PER_MIN?: string; // /api/auth/* requests per IP per minute, per isolate (default 10)
+  // Code Lab — see worker/README-lab.md. All optional strings; defaults live in worker/src/lab/config.ts.
+  RUNNER_URL?: string; // base URL of the runner service (https; http only for loopback)
+  RUNNER_SECRET?: string; // HMAC secret shared with the runner (`wrangler secret put RUNNER_SECRET`)
+  RUN_DAILY_LIMIT_FREE?: string; // runs per user per UTC day (default 50)
+  RUN_DAILY_LIMIT_PRO?: string; // (default 500)
+  RUN_DAILY_LIMIT_GLOBAL?: string; // all users combined per day (default 20000) — cost kill switch
+  RUN_PER_MINUTE_FREE?: string; // burst limit per user (default 10)
+  RUN_PER_MINUTE_PRO?: string; // (default 30)
+  RUN_MAX_CONCURRENT?: string; // simultaneous runs per user (default 2)
+  // Abuse protection: signals of one kind inside the window that trigger an automatic suspension.
+  ABUSE_WINDOW_MIN?: string; // sliding window in minutes (default 10)
+  ABUSE_SUSPEND_HOURS?: string; // suspension length (default 24)
+  ABUSE_RESOURCE_MAX?: string; // timeouts / memory / output floods (default 8)
+  ABUSE_NETWORK_PROBE_MAX?: string; // (default 5)
+  ABUSE_FLOOD_MAX?: string; // rate-limit hits (default 25)
+  ABUSE_BRUTEFORCE_MAX?: string; // wrong-flag floods (default 30)
+  ABUSE_VOLUME_MAX?: string; // (default 5)
 }
 
 export interface TokenUser {
@@ -124,6 +143,9 @@ const ALLOWED_ORIGINS = [
   "https://msharisq.github.io",
   "http://localhost:3000",
   "http://localhost:3001",
+  // Local end-to-end runs (static site served on 4173)
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
 ];
 
 export function corsHeaders(origin: string): Record<string, string> {
@@ -150,13 +172,47 @@ export function json(data: unknown, status = 200, origin = "", extraHeaders: Rec
 
 export const NO_STORE = { "Cache-Control": "no-store" };
 
-/** Redirect back to the frontend with a freshly issued token in the URL fragment. */
-export async function redirectWithToken(user: TokenUser, env: Env, extraHeaders: Record<string, string> = {}): Promise<Response> {
+// ── Login nonce (login-CSRF protection for the last hop) ─────────────────────
+// The site generates a random per-tab nonce when the user clicks "Continue with
+// GitHub/Google" and passes it as ?nonce= to the start endpoint. It travels with
+// the OAuth state in the same HttpOnly cookie ("<state>.<nonce>") and comes back
+// in the success fragment (#token=...&nonce=...). The callback page accepts the
+// token only when that nonce matches the one its own tab stored, so a link
+// carrying somebody else's token cannot sign a victim in. The nonce is read ONLY
+// from the cookie on the callback, never from the callback query.
+
+const NONCE_RE = /^[A-Za-z0-9_-]{16,64}$/;
+
+/** A well-formed login nonce (base64url, 16-64 chars). Anything else is ignored. */
+export function isValidNonce(v: unknown): v is string {
+  return typeof v === "string" && NONCE_RE.test(v);
+}
+
+/** Cookie value for the OAuth start: the state, plus ".<nonce>" when the site sent a valid one. */
+export function stateCookieValue(state: string, nonce: string | null): string {
+  return isValidNonce(nonce) ? `${state}.${nonce}` : state;
+}
+
+/** Splits a state cookie. A malformed nonce part is dropped; the state part is compared as is. */
+export function parseStateCookie(value: string | null): { state: string | null; nonce: string | null } {
+  if (!value) return { state: null, nonce: null };
+  const dot = value.indexOf(".");
+  if (dot < 0) return { state: value, nonce: null };
+  const nonce = value.slice(dot + 1);
+  return { state: value.slice(0, dot), nonce: isValidNonce(nonce) ? nonce : null };
+}
+
+/**
+ * Redirect back to the frontend with a freshly issued token in the URL fragment.
+ * `nonce` must come from the state cookie set at the start of the flow (see above).
+ */
+export async function redirectWithToken(user: TokenUser, env: Env, extraHeaders: Record<string, string> = {}, nonce: string | null = null): Promise<Response> {
   const token = await issueToken(user, env);
+  const fragment = isValidNonce(nonce) ? `token=${token}&nonce=${nonce}` : `token=${token}`;
   // Fragments are never sent to servers, logged by proxies, or leaked via Referer.
   return new Response(null, {
     status: 302,
-    headers: { Location: `${env.FRONTEND_URL}/auth/callback/#token=${token}`, "Cache-Control": "no-store", ...extraHeaders },
+    headers: { Location: `${env.FRONTEND_URL}/auth/callback/#${fragment}`, "Cache-Control": "no-store", ...extraHeaders },
   });
 }
 

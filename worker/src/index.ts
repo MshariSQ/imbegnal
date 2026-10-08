@@ -1,22 +1,26 @@
 // IMBEGNAL API — Cloudflare Worker + D1.
 // Routes: auth (GitHub, Google, email), profile, roadmap progress, bookmarks,
 // study-state sync and the AI tutor. Shared helpers live in util.ts.
-import { type Env, NO_STORE, corsHeaders, getCookie, getUser, isValidId, json, readJson, redirectWithToken } from "./util";
+import { type Env, NO_STORE, corsHeaders, getCookie, getUser, isValidId, json, parseStateCookie, readJson, redirectWithToken, stateCookieValue } from "./util";
 import { handleLogin, handleRegister } from "./auth-email";
 import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
 import { handleStateGet, handleStatePut } from "./state";
 import { handleTutor } from "./ai";
 import { handleAccountDelete, handleEvent } from "./account";
+import { handleLab } from "./lab/handlers";
+import { positiveInt } from "./lab/config";
+import { handleChallengesApi } from "./challenges";
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // Best-effort per-isolate sliding window. Not global (each Worker isolate has
-// its own memory) but free and good enough at this scale.
-const RATE_GENERAL = { limit: 60, windowMs: 60_000 };
-const RATE_AUTH = { limit: 10, windowMs: 60_000 };
+// its own memory) but free and good enough at this scale. RATE_LIMIT_PER_MIN /
+// RATE_LIMIT_AUTH_PER_MIN override the per-IP limits (the full-stack E2E raises them).
+const RATE_WINDOW_MS = 60_000;
 const rateBuckets = new Map<string, number[]>();
 
-function rateLimited(ip: string, isAuth: boolean): boolean {
-  const { limit, windowMs } = isAuth ? RATE_AUTH : RATE_GENERAL;
+function rateLimited(env: Env, ip: string, isAuth: boolean): boolean {
+  const limit = isAuth ? positiveInt(env.RATE_LIMIT_AUTH_PER_MIN, 10) : positiveInt(env.RATE_LIMIT_PER_MIN, 60);
+  const windowMs = RATE_WINDOW_MS;
   const now = Date.now();
   const key = `${isAuth ? "a" : "g"}:${ip}`;
   if (rateBuckets.size > 10_000) rateBuckets.clear(); // memory cap
@@ -75,8 +79,11 @@ async function handleBadge(env: Env): Promise<Response> {
 }
 
 // ── GET /api/auth/github ──────────────────────────────────────────────────────
-function handleAuthGitHub(env: Env): Response {
+function handleAuthGitHub(req: Request, env: Env): Response {
   const state = crypto.randomUUID();
+  // Optional login nonce from the site (?nonce=). A malformed one is ignored, not
+  // an error: the flow then simply returns no nonce and the site refuses the token.
+  const nonce = new URL(req.url).searchParams.get("nonce");
   const params = new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
     redirect_uri: `${env.WORKER_URL}/api/auth/callback`,
@@ -84,12 +91,13 @@ function handleAuthGitHub(env: Env): Response {
     state,
   });
   // The state round-trips through an HttpOnly cookie on the worker origin so
-  // the callback can prove the flow started here (CSRF protection).
+  // the callback can prove the flow started here (CSRF protection). The login
+  // nonce rides along in the same cookie: "<state>.<nonce>".
   return new Response(null, {
     status: 302,
     headers: {
       Location: `https://github.com/login/oauth/authorize?${params}`,
-      "Set-Cookie": `sf_oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
+      "Set-Cookie": `sf_oauth_state=${stateCookieValue(state, nonce)}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=600`,
       "Cache-Control": "no-store",
     },
   });
@@ -100,7 +108,8 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const cookieState = getCookie(req, "sf_oauth_state");
+  // The nonce comes ONLY from the cookie set by /api/auth/github, never from this URL.
+  const { state: cookieState, nonce } = parseStateCookie(getCookie(req, "sf_oauth_state"));
   const clearState = `sf_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=0`;
 
   const fail = (reason: string) => {
@@ -149,7 +158,8 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
     return redirectWithToken(
       { sub: String(ghUser.id), username: ghUser.login, name: ghUser.name || ghUser.login, avatar: ghUser.avatar_url },
       env,
-      { "Set-Cookie": clearState }
+      { "Set-Cookie": clearState },
+      nonce
     );
   } catch (e) {
     return fail(e instanceof Error ? e.message : String(e));
@@ -292,17 +302,17 @@ export default {
 
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
     const isAuthPath = pathname.startsWith("/api/auth/");
-    if (rateLimited(ip, isAuthPath)) {
+    if (rateLimited(env, ip, isAuthPath)) {
       return json({ error: "Too many requests" }, 429, origin, { "Retry-After": "60" });
     }
 
     if (pathname === "/api/health") return handleHealth();
     if (pathname === "/api/stats") return handleStats(env, origin);
     if (pathname === "/api/badge") return handleBadge(env);
-    if (pathname === "/api/auth/github") return handleAuthGitHub(env);
+    if (pathname === "/api/auth/github") return handleAuthGitHub(req, env);
     if (pathname === "/api/auth/callback") return handleAuthCallback(req, env);
     if (pathname === "/api/auth/me") return handleMe(req, env, origin);
-    if (pathname === "/api/auth/google") return handleGoogleStart(env, origin);
+    if (pathname === "/api/auth/google") return handleGoogleStart(req, env, origin);
     if (pathname === "/api/auth/google/callback") return handleGoogleCallback(req, env);
     if (pathname === "/api/auth/register" && req.method === "POST") return handleRegister(req, env, origin);
     if (pathname === "/api/auth/login" && req.method === "POST") return handleLogin(req, env, origin);
@@ -327,6 +337,16 @@ export default {
       if (req.method === "POST") return handleBookmarksPost(req, env, origin);
       if (req.method === "DELETE") return handleBookmarksDelete(req, env, origin);
     }
+
+    // ── Code Lab (run, quota, history, snippets, progress, languages) ──────────
+    if (pathname.startsWith("/api/lab/")) return handleLab(req, env, origin, pathname);
+    // ── end Code Lab ───────────────────────────────────────────────────────────
+    // ── Challenges (CTF), leaderboard, certificates, instructor analytics, admin audit ──
+    // /api/challenges[/:id/(open|hint|submit)], /api/leaderboard, /api/certificates/*,
+    // /api/instructor/analytics, /api/admin/audit — see worker/src/challenges/routes.ts
+    const challengesResponse = await handleChallengesApi(req, env, origin);
+    if (challengesResponse) return challengesResponse;
+    // ── end Challenges block ──
 
     const profileMatch = pathname.match(/^\/api\/users\/([^/]+)$/);
     if (profileMatch) return handleProfile(profileMatch[1], env, origin);

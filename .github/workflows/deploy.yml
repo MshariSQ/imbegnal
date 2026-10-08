@@ -111,6 +111,16 @@ jobs:
         if: steps.creds.outputs.ready == 'true'
         run: npx tsc --noEmit -p .
 
+      # Production's database was first built by hand from the old schema*.sql files. A migration whose
+      # columns already exist (schema-v3.sql = 0002) is recorded as applied instead of re-run, which would
+      # fail with "duplicate column" and stop the deploy. Changes nothing when it cannot prove that safe.
+      - name: Reconcile migrations applied by hand
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/d1-reconcile.mjs --remote
+
       - name: Apply D1 migrations (only new ones run)
         if: steps.creds.outputs.ready == 'true'
         env:

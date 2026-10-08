@@ -76,8 +76,9 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
     try {
       await deleteAccountRemote(token);
       removeToken(); // signs out; progress saved on this device is kept
-    } catch {
-      window.alert(tx.auth.errorGeneric);
+    } catch (e) {
+      // 409: suspended accounts can delete themselves only after the suspension ends.
+      window.alert(e instanceof Error && e.message === "API 409" ? d.deleteSuspended : tx.auth.errorGeneric);
     }
   }
 

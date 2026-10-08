@@ -5,10 +5,10 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, ArrowRight, BookOpen, Bot, CheckCircle2, Circle, Clock, Code2, HelpCircle,
-  ListTree, NotebookPen, PanelRight, Sparkles, ScrollText,
+  ListTree, NotebookPen, PanelRight, Sparkles, ScrollText, FlaskConical,
 } from "lucide-react";
 import type { L10n, Lesson } from "@/data/lessons/types";
-import { MODULE_ORDER, type ModuleKey } from "@/lib/catalog";
+import { MODULE_ORDER, trackTitle, type LessonPractice, type ModuleKey } from "@/lib/catalog";
 import { useLang } from "@/lib/lang-context";
 import { countLabel } from "@/lib/plural";
 import { getToken } from "@/lib/auth";
@@ -22,6 +22,7 @@ import { track } from "@/lib/track";
 import Drawer from "./Drawer";
 import NotesPanel from "./NotesPanel";
 import AiTutor from "./AiTutor";
+import PracticePanel from "./PracticePanel";
 
 export interface PlayerOutlineItem {
   lessonId: string;
@@ -37,11 +38,14 @@ export default function LessonPlayer({
   trackIcon,
   lesson,
   outline,
+  practice,
 }: {
   trackId: string;
   trackIcon: string;
   lesson: Lesson;
   outline: PlayerOutlineItem[];
+  /** Labs, runnable examples, challenges and the blank Code Lab for this lesson (see lib/catalog resolvePractice). */
+  practice: LessonPractice;
 }) {
   const { tx, lang } = useLang();
   const study = useStudy();
@@ -67,6 +71,7 @@ export default function LessonPlayer({
     () => ({
       exercises: lesson.sections.filter((s) => s.type === "exercise").length,
       quizzes: lesson.sections.filter((s) => s.type === "quiz").length,
+      labs: lesson.sections.filter((s) => s.type === "lab").length,
     }),
     [lesson]
   );
@@ -233,7 +238,7 @@ export default function LessonPlayer({
           </button>
           <Link href={`/learn/${trackId}/`} className="flex items-center gap-2 min-w-0 text-sm text-fg-muted hover:text-fg">
             <span>{trackIcon}</span>
-            <span className="truncate font-medium">{tx.tracks[trackId]?.title}</span>
+            <span className="truncate font-medium">{trackTitle(trackId, lang)}</span>
           </Link>
           <div className="hidden sm:flex items-center gap-3 ms-auto w-56">
             <ProgressBar value={outline.length ? courseDone / outline.length : 0} className="flex-1" label={tx.learn.courseProgress} />
@@ -266,6 +271,7 @@ export default function LessonPlayer({
                 <span className="flex items-center gap-1.5"><Clock size={14} /> {lesson.estMinutes} {tx.common.minutes}</span>
                 {stats.exercises > 0 && <span className="flex items-center gap-1.5"><Code2 size={14} /> {countLabel(tx, "exercise", stats.exercises)}</span>}
                 {stats.quizzes > 0 && <span className="flex items-center gap-1.5"><HelpCircle size={14} /> {countLabel(tx, "quiz", stats.quizzes)}</span>}
+                {stats.labs > 0 && <span className="flex items-center gap-1.5"><FlaskConical size={14} /> {tx.curriculum.labsFact.replace("{n}", String(stats.labs))}</span>}
                 {done && <span className="flex items-center gap-1.5 text-emerald-400 font-semibold"><CheckCircle2 size={14} /> {tx.player.done}</span>}
               </div>
             </header>
@@ -280,8 +286,9 @@ export default function LessonPlayer({
               hideHeader
             />
 
-            {/* Completion + navigation */}
+            {/* Practice → completion + navigation */}
             <div className="mt-12 pt-8 border-t border-line">
+              <PracticePanel practice={practice} />
               {!done && (
                 <button
                   onClick={finish}
@@ -305,7 +312,7 @@ export default function LessonPlayer({
                 ) : (
                   <Link href={`/learn/${trackId}/`} className="card card-hover p-4 group text-end">
                     <div className="flex items-center justify-end gap-1.5 text-xs text-fg-subtle mb-1">{tx.player.finishCourse} <BookOpen size={13} /></div>
-                    <div className="text-sm font-semibold text-fg group-hover:text-emerald-400">{tx.tracks[trackId]?.title}</div>
+                    <div className="text-sm font-semibold text-fg group-hover:text-emerald-400">{trackTitle(trackId, lang)}</div>
                   </Link>
                 )}
               </div>

@@ -1,4 +1,8 @@
 import { platformEn, platformAr } from "./i18n-platform";
+import { codelabEn, codelabAr } from "./i18n-codelab";
+import { ctfEn, ctfAr } from "./i18n-ctf";
+import { curriculumEn, curriculumAr } from "./i18n-curriculum";
+import { phase3En, phase3Ar } from "./i18n-phase3";
 
 export type Lang = "en" | "ar";
 
@@ -22,6 +26,8 @@ export const translations = {
       startFree: "Start free",
       toggleTheme: "Toggle dark mode",
       menu: "Menu",
+      codeLab: "Code Lab",
+      challenges: "Challenges",
     },
     footer: {
       tagline: "Free and open-source platform for learning roadmaps, certifications, and career guidance.",
@@ -213,6 +219,10 @@ export const translations = {
       ],
     },
     ...platformEn,
+    ...codelabEn,
+    ...ctfEn,
+    ...curriculumEn,
+    ...phase3En,
   },
 
   ar: {
@@ -234,6 +244,8 @@ export const translations = {
       startFree: "ابدأ مجاناً",
       toggleTheme: "تبديل الوضع الداكن",
       menu: "القائمة",
+      codeLab: "مختبر الكود",
+      challenges: "التحديات",
     },
     footer: {
       tagline: "منصة مجانية ومفتوحة المصدر لخرائط التعلم والشهادات والتوجيه المهني.",
@@ -425,6 +437,10 @@ export const translations = {
       ],
     },
     ...platformAr,
+    ...codelabAr,
+    ...ctfAr,
+    ...curriculumAr,
+    ...phase3Ar,
   },
 } as const;
 

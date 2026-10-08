@@ -43,6 +43,8 @@ export default function Navbar() {
 
   const navLinks = [
     { label: tx.nav.learn, href: "/learn/" },
+    { label: tx.nav.codeLab, href: "/code-lab/" },
+    { label: tx.nav.challenges, href: "/challenges/" },
     { label: tx.nav.roadmaps, href: "/roadmaps/" },
     { label: tx.nav.certifications, href: "/certifications/" },
     { label: tx.nav.resources, href: "/courses/" },

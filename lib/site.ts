@@ -12,3 +12,23 @@ export const API_URL = (
 ).replace(/\/$/, "");
 
 export const GITHUB_REPO = "https://github.com/MshariSQ/imbegnal";
+
+/**
+ * The site's Content-Security-Policy (a <meta> tag: GitHub Pages cannot set headers).
+ * 'unsafe-inline'/'unsafe-eval' are required by Next hydration, the pre-paint theme script,
+ * the exercise test harness (new Function) and Pyodide (wasm). `connect-src` allows exactly the
+ * API origin this build talks to (plus Pyodide's CDN), not a wildcard: a script injected into
+ * the page cannot send data to an arbitrary *.workers.dev host.
+ */
+export function buildCsp(apiUrl: string = API_URL): string {
+  const api = new URL(apiUrl).origin;
+  return (
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src * data:; " +
+    `connect-src 'self' https://cdn.jsdelivr.net ${api}; ` +
+    "object-src 'none'; base-uri 'self'"
+  );
+}

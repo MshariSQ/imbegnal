@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Separate packages with their own toolchains
+    "worker/**",
+    "runner/**",
+    ".claude/**",
+    "tests/e2e/artifacts/**",
   ]),
 ]);
 

@@ -1,0 +1,52 @@
+// Compiled once while the image is built so that the standard library is already in the Go
+// build cache (/opt/gocache) when a learner's program is compiled. The runner copies that cache
+// into the job's tmpfs; a cold cache needs ~25 s of compilation, a warm one ~0.5 s.
+package main
+
+import (
+	_ "bytes"
+	_ "container/heap"
+	_ "container/list"
+	_ "encoding/json"
+	_ "errors"
+	"fmt"
+	_ "io"
+	_ "math"
+	_ "math/big"
+	_ "math/bits"
+	_ "math/rand"
+	_ "os"
+	_ "regexp"
+	_ "slices"
+	_ "sort"
+	_ "strconv"
+	_ "strings"
+	_ "sync"
+	_ "sync/atomic"
+	_ "time"
+	_ "unicode"
+	_ "unicode/utf8"
+	_ "maps"
+	_ "context"
+	_ "bufio"
+	_ "text/tabwriter"
+	_ "os/signal"
+	_ "encoding/binary"
+	_ "hash/fnv"
+	_ "crypto/sha256"
+	_ "crypto/md5"
+	_ "encoding/hex"
+	_ "encoding/base64"
+	_ "net/url"
+	_ "path/filepath"
+	_ "runtime"
+	_ "reflect"
+	_ "unicode/utf16"
+	_ "html"
+	_ "text/template"
+	_ "log"
+	_ "flag"
+	_ "io/ioutil"
+)
+
+func main() { fmt.Println("warm") }

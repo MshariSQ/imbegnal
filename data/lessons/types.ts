@@ -1,3 +1,6 @@
+import type { MatchMode } from "../../shared/challenges";
+import type { LangId } from "../../shared/languages";
+
 export interface L10n {
   en: string;
   ar: string;
@@ -42,6 +45,38 @@ export interface ExerciseSection {
   tests: ExerciseTest[];
 }
 
+/**
+ * A server-graded, multi-language exercise that opens in Code Lab ("Try in Code
+ * Lab"). Reference: `${track}/${lesson}/${id}`. The student runs the code on the
+ * sandboxed runner; the Worker grades stdout against `tests` (looked up from the
+ * generated catalog, never trusted from the client). Tests are visible to the
+ * learner by design; hidden tests exist only for CTF challenges.
+ */
+export interface LabTest {
+  name: L10n;
+  stdin?: string;
+  /** Expected stdout. */
+  expected: string;
+  /** default "trim" (compare after trimming trailing whitespace/newlines). */
+  mode?: MatchMode;
+  epsilon?: number;
+}
+
+export interface LabExerciseSection {
+  type: "lab";
+  /** Unique within the lesson; forms the exercise reference with track + lesson. */
+  id: string;
+  lang: LangId;
+  prompt: L10n;
+  starterCode: string;
+  /** Reference solution: shown after failed attempts and to instructors; verified by the test-suite. */
+  solution: string;
+  hints: L10n[];
+  tests: LabTest[];
+  /** Pre-filled stdin when the learner opens a free run. */
+  sampleInput?: string;
+}
+
 export interface QuizQuestion {
   q: L10n;
   choices: L10n[]; // 3–4 choices
@@ -54,7 +89,7 @@ export interface QuizSection {
   questions: QuizQuestion[];
 }
 
-export type LessonSection = TextSection | CodeDemoSection | ExerciseSection | QuizSection;
+export type LessonSection = TextSection | CodeDemoSection | ExerciseSection | LabExerciseSection | QuizSection;
 
 export interface Lesson {
   nodeId: string; // matches RoadmapNodeInfo.id

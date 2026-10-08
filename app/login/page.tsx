@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, Zap } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 import { saveToken } from "@/lib/auth";
+import { beginInBrowser } from "@/lib/auth-nonce";
 import { track } from "@/lib/track";
 import { ApiError, getGoogleLoginUrl, getLoginUrl, loginWithEmail, registerWithEmail } from "@/lib/api";
 
@@ -40,8 +41,20 @@ function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(params.get("error") ? a.errorAuthFailed : null);
+  const errorParam = params.get("error");
+  const [error, setError] = useState<string | null>(
+    !errorParam ? null
+      : errorParam === "login_untrusted" ? a.errorLoginUntrusted
+      : errorParam === "login_expired" ? a.errorLoginExpired
+      : a.errorAuthFailed
+  );
   const nextParam = params.get("next");
+
+  /** OAuth sign-in: a fresh per-tab login nonce (lib/auth-nonce.ts) goes along, created on click, not during render. */
+  function startOAuth(provider: "github" | "google") {
+    const nonce = beginInBrowser();
+    window.location.assign(provider === "github" ? getLoginUrl(nonce) : getGoogleLoginUrl(nonce));
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -75,13 +88,13 @@ function AuthForm() {
       <p className="text-sm text-fg-muted mt-1.5 mb-6">{mode === "login" ? a.loginSubtitle : a.registerSubtitle}</p>
 
       <div className="grid gap-2.5">
-        <a href={getLoginUrl()} className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-line-strong text-sm font-semibold text-fg hover:bg-fg/5 transition-colors">
+        <button type="button" onClick={() => startOAuth("github")} data-testid="oauth-github" className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-line-strong text-sm font-semibold text-fg hover:bg-fg/5 transition-colors">
           <GithubMark /> {a.continueGithub}
-        </a>
+        </button>
         {GOOGLE_ENABLED && (
-          <a href={getGoogleLoginUrl()} className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-line-strong text-sm font-semibold text-fg hover:bg-fg/5 transition-colors">
+          <button type="button" onClick={() => startOAuth("google")} data-testid="oauth-google" className="flex items-center justify-center gap-2.5 h-11 rounded-xl border border-line-strong text-sm font-semibold text-fg hover:bg-fg/5 transition-colors">
             <GoogleMark /> {a.continueGoogle}
-          </a>
+          </button>
         )}
       </div>
 
