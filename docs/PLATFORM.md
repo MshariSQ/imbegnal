@@ -92,8 +92,11 @@ Deleting or rotating the secrets later silently returns the pipeline to frontend
 > **Rollbacks:** do not roll the Worker back to a version older than the email-accounts release once anyone has signed up
 > with email: the old `/api/auth/me` returned every column (including `password_hash`). Roll forward with a fix instead.
 >
-> If you ever ran the old `schema-v3.sql` by hand against production, tell a maintainer before the first automated deploy:
-> migration `0002` adds the same columns and would fail on a database that already has them.
+> If the old `schema-v3.sql` was ever run by hand against production, migration `0002` would fail on the columns it already
+> added. The deploy handles this: `worker/scripts/d1-reconcile.mjs` runs first and, for a migration whose `ADD COLUMN`
+> columns already exist, runs its remaining idempotent statements and records it as applied (tested in
+> `worker/tests/d1-reconcile.test.ts` on a database built the old way). When it cannot prove that safe it stops the
+> deploy with an error and changes nothing.
 
 Database changes go in `worker/migrations/NNNN_name.sql` (never edit an applied migration).
 Local dev against a database created by hand from the old `schema*.sql` files: delete `worker/.wrangler/state` first
