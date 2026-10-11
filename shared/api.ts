@@ -104,6 +104,12 @@ export interface RunApiResponse {
   quota: QuotaInfo;
   /** Present when `ref` is a lesson exercise or a challenge with auto-graded tests. */
   grade?: GradeResult;
+  /**
+   * Graded lesson lab runs only: XP this run awarded (LAB_XP in shared/xp.ts on the first
+   * passing run, 0 when it failed or the exercise was already awarded). The Worker is the
+   * XP authority for lab exercises (xp_ledger). Additive and optional: an older Worker omits it.
+   */
+  xpAwarded?: number;
 }
 
 export interface LanguageAvailability {
@@ -173,6 +179,8 @@ export interface Snippet {
 export interface LabProgressResponse {
   /** refs: `${track}/${lesson}/${exerciseId}` */
   passed: { ref: string; at: string }[];
+  /** XP the Worker awarded this learner (xp_ledger): every source, and lab exercises alone. Additive: an older Worker omits it. */
+  xp?: { total: number; lab: number };
 }
 
 // ── Challenges ───────────────────────────────────────────────────────────────

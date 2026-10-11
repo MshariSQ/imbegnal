@@ -9,6 +9,7 @@ import type { LabProgressResponse, RunApiResponse, RunDetail, RunRef, RunsApiRes
 import type { LangId } from "../../../shared/languages";
 import { getLanguage } from "../../../shared/languages";
 import type { RunResult, RunStatus } from "../../../shared/protocol";
+import { LAB_XP } from "../../../shared/xp";
 import { recordAbuseSignal } from "../abuse";
 import { type Env, json } from "../util";
 import { getQuotaInfo, recordRun, reserveQuota, settleQuota, toPublicResult } from "./execute";
@@ -81,15 +82,32 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
       code,
       stdin: stdinUsed,
     });
-    if (ref.kind === "lesson" && grade?.passed) {
-      await env.DB.prepare("INSERT OR IGNORE INTO lab_progress (user_id, ref) VALUES (?, ?)").bind(user.sub, `${ref.track}/${ref.lesson}/${ref.exercise}`).run();
+    // The Worker is the XP authority for lab exercises: the pass and its XP are written
+    // together, and the ledger's primary key awards each exercise once per user.
+    let xpAwarded: number | undefined;
+    if (ref.kind === "lesson" && grade) {
+      xpAwarded = 0;
+      if (grade.passed) {
+        const labRef = `${ref.track}/${ref.lesson}/${ref.exercise}`;
+        const [, ledger] = await env.DB.batch([
+          env.DB.prepare("INSERT OR IGNORE INTO lab_progress (user_id, ref) VALUES (?, ?)").bind(user.sub, labRef),
+          env.DB.prepare("INSERT OR IGNORE INTO xp_ledger (user_id, source, ref, xp) VALUES (?, 'lab', ?, ?)").bind(user.sub, labRef, LAB_XP),
+        ]);
+        xpAwarded = ledger.meta.changes > 0 ? LAB_XP : 0;
+      }
     }
     const quota = await settleQuota(env, reservation, outcome);
 
     if (result.status === "internal_error" && result.message === "runner_unavailable") {
       return apiError("runner_unavailable", 503, origin, "The code runner is unavailable. This run was not counted.", { quota, runId });
     }
-    const response: RunApiResponse = { runId, result: toPublicResult(result), quota, ...(grade ? { grade } : {}) };
+    const response: RunApiResponse = {
+      runId,
+      result: toPublicResult(result),
+      quota,
+      ...(grade ? { grade } : {}),
+      ...(xpAwarded !== undefined ? { xpAwarded } : {}),
+    };
     return reply(response, 200, origin);
   } catch (e) {
     console.error("lab run failed", e instanceof Error ? e.message : "unknown");
@@ -205,7 +223,15 @@ async function handleProgress(req: Request, env: Env, origin: string): Promise<R
   const rows = await env.DB.prepare("SELECT ref, passed_at FROM lab_progress WHERE user_id = ? ORDER BY passed_at, ref LIMIT 2000")
     .bind(auth.user.sub)
     .all<{ ref: string; passed_at: string }>();
-  const body: LabProgressResponse = { passed: rows.results.map((r) => ({ ref: r.ref, at: toIso(r.passed_at) })) };
+  const xp = await env.DB.prepare(
+    "SELECT COALESCE(SUM(xp), 0) AS total, COALESCE(SUM(CASE WHEN source = 'lab' THEN xp ELSE 0 END), 0) AS lab FROM xp_ledger WHERE user_id = ?",
+  )
+    .bind(auth.user.sub)
+    .first<{ total: number; lab: number }>();
+  const body: LabProgressResponse = {
+    passed: rows.results.map((r) => ({ ref: r.ref, at: toIso(r.passed_at) })),
+    xp: { total: xp?.total ?? 0, lab: xp?.lab ?? 0 },
+  };
   return reply(body, 200, origin);
 }
 
