@@ -51,7 +51,7 @@ interface Session {
  * `state` how GET /api/state answers a request that carries a token (without one it is always 401, the
  * capability probe of lib/capabilities.ts).
  */
-async function session(opts: { logout?: Answer; state?: 200 | 401 | 404 | "unreachable"; viewport?: { width: number; height: number } } = {}): Promise<Session> {
+async function session(opts: { logout?: Answer; state?: 200 | 401 | 403 | 404 | "unreachable"; viewport?: { width: number; height: number } } = {}): Promise<Session> {
   const ctx = await browser.newContext({ viewport: opts.viewport ?? { width: 1280, height: 900 }, serviceWorkers: "block" });
   const logouts: (string | null)[] = [];
   const blocked: string[] = [];
@@ -77,6 +77,7 @@ async function session(opts: { logout?: Answer; state?: 200 | 401 | 404 | "unrea
       if (!auth) return json(401, { error: "Unauthorized" });
       const state = opts.state ?? 200;
       if (state === "unreachable") return route.abort("connectionfailed");
+      if (state === 403) return json(403, { error: "account_suspended", message: "This account is suspended.", until: "2026-11-20T09:30:00.000Z" });
       return state === 200 ? json(200, { data: null }) : json(state, { error: state === 401 ? "Unauthorized" : "Not found" });
     }
     return json(404, { error: "not_found" });
@@ -190,8 +191,8 @@ describe("a token the Worker no longer accepts", () => {
     }
   });
 
-  for (const state of [404, "unreachable"] as const) {
-    it(`a ${state === 404 ? "404 (previous Worker)" : "network error"} keeps the user signed in`, async () => {
+  for (const state of [403, 404, "unreachable"] as const) {
+    it(`a ${state === 403 ? "403 account_suspended" : state === 404 ? "404 (previous Worker)" : "network error"} keeps the user signed in`, async () => {
       const s = await session({ state });
       try {
         await s.page.goto(`${origin}/dashboard/`);

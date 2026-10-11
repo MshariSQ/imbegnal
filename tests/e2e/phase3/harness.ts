@@ -111,6 +111,12 @@ export interface MockWorker {
   analytics: (days: number, auth: string | null, call: number) => Reply;
   /** GET /api/certificates/:track (`format` is the ?format= value, e.g. "json"; null for the PDF). */
   certificate: (track: string, format: string | null, auth: string | null, call: number) => Reply;
+  /** POST /api/ai/chat (the AI tutor). */
+  ai: (auth: string | null, call: number) => Reply;
+  /** GET/PUT /api/state with a token (without one it is always 401: the capability probe). */
+  state: (method: string, auth: string) => Reply;
+  /** Any other Worker request; undefined falls through to 404 not_found. */
+  other: (method: string, path: string, auth: string | null) => Reply | undefined;
   callsTo: (pathPart: string) => ApiCall[];
 }
 
@@ -120,6 +126,9 @@ export function defaultWorker(): MockWorker {
     verify: () => ({ json: { valid: false } satisfies CertificateVerifyResponse }),
     analytics: () => ({ status: 403, json: { error: "forbidden" } }),
     certificate: () => ({ status: 403, json: { error: "not_eligible", total: 1, done: 0, remaining: 1 } }),
+    ai: () => ({ status: 503, json: { error: "ai_unavailable" } }),
+    state: () => ({ json: { data: null } }),
+    other: () => undefined,
     callsTo: (part) => w.calls.filter((c) => c.path.includes(part)),
   };
   return w;
@@ -157,9 +166,10 @@ async function answer(route: Route, worker: MockWorker, counts: Map<string, numb
   if (req.method() === "GET" && url.pathname === "/api/instructor/analytics") {
     return send(worker.analytics(Number(url.searchParams.get("days")), auth, count("analytics")));
   }
-  // Layout probes: the capability probe expects 401 without a token; the study-state sync answers empty.
-  if (url.pathname === "/api/state") return auth ? send({ json: { data: null } }) : send({ status: 401, json: { error: "unauthorized" } });
-  return send({ status: 404, json: { error: "not_found" } });
+  if (req.method() === "POST" && url.pathname === "/api/ai/chat") return send(worker.ai(auth, count("ai")));
+  // Layout probes: the capability probe expects 401 without a token; the study-state sync answers empty by default.
+  if (url.pathname === "/api/state") return auth ? send(worker.state(req.method(), auth)) : send({ status: 401, json: { error: "unauthorized" } });
+  return send(worker.other(req.method(), url.pathname + url.search, auth) ?? { status: 404, json: { error: "not_found" } });
 }
 
 // ── contexts and pages ───────────────────────────────────────────────────────

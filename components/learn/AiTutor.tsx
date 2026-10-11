@@ -9,6 +9,8 @@ import { getToken, useAuthUser } from "@/lib/auth";
 import { ApiError, streamTutor, type TutorMessage } from "@/lib/api";
 import { track as trackEvent } from "@/lib/track";
 import { domProps } from "@/lib/markdown";
+import { type Suspension, suspensionMessage, suspensionOf } from "@/lib/suspension";
+import SuspendedNotice from "@/components/ui/SuspendedNotice";
 
 const MAX_TURNS = 9; // last few turns only (odd count, ending with the student) — keeps requests small and cheap
 
@@ -36,6 +38,8 @@ export default function AiTutor({
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 403 account_suspended: shown instead of `error`. The tab stays signed in (the token is still valid).
+  const [suspension, setSuspension] = useState<Suspension | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +54,7 @@ export default function AiTutor({
     const q = question.trim();
     if (!q || busy || !token) return;
     setError(null);
+    setSuspension(null);
     setInput("");
 
     // Keep a window of recent turns that starts with a student message
@@ -78,7 +83,9 @@ export default function AiTutor({
       } else {
         const status = e instanceof ApiError ? e.status : 0;
         const code = e instanceof ApiError ? e.code : "";
-        setError(
+        const suspended = e instanceof ApiError ? suspensionOf(e.status, e.body) : null;
+        if (suspended) setSuspension(suspended);
+        else setError(
           status === 401 ? tx.ai.signInRequired
             : status === 429 ? (code === "capacity" ? tx.ai.capacity : tx.ai.limitReached)
             : tx.ai.unavailable
@@ -169,6 +176,7 @@ export default function AiTutor({
           )
         )}
         {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
+        {suspension && <SuspendedNotice testId="ai-suspended" message={suspensionMessage(suspension, { open: tx.ai.suspended, until: tx.ai.suspendedUntil }, lang)} />}
         <div ref={endRef} />
       </div>
 
@@ -207,7 +215,7 @@ export default function AiTutor({
         <div className="flex items-center justify-between mt-2">
           <span className="text-[11px] text-fg-faint">{tx.ai.disclaimer}</span>
           {messages.length > 0 && !busy && (
-            <button type="button" onClick={() => { setMessages([]); setError(null); }} className="inline-flex items-center gap-1 text-[11px] text-fg-subtle hover:text-fg">
+            <button type="button" onClick={() => { setMessages([]); setError(null); setSuspension(null); }} className="inline-flex items-center gap-1 text-[11px] text-fg-subtle hover:text-fg">
               <RotateCcw size={11} /> {tx.ai.clear}
             </button>
           )}

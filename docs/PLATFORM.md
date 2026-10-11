@@ -47,7 +47,11 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   otherwise `401`. A suspended account then gets `403 account_suspended` (with `until`, ISO, when the
   suspension has an end) on every route except `GET /api/auth/me` (it reports `suspended` and
   `suspended_until`), `POST /api/auth/logout` and `DELETE /api/account` (`409` while suspended); an expired
-  suspension is lifted, with its audit row, by the next request to any guarded route. Roles are read from D1
+  suspension is lifted, with its audit row, by the next request to any guarded route. On the site a `403
+  account_suspended` never signs the tab out and never drops local data (the study-state sync keeps the local copy and
+  pushes again later, as after a network error); the certificate card, the AI tutor, Code Lab and the challenge
+  hints/submissions show an "Account suspended" message instead of their generic error, the first two with the end
+  date when `until` is present (`lib/suspension.ts`, `tests/e2e/phase3/suspension.spec.ts`). Roles are read from D1
   on every request. **Signing out** calls `POST /api/auth/logout`, which increments `token_version` and so
   revokes every token of the account on every device (there is no per-device sign-out); the site then
   clears its copy, and a tab whose token the Worker rejects with `401` on the study-state sync signs itself

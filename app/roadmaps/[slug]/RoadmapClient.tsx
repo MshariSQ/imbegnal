@@ -166,6 +166,8 @@ export default function RoadmapClient({
         if (next.has(selected.id)) next.delete(selected.id); else next.add(selected.id);
         return next;
       });
+    } catch {
+      // Offline, or refused (403 account_suspended, 401): the node keeps its state; nothing else changes.
     } finally { setBusy(false); }
   }
 

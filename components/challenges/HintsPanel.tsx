@@ -137,7 +137,7 @@ export default function HintsPanel({
       setConfirming(null);
     } catch (e) {
       const k = classifyFailure(e).kind;
-      setError(k === "signin" ? tx.ctf.errors.signIn : k === "network" ? tx.ctf.errors.network : t.failed);
+      setError(k === "signin" ? tx.ctf.errors.signIn : k === "network" ? tx.ctf.errors.network : k === "suspended" ? t.suspended : t.failed);
     } finally {
       setBusy(false);
     }

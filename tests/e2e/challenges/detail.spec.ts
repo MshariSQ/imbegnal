@@ -319,6 +319,22 @@ describe("challenge detail: hints", () => {
     }
   });
 
+  it("a suspended account (403 account_suspended) gets the suspension message, stays signed in, nothing is revealed", async () => {
+    const api = defaultMock();
+    api.stats = () => ({ stats: [{ id: "caesar-warmup", solves: 5, mine: { solved: false, points: 0, attempts: 0, hintsUsed: 0 } }] });
+    api.hint = () => ({ status: 403, json: { error: "account_suspended", message: "This account is suspended.", until: "2026-11-20T09:30:00.000Z" } });
+    const t = await openPage(browser, origin, "/challenges/caesar-warmup/", { signedIn: true, api });
+    try {
+      await t.page.getByRole("button", { name: /Reveal hint/ }).click();
+      await t.page.getByRole("button", { name: "Yes, reveal it" }).click();
+      await t.page.getByRole("alert").filter({ hasText: "Hints can't be revealed while your account is suspended" }).waitFor();
+      assert.equal(await t.page.getByText("Count how many letters").count(), 0);
+      assert.ok(await t.page.evaluate(() => localStorage.getItem("sf_token")), "still signed in");
+    } finally {
+      await t.close();
+    }
+  });
+
   it("treats a reveal answer without a hint text as a failure: nothing is shown as revealed", async () => {
     const api = defaultMock();
     api.hint = (_id, index) => ({ json: { index, cost: 20, revealed: [index], hintsUsed: 1, potentialPoints: 130 } });
