@@ -199,6 +199,13 @@ describe("Code Lab: deep links", () => {
       assert.ok(after.labs["frontend/html-css/sum-js"], "the Passed badge");
       assert.deepEqual(after.unverified, ["frontend/html-css/sum-js"]);
       assert.equal(after.study?.lessons?.["frontend/html-css"]?.bonus, undefined, "no XP");
+      // Passing again in the browser still earns nothing and still says so. The marker is removed first:
+      // a new run unmounts the banner, so only the next result can bring it back.
+      await h.page.evaluate(() => document.querySelector('[data-testid="xp"]')?.removeAttribute("data-unverified"));
+      await runButton(h.page).click();
+      await h.page.waitForFunction(() => document.querySelector('[data-testid="xp"]')?.getAttribute("data-unverified") === "true");
+      assert.match(await h.page.getByTestId("xp").innerText(), /XP is earned when the exercise is checked on the server/);
+      assert.deepEqual((await stores(h.page)).unverified, ["frontend/html-css/sum-js"]);
       assert.deepEqual(h.errors, []);
     });
   });
