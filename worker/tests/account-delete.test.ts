@@ -21,6 +21,7 @@ function seed(id: string) {
   db.execute("INSERT INTO lab_usage (user_id, day, count) VALUES (?, '2026-01-01', 3)", id);
   db.execute("INSERT INTO lab_snippets (id, user_id, lang, code) VALUES (?, ?, 'python', 'print(1)')", `snip-${id}`, id);
   db.execute("INSERT INTO lab_progress (user_id, ref) VALUES (?, 'a/b/c')", id);
+  db.execute("INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES (?, 'lab', 'a/b/c', 15)", id);
   db.execute("INSERT INTO abuse_signals (user_id, kind, at) VALUES (?, 'resource', '2026-01-01 00:00:00')", id);
   db.execute("INSERT INTO challenge_progress (user_id, challenge_id) VALUES (?, 'x')", id);
   db.execute("INSERT INTO challenge_solves (challenge_id, user_id, points) VALUES ('x', ?, 50)", id);
@@ -38,7 +39,7 @@ describe("DELETE /api/account", () => {
     assert.deepEqual(await jsonOf(res), { ok: true });
 
     const tables: [string, string][] = [
-      ["users", "github_id"], ["lab_runs", "user_id"], ["lab_usage", "user_id"], ["lab_snippets", "user_id"], ["lab_progress", "user_id"],
+      ["users", "github_id"], ["lab_runs", "user_id"], ["lab_usage", "user_id"], ["lab_snippets", "user_id"], ["lab_progress", "user_id"], ["xp_ledger", "user_id"],
       ["abuse_signals", "user_id"], ["challenge_progress", "user_id"], ["challenge_solves", "user_id"], ["challenge_attempts", "user_id"], ["certificates", "user_id"],
     ];
     for (const [t, c] of tables) {
