@@ -1,9 +1,9 @@
 "use client";
 
-import { CheckCircle2, FlaskConical, ListChecks, Trophy } from "lucide-react";
+import { CheckCircle2, FlaskConical, Info, ListChecks, Trophy } from "lucide-react";
 import type { LabExerciseSection } from "@/data/lessons/types";
 import { useLang } from "@/lib/lang-context";
-import { useLabPassed } from "@/lib/lab-progress";
+import { useLabPassed, useLabUnverified } from "@/lib/lab-progress";
 import { XP } from "@/lib/study-store";
 import { codeLabHref } from "@/shared/links";
 import { fmt, langLabel, TryInCodeLab } from "@/components/learn/PracticeLink";
@@ -31,6 +31,7 @@ export default function LabExerciseBlock({
   const T = tx.curriculum;
   const ref = `${trackId}/${lessonId}/${section.id}`;
   const passed = useLabPassed(ref); // empty during SSR/hydration, then localStorage
+  const unverified = useLabUnverified(ref); // passed in the browser while signed in: no XP yet
   const href = codeLabHref({ kind: "exercise", ref });
 
   const lines = section.starterCode.replace(/\n+$/, "").split("\n");
@@ -119,9 +120,15 @@ export default function LabExerciseBlock({
 
         {passed && (
           <div role="status" className="mt-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
-            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
-              <Trophy size={15} aria-hidden /> {fmt(T.labXpEarned, { n: XP.exercise })}
-            </p>
+            {unverified ? (
+              <p className="flex items-center gap-2 text-sm text-fg-soft">
+                <Info size={15} aria-hidden className="shrink-0" /> {T.labXpOnServer}
+              </p>
+            ) : (
+              <p className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
+                <Trophy size={15} aria-hidden /> {fmt(T.labXpEarned, { n: XP.exercise })}
+              </p>
+            )}
             <details className="mt-2">
               <summary className="cursor-pointer min-h-10 inline-flex items-center text-xs font-semibold text-fg-soft rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
                 {T.labSolution}

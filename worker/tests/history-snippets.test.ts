@@ -168,6 +168,17 @@ describe("GET /api/lab/quota and /api/lab/progress", () => {
     assert.deepEqual(body.passed, [{ ref: "python/basics/add", at: "2026-10-01T10:00:00Z" }]);
   });
 
+  test("progress sums the caller's XP ledger: every source in total, lab rows in lab, zeros when empty", async () => {
+    assert.deepEqual((await jsonOf<LabProgressResponse>(await call(env, "/api/lab/progress", { token: t1 }))).xp, { total: 0, lab: 0 });
+    db.execute(
+      `INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES
+        ('u1', 'lab', 'python/basics/add', 15), ('u1', 'lab', 'python/basics/sub', 15), ('u1', 'bonus', 'x', 7),
+        ('u2', 'lab', 'python/basics/add', 15)`,
+    );
+    assert.deepEqual((await jsonOf<LabProgressResponse>(await call(env, "/api/lab/progress", { token: t1 }))).xp, { total: 37, lab: 30 });
+    assert.deepEqual((await jsonOf<LabProgressResponse>(await call(env, "/api/lab/progress", { token: t2 }))).xp, { total: 15, lab: 15 });
+  });
+
   test("suspended users are refused by every authenticated lab endpoint", async () => {
     addUser(db, { id: "bad", status: "suspended", suspendedUntil: "2999-01-01 00:00:00" });
     const tok = await tokenFor("bad");

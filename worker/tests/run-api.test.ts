@@ -6,6 +6,7 @@ import type { GradeResult, QuotaError, RunApiResponse } from "../../shared/api";
 import type { CatalogLab } from "../../shared/catalog";
 import type { RunResult } from "../../shared/protocol";
 import { catalog } from "../src/generated/catalog";
+import { LAB_XP } from "../../shared/xp";
 import { GRADING_BUDGET_MS } from "../src/lab/config";
 import { gradeLab } from "../src/lab/grade";
 import type { Env } from "../src/util";
@@ -377,6 +378,7 @@ describe("quota enforcement on the endpoint", () => {
 describe("lesson lab grading", () => {
   const ref = { kind: "lesson", track: "python", lesson: "basics", exercise: "add" };
   const progress = () => db.query<{ user_id: string; ref: string; passed_at: string }>("SELECT * FROM lab_progress");
+  const ledger = () => db.query<{ user_id: string; source: string; ref: string; xp: number }>("SELECT user_id, source, ref, xp FROM xp_ledger ORDER BY user_id, ref");
 
   test("all tests pass: grade passed, lab_progress recorded, run logged as passed", async () => {
     const res = await post({ lang: "python", code: "CORRECT", ref });
@@ -403,6 +405,62 @@ describe("lesson lab grading", () => {
   test("progress is per user", async () => {
     await post({ lang: "python", code: "CORRECT", ref });
     assert.equal(progress().filter((p) => p.user_id === "u2").length, 0);
+  });
+
+  test("the first pass writes one xp_ledger row and answers xpAwarded = LAB_XP; later passes award 0", async () => {
+    const first = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
+    assert.equal(first.xpAwarded, LAB_XP);
+    assert.deepEqual(ledger(), [{ user_id: "u1", source: "lab", ref: "python/basics/add", xp: LAB_XP }]);
+    const again = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
+    assert.equal(again.xpAwarded, 0, "already awarded");
+    assert.equal(ledger().length, 1, "awarded once");
+    // Another learner earns their own award for the same exercise.
+    const other = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }, await tokenFor("u2")));
+    assert.equal(other.xpAwarded, LAB_XP);
+    assert.deepEqual(ledger().map((r) => r.user_id), ["u1", "u2"]);
+  });
+
+  test("a pass recorded before the ledger existed already earned its XP (study state): passing again awards none", async () => {
+    db.execute("INSERT INTO lab_progress (user_id, ref, passed_at) VALUES ('u1', 'python/basics/add', '2026-01-02 03:04:05')");
+    const body = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
+    assert.equal(body.grade?.passed, true);
+    assert.equal(body.xpAwarded, 0);
+    assert.deepEqual(ledger(), []);
+    assert.deepEqual(progress().map((p) => p.passed_at), ["2026-01-02 03:04:05"]);
+  });
+
+  test("a failed graded run answers xpAwarded 0 and writes no ledger row; free runs carry no xpAwarded and write none", async () => {
+    const failed = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "WRONG", ref }));
+    assert.equal(failed.grade?.passed, false);
+    assert.equal(failed.xpAwarded, 0);
+    const compile = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "COMPILE_ERROR", ref }));
+    assert.equal(compile.xpAwarded, 0);
+    const free = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT" }));
+    assert.equal(free.grade, undefined);
+    assert.equal("xpAwarded" in free, false);
+    assert.deepEqual(ledger(), []);
+    assert.deepEqual(progress(), []);
+  });
+
+  test("a lesson exercise without tests is not graded: no xpAwarded, no ledger row", async () => {
+    const ungraded: CatalogLab = { ...LAB, ref: "python/basics/free", id: "free", tests: [] };
+    catalog.labs.push(ungraded);
+    try {
+      const body = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref: { ...ref, exercise: "free" } }));
+      assert.equal(body.grade, undefined);
+      assert.equal("xpAwarded" in body, false);
+      assert.deepEqual(ledger(), []);
+    } finally {
+      catalog.labs.splice(catalog.labs.indexOf(ungraded), 1);
+    }
+  });
+
+  test("an infrastructure failure mid-grade awards nothing", async () => {
+    stub!.restore();
+    let n = 0;
+    stub = stubRunner((job) => (n++ === 1 ? new Response("down", { status: 503 }) : sumRunner(job)));
+    assert.equal((await post({ lang: "python", code: "CORRECT", ref })).status, 503);
+    assert.deepEqual(ledger(), []);
   });
 
   test("partial pass: score is the fraction, failing visible tests show expected and actual, no progress", async () => {

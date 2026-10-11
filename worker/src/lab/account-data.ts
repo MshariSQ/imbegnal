@@ -12,6 +12,7 @@ import { utcDay } from "./config";
 export function labAccountDeleteStatements(env: Env, userId: string): D1PreparedStatement[] {
   return [
     ...["lab_runs", "lab_snippets", "lab_progress"].map((table) => env.DB.prepare(`DELETE FROM ${table} WHERE user_id = ?`).bind(userId)),
+    env.DB.prepare("DELETE FROM xp_ledger WHERE user_id = ?").bind(userId),
     env.DB.prepare("DELETE FROM lab_usage WHERE user_id = ? AND day < ?").bind(userId, utcDay()),
     env.DB.prepare("DELETE FROM abuse_signals WHERE user_id = ? AND at < datetime('now', '-1 day')").bind(userId),
   ];

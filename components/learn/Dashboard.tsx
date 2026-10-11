@@ -9,7 +9,9 @@ import { getToken, removeToken, useAuthUser } from "@/lib/auth";
 import { deleteAccountRemote } from "@/lib/api";
 import { probeApi, useApiLevel } from "@/lib/capabilities";
 import { GITHUB_REPO } from "@/lib/site";
-import { completedCount, levelInfo, streak, today, totalXp, useStudy, useToday } from "@/lib/study-store";
+import { syncLabProgress } from "@/lib/sync";
+import { completedCount, levelInfo, streak, today, useStudy, useToday } from "@/lib/study-store";
+import { useTotalXp } from "@/lib/xp";
 import ProgressRing from "@/components/ui/ProgressRing";
 import ProgressBar from "@/components/ui/ProgressBar";
 import CourseCard from "./CourseCard";
@@ -63,8 +65,12 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
   const apiLevel = useApiLevel();
   useEffect(() => { probeApi(); }, []);
   const legacyApi = apiLevel === "legacy"; // site published before the new API: no sync, no account deletion
+  const userId = user?.sub;
+  useEffect(() => {
+    if (userId) syncLabProgress(userId); // server lab passes and lab XP, fresh on every dashboard visit
+  }, [userId]);
 
-  const xp = totalXp(study);
+  const xp = useTotalXp(); // + the Worker's lab XP when signed in
   const lvl = levelInfo(xp);
   const days = streak(study);
   const doneToday = study.days.includes(today());

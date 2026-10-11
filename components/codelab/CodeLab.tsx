@@ -16,7 +16,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, CircleSlash, Info, Send, Undo2 } from "lucide-react";
 import { challengesHref, codeLabHref, courseHref, lessonHref, parseCodeLabQuery, type CodeLabIntent } from "../../shared/links";
 import type { SubmitResponse } from "../../shared/api";
-import { markLabPassed } from "@/lib/lab-progress";
+import { useAuthUser } from "@/lib/auth";
+import { getUnverifiedLabs, labGrader, markLabPassed } from "@/lib/lab-progress";
 import { useLang } from "@/lib/lang-context";
 import { getRunDetail } from "@/lib/codelab/api";
 import { useNow } from "@/lib/codelab/clock";
@@ -135,7 +136,7 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
   const [loaded, setLoaded] = useState<{ lang: LabLangId; at: number; undo: { lang: LabLangId; code: string; stdin: string } } | null>(null);
   const [ran, setRan] = useState<{ code: string; line?: number } | null>(null);
   const [failed, setFailed] = useState(0);
-  const [pass, setPass] = useState<{ xp: number } | null>(null);
+  const [pass, setPass] = useState<{ xp: number; unverified: boolean } | null>(null);
   const [submitRes, setSubmitRes] = useState<SubmitResponse | null>(null);
 
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -143,6 +144,7 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
   const latest = useRef({ code, stdin, lang, scopeKey: "" });
 
   const signedIn = runner.signedIn;
+  const userId = useAuthUser()?.sub ?? null;
 
   // ── Boot: preferences + deep-link data + the draft for this scope ──────────
   useEffect(() => {
@@ -273,12 +275,17 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
       if (out.grade && exercise) {
         setResultTab("tests");
         setTab("tests");
-        if (out.grade.passed) setPass({ xp: markLabPassed(exercise.ref) });
-        else setFailed((n) => n + 1);
+        if (out.grade.passed) {
+          // Signed in: the Worker's xp_ledger is the XP authority; a pass graded in this browser earns none.
+          const grader = labGrader({ user: userId, gradeSource: out.gradeSource, xpAwarded: out.xpAwarded });
+          const xp = markLabPassed(exercise.ref, grader);
+          // The note only while it is true: a pass that earned XP earlier reads "Already completed".
+          setPass({ xp, unverified: grader.by === "unverified" && getUnverifiedLabs().includes(exercise.ref) });
+        } else setFailed((n) => n + 1);
       }
       focusResults();
     },
-    [runner, spec.browser, target, lang, code, stdin, exercise, focusResults]
+    [runner, spec.browser, target, lang, code, stdin, exercise, focusResults, userId]
   );
 
   const doSubmit = useCallback(async () => {
@@ -591,7 +598,7 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
               <div ref={resultsRef} tabIndex={-1} aria-label={t.output.regionLabel} className="flex-1 min-h-0 overflow-y-auto outline-none">
                 {exercise && runner.state.grade && (
                   <div className="p-3 sm:p-4 pb-0">
-                    <GradeBanner grade={runner.state.grade} xp={pass?.xp ?? 0} track={exercise.track} lesson={exercise.lessonId} next={exercise.next} />
+                    <GradeBanner grade={runner.state.grade} xp={pass?.xp ?? 0} unverified={pass?.unverified} track={exercise.track} lesson={exercise.lessonId} next={exercise.next} />
                   </div>
                 )}
                 {challenge && submitRes && (

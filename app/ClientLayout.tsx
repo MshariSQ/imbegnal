@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useLang } from "@/lib/lang-context";
 import { useAuthUser } from "@/lib/auth";
-import { startSync } from "@/lib/sync";
+import { startSync, syncLabProgress } from "@/lib/sync";
 import { Toaster } from "@/components/ui/Toast";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -19,9 +19,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     html.classList.toggle("font-arabic", lang === "ar");
   }, [lang]);
 
-  // Signed-in users get their study progress synced across devices
+  // Signed-in users get their study progress synced across devices, and the lab
+  // passes and lab XP the Worker recorded (it is the XP authority for lab exercises)
   useEffect(() => {
-    if (userId) startSync();
+    if (!userId) return;
+    startSync();
+    syncLabProgress(userId);
   }, [userId]);
 
   return (

@@ -17,7 +17,18 @@ export const catalog: Catalog = {
         "web-security",
         "soc",
         "penetration-testing"
-      ]
+      ],
+      "maxBonus": {
+        "setup": 25,
+        "computer-basics": 40,
+        "networking": 40,
+        "linux": 25,
+        "python": 55,
+        "cyber-basics": 25,
+        "web-security": 40,
+        "soc": 25,
+        "penetration-testing": 25
+      }
     },
     {
       "id": "artificial-intelligence",
@@ -32,7 +43,18 @@ export const catalog: Catalog = {
         "computer-vision",
         "mlops",
         "generative-ai"
-      ]
+      ],
+      "maxBonus": {
+        "setup": 25,
+        "python-for-ai": 40,
+        "math-for-ml": 40,
+        "machine-learning": 25,
+        "deep-learning": 40,
+        "nlp": 40,
+        "computer-vision": 25,
+        "mlops": 25,
+        "generative-ai": 25
+      }
     },
     {
       "id": "data-science",
@@ -46,7 +68,17 @@ export const catalog: Catalog = {
         "data-engineering",
         "bi-tools",
         "data-science-portfolio"
-      ]
+      ],
+      "maxBonus": {
+        "statistics": 40,
+        "python-data": 40,
+        "sql-data-science": 25,
+        "data-visualization": 25,
+        "machine-learning-ds": 40,
+        "data-engineering": 10,
+        "bi-tools": 10,
+        "data-science-portfolio": 10
+      }
     },
     {
       "id": "cloud-computing",
@@ -60,7 +92,17 @@ export const catalog: Catalog = {
         "cloud-security",
         "serverless-containers",
         "cloud-architecture"
-      ]
+      ],
+      "maxBonus": {
+        "it-fundamentals": 25,
+        "cloud-concepts": 25,
+        "aws-core": 25,
+        "networking-cloud": 25,
+        "iac": 40,
+        "cloud-security": 25,
+        "serverless-containers": 25,
+        "cloud-architecture": 40
+      }
     },
     {
       "id": "devops",
@@ -74,7 +116,17 @@ export const catalog: Catalog = {
         "iac-devops",
         "monitoring",
         "devsecops"
-      ]
+      ],
+      "maxBonus": {
+        "linux-devops": 40,
+        "git-devops": 40,
+        "docker": 25,
+        "cicd": 40,
+        "kubernetes": 25,
+        "iac-devops": 25,
+        "monitoring": 40,
+        "devsecops": 25
+      }
     },
     {
       "id": "frontend",
@@ -89,7 +141,18 @@ export const catalog: Catalog = {
         "nextjs",
         "getting-paid",
         "frontend-testing"
-      ]
+      ],
+      "maxBonus": {
+        "html-css": 70,
+        "javascript": 85,
+        "git": 25,
+        "react": 40,
+        "typescript": 40,
+        "css-frameworks": 40,
+        "nextjs": 25,
+        "getting-paid": 10,
+        "frontend-testing": 40
+      }
     },
     {
       "id": "backend",
@@ -103,7 +166,17 @@ export const catalog: Catalog = {
         "caching-queues",
         "devops-backend",
         "system-design"
-      ]
+      ],
+      "maxBonus": {
+        "programming-basics": 55,
+        "databases": 40,
+        "apis-rest": 40,
+        "authentication": 40,
+        "nodejs": 40,
+        "caching-queues": 40,
+        "devops-backend": 25,
+        "system-design": 25
+      }
     },
     {
       "id": "ui-ux",
@@ -117,7 +190,17 @@ export const catalog: Catalog = {
         "prototyping",
         "design-systems",
         "accessibility"
-      ]
+      ],
+      "maxBonus": {
+        "design-basics": 40,
+        "typography-color": 40,
+        "figma": 10,
+        "user-research": 10,
+        "wireframing": 10,
+        "prototyping": 10,
+        "design-systems": 25,
+        "accessibility": 40
+      }
     },
     {
       "id": "networking",
@@ -126,7 +209,12 @@ export const catalog: Catalog = {
         "osi-tcpip",
         "ip-subnetting",
         "transport-tcp-udp"
-      ]
+      ],
+      "maxBonus": {
+        "osi-tcpip": 10,
+        "ip-subnetting": 10,
+        "transport-tcp-udp": 10
+      }
     },
     {
       "id": "operating-systems",
@@ -135,7 +223,12 @@ export const catalog: Catalog = {
         "processes-threads",
         "cpu-scheduling",
         "memory-management"
-      ]
+      ],
+      "maxBonus": {
+        "processes-threads": 10,
+        "cpu-scheduling": 10,
+        "memory-management": 10
+      }
     },
     {
       "id": "data-structures-algorithms",
@@ -145,7 +238,13 @@ export const catalog: Catalog = {
         "arrays-hashing",
         "sorting-searching",
         "trees-graphs"
-      ]
+      ],
+      "maxBonus": {
+        "complexity-big-o": 10,
+        "arrays-hashing": 10,
+        "sorting-searching": 10,
+        "trees-graphs": 10
+      }
     },
     {
       "id": "databases",
@@ -155,7 +254,13 @@ export const catalog: Catalog = {
         "data-modeling-normalization",
         "joins-aggregation",
         "indexes-performance"
-      ]
+      ],
+      "maxBonus": {
+        "relational-sql-basics": 10,
+        "data-modeling-normalization": 10,
+        "joins-aggregation": 10,
+        "indexes-performance": 10
+      }
     },
     {
       "id": "reverse-engineering",
@@ -164,7 +269,12 @@ export const catalog: Catalog = {
         "how-programs-run",
         "assembly-basics",
         "static-analysis-deobfuscation"
-      ]
+      ],
+      "maxBonus": {
+        "how-programs-run": 10,
+        "assembly-basics": 10,
+        "static-analysis-deobfuscation": 10
+      }
     }
   ],
   "labs": [

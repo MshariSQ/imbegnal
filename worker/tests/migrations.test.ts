@@ -72,3 +72,17 @@ test("lab_runs defaults: success 0, created_at stamped; lab_progress is unique p
   db.execute("INSERT INTO lab_progress (user_id, ref) VALUES ('u', 'a/b/c')");
   assert.throws(() => db.execute("INSERT INTO lab_progress (user_id, ref) VALUES ('u', 'a/b/c')"), /UNIQUE|constraint/i);
 });
+
+test("0007 xp_ledger: one award per (user, source, ref), indexed by user and time, and re-running it changes nothing", () => {
+  const db = new TestD1("all");
+  db.execute("INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES ('u', 'lab', 'a/b/c', 15)");
+  db.execute("INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES ('u', 'quiz', 'a/b/c', 10)");
+  db.execute("INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES ('v', 'lab', 'a/b/c', 15)");
+  assert.throws(() => db.execute("INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES ('u', 'lab', 'a/b/c', 99)"), /UNIQUE|constraint/i);
+  db.execute("INSERT OR IGNORE INTO xp_ledger (user_id, source, ref, xp) VALUES ('u', 'lab', 'a/b/c', 99)");
+  assert.deepEqual(db.query("SELECT xp FROM xp_ledger WHERE user_id = 'u' AND source = 'lab'"), [{ xp: 15 }]);
+  assert.match(String(db.query<{ awarded_at: string }>("SELECT awarded_at FROM xp_ledger LIMIT 1")[0].awarded_at), /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  assert.deepEqual(db.query<{ name: string }>("SELECT name FROM pragma_index_list('xp_ledger') WHERE origin = 'c'").map((r) => r.name), ["idx_xp_ledger_user_awarded"]);
+  applyMigrations(db.sqlite, ["0007_xp_ledger.sql"]);
+  assert.equal(db.query<{ n: number }>("SELECT COUNT(*) AS n FROM xp_ledger")[0].n, 3, "idempotent: re-applying keeps every row");
+});

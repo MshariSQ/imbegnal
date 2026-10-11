@@ -72,13 +72,13 @@ Lesson-side contract: `LabExerciseSection` in `data/lessons/types.ts`
 | Method & path | Auth | Notes |
 |---|---|---|
 | `GET /api/lab/languages` | none | runner availability per language (cached ~30 s) |
-| `POST /api/lab/run` | user | `RunApiRequest` → `RunApiResponse`. Reserves quota, runs, logs, refunds on `internal_error`/runner down. With `ref` lesson/challenge also returns `grade` |
+| `POST /api/lab/run` | user | `RunApiRequest` → `RunApiResponse`. Reserves quota, runs, logs, refunds on `internal_error`/runner down. With `ref` lesson/challenge also returns `grade`; graded lesson runs also return `xpAwarded` (the first pass writes one `xp_ledger` row) |
 | `GET /api/lab/quota` | user | `QuotaInfo` |
 | `GET /api/lab/runs?limit=&before=` | user | own history, newest first |
 | `GET /api/lab/runs/:id` | user | own run incl. code/stdout/stderr |
 | `POST /api/lab/snippets` | user | create immutable snippet → `{id, path}` |
 | `GET /api/lab/snippets/:id` | none | public read-only snippet |
-| `GET /api/lab/progress` | user | passed lab refs |
+| `GET /api/lab/progress` | user | passed lab refs, and `xp: {total, lab}` summed from `xp_ledger` |
 | `GET /api/challenges` | optional | per-challenge stats (solves, first blood, median solve time) + caller's progress, incl. `revealedHints` (texts of the hints the caller revealed, or all of them once solved) |
 | `POST /api/challenges/:id/open` | user | stamps first-open time (time-to-solve) |
 | `POST /api/challenges/:id/hint` | user | `{index}` → `ChallengeHintResponse` with the hint's text; costs points once (free after a solve). The only way a hint text reaches the browser: the public challenge data (`data/challenges/`) lists each hint's cost only, the texts live in `worker/src/graders/data/hints/` (`tests/unit/hints-no-leak.test.ts` scans the data, the site sources and `out/`) |
