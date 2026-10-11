@@ -36,6 +36,19 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   from that cookie. The callback page saves the token only when the echoed nonce matches its own, so a
   link carrying someone else's token (`#token=<attacker JWT>`) cannot sign a visitor in. Email/password
   sign-in returns the token in a JSON response and is not affected.
+* **Sessions and access control**: the JWT (HS256, 30 days) carries `sub`, `username`, `name`, `avatar`,
+  `tv`, `iat` and `exp`, never a role or a plan. Every route that needs a signed-in user goes through one
+  guard, `worker/src/auth/guard.ts`: the token must verify, its account must still exist, and its `tv` must
+  equal `users.token_version` (tokens from before migration `0008` have no `tv`, which counts as 0);
+  otherwise `401`. A suspended account then gets `403 account_suspended` (with `until`, ISO, when the
+  suspension has an end) on every route except `GET /api/auth/me` (it reports `suspended` and
+  `suspended_until`), `POST /api/auth/logout` and `DELETE /api/account` (`409` while suspended); an expired
+  suspension is lifted, with its audit row, by the next request to any guarded route. Roles are read from D1
+  on every request. **Signing out** calls `POST /api/auth/logout`, which increments `token_version` and so
+  revokes every token of the account on every device (there is no per-device sign-out); the site then
+  clears its copy, and a tab whose token the Worker rejects with `401` on the study-state sync signs itself
+  out. Operators can end all sessions of an account with
+  `UPDATE users SET token_version = token_version + 1 WHERE github_id = '<id>'`.
 * **Theming**: semantic tokens in `app/globals.css` (`bg-surface`, `text-fg-muted`,
   `border-line`, …) flip on `<html data-theme>`. A tiny inline script applies the
   saved/system theme and RTL before first paint (no flash).
@@ -91,6 +104,8 @@ Deleting or rotating the secrets later silently returns the pipeline to frontend
 
 > **Rollbacks:** do not roll the Worker back to a version older than the email-accounts release once anyone has signed up
 > with email: the old `/api/auth/me` returned every column (including `password_hash`). Roll forward with a fix instead.
+> A Worker from before the auth guard ignores `tv`: the data stays compatible, but tokens revoked by a sign-out work
+> again until they expire.
 >
 > If the old `schema-v3.sql` was ever run by hand against production, migration `0002` would fail on the columns it already
 > added. The deploy handles this: `worker/scripts/d1-reconcile.mjs` runs first and, for a migration whose `ADD COLUMN`
@@ -173,10 +188,33 @@ output size, status and timestamp — never environment, secrets or host paths.
 
 Until `RUNNER_URL` is set the site keeps working: lessons, challenges with flag answers and the in-browser JavaScript/Python
 fallback work, and server runs answer a friendly "runner unavailable" (not charged).
-Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by the normal deploy.
+Migrations `0004`–`0006` (Code Lab, challenges, certificates) and later ones (`0008`: `users.token_version`) are applied
+by the normal deploy.
 
-**Roles**: `users.role` is `student` by default. Promote an instructor (analytics at `/api/instructor/analytics`) or admin
-(audit log) with `wrangler d1 execute` — see [`worker/README-lab.md`](../worker/README-lab.md).
+### Owner provisioning (roles)
+
+Roles: `student` (default) < `instructor` (analytics at `/instructor/`, `GET /api/instructor/analytics`) < `admin` (also
+`GET /api/admin/audit`). Only the owner grants them, from a machine where `npx wrangler login` works (or with a
+`CLOUDFLARE_API_TOKEN` that can edit D1 in the environment). No API route writes `users.role` or `users.plan`, signing in
+never changes them, and tokens carry neither (`worker/tests/owner-admin.test.ts`).
+
+```sh
+cd worker
+node scripts/grant-role.mjs --remote --github-id 583231 --role admin         # dry run: prints the account and the SQL
+node scripts/grant-role.mjs --remote --github-id 583231 --role admin --yes   # applies it
+```
+
+* `--github-id` is the numeric GitHub user id: it never changes (`https://api.github.com/users/<login>` shows it as `id`).
+  `--username <name>` also finds email and Google accounts, and is refused when several accounts share the name.
+  `--local [--persist-to DIR]` targets a local D1 instead of production.
+* It prints the matching account, then the exact SQL, and changes nothing without `--yes`. With `--yes` it writes the role
+  and an `audit_log` row (`role.grant`, e.g. `student -> admin (actor: cli)`) in one `wrangler d1 execute`, then prints the
+  account again. Running it twice is harmless; `--role student` demotes.
+* The role applies to the account's next request; no sign-out is needed.
+* `wrangler d1 execute` has no bind parameters, so the script accepts only digits, `[A-Za-z0-9-]` usernames (1-39) and the
+  role enum (`worker/tests/grant-role.test.ts`). It holds no credentials: wrangler uses the operator's own login.
+
+First setup: sign in once on the site with GitHub (that creates the account), then grant yourself `admin` as above.
 
 ## Tests
 
@@ -186,10 +224,10 @@ Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by t
 | `npx eslint .` | — | lint |
 | `npm run check:catalog` | — | `worker/src/generated/catalog.ts` matches the lesson/challenge data (`npm run gen:catalog` to refresh) |
 | `npm run test:unit` | host toolchains (optional) | contracts, output matching, curricula, canonical names, lessons; every lab and challenge reference solution is run against its tests on the host toolchains that exist (missing ones are skipped) |
-| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce |
+| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce, the auth guard on every protected route (revoked tokens, deleted accounts, suspensions, roles), logout and `tv` issuance, role/plan never client-writable, the role CLI |
 | `npm run test:runner` | Docker + `runner/image/build.sh slim` | the sandbox against a real Docker daemon: per-language Hello World, stdout/stderr, timeouts, memory, fork bombs, output floods, no network, no persistence, read-only root, uid, HMAC/replay |
 | `npm run test:e2e` | Docker, a runner image, `worker/node_modules`, Chromium | the real stack (runner + `wrangler dev` with local D1 and the real migrations + the exported site + Playwright): Hello World in Python/JS/Java/C/C++ through the UI, stdout vs stderr, infinite loop killed, network blocked, quota exhaustion message and refunds, lesson → "Try in Code Lab" → starter code → pass → XP, challenge solve → points |
-| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard and the sign-in callback (login nonce); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
+| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard, the sign-in callback (login nonce) and sign-out (server revocation, a revoked token signs the tab out); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
 
 `npm run test:e2e` builds the site with `NEXT_PUBLIC_API_URL=http://127.0.0.1:8787`, starts everything on loopback
 (site 4173, Worker 8787, runner 4242) with throw-away secrets and a temporary D1, and tears it down afterwards.
@@ -264,6 +302,11 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
   the GitHub app) is refused, exactly as under the new Worker. A fragment that carries a nonce is always
   checked, and when the API is the new one or its generation cannot be determined, a missing nonce is
   refused. The window closes as soon as the new Worker is deployed; no site change is needed then.
+- Sessions are revoked per account: signing out ends every session of the account, and a token otherwise stays valid until
+  it expires (30 days) unless the account signs out or is deleted, or an operator bumps `token_version`. If a deleted
+  account is created again with the same GitHub or Google id, its `token_version` starts at 0 again, so an unexpired token
+  from before the deletion would be accepted again. Close this together with the re-registration controls (carry the last
+  version over, or refuse tokens whose `iat` is older than `users.created_at`).
 - Rate limiting is per-isolate (per IP: 60 requests/min, 10/min on `/api/auth/*`; override with the
   `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_AUTH_PER_MIN` variables); move to a Durable Object or Cloudflare Rate
   Limiting rules before large launches.

@@ -68,14 +68,15 @@ npx wrangler d1 migrations apply skillforge-db --remote --config wrangler.toml
 
 ## Roles
 
-Roles are `student` (default), `instructor` and `admin`. They are granted by an operator with SQL, never through the API:
+Roles are `student` (default), `instructor` and `admin`. Only the owner grants them, with the CLI (never through the API;
+details in [docs/PLATFORM.md](../docs/PLATFORM.md#owner-provisioning-roles)):
 
 ```sh
-npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
-  "UPDATE users SET role = 'instructor' WHERE username = 'someone'"      # or 'admin'; 'student' demotes
-npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
-  "INSERT INTO audit_log (user_id, action, detail) SELECT github_id, 'role.change', 'set to instructor by operator' FROM users WHERE username = 'someone'"
+node scripts/grant-role.mjs --remote --github-id <numeric GitHub id> --role instructor          # dry run
+node scripts/grant-role.mjs --remote --github-id <numeric GitHub id> --role instructor --yes    # apply ('student' demotes)
 ```
+
+It writes the role and a `role.grant` audit row; the role is read from D1 on every request, so it applies at once.
 
 Accounts are identified by `users.github_id` for every provider (`"<num>"` GitHub, `"email:<uuid>"`, `"google:<sub>"`).
 Admins are never auto-suspended.
@@ -85,8 +86,16 @@ Admins are never auto-suspended.
 Abuse signals (`abuse_signals`) are advisory: timeouts and memory/output hits, code that looks like a network probe, and
 rate-limit floods. The sandbox is the real security boundary; the signals only catch people probing it. Reaching a threshold
 suspends the account for `ABUSE_SUSPEND_HOURS` and writes an `abuse.auto_suspend` audit row. A suspended user gets
-`403 account_suspended` from every lab and challenge endpoint. Expired suspensions are lifted lazily on the user's next request
-(`abuse.suspension_expired` audit row).
+`403 account_suspended` (with `until` when the suspension ends) from every authenticated endpoint (`worker/src/auth/guard.ts`)
+except `GET /api/auth/me`, `POST /api/auth/logout` and `DELETE /api/account` (`409`). Expired suspensions are lifted lazily
+on the user's next request to any of them (`abuse.suspension_expired` audit row).
+
+End every session of an account (its tokens stop working at once; signing in again issues new ones):
+
+```sh
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
+  "UPDATE users SET token_version = token_version + 1 WHERE username = 'someone'"
+```
 
 Lift one early:
 
