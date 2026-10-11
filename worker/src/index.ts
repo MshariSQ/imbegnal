@@ -4,6 +4,7 @@
 // that needs a signed-in user authenticates through auth/guard.ts.
 import { type Env, NO_STORE, corsHeaders, getCookie, isValidId, json, parseStateCookie, readJson, redirectWithToken, stateCookieValue } from "./util";
 import { LEGACY_401, requireAuth } from "./auth/guard";
+import { handleLogout } from "./auth/logout";
 import { handleLogin, handleRegister } from "./auth-email";
 import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
 import { handleStateGet, handleStatePut } from "./state";
@@ -324,6 +325,7 @@ export default {
     if (pathname === "/api/auth/github") return handleAuthGitHub(req, env);
     if (pathname === "/api/auth/callback") return handleAuthCallback(req, env);
     if (pathname === "/api/auth/me") return handleMe(req, env, origin);
+    if (pathname === "/api/auth/logout" && req.method === "POST") return handleLogout(req, env, origin);
     if (pathname === "/api/auth/google") return handleGoogleStart(req, env, origin);
     if (pathname === "/api/auth/google/callback") return handleGoogleCallback(req, env);
     if (pathname === "/api/auth/register" && req.method === "POST") return handleRegister(req, env, origin);
