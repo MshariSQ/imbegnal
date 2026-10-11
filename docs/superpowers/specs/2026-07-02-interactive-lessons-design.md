@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-02
 **Status:** Approved by owner
-**Scope:** Turn SkillForge roadmaps into full interactive courses — ELI5 bilingual lessons with an in-browser code runner — and harden the platform for production.
+**Scope:** Turn IMBEGNAL roadmaps into full interactive courses — ELI5 bilingual lessons with an in-browser code runner — and harden the platform for production.
 
 ---
 

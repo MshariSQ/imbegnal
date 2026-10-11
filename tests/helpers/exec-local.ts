@@ -9,7 +9,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { getLanguage, type LangId } from "../../shared/languages";
@@ -38,7 +38,31 @@ const GOCACHE = join(tmpdir(), "imb-local-gocache");
 const TOOLCHAIN_HOMES = {
   RUSTUP_HOME: process.env.RUSTUP_HOME || join(homedir(), ".rustup"),
   CARGO_HOME: process.env.CARGO_HOME || join(homedir(), ".cargo"),
+  XDG_CONFIG_HOME: goTelemetryOffConfig(),
 };
+
+/**
+ * Go >= 1.23 starts a telemetry child process that keeps writing to $HOME/.config/go/telemetry
+ * after `go` itself has exited. With a temp HOME that child recreated the directory after rmSync
+ * and sometimes made rmSync throw ENOTEMPTY, which crashed the whole test file. The mode cannot
+ * be set through the environment, only by a `mode` file in the user config dir, so every local
+ * run shares one config dir (outside HOME) whose Go telemetry mode is "off": no files, no child.
+ */
+function goTelemetryOffConfig(): string {
+  const dir = join(tmpdir(), "imb-local-config");
+  const modeFile = join(dir, "go", "telemetry", "mode");
+  try {
+    if (readFileSync(modeFile, "utf8") === "off") return dir;
+  } catch {
+    // not written yet
+  }
+  mkdirSync(join(dir, "go", "telemetry"), { recursive: true });
+  // Test files run in parallel processes: write + rename, so `go` never reads a half-written file.
+  const tmp = `${modeFile}.${process.pid}`;
+  writeFileSync(tmp, "off");
+  renameSync(tmp, modeFile);
+  return dir;
+}
 
 /**
  * Compiled programs, built once per (language, source) and reused for every test case of that

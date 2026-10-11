@@ -20,7 +20,8 @@ Instead of searching across 20 websites, find every roadmap, certification, cour
 - **Roadmaps & certifications** with curated resources
 - Light / dark mode, mobile-first, SEO-optimized (per-lesson pages, sitemap, JSON-LD)
 
-See [docs/PLATFORM.md](docs/PLATFORM.md) for architecture, deployment and the product roadmap.
+See [docs/PLATFORM.md](docs/PLATFORM.md) for architecture, deployment and the product roadmap, and
+[docs/SECRETS.md](docs/SECRETS.md) for every secret and environment variable the deploy needs.
 
 ## Development
 

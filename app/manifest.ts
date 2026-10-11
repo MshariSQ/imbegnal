@@ -7,7 +7,9 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "IMBEGNAL",
     short_name: "IMBEGNAL",
     description: "Free bilingual study platform: interactive courses, quizzes, notes and an AI tutor.",
+    // Relative on purpose: resolved against the manifest's own origin (https://imbegnal.com in production).
     start_url: "/dashboard/",
+    scope: "/",
     display: "standalone",
     background_color: "#0a0c10",
     theme_color: "#10b981",

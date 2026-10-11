@@ -2,8 +2,8 @@
 // GET /api/admin/audit?limit=100          (role: admin)
 //
 // Everything is aggregated in SQL and bounded: `days` ≤ 365, at most MAX_EXERCISES exercises,
-// at most MAX_STATE_ROWS synced study states scanned. Nothing returned carries a user id or
-// a name: the instructor sees populations, not people.
+// at most MAX_STATE_ROWS study states (synced inside the window) scanned. Nothing returned
+// carries a user id or a name: the instructor sees populations, not people.
 import type { AuditEntry, ExerciseAnalytics, InstructorAnalytics, TrackAnalytics } from "../../../shared/api";
 import { apiError, round1, sqlTime, toIso } from "../challenges/http";
 import type { ChallengeDeps } from "../challenges/types";
@@ -42,21 +42,39 @@ async function loadRuns(env: Env, since: string): Promise<InstructorAnalytics["r
 // ── Tracks (from the synced study state) ──────────────────────────────────────
 
 // ?1 JSON array of every catalog lesson key · ?2 JSON object {track: lessonCount} · ?3 state-row cap
-// Per (learner, track): lessons done (only catalog lessons count), first visit, last completion.
+// ?4 window start as SQL time (user_state.updated_at) · ?5 window start in epoch ms (lesson timestamps)
+//
+// Only states synced inside the window are scanned: a lesson visited or done inside the window was
+// synced after it, so the pre-filter never drops a learner the window should count.
+// Per (learner, track): lessons done (only catalog lessons count), first visit, the completing
+// (latest) done timestamp of a catalog lesson, and whether any lesson timestamp falls in the window.
+// Lesson entries that are not objects and timestamps that are not numbers are ignored: the state is
+// client-written, and one malformed entry must not fail the whole query or count as activity.
 const PER_LEARNER = `
 WITH st AS (
-  SELECT github_id, data FROM user_state WHERE json_valid(data) ORDER BY updated_at DESC LIMIT ?3
-), per AS (
-  SELECT st.github_id AS uid, substr(j.key, 1, instr(j.key, '/') - 1) AS track,
-         COUNT(DISTINCT CASE WHEN json_extract(j.value, '$.done') > 0 AND j.key IN (SELECT value FROM json_each(?1)) THEN j.key END) AS done,
-         MIN(COALESCE(json_extract(j.value, '$.visited'), json_extract(j.value, '$.done'))) AS first_ts,
-         MAX(json_extract(j.value, '$.done')) AS last_done
+  SELECT github_id, data FROM user_state WHERE updated_at >= ?4 AND json_valid(data) ORDER BY updated_at DESC LIMIT ?3
+), les AS (
+  SELECT st.github_id AS uid, substr(j.key, 1, instr(j.key, '/') - 1) AS track, j.key AS lesson,
+         j.key IN (SELECT value FROM json_each(?1)) AS in_catalog,
+         CASE WHEN json_type(j.value, '$.visited') IN ('integer', 'real') THEN json_extract(j.value, '$.visited') END AS visited,
+         CASE WHEN json_type(j.value, '$.done') IN ('integer', 'real') AND json_extract(j.value, '$.done') > 0 THEN json_extract(j.value, '$.done') END AS done
   FROM st, json_each(st.data, '$.lessons') j
-  WHERE instr(j.key, '/') > 1
-  GROUP BY st.github_id, track
+  WHERE instr(j.key, '/') > 1 AND j.type = 'object'
+), per AS (
+  SELECT uid, track,
+         COUNT(DISTINCT CASE WHEN done IS NOT NULL AND in_catalog THEN lesson END) AS done,
+         MIN(COALESCE(visited, done)) AS first_ts,
+         MAX(CASE WHEN in_catalog THEN done END) AS last_done,
+         MAX(CASE WHEN visited >= ?5 OR done >= ?5 THEN 1 ELSE 0 END) AS active
+  FROM les
+  GROUP BY uid, track
 )`;
 
-async function loadTracks(env: Env, deps: ChallengeDeps): Promise<TrackAnalytics[]> {
+// A learner counts for a track when one of their lesson timestamps of that track is inside the
+// window; a completion counts when every catalog lesson is done and the completing one is inside it.
+const COMPLETED_IN_WINDOW = "per.done >= t.value AND per.last_done >= ?5";
+
+async function loadTracks(env: Env, deps: ChallengeDeps, since: string, sinceMs: number): Promise<TrackAnalytics[]> {
   const tracks = deps.catalog.tracks.filter((t) => t.lessons.length > 0);
   const lessonKeys = JSON.stringify(tracks.flatMap((t) => t.lessons.map((l) => `${t.id}/${l}`)));
   const totals = JSON.stringify(Object.fromEntries(tracks.map((t) => [t.id, t.lessons.length])));
@@ -64,23 +82,23 @@ async function loadTracks(env: Env, deps: ChallengeDeps): Promise<TrackAnalytics
   const [counts, medians] = await Promise.all([
     env.DB.prepare(
       `${PER_LEARNER}
-       SELECT per.track AS track, COUNT(*) AS learners, SUM(CASE WHEN per.done >= t.value THEN 1 ELSE 0 END) AS completed
-       FROM per JOIN json_each(?2) t ON t.key = per.track GROUP BY per.track`,
+       SELECT per.track AS track, COUNT(*) AS learners, SUM(CASE WHEN ${COMPLETED_IN_WINDOW} THEN 1 ELSE 0 END) AS completed
+       FROM per JOIN json_each(?2) t ON t.key = per.track WHERE per.active = 1 GROUP BY per.track`,
     )
-      .bind(lessonKeys, totals, MAX_STATE_ROWS)
+      .bind(lessonKeys, totals, MAX_STATE_ROWS, since, sinceMs)
       .all<{ track: string; learners: number; completed: number }>(),
-    // Median minutes between the first visit and the last completion, over learners who finished.
+    // Median minutes between the first visit and the completing done, over the window's completions.
     env.DB.prepare(
       `${PER_LEARNER}, dur AS (
          SELECT per.track AS track, (per.last_done - per.first_ts) / 60000.0 AS m
          FROM per JOIN json_each(?2) t ON t.key = per.track
-         WHERE per.done >= t.value AND per.first_ts IS NOT NULL AND per.last_done >= per.first_ts
+         WHERE ${COMPLETED_IN_WINDOW} AND per.first_ts IS NOT NULL AND per.last_done >= per.first_ts
        ), ranked AS (
          SELECT track, m, ROW_NUMBER() OVER (PARTITION BY track ORDER BY m) AS rn, COUNT(*) OVER (PARTITION BY track) AS c FROM dur
        )
        SELECT track, AVG(m) AS median FROM ranked WHERE rn IN ((c + 1) / 2, (c + 2) / 2) GROUP BY track`,
     )
-      .bind(lessonKeys, totals, MAX_STATE_ROWS)
+      .bind(lessonKeys, totals, MAX_STATE_ROWS, since, sinceMs)
       .all<{ track: string; median: number }>(),
   ]);
   const countMap = new Map(counts.results.map((r) => [r.track, r]));
@@ -217,8 +235,14 @@ export async function handleInstructorAnalytics(req: Request, env: Env, origin: 
   if (days === null) return apiError(origin, 400, "invalid_request", `days must be an integer from 1 to ${MAX_DAYS}`);
 
   const now = deps.now();
-  const since = sqlTime(now - days * DAY_MS);
-  const [runs, tracks, exercises, challenges] = await Promise.all([loadRuns(env, since), loadTracks(env, deps), loadExercises(env, since), loadChallenges(env, deps, since)]);
+  const sinceMs = now - days * DAY_MS;
+  const since = sqlTime(sinceMs);
+  const [runs, tracks, exercises, challenges] = await Promise.all([
+    loadRuns(env, since),
+    loadTracks(env, deps, since, sinceMs),
+    loadExercises(env, since),
+    loadChallenges(env, deps, since),
+  ]);
   const body: InstructorAnalytics = { generatedAt: new Date(now).toISOString(), days, runs, tracks, exercises, challenges };
   return json(body, 200, origin, { "Cache-Control": "private, no-store" });
 }

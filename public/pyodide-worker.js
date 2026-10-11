@@ -25,9 +25,9 @@ self.onmessage = async function (e) {
     // Fresh scope per run; capture stdout/stderr.
     var setup =
       "import sys, io\n" +
-      "_sf_out = io.StringIO()\n" +
-      "sys.stdout = _sf_out\n" +
-      "sys.stderr = _sf_out\n";
+      "_imb_out = io.StringIO()\n" +
+      "sys.stdout = _imb_out\n" +
+      "sys.stderr = _imb_out\n";
     var globalsDict = pyodide.globals.get("dict")();
     await pyodide.runPythonAsync(setup, { globals: globalsDict });
 
@@ -39,13 +39,13 @@ self.onmessage = async function (e) {
       runError = String(err && err.message ? err.message : err);
     }
     try {
-      stdout = await pyodide.runPythonAsync("_sf_out.getvalue()", { globals: globalsDict });
+      stdout = await pyodide.runPythonAsync("_imb_out.getvalue()", { globals: globalsDict });
     } catch { /* ignore */ }
 
     var testResults = [];
     if (msg.tests && msg.tests.length && !runError) {
       // expose captured stdout to test snippets as _stdout
-      await pyodide.runPythonAsync("_stdout = _sf_out.getvalue()", { globals: globalsDict });
+      await pyodide.runPythonAsync("_stdout = _imb_out.getvalue()", { globals: globalsDict });
       for (var i = 0; i < msg.tests.length; i++) {
         try {
           await pyodide.runPythonAsync(msg.tests[i], { globals: globalsDict });

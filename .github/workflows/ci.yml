@@ -20,9 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Node from .node-version (22): node:sqlite (Worker test shim) and native type stripping
       - uses: actions/setup-node@v4
         with:
-          node-version: "22" # node:sqlite (Worker test shim) and native type stripping
+          node-version-file: .node-version
           cache: npm
       - run: npm ci
       - run: npm ci
@@ -58,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version-file: .node-version
           cache: npm
       - run: npm ci
       - name: Build the slim toolchain image
@@ -78,7 +79,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version-file: .node-version
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
@@ -100,7 +101,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version-file: .node-version
           cache: npm
       - run: npm ci
       - run: npm ci
