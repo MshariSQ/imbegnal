@@ -20,10 +20,13 @@ when it is unset or empty), **Missing** (required and known to be unset).
    them, see [PLATFORM.md](PLATFORM.md#one-time-setup-no-credentials-are-ever-shared-in-chat-or-committed)), then the optional ones
    (`ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`, `RUNNER_URL` + `RUNNER_SECRET` once the runner VM is up).
 3. **Deploy**: GitHub → repo → Actions → *Deploy (API + site)* → Run workflow (branch `main`), or open the last run and
-   click *Re-run all jobs*. The *Deploy API* job must not show the "API not deployed" warning. Check: `GET <WORKER_URL>/api/state`
-   answers 401 (the new API) instead of 404 (the old one).
-4. **Make yourself admin** with the role CLI `worker/scripts/grant-role.mjs` (being added on another branch; its usage is at
-   the top of the file). Until it lands, use the SQL in [`worker/README-lab.md`](../worker/README-lab.md#roles).
+   click *Re-run all jobs*. The *Deploy API* job must not show the "API not deployed" warning. It applies the pending D1
+   migrations (up to `0007` XP ledger and `0008` `users.token_version`) before `wrangler deploy`, so the new Worker never
+   runs on the old schema. Check: `GET <WORKER_URL>/api/state` answers 401 (the new API) instead of 404 (the old one).
+4. **Make yourself admin**: sign in once on the site with GitHub (that creates your account), then, from `worker/` on a
+   machine where `npx wrangler login` works, run the role CLI `node scripts/grant-role.mjs --remote --github-id <your numeric
+   GitHub id> --role admin` (a dry run that prints the account and the SQL), then the same command with `--yes`. It needs no
+   secret of its own; details in [PLATFORM.md](PLATFORM.md#owner-provisioning-roles).
 
 ## GitHub Actions (`.github/workflows/deploy.yml`)
 
@@ -54,20 +57,20 @@ never add the tunables below to `[vars]` (a deploy would reset them).
 | Name | Used by (file:line) | Where it is set | Status | How the owner sets it |
 |---|---|---|---|---|
 | `DB` (D1 binding, database `skillforge-db`) | `worker/wrangler.toml:8-12`; `env.DB` throughout `worker/src` | Worker binding in `wrangler.toml` | Required | Already configured. Do not rename (see [Legacy identifiers](PLATFORM.md#legacy-identifiers)). |
-| `GITHUB_CLIENT_ID` | `worker/src/index.ts:88`, `:135` | Worker var in `wrangler.toml` (`worker/wrangler.toml:15`) | Required (public OAuth client id, not a secret) | Edit `worker/wrangler.toml` in a commit. It must belong to the same GitHub OAuth App as `GITHUB_CLIENT_SECRET`. |
-| `FRONTEND_URL` | `worker/src/index.ts:120`, `worker/src/util.ts:215`, `worker/src/auth-google.ts:45`, `worker/src/certificates/handlers.ts:37` | Worker var in `wrangler.toml` (`worker/wrangler.toml:16`) | Required | Edit `worker/wrangler.toml` (`https://imbegnal.com`). OAuth sign-ins redirect here; certificate links use it. |
-| `WORKER_URL` | `worker/src/index.ts:89`, `:138`, `worker/src/auth-google.ts:10` | Worker var in `wrangler.toml` (`worker/wrangler.toml:17`) | Required | Edit `worker/wrangler.toml`. OAuth redirect URIs are built from it, so the GitHub OAuth App callback must be `<WORKER_URL>/api/auth/callback` and the Google redirect URI `<WORKER_URL>/api/auth/google/callback`. |
-| `JWT_SECRET` | `worker/src/util.ts:112` (sign), `:118` (verify), `worker/src/certificates/handlers.ts:64` (certificate codes) | Cloudflare Worker secret | Required (present in production per PLATFORM.md) | Dashboard path above, Type Secret, or `npx wrangler secret put JWT_SECRET --config wrangler.toml`. Use a long random value (e.g. from `openssl rand -base64 48`, pasted straight into the prompt). Rotating it signs everyone out and changes the certificate codes derived from it. |
-| `GITHUB_CLIENT_SECRET` | `worker/src/index.ts:136` | Cloudflare Worker secret | Required for GitHub sign-in (present in production per PLATFORM.md) | GitHub → Settings → Developer settings → OAuth Apps → the app → **Generate a new client secret**, then `npx wrangler secret put GITHUB_CLIENT_SECRET --config wrangler.toml`. |
+| `GITHUB_CLIENT_ID` | `worker/src/index.ts:91`, `:138` | Worker var in `wrangler.toml` (`worker/wrangler.toml:15`) | Required (public OAuth client id, not a secret) | Edit `worker/wrangler.toml` in a commit. It must belong to the same GitHub OAuth App as `GITHUB_CLIENT_SECRET`. |
+| `FRONTEND_URL` | `worker/src/index.ts:123`, `worker/src/util.ts:242`, `worker/src/auth-google.ts:45`, `worker/src/certificates/handlers.ts:37` | Worker var in `wrangler.toml` (`worker/wrangler.toml:16`) | Required | Edit `worker/wrangler.toml` (`https://imbegnal.com`). OAuth sign-ins redirect here; certificate links use it. |
+| `WORKER_URL` | `worker/src/index.ts:92`, `:141`, `worker/src/auth-google.ts:10` | Worker var in `wrangler.toml` (`worker/wrangler.toml:17`) | Required | Edit `worker/wrangler.toml`. OAuth redirect URIs are built from it, so the GitHub OAuth App callback must be `<WORKER_URL>/api/auth/callback` and the Google redirect URI `<WORKER_URL>/api/auth/google/callback`. |
+| `JWT_SECRET` | `worker/src/util.ts:134` (sign), `worker/src/auth/guard.ts:86` (verify), `worker/src/certificates/handlers.ts:64` (certificate codes), `worker/src/auth-email.ts:65` (email account keys) | Cloudflare Worker secret | Required (present in production per PLATFORM.md) | Dashboard path above, Type Secret, or `npx wrangler secret put JWT_SECRET --config wrangler.toml`. Use a long random value (e.g. from `openssl rand -base64 48`, pasted straight into the prompt). Rotating it signs everyone out and changes the certificate codes derived from it; existing email accounts keep their keys (login finds them by email), but an email account deleted before the rotation comes back under a new key, without the counters deletion keeps. (Revoking one account's tokens needs no rotation: `POST /api/auth/logout` bumps `users.token_version`, which signs out every device of that account.) |
+| `GITHUB_CLIENT_SECRET` | `worker/src/index.ts:139` | Cloudflare Worker secret | Required for GitHub sign-in (present in production per PLATFORM.md) | GitHub → Settings → Developer settings → OAuth Apps → the app → **Generate a new client secret**, then `npx wrangler secret put GITHUB_CLIENT_SECRET --config wrangler.toml`. |
 | `GOOGLE_CLIENT_ID` | `worker/src/auth-google.ts:14`, `:19`, `:49`, `:61` | Cloudflare Worker secret | Optional; unset = Google sign-in answers `404 google_disabled` | Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID → Web application, redirect URI `<WORKER_URL>/api/auth/google/callback`. Then `npx wrangler secret put GOOGLE_CLIENT_ID --config wrangler.toml`, and set the GitHub variable `GOOGLE_AUTH=1`. |
 | `GOOGLE_CLIENT_SECRET` | `worker/src/auth-google.ts:49`, `:62` | Cloudflare Worker secret | Optional (required together with `GOOGLE_CLIENT_ID`) | Same OAuth client → client secret → `npx wrangler secret put GOOGLE_CLIENT_SECRET --config wrangler.toml`. |
-| `ANTHROPIC_API_KEY` | `worker/src/ai.ts:88`, `:111` | Cloudflare Worker secret | Optional; unset = the AI tutor answers `503 ai_disabled` | console.anthropic.com → API Keys → Create Key, then `npx wrangler secret put ANTHROPIC_API_KEY --config wrangler.toml`. Also set a monthly spend limit in the Anthropic Console. |
-| `AI_MODEL` | `worker/src/ai.ts:107` | Worker dashboard variable (Text) | Optional, default `claude-opus-5-5` (`worker/src/ai.ts:12`) | Dashboard path above, Type Text. Cheaper: `claude-sonnet-5-5`, `claude-haiku-4-5`. |
-| `AI_DAILY_LIMIT_FREE` | `worker/src/ai.ts:72` | Worker dashboard variable (Text) | Optional, default 20 questions per user per day | Dashboard, Type Text. |
-| `AI_DAILY_LIMIT_PRO` | `worker/src/ai.ts:72` | Worker dashboard variable (Text) | Optional, default 200 | Dashboard, Type Text. |
-| `AI_DAILY_LIMIT_GLOBAL` | `worker/src/ai.ts:73` | Worker dashboard variable (Text) | Optional, default 600 (all users per day, the spend kill switch) | Dashboard, Type Text. |
-| `RATE_LIMIT_PER_MIN` | `worker/src/index.ts:22` | Worker dashboard variable (Text) | Optional, default 60 requests per IP per minute (per isolate) | Dashboard, Type Text. |
-| `RATE_LIMIT_AUTH_PER_MIN` | `worker/src/index.ts:22` | Worker dashboard variable (Text) | Optional, default 10 on `/api/auth/*` | Dashboard, Type Text. |
+| `ANTHROPIC_API_KEY` | `worker/src/ai.ts:89`, `:113` | Cloudflare Worker secret | Optional; unset = the AI tutor answers `503 ai_disabled` | console.anthropic.com → API Keys → Create Key, then `npx wrangler secret put ANTHROPIC_API_KEY --config wrangler.toml`. Also set a monthly spend limit in the Anthropic Console. |
+| `AI_MODEL` | `worker/src/ai.ts:109` | Worker dashboard variable (Text) | Optional, default `claude-opus-5-5` (`worker/src/ai.ts:13`) | Dashboard path above, Type Text. Cheaper: `claude-sonnet-5-5`, `claude-haiku-4-5`. |
+| `AI_DAILY_LIMIT_FREE` | `worker/src/ai.ts:73` | Worker dashboard variable (Text) | Optional, default 20 questions per user per day | Dashboard, Type Text. |
+| `AI_DAILY_LIMIT_PRO` | `worker/src/ai.ts:73` | Worker dashboard variable (Text) | Optional, default 200 | Dashboard, Type Text. |
+| `AI_DAILY_LIMIT_GLOBAL` | `worker/src/ai.ts:74` | Worker dashboard variable (Text) | Optional, default 600 (all users per day, the spend kill switch) | Dashboard, Type Text. |
+| `RATE_LIMIT_PER_MIN` | `worker/src/index.ts:25` | Worker dashboard variable (Text) | Optional, default 60 requests per IP per minute (per isolate) | Dashboard, Type Text. |
+| `RATE_LIMIT_AUTH_PER_MIN` | `worker/src/index.ts:25` | Worker dashboard variable (Text) | Optional, default 10 on `/api/auth/*` | Dashboard, Type Text. |
 | `RUNNER_URL` | `worker/src/lab/runner.ts:78` | Cloudflare Worker secret (a Text variable works too) | Optional; unset = server runs answer `503 runner_unavailable` (not charged), `/api/lab/languages` reports `unconfigured` | The runner's public `https://` origin (Cloudflare Tunnel, see [PLATFORM.md](PLATFORM.md#deploying-the-runner-once)). `npx wrangler secret put RUNNER_URL --config wrangler.toml`. |
 | `RUNNER_SECRET` | `worker/src/lab/runner.ts:79` | Cloudflare Worker secret | Optional (required together with `RUNNER_URL`) | Read it on the runner VM (`sudo sed -n 's/^RUNNER_SECRET=//p' /etc/imbegnal-runner.env`) and paste it into `npx wrangler secret put RUNNER_SECRET --config wrangler.toml`. Must equal the runner's `RUNNER_SECRET`. Rotate the runner first, then the Worker. |
 | `RUN_DAILY_LIMIT_FREE` | `worker/src/lab/config.ts:48` | Worker dashboard variable (Text) | Optional, default 50 runs per user per UTC day | Dashboard, Type Text. |
@@ -99,7 +102,7 @@ so set optional ones in both places.
 | `NEXT_PUBLIC_API_URL` | `lib/site.ts:10` | `deploy.yml:45` from GitHub Actions secret `WORKER_URL`; Cloudflare Workers Builds variable (optional) | Optional, default `https://skillforge-api.skillforge.workers.dev` in production builds, `http://localhost:8787` in `next dev` | GitHub: the `WORKER_URL` secret above. Workers Builds: see the next section. |
 | `NEXT_PUBLIC_SITE_URL` | `lib/site.ts:2` (metadataBase, canonical links, og:url, sitemap, robots, JSON-LD) | Not set anywhere | Optional, default `https://imbegnal.com` | Leave unset for production. Only for a build that must advertise another origin. |
 | `NEXT_PUBLIC_GOOGLE_AUTH` | `app/login/page.tsx:13` | `deploy.yml:48` from GitHub Actions variable `GOOGLE_AUTH`; Cloudflare Workers Builds variable | Optional, default off (`"1"` shows the Google button) | GitHub variable `GOOGLE_AUTH=1`, and the same `NEXT_PUBLIC_GOOGLE_AUTH=1` as a Workers Builds variable. |
-| `NEXT_PUBLIC_BASE_PATH` | `app/about/page.tsx:6`, `app/profile/page.tsx:14`, `app/roadmaps/[slug]/RoadmapClient.tsx:126`, `components/layout/Footer.tsx:6`, `lib/auth.ts:51`, `lib/codelab/browser-runner.ts:221`, `lib/runner/python-client.ts:15` | `deploy.yml:50` (empty string, in the file) | Optional, default `""` | Leave empty: the site is served from the domain root and `next.config.ts` has no `basePath`. |
+| `NEXT_PUBLIC_BASE_PATH` | `app/about/page.tsx:6`, `app/profile/page.tsx:14`, `app/roadmaps/[slug]/RoadmapClient.tsx:126`, `components/layout/Footer.tsx:6`, `lib/auth.ts:75`, `lib/codelab/browser-runner.ts:221`, `lib/runner/python-client.ts:15` | `deploy.yml:50` (empty string, in the file) | Optional, default `""` | Leave empty: the site is served from the domain root and `next.config.ts` has no `basePath`. |
 | `NEXT_PUBLIC_GITHUB_CLIENT_ID` | none (set at `deploy.yml:46`, read nowhere) | `deploy.yml:46` from GitHub Actions secret `GH_CLIENT_ID` | Optional, unused | Nothing to do. |
 
 ## Cloudflare Workers Builds (the site, project `imbegnal`)
@@ -151,5 +154,5 @@ allow-list of their own, never the runner's environment or `RUNNER_SECRET`.
 ## CI-only (set inline in `.github/workflows/ci.yml`, nothing to configure)
 
 `HINT_LEAK_REQUIRE_OUT` (`ci.yml:52`, read by `tests/unit/hints-no-leak.test.ts:91`), `RUNNER_TEST_IMAGE` (`ci.yml:70`,
-`runner/tests/helpers.ts:14`), `PYODIDE_DIR` (`ci.yml:93`, `tests/e2e/codelab/support.ts:164`), `E2E_RUNNER_IMAGE`
+`runner/tests/helpers.ts:14`), `PYODIDE_DIR` (`ci.yml:93`, `tests/e2e/codelab/support.ts:165`), `E2E_RUNNER_IMAGE`
 (`ci.yml:115`, `tests/e2e/run.mjs:102`). `npm run test:e2e` generates throw-away Worker secrets for its local stack.
