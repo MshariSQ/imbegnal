@@ -25,9 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Same Node as ci.yml and Cloudflare Workers Builds: the repo's .node-version (22).
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .node-version
           cache: "npm"
 
       - run: npm ci
@@ -73,9 +74,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # `uses:` steps resolve paths from the repository root (defaults.run applies to `run:` only).
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .node-version
           cache: "npm"
           cache-dependency-path: worker/package-lock.json
 
