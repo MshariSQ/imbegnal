@@ -83,15 +83,20 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
       stdin: stdinUsed,
     });
     // The Worker is the XP authority for lab exercises: the pass and its XP are written
-    // together, and the ledger's primary key awards each exercise once per user.
+    // together, and the ledger's primary key awards each exercise once per user. A pass
+    // recorded before the ledger existed already earned its XP in the synced study state,
+    // so it earns no ledger XP (NOT EXISTS runs before this batch records the pass).
     let xpAwarded: number | undefined;
     if (ref.kind === "lesson" && grade) {
       xpAwarded = 0;
       if (grade.passed) {
         const labRef = `${ref.track}/${ref.lesson}/${ref.exercise}`;
-        const [, ledger] = await env.DB.batch([
+        const [ledger] = await env.DB.batch([
+          env.DB.prepare(
+            `INSERT OR IGNORE INTO xp_ledger (user_id, source, ref, xp)
+             SELECT ?1, 'lab', ?2, ?3 WHERE NOT EXISTS (SELECT 1 FROM lab_progress WHERE user_id = ?1 AND ref = ?2)`,
+          ).bind(user.sub, labRef, LAB_XP),
           env.DB.prepare("INSERT OR IGNORE INTO lab_progress (user_id, ref) VALUES (?, ?)").bind(user.sub, labRef),
-          env.DB.prepare("INSERT OR IGNORE INTO xp_ledger (user_id, source, ref, xp) VALUES (?, 'lab', ?, ?)").bind(user.sub, labRef, LAB_XP),
         ]);
         xpAwarded = ledger.meta.changes > 0 ? LAB_XP : 0;
       }

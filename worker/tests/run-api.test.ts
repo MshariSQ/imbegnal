@@ -420,6 +420,15 @@ describe("lesson lab grading", () => {
     assert.deepEqual(ledger().map((r) => r.user_id), ["u1", "u2"]);
   });
 
+  test("a pass recorded before the ledger existed already earned its XP (study state): passing again awards none", async () => {
+    db.execute("INSERT INTO lab_progress (user_id, ref, passed_at) VALUES ('u1', 'python/basics/add', '2026-01-02 03:04:05')");
+    const body = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
+    assert.equal(body.grade?.passed, true);
+    assert.equal(body.xpAwarded, 0);
+    assert.deepEqual(ledger(), []);
+    assert.deepEqual(progress().map((p) => p.passed_at), ["2026-01-02 03:04:05"]);
+  });
+
   test("a failed graded run answers xpAwarded 0 and writes no ledger row; free runs carry no xpAwarded and write none", async () => {
     const failed = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "WRONG", ref }));
     assert.equal(failed.grade?.passed, false);
