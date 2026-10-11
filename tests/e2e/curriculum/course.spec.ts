@@ -54,6 +54,9 @@ for (const lang of LANGS) {
       try {
         await page.goto(`${site.url}/learn/${course.id}/`);
         await page.waitForSelector("h1#course-title");
+        // The export is prerendered in English; the stored language applies when React re-renders after
+        // hydration (useSyncExternalStore), which can land just after the load event. Wait for it.
+        await page.waitForFunction((t) => document.querySelector("h1#course-title")?.textContent === t, titleOf(course.id, lang), { timeout: 10_000 }).catch(() => {});
         assert.equal(await page.locator("h1#course-title").innerText(), titleOf(course.id, lang), `${course.id} title`);
         assert.equal(await page.locator("html").getAttribute("dir"), lang === "ar" ? "rtl" : "ltr");
         for (const id of SECTIONS) assert.equal(await page.locator(`#${id}`).count(), 1, `${course.id}: missing section ${id}`);
@@ -308,6 +311,8 @@ test("/courses filter chips render canonical roadmap titles (EN and AR)", async 
     try {
       await page.goto(`${site.url}/courses/`);
       await page.waitForSelector("button[aria-pressed]");
+      // Same as the course pages: wait for the stored language to apply after hydration.
+      await page.getByRole("button", { name: titleOf("devops", lang), exact: true }).waitFor({ timeout: 10_000 }).catch(() => {});
       const chips = await page.locator("button[aria-pressed]").allInnerTexts();
       for (const id of ["cyber-security", "artificial-intelligence", "frontend", "devops", "ui-ux"]) {
         assert.ok(chips.includes(titleOf(id, lang)), `${lang}: chip for ${id} (${titleOf(id, lang)}) in ${chips.join(" | ")}`);
