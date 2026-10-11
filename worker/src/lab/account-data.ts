@@ -12,7 +12,7 @@
 //   - challenge_attempts from the last 24 hours (id, challenge id, correct yes/no, time; the
 //     submitted flag is never stored): the flag brute-force limits count them (account.ts).
 // Older counters, signals and attempts are erased, and so is all user content (code, snippets,
-// notes, study state, progress, solves, certificates). What is kept is counters only, under the
+// notes, study state, progress, XP awards in xp_ledger, solves, certificates). What is kept is counters only, under the
 // opaque account key alone (GitHub's numeric id, google:<sub>, email:<keyed hash> from
 // auth-email.ts, or the email:<uuid> of older email accounts): no email address, name or content.
 // Every provider's key is deterministic, so signing up again with the same GitHub or Google

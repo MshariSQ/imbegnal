@@ -29,8 +29,8 @@ export async function handleAccountDelete(req: Request, env: Env, origin: string
     env.DB.prepare("DELETE FROM ai_usage WHERE github_id = ? AND day < date('now')").bind(id),
     env.DB.prepare("DELETE FROM user_roadmap_progress WHERE github_id = ?").bind(id),
     env.DB.prepare("DELETE FROM user_bookmarks WHERE github_id = ?").bind(id),
-    // Code Lab runs/snippets/quotas/progress and Challenges progress, solves,
-    // attempts and certificates (audit_log is kept on purpose: operators' security record).
+    // Code Lab runs/snippets/quotas/progress, lab XP (xp_ledger) and Challenges progress, solves
+    // and certificates (audit_log is kept on purpose: operators' security record).
     ...labAccountDeleteStatements(env, id),
     ...["challenge_progress", "challenge_solves", "certificates"].map((t) =>
       env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(id)

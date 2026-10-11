@@ -1,4 +1,8 @@
-// Self-serve account deletion must erase Code Lab and Challenges data too (privacy right to erasure).
+// Self-serve account deletion must erase all user content (privacy right to erasure): the site's synced
+// study state and notes, roadmap progress, bookmarks, older AI usage, and the Code Lab, XP and Challenges
+// data. What it keeps on purpose (counters that rate limits and abuse checks count, audit_log) is listed
+// in worker/src/lab/account-data.ts; reregistration.test.ts proves those still count after
+// "delete, then register again".
 import assert from "node:assert/strict";
 import { beforeEach, describe, test } from "node:test";
 import type { Env } from "../src/util";
@@ -17,6 +21,10 @@ const count = (table: string, col: string, id: string) => db.query<{ n: number }
 
 function seed(id: string) {
   addUser(db, { id });
+  db.execute("INSERT INTO user_state (github_id, data) VALUES (?, ?)", id, JSON.stringify({ v: 1, lessons: {}, notes: { "a/b": { text: `private note of ${id}`, updated: 1 } }, days: [], updated: 1 }));
+  db.execute("INSERT INTO user_roadmap_progress (github_id, roadmap_id, node_id) VALUES (?, 'frontend', 'html')", id);
+  db.execute("INSERT INTO user_bookmarks (github_id, type, item_id) VALUES (?, 'course', 'react')", id);
+  db.execute("INSERT INTO ai_usage (github_id, day, count) VALUES (?, '2026-01-01', 4)", id);
   db.execute("INSERT INTO lab_runs (id, user_id, ref_kind, lang, status) VALUES (?, ?, 'free', 'python', 'ok')", `run-${id}`, id);
   db.execute("INSERT INTO lab_usage (user_id, day, count) VALUES (?, '2026-01-01', 3)", id);
   db.execute("INSERT INTO lab_snippets (id, user_id, lang, code) VALUES (?, ?, 'python', 'print(1)')", `snip-${id}`, id);
@@ -31,7 +39,7 @@ function seed(id: string) {
 }
 
 describe("DELETE /api/account", () => {
-  test("erases the account's Code Lab and Challenges data and nobody else's", async () => {
+  test("erases the account's study state, notes, progress, bookmarks, Code Lab, XP and Challenges data, and nobody else's", async () => {
     seed("alice");
     seed("bob");
     const res = await call(env, "/api/account", { method: "DELETE", token: await tokenFor("alice") });
@@ -39,13 +47,15 @@ describe("DELETE /api/account", () => {
     assert.deepEqual(await jsonOf(res), { ok: true });
 
     const tables: [string, string][] = [
-      ["users", "github_id"], ["lab_runs", "user_id"], ["lab_usage", "user_id"], ["lab_snippets", "user_id"], ["lab_progress", "user_id"], ["xp_ledger", "user_id"],
+      ["users", "github_id"], ["user_state", "github_id"], ["user_roadmap_progress", "github_id"], ["user_bookmarks", "github_id"], ["ai_usage", "github_id"],
+      ["lab_runs", "user_id"], ["lab_usage", "user_id"], ["lab_snippets", "user_id"], ["lab_progress", "user_id"], ["xp_ledger", "user_id"],
       ["abuse_signals", "user_id"], ["challenge_progress", "user_id"], ["challenge_solves", "user_id"], ["challenge_attempts", "user_id"], ["certificates", "user_id"],
     ];
     for (const [t, c] of tables) {
       assert.equal(count(t, c, "alice"), 0, `${t} erased for alice`);
       assert.equal(count(t, c, "bob"), 1, `${t} untouched for bob`);
     }
+    assert.ok(!JSON.stringify(db.query("SELECT * FROM user_state")).includes("private note of alice"), "notes erased");
     // audit_log is the operators' security record: kept, and it carries no content.
     // The deletion itself is recorded too.
     assert.equal(count("audit_log", "user_id", "alice"), 2);

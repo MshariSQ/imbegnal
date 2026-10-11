@@ -235,7 +235,8 @@ First setup: sign in once on the site with GitHub (that creates the account), th
 
 `DELETE /api/account` (`worker/src/account.ts`, the delete button on the dashboard) erases the account in one atomic D1
 batch: the user row, synced study state and notes, roadmap progress, bookmarks, Code Lab runs, snippets and lab
-progress, challenge progress and solves, and certificates. A suspended account cannot delete itself until the
+progress, lab XP awards (`xp_ledger`), challenge progress and solves, and certificates
+(`worker/tests/account-delete.test.ts`). A suspended account cannot delete itself until the
 suspension ends (operators can still erase it on request).
 
 **What is kept, and why.** If deletion also erased the rows that rate limits and abuse checks count, "delete the
