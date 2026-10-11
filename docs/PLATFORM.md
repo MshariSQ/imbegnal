@@ -55,7 +55,8 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   on every request. **Signing out** calls `POST /api/auth/logout`, which increments `token_version` and so
   revokes every token of the account on every device (there is no per-device sign-out); the site then
   clears its copy, and a tab whose token the Worker rejects with `401` on the study-state sync signs itself
-  out. Operators can end all sessions of an account with
+  out; that is the only thing that does (a `401` from `GET /api/lab/progress` only re-checks the token on
+  `/api/state`; the rule is at the top of `lib/sync.ts`). Operators can end all sessions of an account with
   `UPDATE users SET token_version = token_version + 1 WHERE github_id = '<id>'`. **Starting version**: a new
   account row (GitHub callback, Google callback, email registration) starts at a random `token_version` in
   1..2^31-1 (`newTokenVersion()` in `worker/src/util.ts`), and signing in again never changes it. Account keys
