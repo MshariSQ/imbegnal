@@ -178,6 +178,44 @@ Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by t
 **Roles**: `users.role` is `student` by default. Promote an instructor (analytics at `/api/instructor/analytics`) or admin
 (audit log) with `wrangler d1 execute` — see [`worker/README-lab.md`](../worker/README-lab.md).
 
+## Account deletion
+
+`DELETE /api/account` (`worker/src/account.ts`, the delete button on the dashboard) erases the account in one atomic D1
+batch: the user row, synced study state and notes, roadmap progress, bookmarks, Code Lab runs, snippets and lab
+progress, challenge progress and solves, and certificates. A suspended account cannot delete itself until the
+suspension ends (operators can still erase it on request).
+
+**What is kept, and why.** If deletion also erased the rows that rate limits and abuse checks count, "delete the
+account, sign up again" would hand out a fresh daily quota, a clean abuse history and new flag guesses. So the batch
+keeps, for at least as long as they count:
+
+| Kept | Counted by |
+|---|---|
+| today's `lab_usage` row (key, date, number) | Code Lab daily run quota |
+| today's `ai_usage` row (key, date, number) | AI tutor daily quota |
+| `abuse_signals` of the last 24 hours (kind and a fixed-format detail) | automatic suspension |
+| `challenge_attempts` of the last 24 hours (challenge id, correct or not, time; the submitted flag is never stored) | flag brute-force limits: 5 a minute and 30 an hour per challenge, 120 an hour overall |
+| `audit_log` | the operators' security record |
+
+Older rows of the four counter tables go with the account. The retained rows hold counters only, under the opaque account key:
+no email address, name, code, notes or other content. Nothing purges them afterwards (there is no scheduled job yet);
+a later deletion of the same key erases the ones that have stopped counting by then. The full list is in the comment
+at the top of `worker/src/lab/account-data.ts`.
+
+Every provider's key is deterministic, so signing up again lands on the same key and the retained rows apply again:
+
+- GitHub: the numeric GitHub user id.
+- Google: `google:<sub>`.
+- Email: `email:` + the first 32 hex characters of HMAC-SHA256(`JWT_SECRET`, `"imbegnal:email-account:v1|" + email`),
+  with the email trimmed and lower-cased exactly as at sign-in (`worker/src/auth-email.ts`). It is keyed because the
+  account key travels in the JWT `sub`: a plain hash of the email would let anyone confirm a guessed address. A
+  registration whose key is already in use answers `409 email_taken`, like a taken email.
+
+Email accounts created before the derived keys keep their random `email:<uuid>` key (sign-in looks accounts up by
+email). When such an account is deleted and the address registered again, the new account gets the derived key, so
+that one re-registration starts with fresh counters; after that the key is stable. Rotating `JWT_SECRET` likewise
+changes the key of later registrations (existing accounts keep theirs).
+
 ## Tests
 
 | Command | Needs | Covers |
