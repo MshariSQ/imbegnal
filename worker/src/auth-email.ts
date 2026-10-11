@@ -55,7 +55,18 @@ export async function handleRegister(req: Request, env: Env, origin: string): Pr
   const exists = await env.DB.prepare("SELECT 1 FROM users WHERE email = ? AND provider = 'email'").bind(email).first();
   if (exists) return json({ error: "email_taken" }, 409, origin);
 
-  const sub = `email:${crypto.randomUUID()}`;
+  // Deterministic, like GitHub ("<id>") and Google ("google:<sub>") keys, so deleting the account and
+  // registering again with the same email gets the same key back, and with it the counters that account
+  // deletion keeps (lab/account-data.ts). Keyed with JWT_SECRET because the key is the JWT `sub`: a plain
+  // hash would let anyone confirm a guessed email. Accounts created before this keep their
+  // email:<uuid> key (login looks them up by email).
+  const mac = await crypto.subtle.sign(
+    "HMAC",
+    await crypto.subtle.importKey("raw", new TextEncoder().encode(env.JWT_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]),
+    new TextEncoder().encode(`imbegnal:email-account:v1|${email}`),
+  );
+  const sub = `email:${Array.from(new Uint8Array(mac).slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("")}`;
+  if (await env.DB.prepare("SELECT 1 FROM users WHERE github_id = ?").bind(sub).first()) return json({ error: "email_taken" }, 409, origin);
   const displayName = name || email.split("@")[0];
   const username = await uniqueUsername(env, displayName);
   await env.DB.prepare(
