@@ -7,7 +7,8 @@
 //   ceiling (kill switch), 4. capped output + input sizes, 5. cached lesson
 //   block, 6. quota is refunded when the model call fails before any output.
 import Anthropic from "@anthropic-ai/sdk";
-import { type Env, NO_STORE, corsHeaders, getUser, isValidId, json, readJson } from "./util";
+import { type Env, NO_STORE, corsHeaders, isValidId, json, readJson } from "./util";
+import { LEGACY_401, requireAuth } from "./auth/guard";
 
 const DEFAULT_MODEL = "claude-opus-5-5"; // override with the AI_MODEL var (e.g. claude-sonnet-5-5, claude-haiku-4-5)
 const MAX_MESSAGES = 10; // the client sends the last few turns only
@@ -86,8 +87,9 @@ async function reserveQuota(env: Env, sub: string, day: string): Promise<Quota> 
 
 export async function handleTutor(req: Request, env: Env, origin: string, ctx: ExecutionContext): Promise<Response> {
   if (!env.ANTHROPIC_API_KEY) return json({ error: "ai_disabled" }, 503, origin, NO_STORE);
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   const body = await readJson(req);
   const messages = parseMessages(body?.messages);

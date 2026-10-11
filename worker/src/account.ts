@@ -1,7 +1,7 @@
 // Self-serve account deletion (privacy right to erasure) and anonymous usage events.
-import { type Env, NO_STORE, corsHeaders, getUser, json } from "./util";
+import { type Env, NO_STORE, corsHeaders, json } from "./util";
 import { labAccountDeleteStatements } from "./lab/account-data";
-import { isSuspended } from "./abuse";
+import { LEGACY_401, requireAuth } from "./auth/guard";
 import { audit } from "./audit";
 
 // ── DELETE /api/account ───────────────────────────────────────────────────────
@@ -11,10 +11,10 @@ import { audit } from "./audit";
 // signing in again (same GitHub/Google id) would lift the suspension. Operators can still
 // erase it on request.
 export async function handleAccountDelete(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
-  const id = user.sub;
-  if (await isSuspended(env, id)) {
+  const auth = await requireAuth(req, env, origin, { ...LEGACY_401, allowSuspended: true });
+  if (!auth.ok) return auth.response;
+  const id = auth.user.sub;
+  if (auth.user.suspended) {
     return json(
       { error: "account_suspended", message: "This account is suspended. You can delete it once the suspension ends, or ask us to." },
       409,

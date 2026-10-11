@@ -91,6 +91,19 @@ Lesson-side contract: `LabExerciseSection` in `data/lessons/types.ts`
 
 Status/error codes are listed at the top of `shared/api.ts`.
 
+**Auth** (`worker/src/auth/guard.ts`, the one guard of every protected Worker route):
+
+* `user`: a Bearer JWT that verifies, of an account that still exists, whose `tv` claim equals
+  `users.token_version` (a token without `tv` counts as 0); otherwise `401 unauthorized`. `POST /api/auth/logout`
+  increments the version, which revokes every earlier token of the account. A suspended account then gets
+  `403 account_suspended` (`until`, ISO, when the suspension has an end); an expired suspension is lifted (with an
+  `abuse.suspension_expired` audit row) by the next request to any guarded route. `/api/lab/run` and challenge
+  submissions are refused before any quota is reserved; `reserveQuota` re-checks the account and answers with the same body.
+* `optional`: the same guard, but a missing, invalid, revoked or deleted-account token reads as anonymous (never 401);
+  a suspended account still sees its own progress there.
+* `instructor/admin`: `user`, then the role read from D1 on this request (`403 forbidden` below it). The token never
+  carries a role; roles are granted only with `worker/scripts/grant-role.mjs` (docs/PLATFORM.md, "Owner provisioning").
+
 ### Quotas (Free vs Plus)
 
 The paid plan on the pricing page is **Pro** (`users.plan = 'pro'`); "Plus" in product copy means

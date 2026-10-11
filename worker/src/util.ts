@@ -108,10 +108,23 @@ export async function verifyJWT(token: string, secret: string): Promise<Record<s
 
 const TOKEN_TTL = 30 * 24 * 60 * 60;
 
-export function issueToken(user: TokenUser, env: Env): Promise<string> {
-  return signJWT({ ...user, exp: Math.floor(Date.now() / 1000) + TOKEN_TTL }, env.JWT_SECRET);
+/**
+ * Signs a session token for an account that exists (every issuer upserts the row first). It embeds the
+ * account's current users.token_version as `tv`, which auth/guard.ts compares on every request, so a
+ * logout revokes it. The payload is built field by field: a token never carries a role or a plan.
+ */
+export async function issueToken(user: TokenUser, env: Env): Promise<string> {
+  const row = await env.DB.prepare("SELECT token_version FROM users WHERE github_id = ?").bind(user.sub).first<{ token_version: number | null }>();
+  return signJWT(
+    { sub: user.sub, username: user.username, name: user.name, avatar: user.avatar, tv: row?.token_version ?? 0, exp: Math.floor(Date.now() / 1000) + TOKEN_TTL },
+    env.JWT_SECRET,
+  );
 }
 
+/**
+ * Signature and expiry check ONLY: no revocation, account or suspension check. Routes must use
+ * auth/guard.ts (requireAuth / optionalGuard) instead.
+ */
 export async function getUser(req: Request, env: Env) {
   const auth = req.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return null;

@@ -10,7 +10,7 @@
  *    `error` code to a localized message.
  *      400 invalid_request          malformed body / unknown language / too large
  *      401 unauthorized             missing or stale token
- *      403 account_suspended        abuse protection disabled the account
+ *      403 account_suspended        abuse protection (or an operator) disabled the account; `until` (ISO) when it ends
  *      403 forbidden                role required (instructor/admin)
  *      404 not_found
  *      429 quota_exceeded           see QuotaError.scope

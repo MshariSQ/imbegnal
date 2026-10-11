@@ -140,6 +140,7 @@ async function hasSolved(env: Env, userId: string, challengeId: string): Promise
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function handleSubmit(req: Request, env: Env, origin: string, id: string, deps: ChallengeDeps): Promise<Response> {
+  // The guard refuses suspended accounts (403 account_suspended) for flag and code submissions alike.
   const auth = await requireLiveUser(req, env, origin);
   if (!auth.ok) return auth.response;
   const entry = deps.registry.entry(id);
@@ -157,7 +158,6 @@ async function submitFlag(env: Env, origin: string, deps: ChallengeDeps, userId:
   const flag = body.flag;
   if (typeof flag !== "string" || flag.trim().length === 0) return apiError(origin, 400, "invalid_request", "flag is required");
   if (flag.length > SUBMIT_LIMITS.flagMaxChars) return apiError(origin, 400, "invalid_request", "flag is too long");
-  if (await deps.abuse.isSuspended(env, userId)) return apiError(origin, 403, "account_suspended", "This account is suspended.");
 
   const nowMs = deps.now();
   const attemptId = await recordAttempt(env, userId, meta.id, nowMs, false);

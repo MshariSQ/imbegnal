@@ -1,7 +1,10 @@
 // IMBEGNAL API — Cloudflare Worker + D1.
 // Routes: auth (GitHub, Google, email), profile, roadmap progress, bookmarks,
-// study-state sync and the AI tutor. Shared helpers live in util.ts.
-import { type Env, NO_STORE, corsHeaders, getCookie, getUser, isValidId, json, parseStateCookie, readJson, redirectWithToken, stateCookieValue } from "./util";
+// study-state sync and the AI tutor. Shared helpers live in util.ts. Every route
+// that needs a signed-in user authenticates through auth/guard.ts.
+import { type Env, NO_STORE, corsHeaders, getCookie, isValidId, json, parseStateCookie, readJson, redirectWithToken, stateCookieValue } from "./util";
+import { LEGACY_401, requireAuth } from "./auth/guard";
+import { handleLogout } from "./auth/logout";
 import { handleLogin, handleRegister } from "./auth-email";
 import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
 import { handleStateGet, handleStatePut } from "./state";
@@ -167,11 +170,15 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
 }
 
 // ── GET /api/auth/me ──────────────────────────────────────────────────────────
+// Answers for a suspended account too, so the site can say so: `suspended` and `suspended_until`
+// (ISO, null while indefinite or not suspended) are the only fields added to the profile row.
 async function handleMe(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, { ...LEGACY_401, allowSuspended: true });
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const row = await env.DB.prepare("SELECT github_id, username, name, avatar_url, email, bio, provider, plan, created_at FROM users WHERE github_id = ?").bind(user.sub).first();
-  return json(row, 200, origin, NO_STORE);
+  if (!row) return json({ error: "Unauthorized" }, 401, origin, NO_STORE); // deleted in between
+  return json({ ...row, suspended: user.suspended, suspended_until: user.suspendedUntil ?? null }, 200, origin, NO_STORE);
 }
 
 // ── GET /api/users/:username ──────────────────────────────────────────────────
@@ -216,8 +223,9 @@ async function handleProfile(username: string, env: Env, origin: string): Promis
 
 // ── GET /api/progress?roadmap_id=xxx ─────────────────────────────────────────
 async function handleProgressGet(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const roadmapId = new URL(req.url).searchParams.get("roadmap_id");
   if (!isValidId(roadmapId)) return json({ error: "invalid roadmap_id" }, 400, origin);
   const rows = await env.DB.prepare(
@@ -228,8 +236,9 @@ async function handleProgressGet(req: Request, env: Env, origin: string): Promis
 
 // ── POST /api/progress ────────────────────────────────────────────────────────
 async function handleProgressPost(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const body = await readJson(req);
   if (!body || !isValidId(body.roadmap_id) || !isValidId(body.node_id)) {
     return json({ error: "invalid roadmap_id or node_id" }, 400, origin);
@@ -242,8 +251,9 @@ async function handleProgressPost(req: Request, env: Env, origin: string): Promi
 
 // ── DELETE /api/progress ──────────────────────────────────────────────────────
 async function handleProgressDelete(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const body = await readJson(req);
   if (!body || !isValidId(body.roadmap_id) || !isValidId(body.node_id)) {
     return json({ error: "invalid roadmap_id or node_id" }, 400, origin);
@@ -256,8 +266,9 @@ async function handleProgressDelete(req: Request, env: Env, origin: string): Pro
 
 // ── GET /api/bookmarks ────────────────────────────────────────────────────────
 async function handleBookmarksGet(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const rows = await env.DB.prepare(
     "SELECT type, item_id, created_at FROM user_bookmarks WHERE github_id = ? ORDER BY created_at DESC"
   ).bind(user.sub).all();
@@ -266,8 +277,9 @@ async function handleBookmarksGet(req: Request, env: Env, origin: string): Promi
 
 // ── POST /api/bookmarks ───────────────────────────────────────────────────────
 async function handleBookmarksPost(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const body = await readJson(req);
   if (!body || (body.type !== "certification" && body.type !== "course") || !isValidId(body.item_id)) {
     return json({ error: "invalid type or item_id" }, 400, origin);
@@ -280,8 +292,9 @@ async function handleBookmarksPost(req: Request, env: Env, origin: string): Prom
 
 // ── DELETE /api/bookmarks ─────────────────────────────────────────────────────
 async function handleBookmarksDelete(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const body = await readJson(req);
   if (!body || (body.type !== "certification" && body.type !== "course") || !isValidId(body.item_id)) {
     return json({ error: "invalid type or item_id" }, 400, origin);
@@ -312,6 +325,7 @@ export default {
     if (pathname === "/api/auth/github") return handleAuthGitHub(req, env);
     if (pathname === "/api/auth/callback") return handleAuthCallback(req, env);
     if (pathname === "/api/auth/me") return handleMe(req, env, origin);
+    if (pathname === "/api/auth/logout" && req.method === "POST") return handleLogout(req, env, origin);
     if (pathname === "/api/auth/google") return handleGoogleStart(req, env, origin);
     if (pathname === "/api/auth/google/callback") return handleGoogleCallback(req, env);
     if (pathname === "/api/auth/register" && req.method === "POST") return handleRegister(req, env, origin);
