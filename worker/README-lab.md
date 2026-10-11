@@ -64,7 +64,7 @@ npx wrangler d1 migrations apply skillforge-db --remote --config wrangler.toml
 ```
 
 `lab_runs` keeps the learner's own copy of code, stdin and output (size-capped: 64 KiB code, 16 KiB each for stdin/stdout/stderr).
-`labAccountDeleteStatements()` in `worker/src/lab/account-data.ts` lists what an account erasure must delete; it takes effect once `handleAccountDelete` (`worker/src/account.ts`, not owned by Code Lab) includes it in its batch. `audit_log` is kept on purpose.
+`labAccountDeleteStatements()` in `worker/src/lab/account-data.ts` lists the Code Lab rows an account erasure deletes (runs, snippets, progress, `xp_ledger`, older `lab_usage` and `abuse_signals`); `handleAccountDelete` (`worker/src/account.ts`) runs them in its one atomic batch. `audit_log`, today's `lab_usage` and the last 24 hours of `abuse_signals` are kept on purpose ([docs/PLATFORM.md](../docs/PLATFORM.md#account-deletion), "What is kept, and why").
 
 ## Roles
 
