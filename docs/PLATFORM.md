@@ -26,7 +26,11 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
 * **Local-first**: progress, notes, XP and streak work for guests
   (`localStorage`). When signed in, `lib/sync.ts` merges with the server copy
   (union of completions, newest note wins, XP derived from per-lesson records so
-  merges never double-count) and pushes changes debounced.
+  merges never double-count) and pushes changes debounced. The Worker stores a sanitized
+  copy (`worker/src/state.ts`: catalog lessons only, each lesson's bonus clamped to what its
+  exercises and quizzes can award, sane timestamps). XP for graded lab exercises of
+  signed-in learners is awarded by the Worker (`xp_ledger`); every XP total in the UI comes
+  from `lib/xp.ts` (study-state XP, plus that lab XP when signed in).
 * **Sign-in**: GitHub and Google use the OAuth code flow on the Worker; the OAuth `state` round-trips
   through an HttpOnly cookie. The Worker hands the JWT back in the URL fragment
   (`/auth/callback/#token=...&nonce=...`). The `nonce` closes login CSRF on that last hop: the login
@@ -173,7 +177,7 @@ output size, status and timestamp — never environment, secrets or host paths.
 
 Until `RUNNER_URL` is set the site keeps working: lessons, challenges with flag answers and the in-browser JavaScript/Python
 fallback work, and server runs answer a friendly "runner unavailable" (not charged).
-Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by the normal deploy.
+Migrations `0004`–`0007` (Code Lab, challenges, certificates, XP ledger) are applied by the normal deploy.
 
 **Roles**: `users.role` is `student` by default. Promote an instructor (analytics at `/api/instructor/analytics`) or admin
 (audit log) with `wrangler d1 execute` — see [`worker/README-lab.md`](../worker/README-lab.md).

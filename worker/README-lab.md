@@ -8,10 +8,10 @@ The spec is `docs/CODE_LAB.md`; the wire types are `shared/api.ts` and `shared/p
 | Method and path | Auth | Purpose |
 | --- | --- | --- |
 | `GET /api/lab/languages` | public | Languages the runner can execute right now (`runner`: `up`, `down` or `unconfigured`). Cached 30 s per isolate (10 s when down). |
-| `POST /api/lab/run` | user | Run code (free run) or grade a lesson lab exercise (`ref.kind = "lesson"`, one quota unit for the whole graded submission). |
+| `POST /api/lab/run` | user | Run code (free run) or grade a lesson lab exercise (`ref.kind = "lesson"`, one quota unit for the whole graded submission). The first passing graded run awards the exercise's XP once (`xp_ledger`, migration 0007) and answers `xpAwarded`. |
 | `GET /api/lab/quota` | user | Used / limit / remaining for today and the next reset (00:00 UTC). |
 | `GET /api/lab/runs`, `GET /api/lab/runs/:id` | user | Own history only (cursor pagination with `?before=`); other users' ids answer 404. |
-| `GET /api/lab/progress` | user | Lab exercises the user passed. |
+| `GET /api/lab/progress` | user | Lab exercises the user passed, and the XP the Worker awarded them (`xp: { total, lab }`). |
 | `POST /api/lab/snippets`, `GET /api/lab/snippets/:id` | user / public | Immutable shareable snippets (200 per user, 20 per hour). |
 
 Challenge submissions are not handled here (`POST /api/challenges/:id/submit`); `ref.kind = "challenge"` on `/run` is a 400.
