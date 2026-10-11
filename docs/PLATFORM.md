@@ -69,6 +69,9 @@ builds `./out` itself when it is missing), deploy command `npx wrangler deploy`,
 
 ### One-time setup (no credentials are ever shared in chat or committed)
 
+Every secret and variable, where it is read, where it is set and whether it is required: [`docs/SECRETS.md`](SECRETS.md)
+(with the order for a first deploy).
+
 1. **Cloudflare API token** — dash.cloudflare.com → My Profile → API Tokens → Create Token → **Create Custom Token** with exactly:
    **Account › Workers Scripts › Edit** and **Account › D1 › Edit**; Account Resources: your account only; **no Zone permissions**
    (the "Edit Cloudflare Workers" template also grants route access on every domain in the account, which CI does not need).
