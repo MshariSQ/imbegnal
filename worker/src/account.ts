@@ -25,15 +25,18 @@ export async function handleAccountDelete(req: Request, env: Env, origin: string
   await audit(env, { userId: id, action: "account.delete", detail: "self-serve erasure" });
   await env.DB.batch([
     env.DB.prepare("DELETE FROM user_state WHERE github_id = ?").bind(id),
-    env.DB.prepare("DELETE FROM ai_usage WHERE github_id = ?").bind(id),
+    // Today's AI tutor counter is kept, older days are erased (why: lab/account-data.ts).
+    env.DB.prepare("DELETE FROM ai_usage WHERE github_id = ? AND day < date('now')").bind(id),
     env.DB.prepare("DELETE FROM user_roadmap_progress WHERE github_id = ?").bind(id),
     env.DB.prepare("DELETE FROM user_bookmarks WHERE github_id = ?").bind(id),
     // Code Lab runs/snippets/quotas/progress and Challenges progress, solves,
     // attempts and certificates (audit_log is kept on purpose: operators' security record).
     ...labAccountDeleteStatements(env, id),
-    ...["challenge_progress", "challenge_solves", "challenge_attempts", "certificates"].map((t) =>
+    ...["challenge_progress", "challenge_solves", "certificates"].map((t) =>
       env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(id)
     ),
+    // Flag attempts of the last 24 hours are kept (the brute-force limits count them), older ones erased.
+    env.DB.prepare("DELETE FROM challenge_attempts WHERE user_id = ? AND at < datetime('now', '-1 day')").bind(id),
     env.DB.prepare("DELETE FROM users WHERE github_id = ?").bind(id),
   ]);
   return json({ ok: true }, 200, origin, NO_STORE);

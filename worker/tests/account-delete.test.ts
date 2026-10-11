@@ -24,7 +24,7 @@ function seed(id: string) {
   db.execute("INSERT INTO abuse_signals (user_id, kind, at) VALUES (?, 'resource', '2026-01-01 00:00:00')", id);
   db.execute("INSERT INTO challenge_progress (user_id, challenge_id) VALUES (?, 'x')", id);
   db.execute("INSERT INTO challenge_solves (challenge_id, user_id, points) VALUES ('x', ?, 50)", id);
-  db.execute("INSERT INTO challenge_attempts (user_id, challenge_id, correct) VALUES (?, 'x', 0)", id);
+  db.execute("INSERT INTO challenge_attempts (user_id, challenge_id, correct, at) VALUES (?, 'x', 0, '2026-01-01 00:00:00')", id);
   db.execute("INSERT INTO certificates (code, user_id, track, recipient) VALUES (?, ?, 'frontend', 'R')", `IMB-${id}`, id);
   db.execute("INSERT INTO audit_log (user_id, action, detail) VALUES (?, 'abuse.signal', 'kept')", id);
 }

@@ -4,8 +4,19 @@
 //
 // Kept on purpose, because deleting them would let "delete account, sign in again" reset
 // the controls (security review finding): audit_log rows (the operators' security record),
-// TODAY's lab_usage counter (id, date, number) and abuse signals from the last 24 hours
-// (kind + a fixed-format detail, no content). Older counters and signals are erased.
+// and everything a rate limit or abuse check counts, for at least as long as it counts:
+//   - TODAY's lab_usage counter (id, date, number): the daily Code Lab run quota;
+//   - TODAY's ai_usage counter (id, date, number): the AI tutor's daily quota (account.ts);
+//   - abuse signals from the last 24 hours (kind + a fixed-format detail, no content):
+//     automatic suspension counts them;
+//   - challenge_attempts from the last 24 hours (id, challenge id, correct yes/no, time; the
+//     submitted flag is never stored): the flag brute-force limits count them (account.ts).
+// Older counters, signals and attempts are erased, and so is all user content (code, snippets,
+// notes, study state, progress, solves, certificates). What is kept is counters only, under the
+// opaque account key alone (GitHub's numeric id, google:<sub>, email:<keyed hash> from
+// auth-email.ts, or the email:<uuid> of older email accounts): no email address, name or content.
+// Every provider's key is deterministic, so signing up again with the same GitHub or Google
+// account or the same email address gets the same key and is still counted by these rows.
 import type { Env } from "../util";
 import { utcDay } from "./config";
 
