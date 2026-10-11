@@ -137,32 +137,36 @@ describe("every issuer embeds the current token_version as `tv`", () => {
     ["GitHub", "4242", "/api/auth/github", "/api/auth/callback", "sf_oauth_state"],
     ["Google", "google:77", "/api/auth/google", "/api/auth/google/callback", "imb_google_state"],
   ] as const) {
-    test(`${name} callback: a new account gets tv 0; a returning one its current version, and the old token stays revoked`, async () => {
+    test(`${name} callback: a new account gets its random starting version; a returning one its current version, and the old token stays revoked`, async () => {
       const first = await oauthToken(start, callback, cookie);
       assert.equal(claims(first).sub, sub);
-      assert.equal(claims(first).tv, 0);
+      const start0 = version(sub);
+      assert.ok(start0 >= 1, "new accounts start at a random positive version (recreate-revocation.test.ts)");
+      assert.equal(claims(first).tv, start0);
       assert.equal((await me(first)).status, 200);
 
       assert.equal((await logout(first)).status, 200);
       const second = await oauthToken(start, callback, cookie);
-      assert.equal(claims(second).tv, 1);
+      assert.equal(claims(second).tv, start0 + 1);
       assert.equal((await me(second)).status, 200, "the new sign-in works");
       assert.equal((await me(first)).status, 401, "signing in again does not revive the old token");
     });
   }
 
-  test("email register (tv 0) and login (current version)", async () => {
+  test("email register (the random starting version) and login (current version)", async () => {
     const reg = await call(env, "/api/auth/register", { body: { name: "Ema", email: "ema@example.com", password: "correct horse battery" } });
     assert.equal(reg.status, 201);
     const t0 = (await jsonOf<{ token: string }>(reg)).token;
-    assert.equal(claims(t0).tv, 0);
+    const start0 = version(claims(t0).sub as string);
+    assert.ok(start0 >= 1);
+    assert.equal(claims(t0).tv, start0);
     assert.equal((await logout(t0)).status, 200);
     assert.equal((await logout(t0)).status, 401);
 
     const login = await call(env, "/api/auth/login", { body: { email: "ema@example.com", password: "correct horse battery" } });
     assert.equal(login.status, 200);
     const t1 = (await jsonOf<{ token: string }>(login)).token;
-    assert.equal(claims(t1).tv, 1);
+    assert.equal(claims(t1).tv, start0 + 1);
     assert.equal((await me(t1)).status, 200);
   });
 });

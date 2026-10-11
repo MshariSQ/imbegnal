@@ -2,7 +2,7 @@
 // Enabled only when GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are configured.
 // Mirrors the GitHub flow: CSRF state round-trips through an HttpOnly cookie,
 // together with the optional login nonce ("<state>.<nonce>", see util.ts).
-import { type Env, getCookie, json, parseStateCookie, redirectWithToken, stateCookieValue, uniqueUsername } from "./util";
+import { type Env, getCookie, json, newTokenVersion, parseStateCookie, redirectWithToken, stateCookieValue, uniqueUsername } from "./util";
 
 const STATE_COOKIE = "imb_google_state";
 
@@ -78,12 +78,12 @@ export async function handleGoogleCallback(req: Request, env: Env): Promise<Resp
     const username = existing?.username ?? (await uniqueUsername(env, name));
 
     await env.DB.prepare(
-      `INSERT INTO users (github_id, username, name, avatar_url, email, bio, provider, last_login)
-       VALUES (?, ?, ?, ?, ?, '', 'google', CURRENT_TIMESTAMP)
+      `INSERT INTO users (github_id, username, name, avatar_url, email, bio, provider, last_login, token_version)
+       VALUES (?, ?, ?, ?, ?, '', 'google', CURRENT_TIMESTAMP, ?)
        ON CONFLICT(github_id) DO UPDATE SET
          name = excluded.name, avatar_url = excluded.avatar_url,
          email = excluded.email, last_login = CURRENT_TIMESTAMP`
-    ).bind(sub, username, name, profile.picture ?? "", profile.email_verified ? profile.email ?? "" : "").run();
+    ).bind(sub, username, name, profile.picture ?? "", profile.email_verified ? profile.email ?? "" : "", newTokenVersion()).run(); // token_version: new rows only (util.ts)
 
     return redirectWithToken({ sub, username, name, avatar: profile.picture ?? "" }, env, { "Set-Cookie": clearState }, nonce);
   } catch (e) {

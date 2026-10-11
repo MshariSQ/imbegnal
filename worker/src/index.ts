@@ -2,7 +2,7 @@
 // Routes: auth (GitHub, Google, email), profile, roadmap progress, bookmarks,
 // study-state sync and the AI tutor. Shared helpers live in util.ts. Every route
 // that needs a signed-in user authenticates through auth/guard.ts.
-import { type Env, NO_STORE, corsHeaders, getCookie, isValidId, json, parseStateCookie, readJson, redirectWithToken, stateCookieValue } from "./util";
+import { type Env, NO_STORE, corsHeaders, getCookie, isValidId, json, newTokenVersion, parseStateCookie, readJson, redirectWithToken, stateCookieValue } from "./util";
 import { LEGACY_401, requireAuth } from "./auth/guard";
 import { handleLogout } from "./auth/logout";
 import { handleLogin, handleRegister } from "./auth-email";
@@ -149,14 +149,14 @@ async function handleAuthCallback(req: Request, env: Env): Promise<Response> {
     })).json() as { id: number; login: string; name: string; avatar_url: string; email: string; bio: string };
 
     await env.DB.prepare(`
-      INSERT INTO users (github_id, username, name, avatar_url, email, bio, last_login)
-      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO users (github_id, username, name, avatar_url, email, bio, last_login, token_version)
+      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
       ON CONFLICT(github_id) DO UPDATE SET
         username = excluded.username, name = excluded.name,
         avatar_url = excluded.avatar_url, email = excluded.email,
         bio = excluded.bio, last_login = CURRENT_TIMESTAMP
     `).bind(String(ghUser.id), ghUser.login, ghUser.name || ghUser.login,
-      ghUser.avatar_url, ghUser.email || "", ghUser.bio || "").run();
+      ghUser.avatar_url, ghUser.email || "", ghUser.bio || "", newTokenVersion()).run(); // token_version: new rows only (util.ts)
 
     return redirectWithToken(
       { sub: String(ghUser.id), username: ghUser.login, name: ghUser.name || ghUser.login, avatar: ghUser.avatar_url },

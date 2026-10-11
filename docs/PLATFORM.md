@@ -52,7 +52,13 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   revokes every token of the account on every device (there is no per-device sign-out); the site then
   clears its copy, and a tab whose token the Worker rejects with `401` on the study-state sync signs itself
   out. Operators can end all sessions of an account with
-  `UPDATE users SET token_version = token_version + 1 WHERE github_id = '<id>'`.
+  `UPDATE users SET token_version = token_version + 1 WHERE github_id = '<id>'`. **Starting version**: a new
+  account row (GitHub callback, Google callback, email registration) starts at a random `token_version` in
+  1..2^31-1 (`newTokenVersion()` in `worker/src/util.ts`), and signing in again never changes it. Account keys
+  are deterministic (see [Account deletion](#account-deletion)), so an account that is deleted and created
+  again gets the same key; the fresh random version means a token issued to the deleted account (its old `tv`,
+  or no `tv`) is refused (`worker/tests/recreate-revocation.test.ts`). Accounts created before this keep
+  version 0, so their current tokens keep working.
 * **Theming**: semantic tokens in `app/globals.css` (`bg-surface`, `text-fg-muted`,
   `border-line`, …) flip on `<html data-theme>`. A tiny inline script applies the
   saved/system theme and RTL before first paint (no flash).
@@ -266,7 +272,7 @@ changes the key of later registrations (existing accounts keep theirs).
 | `npx eslint .` | — | lint |
 | `npm run check:catalog` | — | `worker/src/generated/catalog.ts` matches the lesson/challenge data (`npm run gen:catalog` to refresh) |
 | `npm run test:unit` | host toolchains (optional) | contracts, output matching, curricula, canonical names, lessons; every lab and challenge reference solution is run against its tests on the host toolchains that exist (missing ones are skipped) |
-| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce, the auth guard on every protected route (revoked tokens, deleted accounts, suspensions, roles), logout and `tv` issuance, role/plan never client-writable, the role CLI |
+| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce, the auth guard on every protected route (revoked tokens, deleted accounts, suspensions, roles), logout and `tv` issuance (a deleted, re-created account refuses the old tokens), role/plan never client-writable, the role CLI |
 | `npm run test:runner` | Docker + `runner/image/build.sh slim` | the sandbox against a real Docker daemon: per-language Hello World, stdout/stderr, timeouts, memory, fork bombs, output floods, no network, no persistence, read-only root, uid, HMAC/replay |
 | `npm run test:e2e` | Docker, a runner image, `worker/node_modules`, Chromium | the real stack (runner + `wrangler dev` with local D1 and the real migrations + the exported site + Playwright): Hello World in Python/JS/Java/C/C++ through the UI, stdout vs stderr, infinite loop killed, network blocked, quota exhaustion message and refunds, lesson → "Try in Code Lab" → starter code → pass → XP, challenge solve → points |
 | `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard, the sign-in callback (login nonce) and sign-out (server revocation, a revoked token signs the tab out); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
@@ -345,10 +351,7 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
   checked, and when the API is the new one or its generation cannot be determined, a missing nonce is
   refused. The window closes as soon as the new Worker is deployed; no site change is needed then.
 - Sessions are revoked per account: signing out ends every session of the account, and a token otherwise stays valid until
-  it expires (30 days) unless the account signs out or is deleted, or an operator bumps `token_version`. If a deleted
-  account is created again with the same GitHub or Google id, its `token_version` starts at 0 again, so an unexpired token
-  from before the deletion would be accepted again. Close this together with the re-registration controls (carry the last
-  version over, or refuse tokens whose `iat` is older than `users.created_at`).
+  it expires (30 days) unless the account signs out or is deleted, or an operator bumps `token_version`.
 - Rate limiting is per-isolate (per IP: 60 requests/min, 10/min on `/api/auth/*`; override with the
   `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_AUTH_PER_MIN` variables); move to a Durable Object or Cloudflare Rate
   Limiting rules before large launches.

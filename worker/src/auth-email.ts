@@ -2,7 +2,7 @@
 // Passwords are hashed with PBKDF2-SHA256 (100k iterations — the Workers
 // runtime maximum) and a per-user random salt. Stored as
 // `pbkdf2$<iterations>$<salt b64>$<hash b64>` so parameters can evolve.
-import { type Env, b64ToBytes, bytesToB64, issueToken, json, readJson, uniqueUsername } from "./util";
+import { type Env, b64ToBytes, bytesToB64, issueToken, json, newTokenVersion, readJson, uniqueUsername } from "./util";
 
 const ITERATIONS = 100_000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -70,9 +70,9 @@ export async function handleRegister(req: Request, env: Env, origin: string): Pr
   const displayName = name || email.split("@")[0];
   const username = await uniqueUsername(env, displayName);
   await env.DB.prepare(
-    `INSERT INTO users (github_id, username, name, avatar_url, email, bio, provider, password_hash, last_login)
-     VALUES (?, ?, ?, '', ?, '', 'email', ?, CURRENT_TIMESTAMP)`
-  ).bind(sub, username, displayName, email, await hashPassword(password)).run();
+    `INSERT INTO users (github_id, username, name, avatar_url, email, bio, provider, password_hash, last_login, token_version)
+     VALUES (?, ?, ?, '', ?, '', 'email', ?, CURRENT_TIMESTAMP, ?)`
+  ).bind(sub, username, displayName, email, await hashPassword(password), newTokenVersion()).run(); // random start: util.ts newTokenVersion
 
   const token = await issueToken({ sub, username, name: displayName, avatar: "" }, env);
   return json({ token }, 201, origin, { "Cache-Control": "no-store" });

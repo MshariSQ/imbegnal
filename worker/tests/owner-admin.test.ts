@@ -33,7 +33,8 @@ describe("email registration and login", () => {
     assert.equal(res.status, 201);
     const rows = account("email = ?", "m@example.com");
     assert.equal(rows.length, 1);
-    assert.deepEqual({ ...rows[0], github_id: undefined }, { github_id: undefined, role: "student", plan: "free", status: "active", provider: "email", token_version: 0 });
+    assert.deepEqual({ ...rows[0], github_id: undefined, token_version: undefined }, { github_id: undefined, role: "student", plan: "free", status: "active", provider: "email", token_version: undefined });
+    assert.ok(rows[0].token_version >= 1 && rows[0].token_version !== 99, "a random starting version (recreate-revocation.test.ts), not the smuggled one");
     assert.notEqual(rows[0].github_id, "1");
     const token = (await jsonOf<{ token: string }>(res)).token;
     assert.deepEqual(Object.keys(claims(token)).sort(), TOKEN_CLAIMS);
