@@ -1,5 +1,6 @@
 // Small request/response helpers shared by the Challenges, certificate and instructor handlers.
-import { type Env, NO_STORE, getUser, json } from "../util";
+import { type GuardOptions, optionalGuard, requireAuth } from "../auth/guard";
+import { type Env, NO_STORE, json } from "../util";
 
 export interface AuthedUser {
   sub: string;
@@ -12,36 +13,30 @@ export function apiError(origin: string, status: number, error: string, message?
   return json({ error, ...(message ? { message } : {}), ...extra }, status, origin, { ...NO_STORE, ...headers });
 }
 
-const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
+const authed = (u: { sub: string; username?: string; name?: string }): AuthedUser => ({ sub: u.sub, username: u.username, name: u.name });
 
-/** The caller when a valid token is present; null otherwise. Never throws, never 401s. */
+/**
+ * The caller of a public route that personalises its answer (challenge list, leaderboard); null for
+ * anonymous callers and for missing, invalid, expired or revoked tokens and deleted accounts
+ * (auth/guard.ts optionalGuard). A suspended account still reads its own public progress. Never throws, never 401s.
+ */
 export async function optionalUser(req: Request, env: Env): Promise<AuthedUser | null> {
-  try {
-    const u = await getUser(req, env);
-    if (!u || typeof u.sub !== "string" || u.sub.length === 0) return null;
-    return { sub: u.sub, username: str(u.username), name: str(u.name) };
-  } catch {
-    return null;
-  }
-}
-
-export async function requireUser(req: Request, env: Env, origin: string): Promise<{ ok: true; user: AuthedUser } | { ok: false; response: Response }> {
-  const user = await optionalUser(req, env);
-  if (!user) return { ok: false, response: apiError(origin, 401, "unauthorized") };
-  return { ok: true, user };
+  const u = await optionalGuard(req, env, { allowSuspended: true });
+  return u ? authed(u) : null;
 }
 
 /**
- * Like requireUser, and the account must still exist: a valid token of a deleted account
- * must not be able to create progress rows (same rule as PUT /api/state).
+ * auth/guard.ts for the Challenges and certificate routes: a valid, unrevoked token of an account
+ * that still exists (a deleted account must not create progress rows) and is not suspended.
+ * 401 unauthorized, 403 account_suspended.
  */
-export async function requireLiveUser(req: Request, env: Env, origin: string): Promise<{ ok: true; user: AuthedUser } | { ok: false; response: Response }> {
-  const auth = await requireUser(req, env, origin);
-  if (!auth.ok) return auth;
-  const row = await env.DB.prepare("SELECT 1 AS ok FROM users WHERE github_id = ?").bind(auth.user.sub).first<{ ok: number }>();
-  if (!row) return { ok: false, response: apiError(origin, 401, "unauthorized") };
-  return auth;
+export async function requireLiveUser(req: Request, env: Env, origin: string, opts: GuardOptions = {}): Promise<{ ok: true; user: AuthedUser } | { ok: false; response: Response }> {
+  const auth = await requireAuth(req, env, origin, opts);
+  return auth.ok ? { ok: true, user: authed(auth.user) } : auth;
 }
+
+/** Same as requireLiveUser (kept for existing callers). */
+export const requireUser = requireLiveUser;
 
 /** Reads a JSON object body, refusing to buffer more than `maxBytes`. */
 export async function readBoundedJson(req: Request, maxBytes: number): Promise<{ ok: true; body: Record<string, unknown> } | { ok: false; reason: "invalid" | "too_large" }> {

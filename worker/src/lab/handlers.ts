@@ -13,7 +13,7 @@ import { recordAbuseSignal } from "../abuse";
 import { type Env, json } from "../util";
 import { getQuotaInfo, recordRun, reserveQuota, settleQuota, toPublicResult } from "./execute";
 import { findLab, gradeLab } from "./grade";
-import { apiError, authenticate, readBody, reply, requireActiveUser, toIso } from "./http";
+import { apiError, readBody, reply, requireActiveUser, toIso } from "./http";
 import { getLanguages, runOnRunner } from "./runner";
 import { handleSnippetCreate, handleSnippetGet } from "./snippets";
 import { looksLikeNetworkProbe } from "./suspicious";
@@ -28,8 +28,9 @@ async function handleLanguages(env: Env, origin: string): Promise<Response> {
 
 // ── POST /api/lab/run ─────────────────────────────────────────────────────────
 async function handleRun(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await authenticate(req, env);
-  if (!user) return apiError("unauthorized", 401, origin);
+  const auth = await requireActiveUser(req, env, origin);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   const body = await readBody(req);
   if (!body.ok) return apiError("invalid_request", 400, origin, "The body must be a JSON object of at most 200 KiB.");

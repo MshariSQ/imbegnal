@@ -10,6 +10,7 @@ import type { LangId } from "../../../shared/languages";
 import type { Plan, PublicRunResult, QuotaError, QuotaInfo, RunRef } from "../../../shared/api";
 import type { RunResult, RunStatus } from "../../../shared/protocol";
 import { evaluateSuspension, recordAbuseSignal } from "../abuse";
+import { sqlToIso, suspendedBody } from "../auth/guard";
 import type { Env } from "../util";
 import {
   GLOBAL_BUCKET,
@@ -86,8 +87,10 @@ export async function reserveQuota(env: Env, user: LabUser, units = 1, origin = 
     .first<{ plan: string | null; status: string | null; suspended_until: string | null }>();
   // A deleted account with a still-valid token must not keep running code.
   if (!row) return deny("unauthorized", 401, "Sign in again.");
+  // Every caller has passed auth/guard.ts already (it lifts an expired suspension, with its audit row, and
+  // refuses a suspended account), so this only catches a suspension that began since, with the same body.
   if (await evaluateSuspension(env, user.sub, row)) {
-    return deny("account_suspended", 403, "This account is suspended after automated abuse protection triggered.");
+    return { ok: false, response: reply(suspendedBody(sqlToIso(row.suspended_until)), 403, origin) };
   }
 
   const plan = planOf(row.plan);
