@@ -1,13 +1,15 @@
 // Study-state sync: one JSON document per user (progress, XP sources, streak
 // days, notes). The client merges server + local copies before pushing, so the
 // server just stores the latest merged document.
-import { type Env, NO_STORE, getUser, json, readJson } from "./util";
+import { type Env, NO_STORE, json, readJson } from "./util";
+import { LEGACY_401, requireAuth } from "./auth/guard";
 
 const MAX_BYTES = 512 * 1024;
 
 export async function handleStateGet(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const row = await env.DB.prepare("SELECT data FROM user_state WHERE github_id = ?").bind(user.sub).first<{ data: string }>();
   let data: unknown = null;
   try {
@@ -19,8 +21,9 @@ export async function handleStateGet(req: Request, env: Env, origin: string): Pr
 }
 
 export async function handleStatePut(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
   const body = await readJson(req);
   const data = body?.data as { v?: unknown } | undefined;
   if (!data || typeof data !== "object" || data.v !== 1) return json({ error: "invalid_state" }, 400, origin);
