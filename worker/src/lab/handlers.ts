@@ -76,6 +76,7 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
     const runId = await recordRun(env, {
       id: reservation.runId,
       userId: user.sub,
+      tokenVersion: user.tokenVersion,
       ref,
       lang,
       result,
@@ -87,6 +88,8 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
     // together, and the ledger's primary key awards each exercise once per user. A pass
     // recorded before the ledger existed already earned its XP in the synced study state,
     // so it earns no ledger XP (NOT EXISTS runs before this batch records the pass).
+    // Both are written only while the account is still the one the guard saw (token_version),
+    // like recordRun: a run that outlives DELETE /api/account writes nothing and awards 0.
     let xpAwarded: number | undefined;
     if (ref.kind === "lesson" && grade) {
       xpAwarded = 0;
@@ -95,9 +98,13 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
         const [ledger] = await env.DB.batch([
           env.DB.prepare(
             `INSERT OR IGNORE INTO xp_ledger (user_id, source, ref, xp)
-             SELECT ?1, 'lab', ?2, ?3 WHERE NOT EXISTS (SELECT 1 FROM lab_progress WHERE user_id = ?1 AND ref = ?2)`,
-          ).bind(user.sub, labRef, LAB_XP),
-          env.DB.prepare("INSERT OR IGNORE INTO lab_progress (user_id, ref) VALUES (?, ?)").bind(user.sub, labRef),
+             SELECT ?1, 'lab', ?2, ?3 WHERE NOT EXISTS (SELECT 1 FROM lab_progress WHERE user_id = ?1 AND ref = ?2)
+               AND EXISTS (SELECT 1 FROM users WHERE github_id = ?1 AND token_version = ?4)`,
+          ).bind(user.sub, labRef, LAB_XP, user.tokenVersion),
+          env.DB.prepare(
+            `INSERT OR IGNORE INTO lab_progress (user_id, ref)
+             SELECT ?1, ?2 WHERE EXISTS (SELECT 1 FROM users WHERE github_id = ?1 AND token_version = ?3)`,
+          ).bind(user.sub, labRef, user.tokenVersion),
         ]);
         xpAwarded = ledger.meta.changes > 0 ? LAB_XP : 0;
       }

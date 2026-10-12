@@ -12,7 +12,7 @@ import { LANG_IDS, type LangId } from "../../../shared/languages";
 import { buildProgram, gradeFlag, gradeTests } from "../graders/engine";
 import { looksLikeNetworkProbe } from "../lab/suspicious";
 import { type Env, json } from "../util";
-import { apiError, parseSqlTime, readBoundedJson, requireLiveUser, sqlTime } from "./http";
+import { type AuthedUser, apiError, parseSqlTime, readBoundedJson, requireLiveUser, sqlTime } from "./http";
 import { awardFor } from "./progress";
 import type { ChallengeDeps } from "./types";
 
@@ -27,10 +27,16 @@ export const FLAG_LIMITS = { perMinute: 5, perHour: 30, perHourAllChallenges: 12
 const MINUTE_MS = 60_000;
 const HOUR_MS = 3_600_000;
 
+// Per-user rows written after grading (solves, progress) need the account to still be the one the guard
+// saw (token_version ?n): a submission that outlives DELETE /api/account, or the account being created
+// again under the same key, must not write them back (lab/http.ts LabUser.tokenVersion). The attempt log
+// (challenge_attempts) is a rate-limit counter that account deletion keeps on purpose, so it is not gated.
+const ALIVE = (sub: string, tv: string) => `EXISTS (SELECT 1 FROM users WHERE github_id = ${sub} AND token_version = ${tv})`;
+
 const INSERT_SOLVE = `
 INSERT OR IGNORE INTO challenge_solves (challenge_id, user_id, points, first_blood, minutes_to_solve, solved_at)
 SELECT ?1, ?2, ?3, ?4, ?5, ?6
-WHERE NOT EXISTS (SELECT 1 FROM challenge_solves WHERE challenge_id = ?1 AND user_id = ?2)`;
+WHERE NOT EXISTS (SELECT 1 FROM challenge_solves WHERE challenge_id = ?1 AND user_id = ?2) AND ${ALIVE("?2", "?7")}`;
 
 const noStore = { "Cache-Control": "no-store" };
 
@@ -43,12 +49,12 @@ async function recordAttempt(env: Env, userId: string, challengeId: string, atMs
   return Number(res.meta.last_row_id);
 }
 
-async function bumpAttempts(env: Env, userId: string, challengeId: string): Promise<void> {
+async function bumpAttempts(env: Env, user: AuthedUser, challengeId: string): Promise<void> {
   await env.DB.prepare(
-    `INSERT INTO challenge_progress (user_id, challenge_id, attempts) VALUES (?1, ?2, 1)
+    `INSERT INTO challenge_progress (user_id, challenge_id, attempts) SELECT ?1, ?2, 1 WHERE ${ALIVE("?1", "?3")}
      ON CONFLICT(user_id, challenge_id) DO UPDATE SET attempts = attempts + 1`,
   )
-    .bind(userId, challengeId)
+    .bind(user.sub, challengeId, user.tokenVersion)
     .run();
 }
 
@@ -93,7 +99,8 @@ async function flagRetryAfter(env: Env, userId: string, challengeId: string, now
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-async function awardSolve(env: Env, deps: ChallengeDeps, userId: string, meta: ChallengeMeta): Promise<{ awarded: number; firstBlood: boolean; alreadySolved: boolean }> {
+async function awardSolve(env: Env, deps: ChallengeDeps, user: AuthedUser, meta: ChallengeMeta): Promise<{ awarded: number; firstBlood: boolean; alreadySolved: boolean }> {
+  const userId = user.sub;
   const prog = await env.DB.prepare("SELECT first_opened_at, hint_mask FROM challenge_progress WHERE user_id = ? AND challenge_id = ?")
     .bind(userId, meta.id)
     .first<{ first_opened_at: string | null; hint_mask: number }>();
@@ -105,12 +112,12 @@ async function awardSolve(env: Env, deps: ChallengeDeps, userId: string, meta: C
 
   // Try to be first: the partial unique index lets exactly one row per challenge carry
   // first_blood = 1; OR IGNORE turns losing the race (or an existing solve) into 0 changes.
-  const first = await env.DB.prepare(INSERT_SOLVE).bind(meta.id, userId, points, 1, minutes, at).run();
+  const first = await env.DB.prepare(INSERT_SOLVE).bind(meta.id, userId, points, 1, minutes, at, user.tokenVersion).run();
   let firstBlood = first.meta.changes === 1;
   let inserted = firstBlood;
   if (!firstBlood) {
     // Either somebody else already holds first blood, or this learner has solved it before.
-    const second = await env.DB.prepare(INSERT_SOLVE).bind(meta.id, userId, points, 0, minutes, at).run();
+    const second = await env.DB.prepare(INSERT_SOLVE).bind(meta.id, userId, points, 0, minutes, at, user.tokenVersion).run();
     inserted = second.meta.changes === 1;
     firstBlood = false;
   }
@@ -121,15 +128,16 @@ async function awardSolve(env: Env, deps: ChallengeDeps, userId: string, meta: C
     .first<{ points: number; solved_at: string }>();
   if (solve) {
     await env.DB.prepare(
-      `INSERT INTO challenge_progress (user_id, challenge_id, solved_at, points) VALUES (?1, ?2, ?3, ?4)
+      `INSERT INTO challenge_progress (user_id, challenge_id, solved_at, points) SELECT ?1, ?2, ?3, ?4 WHERE ${ALIVE("?1", "?5")}
        ON CONFLICT(user_id, challenge_id) DO UPDATE SET
          solved_at = COALESCE(solved_at, excluded.solved_at),
          points = CASE WHEN solved_at IS NULL THEN excluded.points ELSE points END`,
     )
-      .bind(userId, meta.id, solve.solved_at, solve.points)
+      .bind(userId, meta.id, solve.solved_at, solve.points, user.tokenVersion)
       .run();
   }
-  return { awarded: inserted ? points : 0, firstBlood, alreadySolved: !inserted };
+  // No solve row at all: the account is gone, nothing was booked (not "already solved").
+  return { awarded: inserted ? points : 0, firstBlood, alreadySolved: !inserted && solve !== null };
 }
 
 async function hasSolved(env: Env, userId: string, challengeId: string): Promise<boolean> {
@@ -150,11 +158,12 @@ export async function handleSubmit(req: Request, env: Env, origin: string, id: s
   if (!read.ok) return apiError(origin, 400, "invalid_request", read.reason === "too_large" ? "request body too large" : "expected a JSON body");
 
   const { meta, grader } = entry;
-  if (grader.kind === "flag") return submitFlag(env, origin, deps, auth.user.sub, meta, grader, read.body);
+  if (grader.kind === "flag") return submitFlag(env, origin, deps, auth.user, meta, grader, read.body);
   return submitCode(env, origin, deps, auth.user, meta, grader, read.body);
 }
 
-async function submitFlag(env: Env, origin: string, deps: ChallengeDeps, userId: string, meta: ChallengeMeta, grader: FlagGrader, body: Record<string, unknown>): Promise<Response> {
+async function submitFlag(env: Env, origin: string, deps: ChallengeDeps, user: AuthedUser, meta: ChallengeMeta, grader: FlagGrader, body: Record<string, unknown>): Promise<Response> {
+  const userId = user.sub;
   const flag = body.flag;
   if (typeof flag !== "string" || flag.trim().length === 0) return apiError(origin, 400, "invalid_request", "flag is required");
   if (flag.length > SUBMIT_LIMITS.flagMaxChars) return apiError(origin, 400, "invalid_request", "flag is too long");
@@ -167,7 +176,7 @@ async function submitFlag(env: Env, origin: string, deps: ChallengeDeps, userId:
     await deps.abuse.recordAbuseSignal(env, userId, "bruteforce", `challenge=${meta.id} too many wrong flags`).catch(() => undefined);
     return apiError(origin, 429, "rate_limited", "Too many wrong attempts. Wait a moment before trying again.", { scope: "rate", retryAfterSec: retryAfter }, { "Retry-After": String(retryAfter) });
   }
-  await bumpAttempts(env, userId, meta.id);
+  await bumpAttempts(env, user, meta.id);
 
   const correct = await gradeFlag(grader, flag);
   if (!correct) {
@@ -175,7 +184,7 @@ async function submitFlag(env: Env, origin: string, deps: ChallengeDeps, userId:
     return json(body, 200, origin, noStore);
   }
   await env.DB.prepare("UPDATE challenge_attempts SET correct = 1 WHERE id = ?").bind(attemptId).run();
-  const award = await awardSolve(env, deps, userId, meta);
+  const award = await awardSolve(env, deps, user, meta);
   const res: SubmitResponse = { correct: true, awarded: award.awarded, alreadySolved: award.alreadySolved, firstBlood: award.firstBlood };
   return json(res, 200, origin, noStore);
 }
@@ -184,7 +193,7 @@ async function submitCode(
   env: Env,
   origin: string,
   deps: ChallengeDeps,
-  user: { sub: string; username?: string; name?: string },
+  user: AuthedUser,
   meta: ChallengeMeta,
   grader: OutputGrader | HarnessGrader,
   body: Record<string, unknown>,
@@ -236,12 +245,12 @@ async function submitCode(
     const passed = outcome.grade.passed;
     try {
       // stdin is deliberately not stored: it is hidden-test data.
-      await deps.lab.recordRun(env, { userId: user.sub, ref: { kind: "challenge", id: meta.id }, lang: lang as LangId, result: outcome.result, passed, code });
+      await deps.lab.recordRun(env, { userId: user.sub, tokenVersion: user.tokenVersion, ref: { kind: "challenge", id: meta.id }, lang: lang as LangId, result: outcome.result, passed, code });
     } catch (e) {
       console.error("challenge run log failed", e instanceof Error ? e.name : "error");
     }
     await recordAttempt(env, user.sub, meta.id, deps.now(), passed);
-    await bumpAttempts(env, user.sub, meta.id);
+    await bumpAttempts(env, user, meta.id);
 
     const res: SubmitResponse = {
       correct: passed,
@@ -253,7 +262,7 @@ async function submitCode(
       result: deps.lab.toPublicResult(outcome.result),
       quota,
     };
-    if (passed) Object.assign(res, await awardSolve(env, deps, user.sub, meta));
+    if (passed) Object.assign(res, await awardSolve(env, deps, user, meta));
     else res.alreadySolved = await hasSolved(env, user.sub, meta.id);
     return json(res, 200, origin, noStore);
   } catch (e) {

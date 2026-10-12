@@ -9,6 +9,13 @@ export interface LabUser {
   sub: string;
   username?: string;
   name?: string;
+  /**
+   * users.token_version when the guard accepted the request. What a run writes back after the runner
+   * returns is written only while the account still exists with this version (recordRun, the lab
+   * pass and its XP), so a run that outlives DELETE /api/account cannot re-create the erased data, nor
+   * hand it to an account created again under the same key (a new account starts at a new version).
+   */
+  tokenVersion: number;
 }
 
 /** JSON response that is never cached (private, per-user data). */
@@ -21,7 +28,7 @@ export function apiError(error: string, status: number, origin: string, message?
   return reply(body, status, origin);
 }
 
-const labUser = (u: LabUser): LabUser => ({ sub: u.sub, username: u.username, name: u.name });
+const labUser = (u: LabUser): LabUser => ({ sub: u.sub, username: u.username, name: u.name, tokenVersion: u.tokenVersion });
 
 /**
  * The signed-in user (valid, unrevoked token of an existing account; suspended accounts included), or

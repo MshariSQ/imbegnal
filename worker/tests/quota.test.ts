@@ -153,7 +153,7 @@ describe("settle", () => {
   test("recordRun completes the in-flight row in place instead of adding a second one", async () => {
     const env = make();
     const resv = await reserveOk(env, "u1");
-    const id = await recordRun(env, { id: resv.runId, userId: "u1", ref: { kind: "free" }, lang: "python", result: okResult(), code: "print(1)" });
+    const id = await recordRun(env, { id: resv.runId, userId: "u1", tokenVersion: 0, ref: { kind: "free" }, lang: "python", result: okResult(), code: "print(1)" });
     assert.equal(id, resv.runId);
     const rows = db.query<{ id: string; status: string; success: number; lang: string }>("SELECT id, status, success, lang FROM lab_runs WHERE user_id = 'u1'");
     assert.deepEqual(rows, [{ id: resv.runId, status: "ok", success: 1, lang: "python" }]);
@@ -164,7 +164,7 @@ describe("settle", () => {
   test("recordRun cannot overwrite another user's row", async () => {
     const env = make();
     const resv = await reserveOk(env, "u1");
-    await recordRun(env, { id: resv.runId, userId: "u2", ref: { kind: "free" }, lang: "python", result: okResult({ stdout: "hijack" }), code: "x" });
+    await recordRun(env, { id: resv.runId, userId: "u2", tokenVersion: 0, ref: { kind: "free" }, lang: "python", result: okResult({ stdout: "hijack" }), code: "x" });
     const row = db.query<{ user_id: string; status: string; stdout: string | null }>("SELECT user_id, status, stdout FROM lab_runs WHERE id = ?", resv.runId)[0];
     assert.deepEqual(row, { user_id: "u1", status: "running", stdout: null });
   });

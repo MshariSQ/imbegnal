@@ -6,6 +6,8 @@ export interface AuthedUser {
   sub: string;
   username?: string;
   name?: string;
+  /** users.token_version when the guard accepted the request (see lab/http.ts LabUser.tokenVersion). */
+  tokenVersion: number;
 }
 
 /** Stable machine error body (see the status table at the top of shared/api.ts). */
@@ -13,7 +15,7 @@ export function apiError(origin: string, status: number, error: string, message?
   return json({ error, ...(message ? { message } : {}), ...extra }, status, origin, { ...NO_STORE, ...headers });
 }
 
-const authed = (u: { sub: string; username?: string; name?: string }): AuthedUser => ({ sub: u.sub, username: u.username, name: u.name });
+const authed = (u: AuthedUser): AuthedUser => ({ sub: u.sub, username: u.username, name: u.name, tokenVersion: u.tokenVersion });
 
 /**
  * The caller of a public route that personalises its answer (challenge list, leaderboard); null for

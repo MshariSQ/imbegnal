@@ -442,6 +442,49 @@ describe("lesson lab grading", () => {
     assert.deepEqual(progress(), []);
   });
 
+  test("the account is deleted while the run is on the runner: the result is returned, nothing is written back", async () => {
+    stub!.restore();
+    let deleted = false;
+    stub = stubRunner(async (job) => {
+      if (!deleted) {
+        deleted = true;
+        assert.equal((await call(env, "/api/account", { method: "DELETE", token })).status, 200, "DELETE /api/account commits mid-run");
+      }
+      return sumRunner(job);
+    });
+    const res = await post({ lang: "python", code: "CORRECT # SECRET_CODE_OF_ERASED_USER", ref });
+    assert.equal(res.status, 200);
+    const body = await jsonOf<RunApiResponse>(res);
+    assert.equal(body.grade?.passed, true, "the caller still gets the result");
+    assert.equal(body.xpAwarded, 0);
+    assert.deepEqual(db.query("SELECT id FROM lab_runs WHERE user_id = 'u1'"), [], "no run (code, output) re-created");
+    assert.deepEqual(progress(), []);
+    assert.deepEqual(ledger(), []);
+    // The same key registered again (a new incarnation) starts with nothing.
+    db.execute("INSERT INTO users (github_id, username, name, token_version) VALUES ('u1', 'again', 'Again', 7)");
+    const again = await jsonOf<{ passed: unknown[]; xp: { total: number } }>(await call(env, "/api/lab/progress", { token: await tokenFor("u1", { tv: 7 }) }));
+    assert.deepEqual([again.passed, again.xp.total], [[], 0]);
+  });
+
+  test("the account is deleted and created again (new token_version) while the run is on the runner: nothing lands in the new account", async () => {
+    stub!.restore();
+    let swapped = false;
+    stub = stubRunner(async (job) => {
+      if (!swapped) {
+        swapped = true;
+        assert.equal((await call(env, "/api/account", { method: "DELETE", token })).status, 200);
+        db.execute("INSERT INTO users (github_id, username, name, token_version) VALUES ('u1', 'again', 'Again', 123456)");
+      }
+      return sumRunner(job);
+    });
+    const body = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
+    assert.equal(body.grade?.passed, true);
+    assert.equal(body.xpAwarded, 0);
+    assert.deepEqual(db.query("SELECT id FROM lab_runs WHERE user_id = 'u1'"), []);
+    assert.deepEqual(progress(), []);
+    assert.deepEqual(ledger(), []);
+  });
+
   test("a lesson exercise without tests is not graded: no xpAwarded, no ledger row", async () => {
     const ungraded: CatalogLab = { ...LAB, ref: "python/basics/free", id: "free", tests: [] };
     catalog.labs.push(ungraded);
