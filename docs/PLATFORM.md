@@ -314,7 +314,15 @@ signed-in learner sees the study-state XP plus the Worker's lab XP for that acco
 plus `xpAwarded` of runs graded since). Guest awards never count for a signed-in learner: a pass the Worker has not
 recorded for that account (graded in the browser, by a Worker too old to report `xpAwarded`, `recorded: false`, or
 passed as a guest before signing in) shows the Passed badge and "XP is earned when the exercise is checked on the
-server" until the Worker awards it. Signing out returns to the guest rule.
+server" until the Worker awards it. Signing out returns to the guest rule. Each `GET /api/lab/progress` answer
+replaces the browser's figure for that account (a pass the Worker no longer has, e.g. after the account was deleted
+and created again, stops counting), except passes the Worker graded in that browser after the request was sent,
+which the answer may predate: those stay on top with their XP until an answer lists them.
+
+Deploy-window residual: a signed-in pass graded by a Worker that already has `/api/lab/*` but predates the ledger
+writes `lab_progress` without a ledger row, so the new Worker never awards it and the site shows it as earned with
+no XP. Production's current Worker has no lab API at all (its runs fall back to the browser), so this cannot happen
+on the next deploy; deploy the Worker before the site if an older lab-enabled Worker is ever live.
 
 Legacy residual: the client before this change (`origin/main` 79314d1 and earlier) added the 15 XP of every pass to
 the lesson `bonus`, and it stays there (`lib/lab-progress.ts` treats such passes as earned and never awards them

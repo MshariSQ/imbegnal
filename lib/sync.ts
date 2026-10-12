@@ -104,11 +104,12 @@ let labSync: { user: string; promise: Promise<void> } | null = null;
 export function syncLabProgress(user: string): Promise<void> {
   if (labSync?.user === user) return labSync.promise;
   const token = getToken(); // the token fetchLabProgress sends
+  const since = Date.now(); // passes graded after this may be missing from the answer (mergeLabProgress keeps them)
   const promise = fetchLabProgress()
     .then((res) => {
       if (getCurrentUser()?.sub !== user || !Array.isArray(res.passed)) return; // signed out or switched meanwhile
       const lab = res.xp?.lab;
-      mergeLabProgress(res.passed, typeof lab === "number" && Number.isFinite(lab) ? { user, labXp: lab } : undefined);
+      mergeLabProgress(res.passed, typeof lab === "number" && Number.isFinite(lab) ? { user, labXp: lab, since } : undefined);
     })
     .catch(async (e: unknown) => {
       if (token && e instanceof LabApiError && e.status === 401 && getToken() === token) await probeState(token);

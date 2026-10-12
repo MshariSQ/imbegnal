@@ -38,10 +38,22 @@ const SERVER_KEY = "imb-labs-server-v1";
  * without guest XP (signed in, or merged from the server). A passed ref without an entry is legacy (above).
  */
 const GUEST_KEY = "imb-labs-guest-xp-v1";
+/**
+ * `RecentServerPasses`: the passes the Worker graded for one user in this browser, with the XP it
+ * reported and when (this browser's clock). A GET /api/lab/progress answer replaces SERVER_KEY, except
+ * for these passes when they arrived after that request was sent (the answer may predate them).
+ */
+const RECENT_KEY = "imb-labs-server-recent-v1";
 const EMPTY: Readonly<Record<string, number>> = {};
 let cache: Record<string, number> | null = null;
 let serverCache: ServerLabXp | null | undefined; // undefined: not read yet
 let guestCache: Record<string, number> | null = null;
+let recentCache: RecentServerPasses | null | undefined; // undefined: not read yet
+
+interface RecentServerPasses {
+  user: string;
+  items: Record<string, { xp: number; at: number }>;
+}
 const listeners = new Set<() => void>();
 
 export interface ServerLabXp {
@@ -105,6 +117,28 @@ function loadServer(): ServerLabXp | null {
 function saveServer(next: ServerLabXp) {
   serverCache = next;
   write(SERVER_KEY, next);
+}
+
+function loadRecent(): RecentServerPasses | null {
+  if (recentCache !== undefined) return recentCache;
+  try {
+    const v = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "null") as Partial<RecentServerPasses> | null;
+    const items: RecentServerPasses["items"] = {};
+    if (v && typeof v.user === "string" && v.items && typeof v.items === "object") {
+      for (const [ref, it] of Object.entries(v.items)) {
+        if (it && Number.isFinite(it.xp) && Number.isFinite(it.at)) items[ref] = { xp: it.xp, at: it.at };
+      }
+      recentCache = { user: v.user, items };
+    } else recentCache = null;
+  } catch {
+    recentCache = null;
+  }
+  return recentCache;
+}
+
+function saveRecent(next: RecentServerPasses) {
+  recentCache = next;
+  write(RECENT_KEY, next);
 }
 
 /** Records the passes in the device list; a new one gets a guest entry of 0 unless `legacy` says its XP is in the bonus. */
@@ -186,6 +220,9 @@ export function markLabPassed(ref: string, grader: LabGrader = { by: "local" }, 
       const refs = same ? prev.refs : [];
       const lab = (same ? prev.lab : 0) + grader.xpAwarded;
       if (!same || prev.lab !== lab || !refs.includes(ref)) saveServer({ user: grader.user, lab, refs: refs.includes(ref) ? refs : [...refs, ref] });
+      const recent = loadRecent();
+      const items = recent?.user === grader.user ? recent.items : {};
+      saveRecent({ user: grader.user, items: { ...items, [ref]: { xp: (items[ref]?.xp ?? 0) + grader.xpAwarded, at: Date.now() } } });
       return grader.xpAwarded;
     }
     case "unverified":
@@ -202,16 +239,29 @@ export function markLabPassed(ref: string, grader: LabGrader = { by: "local" }, 
 
 /**
  * Merges what GET /api/lab/progress reported: the passes (no guest XP) and, with `server`, the Worker's
- * lab XP and recorded passes for that user, which replace this browser's figure for that user. A pass
+ * lab XP and recorded passes for that user, which replace this browser's figure for that user (so a pass
+ * the Worker no longer has, e.g. after the account was deleted and created again, stops counting). A pass
  * the Worker recorded before the ledger (no `xp`) earned its XP in the synced bonus: it is legacy.
+ * `server.since` is when the request was sent (Date.now()): a pass the Worker graded in this browser after
+ * that and that the answer does not list may postdate the answer, so it is kept on top, with its XP.
  */
-export function mergeLabProgress(passed: { ref: string; at: string; xp?: number }[], server?: { user: string; labXp: number }) {
+export function mergeLabProgress(passed: { ref: string; at: string; xp?: number }[], server?: { user: string; labXp: number; since?: number }) {
   recordPasses(passed.map((p) => ({ ref: p.ref, at: Date.parse(p.at) || Date.now(), legacy: !!server && !(typeof p.xp === "number" && p.xp > 0) })));
   if (!server) return;
+  const reported = new Set(passed.map((p) => p.ref));
+  const recent = loadRecent();
+  const since = server.since;
+  const kept: RecentServerPasses["items"] = {};
+  if (recent?.user === server.user && since !== undefined) {
+    for (const [ref, it] of Object.entries(recent.items)) if (it.at >= since && !reported.has(ref)) kept[ref] = it;
+  }
+  const refs = [...new Set([...reported, ...Object.keys(kept)])];
+  const lab = server.labXp + Object.values(kept).reduce((sum, it) => sum + it.xp, 0);
   const prev = loadServer();
-  // Passes this browser saw the Worker record since the request was sent are kept (same user only).
-  const refs = [...new Set([...passed.map((p) => p.ref), ...(prev?.user === server.user ? prev.refs : [])])];
-  if (prev?.user !== server.user || prev.lab !== server.labXp || refs.length !== prev.refs.length) saveServer({ user: server.user, lab: server.labXp, refs });
+  if (prev?.user !== server.user || prev.lab !== lab || prev.refs.length !== refs.length || refs.some((r) => !prev.refs.includes(r))) {
+    saveServer({ user: server.user, lab, refs });
+  }
+  if (recent && (recent.user !== server.user || Object.keys(kept).length !== Object.keys(recent.items).length)) saveRecent({ user: server.user, items: kept });
 }
 
 function subscribe(cb: () => void) {
@@ -220,6 +270,7 @@ function subscribe(cb: () => void) {
     if (e.key === KEY) cache = null;
     else if (e.key === SERVER_KEY) serverCache = undefined;
     else if (e.key === GUEST_KEY) guestCache = null;
+    else if (e.key === RECENT_KEY) recentCache = undefined;
     else return;
     cb();
   };

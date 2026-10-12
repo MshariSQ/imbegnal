@@ -131,3 +131,34 @@ test("probe B: guest award, the Worker awards it before any push, then a pull wi
     storage.removeItem("sf_token");
   }
 });
+
+test("a progress answer replaces the server figure: a pass the Worker no longer has (account deleted and created again) stops counting", () => {
+  const since = Date.now();
+  serverPass("gone/l1/a", "u-re");
+  assert.equal(serverLabXpOf("u-re"), LAB_XP);
+  assert.ok(!isLabUnverified("gone/l1/a", "u-re"));
+  // The new account (same subject): the Worker has no passes and no XP; the request was sent after the pass.
+  mergeLabProgress([], { user: "u-re", labXp: 0, since: since + 60_000 });
+  assert.equal(serverLabXpOf("u-re"), 0, "the dashboard total drops the old account's XP");
+  assert.ok(isLabUnverified("gone/l1/a", "u-re"), "and the lesson block no longer says it was earned");
+});
+
+test("a pass the Worker graded after the progress request was sent is kept on top of the answer, with its XP (no race)", () => {
+  mergeLabProgress([{ ref: "race/l1/a", at: "2026-10-01T00:00:00Z", xp: LAB_XP }, { ref: "race/l1/b", at: "2026-10-01T00:00:00Z", xp: LAB_XP }], { user: "u-race", labXp: 2 * LAB_XP });
+  const since = Date.now(); // the next GET /api/lab/progress leaves
+  serverPass("race/l1/c", "u-race"); // a run graded while it is in flight
+  assert.equal(serverLabXpOf("u-race"), 3 * LAB_XP);
+  // The answer was computed before that run committed: it lists only a and b.
+  mergeLabProgress([{ ref: "race/l1/a", at: "2026-10-01T00:00:00Z", xp: LAB_XP }, { ref: "race/l1/b", at: "2026-10-01T00:00:00Z", xp: LAB_XP }], { user: "u-race", labXp: 2 * LAB_XP, since });
+  assert.equal(serverLabXpOf("u-race"), 3 * LAB_XP, "the newer pass keeps its XP");
+  assert.ok(!isLabUnverified("race/l1/c", "u-race"));
+  // A later answer that includes it: counted once.
+  mergeLabProgress(
+    ["a", "b", "c"].map((x) => ({ ref: `race/l1/${x}`, at: "2026-10-01T00:00:00Z", xp: LAB_XP })),
+    { user: "u-race", labXp: 3 * LAB_XP, since: Date.now() },
+  );
+  assert.equal(serverLabXpOf("u-race"), 3 * LAB_XP, "not 45 + 15");
+  // And a still later answer without it (the pass is older than that request): the Worker's word wins.
+  mergeLabProgress([], { user: "u-race", labXp: 0, since: Date.now() + 1 });
+  assert.equal(serverLabXpOf("u-race"), 0);
+});
