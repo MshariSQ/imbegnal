@@ -239,7 +239,7 @@ async function handleProgress(req: Request, env: Env, origin: string): Promise<R
   const auth = await requireActiveUser(req, env, origin);
   if (!auth.ok) return auth.response;
   // xp: the ledger's award for that pass (none for passes recorded before the ledger, whose XP is in the
-  // synced study state). The site uses it to drop a local award for the same exercise (lib/lab-progress.ts).
+  // synced study state). The site shows xp.lab as the learner's lab XP and these passes as verified (lib/lab-progress.ts).
   const rows = await env.DB.prepare(
     `SELECT p.ref AS ref, p.passed_at AS passed_at, COALESCE(l.xp, 0) AS xp FROM lab_progress p
      LEFT JOIN xp_ledger l ON l.user_id = p.user_id AND l.source = 'lab' AND l.ref = p.ref

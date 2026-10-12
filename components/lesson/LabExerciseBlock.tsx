@@ -32,10 +32,13 @@ export default function LabExerciseBlock({
   const T = tx.curriculum;
   const ref = `${trackId}/${lessonId}/${section.id}`;
   const passed = useLabPassed(ref); // empty during SSR/hydration, then localStorage
-  const unverified = useLabUnverified(ref); // passed in the browser while signed in: no XP yet
+  const user = useAuthUser()?.sub ?? null;
+  // Passed, but its XP does not count for whoever is here (lib/lab-progress.ts): signed in, the Worker
+  // has not awarded it; a guest, it was passed only while signed in.
+  const unverified = useLabUnverified(ref, user);
   // The "checked on the server" note is for signed-in learners only: a guest earns the XP by passing it in
-  // the browser (lib/lab-progress.ts), and has not earned it yet either, so a guest sees neither line.
-  const signedIn = useAuthUser() !== null;
+  // the browser, and has not earned it yet either, so a guest sees neither line.
+  const signedIn = user !== null;
   const href = codeLabHref({ kind: "exercise", ref });
 
   const lines = section.starterCode.replace(/\n+$/, "").split("\n");

@@ -74,11 +74,11 @@ const JS_SOLUTION = 'const [a, b] = require("fs").readFileSync(0, "utf8").trim()
 /** What the stores hold after a pass (lib/lab-progress.ts, lib/study-store.ts). */
 const stores = async (page: import("playwright").Page) => {
   // No named functions inside evaluate: tsx would wrap them in a helper the page does not have.
-  const [labs, server, unverified, study] = await page.evaluate(
+  const [labs, server, guest, study] = await page.evaluate(
     (keys) => keys.map((k) => JSON.parse(localStorage.getItem(k) ?? "null")),
-    ["imb-labs-v1", "imb-labs-server-v1", "imb-labs-unverified-v1", "imb-study-v1"],
+    ["imb-labs-v1", "imb-labs-server-v1", "imb-labs-guest-xp-v1", "imb-study-v1"],
   );
-  return { labs, server, unverified, study };
+  return { labs, server, guest, study };
 };
 
 describe("Code Lab: deep links", () => {
@@ -163,8 +163,9 @@ describe("Code Lab: deep links", () => {
       await h.page.waitForFunction(() => document.querySelector('[data-testid="grade-banner"]')?.getAttribute("data-passed") === "true");
       assert.equal((await h.page.getByTestId("xp").innerText()).trim(), "+15 XP", "the Worker's xpAwarded");
       const after = await stores(h.page);
-      assert.deepEqual(after.server, { user: "u-test", lab: 15 }, "kept as the Worker's lab XP for this user");
-      assert.equal(after.study?.lessons?.["frontend/html-css"]?.bonus, undefined, "no local XP for a server-graded pass");
+      assert.deepEqual(after.server, { user: "u-test", lab: 15, refs: ["frontend/html-css/sum-two"] }, "kept as the Worker's lab XP and pass for this user");
+      assert.equal(after.study?.lessons?.["frontend/html-css"]?.bonus, undefined, "no study-state XP for a server-graded pass");
+      assert.deepEqual(after.guest, { "frontend/html-css/sum-two": 0 }, "no guest XP either");
       assert.ok(h.api.requests.includes("GET /api/lab/progress"), "signed-in pages merge the server's lab progress");
       const banner = h.page.getByTestId("grade-banner");
       assert.equal(await banner.getByRole("link", { name: "Back to lesson" }).getAttribute("href"), "/learn/frontend/html-css/");
@@ -175,7 +176,7 @@ describe("Code Lab: deep links", () => {
       // A second pass awards no more XP.
       await runButton(h.page).click();
       await h.page.waitForFunction(() => /Already completed/.test(document.querySelector('[data-testid="xp"]')?.textContent ?? ""));
-      assert.deepEqual((await stores(h.page)).server, { user: "u-test", lab: 15 });
+      assert.deepEqual((await stores(h.page)).server, { user: "u-test", lab: 15, refs: ["frontend/html-css/sum-two"] });
       assert.deepEqual(h.errors, []);
     });
   });
@@ -197,7 +198,7 @@ describe("Code Lab: deep links", () => {
       assert.doesNotMatch(await h.page.getByTestId("grade-banner").innerText(), /\+\d+ XP/);
       const after = await stores(h.page);
       assert.ok(after.labs["frontend/html-css/sum-js"], "the Passed badge");
-      assert.deepEqual(after.unverified, ["frontend/html-css/sum-js"]);
+      assert.deepEqual(after.guest, { "frontend/html-css/sum-js": 0 }, "no guest XP");
       assert.equal(after.study?.lessons?.["frontend/html-css"]?.bonus, undefined, "no XP");
       // Passing again in the browser still earns nothing and still says so. The marker is removed first:
       // a new run unmounts the banner, so only the next result can bring it back.
@@ -205,7 +206,7 @@ describe("Code Lab: deep links", () => {
       await runButton(h.page).click();
       await h.page.waitForFunction(() => document.querySelector('[data-testid="xp"]')?.getAttribute("data-unverified") === "true");
       assert.match(await h.page.getByTestId("xp").innerText(), /XP is earned when the exercise is checked on the server/);
-      assert.deepEqual((await stores(h.page)).unverified, ["frontend/html-css/sum-js"]);
+      assert.deepEqual((await stores(h.page)).guest, { "frontend/html-css/sum-js": 0 });
       assert.deepEqual(h.errors, []);
     });
   });
@@ -221,9 +222,9 @@ describe("Code Lab: deep links", () => {
       assert.equal(api.runs.length, 0);
       assert.equal((await h.page.getByTestId("xp").innerText()).trim(), "+15 XP");
       const after = await stores(h.page);
-      assert.equal(after.study.lessons["frontend/html-css"].bonus, 15, "awarded to the lesson in the study store");
+      assert.deepEqual(after.guest, { "frontend/html-css/sum-js": 15 }, "kept in this browser's guest awards");
+      assert.equal(after.study?.lessons?.["frontend/html-css"]?.bonus, undefined, "never in the synced study state");
       assert.equal(after.server, null);
-      assert.equal(after.unverified, null);
       assert.ok(!h.api.requests.includes("GET /api/lab/progress"), "guests never ask the server");
       assert.deepEqual(h.errors, []);
     });

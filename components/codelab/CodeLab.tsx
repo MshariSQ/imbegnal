@@ -17,7 +17,7 @@ import { AlertTriangle, ChevronDown, ChevronUp, CircleSlash, Info, Send, Undo2 }
 import { challengesHref, codeLabHref, courseHref, lessonHref, parseCodeLabQuery, type CodeLabIntent } from "../../shared/links";
 import type { SubmitResponse } from "../../shared/api";
 import { useAuthUser } from "@/lib/auth";
-import { getUnverifiedLabs, labGrader, markLabPassed } from "@/lib/lab-progress";
+import { isLabUnverified, labGrader, markLabPassed } from "@/lib/lab-progress";
 import { useLang } from "@/lib/lang-context";
 import { getRunDetail } from "@/lib/codelab/api";
 import { useNow } from "@/lib/codelab/clock";
@@ -276,11 +276,11 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
         setResultTab("tests");
         setTab("tests");
         if (out.grade.passed) {
-          // Signed in: the Worker's xp_ledger is the XP authority; a pass graded in this browser earns none.
+          // Signed in: the Worker's xp_ledger is the XP authority; a pass it did not award earns none.
           const grader = labGrader({ user: userId, gradeSource: out.gradeSource, xpAwarded: out.xpAwarded });
           const xp = markLabPassed(exercise.ref, grader);
           // The note only while it is true: a pass that earned XP earlier reads "Already completed".
-          setPass({ xp, unverified: grader.by === "unverified" && getUnverifiedLabs().includes(exercise.ref) });
+          setPass({ xp, unverified: grader.by === "unverified" && isLabUnverified(exercise.ref, grader.user) });
         } else setFailed((n) => n + 1);
       }
       focusResults();

@@ -3,7 +3,8 @@
  *
  *  - lesson:   completing a lesson (site, lib/study-store.ts `done`)
  *  - exercise: first pass of an in-lesson exercise (site, study-store `bonus`), and
- *              first server-graded pass of a lesson lab exercise (Worker, xp_ledger)
+ *              first server-graded pass of a lesson lab exercise (Worker, xp_ledger; a guest's
+ *              browser pass earns it in that browser only, lib/lab-progress.ts)
  *  - quiz:     first pass of an in-lesson quiz (site, study-store `bonus`)
  *
  * Pure; no imports.

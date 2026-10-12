@@ -29,8 +29,9 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   merges never double-count) and pushes changes debounced. The Worker stores a sanitized
   copy (`worker/src/state.ts`: catalog lessons only, each lesson's bonus clamped to what its
   exercises and quizzes can award, sane timestamps). XP for graded lab exercises of
-  signed-in learners is awarded by the Worker (`xp_ledger`); every XP total in the UI comes
-  from `lib/xp.ts` (study-state XP, plus that lab XP when signed in). What is server-authoritative,
+  signed-in learners is awarded by the Worker (`xp_ledger`); lab XP is never part of the synced
+  study state. Every XP total in the UI comes from `lib/xp.ts`: study-state XP, plus the Worker's
+  lab XP when signed in, or a guest's lab awards kept in that browser. What is server-authoritative,
   server-bounded or still client-trusted: [XP authority](#xp-authority).
 * **Sign-in**: GitHub and Google use the OAuth code flow on the Worker; the OAuth `state` round-trips
   through an HttpOnly cookie. The Worker hands the JWT back in the URL fragment
@@ -305,13 +306,21 @@ already in `lab_progress`), so `PUT /api/state` allows that XP to stay in `bonus
 learner's `lab_progress` rows of that lesson's catalog labs without an `xp_ledger` row (one query per PUT). The ledger
 is not backfilled, which would count the same XP twice.
 
-**One exercise, counted once, on the site.** A lab passed in the browser by a guest (or by the previous client) put
-its 15 XP into the lesson bonus. When the Worker later awards the same exercise (a server-graded pass, or
-`GET /api/lab/progress` reporting it with `xp`), `lib/lab-progress.ts` takes that local award back out of the bonus
-once, and `lib/sync.ts` keeps it out of the next pull + merge until the reduced document is pushed. Residual case: a
-copy of a local award held by another device (made there, or synced there before the removal) can come back through
-that device's next push; the server never stores more than `maxBonus` (plus pre-ledger lab passes) for a lesson, so
-that double count is bounded by the lesson's `maxBonus`.
+**One exercise, counted once, on the site.** Lab XP never goes into the synced study state (whose `bonus` is
+max-merged between devices and the server copy, so XP put there could not be taken out again). `lib/xp.ts` is the
+one rule for every total: a guest sees the study-state XP plus the lab XP that guests earned in that browser (15 per
+exercise passed in the browser, kept per exercise in `localStorage` by `lib/lab-progress.ts`, never synced); a
+signed-in learner sees the study-state XP plus the Worker's lab XP for that account (`GET /api/lab/progress` `xp.lab`,
+plus `xpAwarded` of runs graded since). Guest awards never count for a signed-in learner: a pass the Worker has not
+recorded for that account (graded in the browser, by a Worker too old to report `xpAwarded`, or passed as a guest
+before signing in) shows the Passed badge and "XP is earned when the exercise is checked on the
+server" until the Worker awards it. Signing out returns to the guest rule.
+
+Legacy residual: the client before this change (`origin/main` 79314d1 and earlier) added the 15 XP of every pass to
+the lesson `bonus`, and it stays there (`lib/lab-progress.ts` treats such passes as earned and never awards them
+again locally). If the Worker later awards the same exercise to that learner, the lab counts twice, bounded by the
+lesson's `maxBonus` on the server copy. (A pass the Worker itself recorded before the ledger is never awarded again,
+so the pre-ledger allowance above adds nothing to that bound.) This is documented, not corrected.
 
 **Known gap: certificates trust `done`.** `GET /api/certificates/:track` issues a publicly verifiable certificate once
 every lesson of the course is `done` in the synced study state, which the browser writes; one `PUT /api/state` can

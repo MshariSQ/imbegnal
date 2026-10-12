@@ -150,7 +150,8 @@ test("a lab block shows its passed state and sample solution only after the lab 
 
 test("a lab passed in the browser while signed in shows Passed but no XP, with the note that the server awards it", async () => {
   const ref = "cyber-security/python/failed-logins";
-  const storage = { "imb-labs-v1": JSON.stringify({ [ref]: 1700000000000 }), "imb-labs-unverified-v1": JSON.stringify([ref]), sf_token: fakeJwt() };
+  // Recorded while signed in, without guest XP (lib/lab-progress.ts), and not reported by the Worker.
+  const storage = { "imb-labs-v1": JSON.stringify({ [ref]: 1700000000000 }), "imb-labs-guest-xp-v1": JSON.stringify({ [ref]: 0 }), sf_token: fakeJwt() };
   for (const lang of LANGS) {
     const w = await newPage(browser, site.url, { lang, storage });
     try {

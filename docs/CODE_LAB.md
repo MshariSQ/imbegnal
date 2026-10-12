@@ -65,7 +65,8 @@ stopped inside the frame even in browsers where the parent's watchdog timer cann
 | `links.ts` | URL builders/parsers (`codeLabHref`, `parseCodeLabQuery`, …): use these for every link |
 
 Lesson-side contract: `LabExerciseSection` in `data/lessons/types.ts`
-(`ref = track/lesson/exerciseId`). Client progress: `lib/lab-progress.ts`.
+(`ref = track/lesson/exerciseId`). Client progress: `lib/lab-progress.ts` (lab XP: the Worker's for signed-in
+learners, a guest's own in that browser, never in the synced study state; the rule is in `lib/xp.ts`).
 
 ## 3. Worker API (all JSON, Bearer JWT unless noted)
 
