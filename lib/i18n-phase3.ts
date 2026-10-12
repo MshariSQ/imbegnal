@@ -85,6 +85,7 @@ export const phase3En = {
     suspended: {
       title: "Account suspended",
       body: "Your account is suspended, so analytics are unavailable. If you think this is a mistake, open an issue on GitHub.",
+      bodyUntil: "Your account is suspended until {date}, so analytics are unavailable until then. If you think this is a mistake, open an issue on GitHub.",
     },
     error: {
       title: "Could not load analytics",
@@ -236,6 +237,7 @@ export const phase3Ar: Phase3Tx = {
     suspended: {
       title: "الحساب موقوف",
       body: "حسابك موقوف، لذلك لا تتوفر التحليلات. إن كنت ترى أن هذا خطأ فافتح قضية على GitHub.",
+      bodyUntil: "حسابك موقوف حتى {date}، لذلك لا تتوفر التحليلات حتى ذلك الحين. إن كنت ترى أن هذا خطأ فافتح قضية على GitHub.",
     },
     error: {
       title: "تعذّر تحميل التحليلات",

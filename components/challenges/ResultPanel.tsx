@@ -9,6 +9,7 @@ import type { ChallengeKind } from "@/shared/challenges";
 import { challengeHref } from "@/shared/links";
 import { useLang } from "@/lib/lang-context";
 import { loginHref } from "@/lib/ctf/errors";
+import { suspensionMessage } from "@/lib/suspension";
 import { fmt } from "@/lib/ctf/format";
 import { formatCountdown, formatNumber } from "@/lib/ctf/time";
 import type { ChallengeListItem } from "@/lib/ctf/types";
@@ -84,7 +85,7 @@ function ErrorBody({ state, cooldown }: { state: Extract<SubmissionState, { phas
       return <p>{at ? fmt(e.quotaAt, { time: at }) : e.quota}</p>;
     }
     case "suspended":
-      return <p>{e.suspended}</p>;
+      return <p>{suspensionMessage({ until: state.until }, { open: e.suspended, until: e.suspendedUntil }, lang)}</p>;
     case "forbidden":
       return <p>{e.forbidden}</p>;
     case "runner":

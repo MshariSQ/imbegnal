@@ -10,6 +10,7 @@ import { getToken, useAuthUser } from "@/lib/auth";
 import { useLang } from "@/lib/lang-context";
 import { revealHint } from "@/lib/ctf/api";
 import { classifyFailure, loginHref } from "@/lib/ctf/errors";
+import { suspensionMessage } from "@/lib/suspension";
 import { fmt } from "@/lib/ctf/format";
 import { awardWithHints, nextHintIndex, textsByIndex } from "@/lib/ctf/hints";
 import { clampCount } from "@/lib/ctf/points";
@@ -136,8 +137,17 @@ export default function HintsPanel({
       recordHint(challengeId, index, res.text);
       setConfirming(null);
     } catch (e) {
-      const k = classifyFailure(e).kind;
-      setError(k === "signin" ? tx.ctf.errors.signIn : k === "network" ? tx.ctf.errors.network : k === "suspended" ? t.suspended : t.failed);
+      const f = classifyFailure(e);
+      const k = f.kind;
+      setError(
+        k === "signin"
+          ? tx.ctf.errors.signIn
+          : k === "network"
+            ? tx.ctf.errors.network
+            : k === "suspended"
+              ? suspensionMessage({ until: f.until }, { open: t.suspended, until: t.suspendedUntil }, lang)
+              : t.failed
+      );
     } finally {
       setBusy(false);
     }

@@ -22,9 +22,14 @@ export function suspensionOf(status: number, body: unknown): Suspension | null {
 
 /** The end of a suspension as a date and time in the reader's language and time zone. */
 export function formatSuspensionEnd(until: string, lang: "en" | "ar"): string {
+  return formatSuspensionEndIn(until, intlLocale(lang));
+}
+
+/** formatSuspensionEnd for an Intl locale tag (intlLocale(lang)), for callers that carry the tag. */
+export function formatSuspensionEndIn(until: string, locale: string): string {
   const t = Date.parse(until);
   if (!Number.isFinite(t)) return "";
-  return new Intl.DateTimeFormat(intlLocale(lang), { dateStyle: "long", timeStyle: "short" }).format(t);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(t);
 }
 
 /** `copy.until` with {date} filled in when the suspension has an end, else `copy.open`. */

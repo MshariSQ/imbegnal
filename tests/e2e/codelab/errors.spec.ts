@@ -148,7 +148,19 @@ describe("Code Lab: every failure has its own, actionable message", () => {
       const a = alertText(h.page);
       await a.waitFor();
       assert.match(await a.innerText(), /Account suspended/);
+      assert.doesNotMatch(await a.innerText(), /unusual activity/, "neutral about the cause");
       assert.equal(await a.getByRole("button").count(), 0);
+    }, api);
+  });
+
+  it("a suspension with an end date names it", async () => {
+    const api = failWith({ status: 403, body: { error: "account_suspended", until: "2026-11-20T09:30:00.000Z" } });
+    await withPage(s, { signedIn: true }, async (h) => {
+      await openLab(h, s.site);
+      await runButton(h.page).click();
+      const a = alertText(h.page);
+      await a.waitFor();
+      assert.match(await a.innerText(), /suspended until November 20, 2026/);
     }, api);
   });
 

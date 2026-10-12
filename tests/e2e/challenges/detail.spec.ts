@@ -327,7 +327,9 @@ describe("challenge detail: hints", () => {
     try {
       await t.page.getByRole("button", { name: /Reveal hint/ }).click();
       await t.page.getByRole("button", { name: "Yes, reveal it" }).click();
-      await t.page.getByRole("alert").filter({ hasText: "Hints can't be revealed while your account is suspended" }).waitFor();
+      const alert = t.page.getByRole("alert").filter({ hasText: "Hints can't be revealed while your account is suspended" });
+      await alert.waitFor();
+      assert.match(await alert.innerText(), /until November 20, 2026/, "the end date, as on the certificate card and the AI tutor");
       assert.equal(await t.page.getByText("Count how many letters").count(), 0);
       assert.ok(await t.page.evaluate(() => localStorage.getItem("sf_token")), "still signed in");
     } finally {
@@ -552,7 +554,8 @@ describe("challenge detail: flag submission", () => {
 
   const failures: { name: string; status: number; json: object; kind: string; text: RegExp }[] = [
     { name: "quota exceeded", status: 429, json: { error: "quota_exceeded", scope: "daily", resetAt: "2026-06-02T00:00:00Z" }, kind: "quota", text: /run limit/ },
-    { name: "suspended account", status: 403, json: { error: "account_suspended" }, kind: "suspended", text: /Submissions are disabled for your account/ },
+    { name: "suspended account", status: 403, json: { error: "account_suspended" }, kind: "suspended", text: /Submissions are disabled for your account\. / },
+    { name: "suspended account with an end date", status: 403, json: { error: "account_suspended", until: "2026-11-20T09:30:00.000Z" }, kind: "suspended", text: /Submissions are disabled for your account until November 20, 2026/ },
     { name: "runner unavailable", status: 503, json: { error: "runner_unavailable" }, kind: "runner", text: /runner is unavailable.*wasn't counted/ },
     { name: "invalid request", status: 400, json: { error: "invalid_request" }, kind: "invalid", text: /couldn't be accepted/ },
     { name: "unknown challenge on the server", status: 404, json: { error: "not_found" }, kind: "notfound", text: /isn't available on the server yet/ },

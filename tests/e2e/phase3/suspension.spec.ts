@@ -197,3 +197,36 @@ describe("AI tutor", () => {
     }
   });
 });
+
+describe("instructor analytics", () => {
+  for (const lang of ["en", "ar"] as const) {
+    it(`shows the suspension notice with its end date (${lang})`, async () => {
+      const t3 = translations[lang].instructor.suspended;
+      const worker = suspendedWorker(UNTIL);
+      worker.analytics = () => suspended(UNTIL);
+      const t = await openPage(browser, origin, "/instructor/", { worker, lang, signedIn: true });
+      try {
+        const notice = t.page.getByTestId("instructor-suspended");
+        await notice.waitFor();
+        const date = matchTemplate((await notice.innerText()).replace(/\s+/g, " "), t3.bodyUntil);
+        assert.match(date, /2026/, "the end date is shown");
+        await assertNothingLost(t, null);
+      } finally {
+        await t.close();
+      }
+    });
+  }
+
+  it("without an end date: the open-ended message", async () => {
+    const worker = suspendedWorker();
+    worker.analytics = () => suspended();
+    const t = await openPage(browser, origin, "/instructor/", { worker, signedIn: true });
+    try {
+      const notice = t.page.getByTestId("instructor-suspended");
+      await notice.waitFor();
+      assert.ok((await notice.innerText()).includes(translations.en.instructor.suspended.body));
+    } finally {
+      await t.close();
+    }
+  });
+});

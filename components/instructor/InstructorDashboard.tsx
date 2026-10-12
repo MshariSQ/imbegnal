@@ -18,6 +18,7 @@ import { classifyFailure, loginHref } from "@/lib/ctf/errors";
 import { plural } from "@/lib/ctf/format";
 import { formatDuration as formatMinutes } from "@/lib/ctf/time";
 import { useLang } from "@/lib/lang-context";
+import { suspensionMessage } from "@/lib/suspension";
 import { fetchInstructorAnalytics } from "@/lib/instructor/api";
 import { DEFAULT_PERIOD, PERIODS, barRows, formatCount, formatPercent, humanizeKey, successRate, totalChallengeSolves, totalCompletions, type Period } from "@/lib/instructor/analytics";
 import BarList from "./BarList";
@@ -28,7 +29,7 @@ const BTN = "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg p
 type Load =
   | { key: string; status: "loading" }
   | { key: string; status: "ok"; data: InstructorAnalytics }
-  | { key: string; status: "unauthorized" | "forbidden" | "suspended" | "error" };
+  | { key: string; status: "unauthorized" | "forbidden" | "suspended" | "error"; until?: string };
 
 const noopSubscribe = () => () => {};
 /** False on the server and during hydration, true afterwards: the "is the browser state readable yet" switch. */
@@ -62,8 +63,8 @@ export default function InstructorDashboard({ trackTitles, challengeTitles }: Pr
       .then((data) => setLoad({ key, status: "ok", data }))
       .catch((e: unknown) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
-        const kind = classifyFailure(e).kind;
-        setLoad({ key, status: kind === "signin" ? "unauthorized" : kind === "forbidden" ? "forbidden" : kind === "suspended" ? "suspended" : "error" });
+        const { kind, until } = classifyFailure(e);
+        setLoad({ key, status: kind === "signin" ? "unauthorized" : kind === "forbidden" ? "forbidden" : kind === "suspended" ? "suspended" : "error", ...(until ? { until } : {}) });
       });
     return () => ctl.abort();
   }, [key, viewer, days]);
@@ -92,7 +93,14 @@ export default function InstructorDashboard({ trackTitles, challengeTitles }: Pr
 
       {known && current.status === "unauthorized" && <Notice icon="login" title={t.signIn.title} body={t.signIn.expired} action={<SignInLink label={t.signIn.cta} />} testId="instructor-expired" />}
       {known && current.status === "forbidden" && <Notice icon="lock" title={t.forbidden.title} body={t.forbidden.body} testId="instructor-forbidden" />}
-      {known && current.status === "suspended" && <Notice icon="lock" title={t.suspended.title} body={t.suspended.body} testId="instructor-suspended" />}
+      {known && current.status === "suspended" && (
+        <Notice
+          icon="lock"
+          title={t.suspended.title}
+          body={suspensionMessage({ until: current.until }, { open: t.suspended.body, until: t.suspended.bodyUntil }, lang)}
+          testId="instructor-suspended"
+        />
+      )}
 
       {(!hydrated || (known && !blocked)) && (
         <>
