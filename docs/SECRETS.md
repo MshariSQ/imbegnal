@@ -79,8 +79,8 @@ never add the tunables below to `[vars]` (a deploy would reset them).
 | `RUN_PER_MINUTE_FREE` | `worker/src/lab/config.ts:49` | Worker dashboard variable (Text) | Optional, default 10 | Dashboard, Type Text. |
 | `RUN_PER_MINUTE_PRO` | `worker/src/lab/config.ts:49` | Worker dashboard variable (Text) | Optional, default 30 | Dashboard, Type Text. |
 | `RUN_MAX_CONCURRENT` | `worker/src/lab/config.ts:51` | Worker dashboard variable (Text) | Optional, default 2 | Dashboard, Type Text. |
-| `ABUSE_WINDOW_MIN` | `worker/src/abuse.ts:75` | Worker dashboard variable (Text) | Optional, default 10 minutes | Dashboard, Type Text. |
-| `ABUSE_SUSPEND_HOURS` | `worker/src/abuse.ts:82` | Worker dashboard variable (Text) | Optional, default 24 | Dashboard, Type Text. |
+| `ABUSE_WINDOW_MIN` | `worker/src/abuse.ts:82` | Worker dashboard variable (Text) | Optional, default 10 minutes | Dashboard, Type Text. |
+| `ABUSE_SUSPEND_HOURS` | `worker/src/abuse.ts:89` | Worker dashboard variable (Text) | Optional, default 24 | Dashboard, Type Text. |
 | `ABUSE_RESOURCE_MAX` | `worker/src/abuse.ts:25` | Worker dashboard variable (Text) | Optional, default 8 | Dashboard, Type Text. |
 | `ABUSE_NETWORK_PROBE_MAX` | `worker/src/abuse.ts:26` | Worker dashboard variable (Text) | Optional, default 5 | Dashboard, Type Text. |
 | `ABUSE_FLOOD_MAX` | `worker/src/abuse.ts:27` | Worker dashboard variable (Text) | Optional, default 25 | Dashboard, Type Text. |
