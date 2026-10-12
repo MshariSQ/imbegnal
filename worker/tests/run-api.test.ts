@@ -456,7 +456,9 @@ describe("lesson lab grading", () => {
     assert.equal(res.status, 200);
     const body = await jsonOf<RunApiResponse>(res);
     assert.equal(body.grade?.passed, true, "the caller still gets the result");
-    assert.equal(body.xpAwarded, 0);
+    // The pass was not recorded: the site must not show it as server-verified (lib/lab-progress.ts labGrader).
+    assert.equal(body.recorded, false);
+    assert.equal("xpAwarded" in body, false, "no xpAwarded: nothing was awarded or recorded");
     assert.deepEqual(db.query("SELECT id FROM lab_runs WHERE user_id = 'u1'"), [], "no run (code, output) re-created");
     assert.deepEqual(progress(), []);
     assert.deepEqual(ledger(), []);
@@ -479,10 +481,37 @@ describe("lesson lab grading", () => {
     });
     const body = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
     assert.equal(body.grade?.passed, true);
-    assert.equal(body.xpAwarded, 0);
+    assert.equal(body.recorded, false);
+    assert.equal("xpAwarded" in body, false);
     assert.deepEqual(db.query("SELECT id FROM lab_runs WHERE user_id = 'u1'"), []);
     assert.deepEqual(progress(), []);
     assert.deepEqual(ledger(), []);
+  });
+
+  test("a sign-out everywhere while the run is on the runner: the pass is not recorded and the response says so", async () => {
+    stub!.restore();
+    let signedOut = false;
+    stub = stubRunner(async (job) => {
+      if (!signedOut) {
+        signedOut = true;
+        assert.equal((await call(env, "/api/auth/logout", { method: "POST", token, body: {} })).status, 200, "POST /api/auth/logout commits mid-run");
+      }
+      return sumRunner(job);
+    });
+    const body = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
+    assert.equal(body.grade?.passed, true);
+    assert.equal(body.recorded, false);
+    assert.equal("xpAwarded" in body, false);
+    assert.deepEqual(progress(), []);
+    assert.deepEqual(ledger(), []);
+  });
+
+  test("a recorded pass carries xpAwarded and no `recorded` field (the field is only ever false)", async () => {
+    const body = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "CORRECT", ref }));
+    assert.equal(body.xpAwarded, LAB_XP);
+    assert.equal("recorded" in body, false);
+    const failed = await jsonOf<RunApiResponse>(await post({ lang: "python", code: "WRONG", ref }));
+    assert.equal("recorded" in failed, false);
   });
 
   test("a lesson exercise without tests is not graded: no xpAwarded, no ledger row", async () => {

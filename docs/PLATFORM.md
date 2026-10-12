@@ -279,9 +279,10 @@ again is still counted; after that the key is stable. Rotating `JWT_SECRET` chan
 A graded lab run or challenge code submission that is still on the runner when the deletion commits writes nothing
 back: the run log (code, output), the lab pass, its XP and a solve are written only while the account still exists
 with the `token_version` the request was authenticated with (`worker/src/lab/execute.ts` `recordRun`,
-`worker/src/lab/handlers.ts`, `worker/src/challenges/submit.ts`). The caller still gets the result, with
-`xpAwarded`/`awarded` 0. A sign-out on another device during the run also changes `token_version`, so that one run is
-not recorded either (running it again records it).
+`worker/src/lab/handlers.ts`, `worker/src/challenges/submit.ts`). The caller still gets the result: a challenge
+submission with `awarded` 0, a lab pass with `recorded: false` and no `xpAwarded`, which the site shows as a pass not
+checked on the server (no XP). A sign-out on another device during the run also changes `token_version`, so that one
+run is not recorded either (running it again records it).
 
 ## XP authority
 

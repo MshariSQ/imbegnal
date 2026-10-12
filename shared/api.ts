@@ -107,9 +107,18 @@ export interface RunApiResponse {
   /**
    * Graded lesson lab runs only: XP this run awarded (LAB_XP in shared/xp.ts on the first
    * passing run, 0 when it failed or the exercise was already awarded). The Worker is the
-   * XP authority for lab exercises (xp_ledger). Additive and optional: an older Worker omits it.
+   * XP authority for lab exercises (xp_ledger). Additive and optional: an older Worker omits it,
+   * and it is omitted when `recorded` is false.
    */
   xpAwarded?: number;
+  /**
+   * Graded lesson lab passes only, and only ever `false`: the pass (lab_progress) and its XP were NOT
+   * recorded because the account stopped being the one that started the run while it was on the
+   * runner (DELETE /api/account, or POST /api/auth/logout ending every session). The grade is still
+   * the real result; the site shows the pass as not checked on the server (no XP). Additive and
+   * optional: absent when the pass was recorded, and from older Workers.
+   */
+  recorded?: false;
 }
 
 export interface LanguageAvailability {

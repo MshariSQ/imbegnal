@@ -72,7 +72,7 @@ Lesson-side contract: `LabExerciseSection` in `data/lessons/types.ts`
 | Method & path | Auth | Notes |
 |---|---|---|
 | `GET /api/lab/languages` | none | runner availability per language (cached ~30 s) |
-| `POST /api/lab/run` | user | `RunApiRequest` → `RunApiResponse`. Reserves quota, runs, logs, refunds on `internal_error`/runner down. With `ref` lesson/challenge also returns `grade`; graded lesson runs also return `xpAwarded` (the first pass writes one `xp_ledger` row) |
+| `POST /api/lab/run` | user | `RunApiRequest` → `RunApiResponse`. Reserves quota, runs, logs, refunds on `internal_error`/runner down. With `ref` lesson/challenge also returns `grade`; graded lesson runs also return `xpAwarded` (the first pass writes one `xp_ledger` row), or `recorded: false` instead when the account was deleted or signed out everywhere while the run was on the runner (nothing written) |
 | `GET /api/lab/quota` | user | `QuotaInfo` |
 | `GET /api/lab/runs?limit=&before=` | user | own history, newest first |
 | `GET /api/lab/runs/:id` | user | own run incl. code/stdout/stderr |

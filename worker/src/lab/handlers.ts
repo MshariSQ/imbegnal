@@ -89,13 +89,17 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
     // recorded before the ledger existed already earned its XP in the synced study state,
     // so it earns no ledger XP (NOT EXISTS runs before this batch records the pass).
     // Both are written only while the account is still the one the guard saw (token_version),
-    // like recordRun: a run that outlives DELETE /api/account writes nothing and awards 0.
+    // like recordRun: a run that outlives DELETE /api/account or a sign-out everywhere writes
+    // nothing, and its response says `recorded: false` instead of an xpAwarded (the batch is one
+    // transaction, so the account check sees what the two conditional inserts saw).
     let xpAwarded: number | undefined;
+    let recorded = true;
     if (ref.kind === "lesson" && grade) {
       xpAwarded = 0;
       if (grade.passed) {
         const labRef = `${ref.track}/${ref.lesson}/${ref.exercise}`;
-        const [ledger] = await env.DB.batch([
+        const [account, ledger] = await env.DB.batch([
+          env.DB.prepare("SELECT 1 AS ok FROM users WHERE github_id = ?1 AND token_version = ?2").bind(user.sub, user.tokenVersion),
           env.DB.prepare(
             `INSERT OR IGNORE INTO xp_ledger (user_id, source, ref, xp)
              SELECT ?1, 'lab', ?2, ?3 WHERE NOT EXISTS (SELECT 1 FROM lab_progress WHERE user_id = ?1 AND ref = ?2)
@@ -106,6 +110,7 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
              SELECT ?1, ?2 WHERE EXISTS (SELECT 1 FROM users WHERE github_id = ?1 AND token_version = ?3)`,
           ).bind(user.sub, labRef, user.tokenVersion),
         ]);
+        recorded = account.results.length > 0;
         xpAwarded = ledger.meta.changes > 0 ? LAB_XP : 0;
       }
     }
@@ -119,7 +124,7 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
       result: toPublicResult(result),
       quota,
       ...(grade ? { grade } : {}),
-      ...(xpAwarded !== undefined ? { xpAwarded } : {}),
+      ...(!recorded ? { recorded: false as const } : xpAwarded !== undefined ? { xpAwarded } : {}),
     };
     return reply(response, 200, origin);
   } catch (e) {
