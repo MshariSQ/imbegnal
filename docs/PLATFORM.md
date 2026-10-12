@@ -416,8 +416,8 @@ device, or makes a deploy talk to a different Worker or database. New identifier
    certification pages (disclose clearly).
 4. **Sponsorships/GitHub Sponsors** for the open-source project; employer-sponsored tracks.
 
-**Growth**: lesson pages carry `LearningResource` JSON-LD and a sitemap, so each
-of the 67 lessons can rank in English and Arabic; Arabic tech content is
+**Growth**: lesson pages carry `LearningResource` JSON-LD and a sitemap, so every
+lesson can rank in English and Arabic; Arabic tech content is
 under-served. Add an OG image per course and submit the sitemap to Search Console.
 
 ## Known gaps / next steps
