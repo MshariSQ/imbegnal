@@ -233,16 +233,22 @@ async function handleRunDetail(req: Request, env: Env, origin: string, id: strin
 async function handleProgress(req: Request, env: Env, origin: string): Promise<Response> {
   const auth = await requireActiveUser(req, env, origin);
   if (!auth.ok) return auth.response;
-  const rows = await env.DB.prepare("SELECT ref, passed_at FROM lab_progress WHERE user_id = ? ORDER BY passed_at, ref LIMIT 2000")
+  // xp: the ledger's award for that pass (none for passes recorded before the ledger, whose XP is in the
+  // synced study state). The site uses it to drop a local award for the same exercise (lib/lab-progress.ts).
+  const rows = await env.DB.prepare(
+    `SELECT p.ref AS ref, p.passed_at AS passed_at, COALESCE(l.xp, 0) AS xp FROM lab_progress p
+     LEFT JOIN xp_ledger l ON l.user_id = p.user_id AND l.source = 'lab' AND l.ref = p.ref
+     WHERE p.user_id = ? ORDER BY p.passed_at, p.ref LIMIT 2000`,
+  )
     .bind(auth.user.sub)
-    .all<{ ref: string; passed_at: string }>();
+    .all<{ ref: string; passed_at: string; xp: number }>();
   const xp = await env.DB.prepare(
     "SELECT COALESCE(SUM(xp), 0) AS total, COALESCE(SUM(CASE WHEN source = 'lab' THEN xp ELSE 0 END), 0) AS lab FROM xp_ledger WHERE user_id = ?",
   )
     .bind(auth.user.sub)
     .first<{ total: number; lab: number }>();
   const body: LabProgressResponse = {
-    passed: rows.results.map((r) => ({ ref: r.ref, at: toIso(r.passed_at) })),
+    passed: rows.results.map((r) => ({ ref: r.ref, at: toIso(r.passed_at), ...(r.xp > 0 ? { xp: r.xp } : {}) })),
     xp: { total: xp?.total ?? 0, lab: xp?.lab ?? 0 },
   };
   return reply(body, 200, origin);

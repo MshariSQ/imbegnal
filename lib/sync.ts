@@ -9,7 +9,7 @@ import { getCurrentUser, getToken, removeToken } from "./auth";
 import { getStudyStateRemote, putStudyStateRemote } from "./api";
 import { fetchLabProgress } from "./codelab/api";
 import { LabApiError } from "./codelab/api-error";
-import { mergeLabProgress } from "./lab-progress";
+import { mergeLabProgress, reapplyLabXpRemovals, settleLabXpRemovals } from "./lab-progress";
 import { getStudyState, mergeStates, onStudyChange, setStudyState, type StudyState } from "./study-store";
 
 const PUSH_DELAY = 2500;
@@ -68,6 +68,7 @@ function schedulePush() {
     try {
       await putStudyStateRemote(state, token);
       lastPushed = state.updated;
+      settleLabXpRemovals(state.updated); // lab XP taken out of the bonus up to here is on the server now
     } catch (e) {
       dropRejectedToken(e, token);
       // offline or server error — retry on the next change
@@ -86,8 +87,10 @@ export async function startSync() {
   const res = await probeState(token); // null: failed (keep local state; we'll still push later)
   const data = res?.data;
   if (data && typeof data === "object") {
-    const merged = mergeStates(getStudyState(), data as StudyState);
-    setStudyState(merged, false);
+    // mergeStates takes the larger bonus per lesson: a server copy pushed before a lab award was taken
+    // back (lib/lab-progress.ts) would add it back, so removals not pushed yet are applied again.
+    const local = getStudyState();
+    setStudyState(reapplyLabXpRemovals(mergeStates(local, data as StudyState), local), false);
   }
   schedulePush();
   onStudyChange(schedulePush);

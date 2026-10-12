@@ -177,8 +177,11 @@ export interface Snippet {
 
 /** GET /api/lab/progress — lab exercises the signed-in learner has passed (server is the source of truth). */
 export interface LabProgressResponse {
-  /** refs: `${track}/${lesson}/${exerciseId}` */
-  passed: { ref: string; at: string }[];
+  /**
+   * refs: `${track}/${lesson}/${exerciseId}`. `xp`: what the Worker's XP ledger awarded for that pass;
+   * absent for passes recorded before the ledger (their XP is in the synced study state) and from older Workers.
+   */
+  passed: { ref: string; at: string; xp?: number }[];
   /** XP the Worker awarded this learner (xp_ledger): every source, and lab exercises alone. Additive: an older Worker omits it. */
   xp?: { total: number; lab: number };
 }

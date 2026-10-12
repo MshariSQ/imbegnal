@@ -168,6 +168,18 @@ describe("GET /api/lab/quota and /api/lab/progress", () => {
     assert.deepEqual(body.passed, [{ ref: "python/basics/add", at: "2026-10-01T10:00:00Z" }]);
   });
 
+  test("progress marks each pass whose XP the ledger awarded (xp), so the site can drop a local award for the same exercise", async () => {
+    db.execute(
+      "INSERT INTO lab_progress (user_id, ref, passed_at) VALUES ('u1', 'python/basics/add', '2026-10-01 10:00:00'), ('u1', 'python/basics/old', '2026-01-01 10:00:00')",
+    );
+    db.execute("INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES ('u1', 'lab', 'python/basics/add', 15), ('u2', 'lab', 'python/basics/old', 15)");
+    const body = await jsonOf<LabProgressResponse>(await call(env, "/api/lab/progress", { token: t1 }));
+    assert.deepEqual(body.passed, [
+      { ref: "python/basics/old", at: "2026-01-01T10:00:00Z" }, // before the ledger: its XP is in the study state
+      { ref: "python/basics/add", at: "2026-10-01T10:00:00Z", xp: 15 },
+    ]);
+  });
+
   test("progress sums the caller's XP ledger: every source in total, lab rows in lab, zeros when empty", async () => {
     assert.deepEqual((await jsonOf<LabProgressResponse>(await call(env, "/api/lab/progress", { token: t1 }))).xp, { total: 0, lab: 0 });
     db.execute(
