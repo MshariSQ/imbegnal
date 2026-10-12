@@ -136,3 +136,19 @@ test("renaming a roadmap changes every rendered track title (title helper with a
   assert.equal(trackTitle("no-such-track"), "no-such-track");
   assert.equal(trackMeta("no-such-track"), null);
 });
+
+test("a route that declares its canonical URL gives og:url the same path (link previews and shares go to the page, not home)", () => {
+  // Without its own openGraph.url a route inherits the root layout's (the home page) while its canonical is its own path.
+  let checked = 0;
+  for (const file of walk(join(ROOT, "app"))) {
+    if (!/\/(page|layout)\.tsx$/.test(file) || file === join(ROOT, "app/layout.tsx")) continue;
+    const src = readFileSync(file, "utf8");
+    const canonical = src.match(/alternates:\s*\{\s*canonical:\s*("[^"]*"|`[^`]*`)/)?.[1];
+    if (!canonical) continue;
+    checked++;
+    const at = src.indexOf("openGraph:");
+    const og = at < 0 ? undefined : src.slice(at, at + 600).match(/\burl:\s*("[^"]*"|`[^`]*`)/)?.[1];
+    assert.equal(og, canonical, `${relative(ROOT, file)}: openGraph.url must equal alternates.canonical`);
+  }
+  assert.ok(checked >= 12, `routes with a canonical URL: ${checked}`);
+});
