@@ -108,8 +108,14 @@ describe("challenge detail: content", () => {
     try {
       const link = t.page.getByTestId("open-code-lab");
       assert.equal(await link.getAttribute("href"), "/code-lab/?ch=interval-merge&lang=python");
-      await t.page.getByLabel("Language").selectOption("javascript");
-      assert.equal(await link.getAttribute("href"), "/code-lab/?ch=interval-merge&lang=javascript");
+      // The page hydrates after `load`, and on a loaded machine (the full suite) noticeably later. A change
+      // made before React handles events on the controlled select is lost: React puts the rendered value
+      // back (reproduced with CPU throttling x8: the select snaps back to Python). So choose the language
+      // again until the page has taken it, as a learner would.
+      await eventually(async () => {
+        if ((await link.getAttribute("href")) !== "/code-lab/?ch=interval-merge&lang=javascript") await t.page.getByLabel("Language").selectOption("javascript");
+        assert.equal(await link.getAttribute("href"), "/code-lab/?ch=interval-merge&lang=javascript");
+      });
       assert.match(await t.page.locator("aside").innerText(), /submit from there/);
       // only allowed languages are offered
       assert.deepEqual(await t.page.getByLabel("Language").locator("option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value)), ["python", "javascript"]);
