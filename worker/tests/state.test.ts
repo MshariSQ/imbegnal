@@ -81,17 +81,46 @@ describe("PUT /api/state", () => {
     assert.equal(stored().lessons[KEY].bonus, undefined, "not a number");
   });
 
-  test("timestamps outside 2020-01-01 .. now + 1 day, and non-numbers, are dropped", async () => {
+  test("visited outside 2020-01-01 .. now + 1 day, or not a number, is dropped", async () => {
     const now = Date.now();
     const bad: unknown[] = [1, -5, Date.UTC(2019, 11, 31), now + 2 * 86_400_000, 8.64e15, "2026-10-01", true, null, {}];
     for (const v of bad) {
-      await put({ ...honest(), lessons: { [KEY]: { done: v, visited: v, bonus: 10 } } });
+      await put({ ...honest(), lessons: { [KEY]: { visited: v, bonus: 10 } } });
       assert.deepEqual(stored().lessons[KEY], { bonus: 10 }, JSON.stringify(v));
     }
     for (const v of [Date.UTC(2020, 0, 1), now, now + 86_400_000 - 60_000]) {
       await put({ ...honest(), lessons: { [KEY]: { done: v, visited: v } } });
       assert.deepEqual(stored().lessons[KEY], { done: v, visited: v }, String(v));
     }
+  });
+
+  test("done keeps every completion the site and the certificates count: true, and any positive number (a future one is clamped)", async () => {
+    const now = Date.now();
+    // true: the legacy shape (migrations.test.ts); 1: what mergeStates makes of true and a timestamp (Math.min(true, t))
+    for (const v of [true, 1, Date.UTC(2019, 11, 31), Date.UTC(2020, 0, 1), now]) {
+      await put({ ...honest(), lessons: { [KEY]: { done: v, bonus: 10 } } });
+      assert.deepEqual(stored().lessons[KEY], { done: v, bonus: 10 }, JSON.stringify(v));
+    }
+    for (const v of [now + 2 * 86_400_000, 8.64e15]) {
+      await put({ ...honest(), lessons: { [KEY]: { done: v } } });
+      const done = stored().lessons[KEY].done as number;
+      assert.ok(done <= Date.now() + 86_400_000 && done >= now + 86_400_000 - 60_000, `clamped to now + 1 day: ${v}`);
+    }
+    for (const v of [0, -5, "2026-10-01", false, null, {}, [], Number.NaN]) {
+      await put({ ...honest(), lessons: { [KEY]: { done: v, bonus: 10 } } });
+      assert.deepEqual(stored().lessons[KEY], { bonus: 10 }, `not a completion: ${JSON.stringify(v)}`);
+    }
+  });
+
+  test("the legacy production document ({done: true} lessons) keeps its completions and certificate eligibility", async () => {
+    const track = catalog.tracks.find((t) => t.id === "cyber-security")!;
+    const legacy = { v: 1, lessons: Object.fromEntries(track.lessons.map((l) => [`${track.id}/${l}`, { done: true }])) };
+    db.execute("INSERT INTO user_state (github_id, data) VALUES ('u1', ?)", JSON.stringify(legacy));
+    // The site pulls it, merges, and pushes it back.
+    assert.equal((await put({ ...(await get()), notes: {}, days: [], updated: T })).status, 200);
+    assert.deepEqual(stored().lessons, legacy.lessons);
+    const cert = await call(env, "/api/certificates/cyber-security?format=json", { token });
+    assert.equal(cert.status, 200, "still eligible");
   });
 
   test("quiz accuracy outside [0, 1] or not a number is dropped", async () => {
@@ -102,7 +131,7 @@ describe("PUT /api/state", () => {
   });
 
   test("lesson records drop unknown fields and records that end up empty", async () => {
-    await put({ ...honest(), lessons: { [KEY]: { done: T, xp: 100000, level: 99 }, [OTHER]: { done: 1, quiz: 7 }, "networking/osi-tcpip": "done" } });
+    await put({ ...honest(), lessons: { [KEY]: { done: T, xp: 100000, level: 99 }, [OTHER]: { visited: 1, quiz: 7 }, "networking/osi-tcpip": "done" } });
     assert.deepEqual(stored().lessons, { [KEY]: { done: T } });
   });
 
@@ -144,7 +173,7 @@ describe("PUT /api/state", () => {
 
 test("sanitizeStudyState is pure and uses the given clock", () => {
   const doc = { v: 1, lessons: { [KEY]: { done: T } } };
-  assert.deepEqual(sanitizeStudyState(doc, T - 2 * 86_400_000).lessons, {}, "a completion after now + 1 day is dropped");
+  assert.deepEqual(sanitizeStudyState(doc, T - 2 * 86_400_000).lessons, { [KEY]: { done: T - 86_400_000 } }, "a completion after now + 1 day is clamped to it");
   assert.deepEqual(sanitizeStudyState(doc, T).lessons, { [KEY]: { done: T } });
   assert.deepEqual(doc, { v: 1, lessons: { [KEY]: { done: T } } }, "input untouched");
 });

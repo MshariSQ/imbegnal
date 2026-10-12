@@ -13,7 +13,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** The stored document: lib/study-store.ts StudyState, after sanitizeStudyState. */
 export interface StoredStudyState {
   v: 1;
-  lessons: Record<string, { visited?: number; done?: number; quiz?: number; bonus?: number }>;
+  /** `done: true` is the legacy shape (worker/tests/migrations.test.ts); the certificates and the site count it as done. */
+  lessons: Record<string, { visited?: number; done?: number | true; quiz?: number; bonus?: number }>;
   notes: Record<string, { text: string; updated: number }>;
   days: string[];
   last?: { key: string; at: number };
@@ -35,8 +36,10 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 const isNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 /**
- * What PUT /api/state stores. Lessons: only keys of the generated catalog; `done` and
- * `visited` only as timestamps between 2020-01-01 and now + 1 day; `quiz` only in [0, 1];
+ * What PUT /api/state stores. Lessons: only keys of the generated catalog; `visited` only as a
+ * timestamp between 2020-01-01 and now + 1 day; `done` as every completion the site and the
+ * certificates (certificates/handlers.ts countDone) count: `true` (legacy) or a positive number,
+ * clamped to now + 1 day (so 1, which mergeStates makes of `true` and a timestamp, is kept); `quiz` only in [0, 1];
  * `bonus` clamped to [0, the lesson's maxBonus] (in-lesson exercises and quizzes; lab XP is
  * not stored here). notes, days, last and updated are only type-checked; unknown fields are
  * dropped. Values the client never writes are what this removes, so an honest document
@@ -53,7 +56,8 @@ export function sanitizeStudyState(data: Record<string, unknown>, now = Date.now
       if (max === undefined || !isRecord(r)) continue;
       const out: StoredStudyState["lessons"][string] = {};
       if (isTime(r.visited)) out.visited = r.visited;
-      if (isTime(r.done)) out.done = r.done;
+      if (r.done === true) out.done = true;
+      else if (isNumber(r.done) && r.done > 0) out.done = Math.min(r.done, now + DAY_MS);
       if (isNumber(r.quiz) && r.quiz >= 0 && r.quiz <= 1) out.quiz = r.quiz;
       if (isNumber(r.bonus)) {
         const bonus = Math.min(Math.max(Math.floor(r.bonus), 0), max);
