@@ -46,6 +46,14 @@ describe("the end date reaches every screen", () => {
     assert.deepEqual(classifyFailure(new CtfApiError(403, "account_suspended", { error: "account_suspended" })), { kind: "suspended" });
   });
 
+  it("instructor analytics: the API client keeps the Worker's answer, so `until` reaches the notice", async () => {
+    const { fetchInstructorAnalytics } = await import("../../lib/instructor/api");
+    const { classifyFailure } = await import("../../lib/ctf/errors");
+    const refuse = (async () => Response.json({ error: "account_suspended", message: "x", until: UNTIL }, { status: 403 })) as typeof fetch;
+    const err = await fetchInstructorAnalytics(30, "t", undefined, refuse).then(() => null, (e: unknown) => e);
+    assert.deepEqual(classifyFailure(err), { kind: "suspended", until: UNTIL });
+  });
+
   it("Code Lab: the problem names the end date, and the copy no longer blames 'unusual activity'", async () => {
     const { codelabAr, codelabEn } = await import("../../lib/i18n-codelab");
     const { LabApiError } = await import("../../lib/codelab/api-error");

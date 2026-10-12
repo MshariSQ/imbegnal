@@ -18,7 +18,7 @@ export async function fetchInstructorAnalytics(days: Period, token: string, sign
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const code = typeof (body as Partial<ApiErrorBody> | null)?.error === "string" ? (body as ApiErrorBody).error : "error";
-    throw new CtfApiError(res.status, code);
+    throw new CtfApiError(res.status, code, (body ?? undefined) as CtfApiError["body"]); // keeps `until` of a suspension
   }
   const data = normalizeAnalytics(body);
   if (!data) throw new CtfApiError(res.status, "bad_response");
