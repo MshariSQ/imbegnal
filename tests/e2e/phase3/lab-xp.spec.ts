@@ -37,6 +37,29 @@ const LESSON = "cyber-security/python";
 const totalXp = (page: Page) =>
   page.evaluate(() => [...document.querySelectorAll("main .card")].find((c) => /Total XP/.test(c.textContent ?? ""))?.querySelector("bdi")?.textContent?.trim() ?? "");
 
+describe("lab XP on the lesson page", () => {
+  it("a guest does not see the 'checked on the server' note for a pass left unverified by a signed-in session", async () => {
+    const storage = { "imb-labs-v1": JSON.stringify({ [REF]: 1_760_000_000_000 }), "imb-labs-unverified-v1": JSON.stringify([REF]) };
+    const lab = (o: { page: Page }) => o.page.locator('section[aria-labelledby="lab-failed-logins"]');
+    const guest = await openPage(browser, origin, `/learn/${LESSON}/`, { storage });
+    try {
+      await lab(guest).getByText("Passed", { exact: true }).first().waitFor();
+      await guest.page.waitForTimeout(300);
+      const text = await lab(guest).innerText();
+      assert.doesNotMatch(text, /checked on the server/, "a guest earns this XP by passing it in the browser");
+      assert.doesNotMatch(text, /You earned/, "and has not earned it yet");
+    } finally {
+      await guest.close();
+    }
+    const member = await openPage(browser, origin, `/learn/${LESSON}/`, { storage, signedIn: true });
+    try {
+      await eventually(async () => assert.match(await lab(member).innerText(), /XP is earned when the exercise is checked on the server/));
+    } finally {
+      await member.close();
+    }
+  });
+});
+
 describe("lab XP after sign-in", () => {
   it("a guest pass the Worker has also awarded counts once on the dashboard, and on another device", async () => {
     // The server copy still holds the guest's award: it was pushed when the learner first signed in.
