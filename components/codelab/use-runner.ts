@@ -60,8 +60,10 @@ export interface RunOutcome {
   grade: GradeResult | null;
   gradeSource: "server" | "browser" | null;
   problem: Problem | null;
-  /** Server-graded lesson runs: the XP the Worker awarded (absent from an older Worker). */
+  /** Server-graded lesson runs: the XP the Worker awarded (absent from an older Worker, or when not recorded). */
   xpAwarded?: number;
+  /** false: the Worker graded the pass but did not record it (shared/api.ts RunApiResponse.recorded). */
+  recorded?: false;
 }
 
 export interface PreviewState {
@@ -199,7 +201,7 @@ export function useRunner() {
           setQuotaBoth(res.quota);
           const view: RunView = { source: "server", lang: opts.lang, result: res.result, runId: res.runId };
           patch({ phase: "done", view, grade: res.grade ?? null, gradeSource: res.grade ? "server" : null });
-          return { view, grade: res.grade ?? null, gradeSource: res.grade ? "server" : null, problem: null, xpAwarded: res.xpAwarded };
+          return { view, grade: res.grade ?? null, gradeSource: res.grade ? "server" : null, problem: null, xpAwarded: res.xpAwarded, recorded: res.recorded };
         }
 
         // Browser target

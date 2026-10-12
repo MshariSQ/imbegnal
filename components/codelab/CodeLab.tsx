@@ -277,7 +277,7 @@ function LabSession({ intent, webMode, returnTo }: { intent: CodeLabIntent; webM
         setTab("tests");
         if (out.grade.passed) {
           // Signed in: the Worker's xp_ledger is the XP authority; a pass it did not award earns none.
-          const grader = labGrader({ user: userId, gradeSource: out.gradeSource, xpAwarded: out.xpAwarded });
+          const grader = labGrader({ user: userId, gradeSource: out.gradeSource, xpAwarded: out.xpAwarded, recorded: out.recorded });
           const xp = markLabPassed(exercise.ref, grader);
           // The note only while it is true: a pass that earned XP earlier reads "Already completed".
           setPass({ xp, unverified: grader.by === "unverified" && isLabUnverified(exercise.ref, grader.user) });

@@ -13,8 +13,9 @@
  *    `mergeLabProgress`) brings the Worker's lab XP and passes for that user (SERVER_KEY). lib/xp.ts adds
  *    that lab XP to a signed-in total; guest awards never count there. Any other pass is unverified for
  *    that user (the Passed badge and the "checked on the server" note, no XP): graded in this browser,
- *    or graded by a Worker too old to report `xpAwarded`. After signing in, a guest's passes are
- *    unverified passes of that user until the Worker awards them.
+ *    graded by a Worker too old to report `xpAwarded`, or not recorded (`recorded: false`, the account
+ *    changed mid-run). After signing in, a guest's passes are unverified passes of that user until the
+ *    Worker awards them.
  *  - Legacy: the client before this change (origin/main 79314d1 and earlier) added LAB_XP to the lesson's
  *    `bonus` for every pass it recorded, and that XP stays there (PUT /api/state keeps it for server passes
  *    from before the ledger: worker/src/state.ts legacyLabAllowance; a browser-graded one shares the
@@ -163,15 +164,15 @@ export function isLabUnverified(ref: string, user: string | null): boolean {
  *  - "local":      a guest, graded in this browser: LAB_XP in this browser's guest awards, once
  *  - "server":     the Worker graded and recorded it; `xpAwarded` is what it wrote to xp_ledger
  *                  (0 when this exercise was already awarded)
- *  - "unverified": signed in, but no XP from the Worker: graded in this browser, or by a Worker too
- *                  old to report `xpAwarded`: the Passed badge, no XP
+ *  - "unverified": signed in, but no XP from the Worker: graded in this browser, by a Worker too old
+ *                  to report `xpAwarded`, or not recorded (`recorded: false`): the Passed badge, no XP
  */
 export type LabGrader = { by: "local" } | { by: "server"; user: string; xpAwarded: number } | { by: "unverified"; user: string };
 
 /** The grader of a passing Code Lab run: who is signed in, where it was graded, and what the Worker reported. */
-export function labGrader(run: { user: string | null; gradeSource: "server" | "browser" | null; xpAwarded?: number }): LabGrader {
+export function labGrader(run: { user: string | null; gradeSource: "server" | "browser" | null; xpAwarded?: number; recorded?: false }): LabGrader {
   if (!run.user) return { by: "local" };
-  if (run.gradeSource === "server" && typeof run.xpAwarded === "number") return { by: "server", user: run.user, xpAwarded: run.xpAwarded };
+  if (run.gradeSource === "server" && typeof run.xpAwarded === "number" && run.recorded !== false) return { by: "server", user: run.user, xpAwarded: run.xpAwarded };
   return { by: "unverified", user: run.user };
 }
 

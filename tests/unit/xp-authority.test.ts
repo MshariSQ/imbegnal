@@ -76,13 +76,16 @@ test("the generated catalog carries every course lesson's maxBonus, computed fro
   assert.ok(withLabs > 0, "some lessons have labs, and their XP is not part of maxBonus");
 });
 
-test("labGrader: the Worker's xpAwarded when it graded the run; guests earn local XP; any other signed-in pass is unverified", () => {
+test("labGrader: the Worker's xpAwarded when it graded and recorded the run; guests earn local XP; any other signed-in pass is unverified", () => {
   assert.deepEqual(labGrader({ user: "u1", gradeSource: "server", xpAwarded: LAB_XP }), { by: "server", user: "u1", xpAwarded: LAB_XP });
   assert.deepEqual(labGrader({ user: "u1", gradeSource: "server", xpAwarded: 0 }), { by: "server", user: "u1", xpAwarded: 0 });
   assert.deepEqual(labGrader({ user: "u1", gradeSource: "browser" }), { by: "unverified", user: "u1" });
   assert.deepEqual(labGrader({ user: null, gradeSource: "browser" }), { by: "local" });
   // A Worker from before the ledger answers no xpAwarded: no XP for a signed-in learner (it keeps none).
   assert.deepEqual(labGrader({ user: "u1", gradeSource: "server" }), { by: "unverified", user: "u1" });
+  // The Worker graded it but did not record it (account deleted or signed out everywhere mid-run).
+  assert.deepEqual(labGrader({ user: "u1", gradeSource: "server", recorded: false }), { by: "unverified", user: "u1" });
+  assert.deepEqual(labGrader({ user: "u1", gradeSource: "server", xpAwarded: LAB_XP, recorded: false }), { by: "unverified", user: "u1" });
 });
 
 test("guests: a local pass earns XP.exercise once, in this browser's guest awards, never in the synced study state", () => {

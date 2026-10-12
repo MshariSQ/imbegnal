@@ -312,8 +312,8 @@ one rule for every total: a guest sees the study-state XP plus the lab XP that g
 exercise passed in the browser, kept per exercise in `localStorage` by `lib/lab-progress.ts`, never synced); a
 signed-in learner sees the study-state XP plus the Worker's lab XP for that account (`GET /api/lab/progress` `xp.lab`,
 plus `xpAwarded` of runs graded since). Guest awards never count for a signed-in learner: a pass the Worker has not
-recorded for that account (graded in the browser, by a Worker too old to report `xpAwarded`, or passed as a guest
-before signing in) shows the Passed badge and "XP is earned when the exercise is checked on the
+recorded for that account (graded in the browser, by a Worker too old to report `xpAwarded`, `recorded: false`, or
+passed as a guest before signing in) shows the Passed badge and "XP is earned when the exercise is checked on the
 server" until the Worker awards it. Signing out returns to the guest rule.
 
 Legacy residual: the client before this change (`origin/main` 79314d1 and earlier) added the 15 XP of every pass to

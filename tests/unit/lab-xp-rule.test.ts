@@ -87,6 +87,18 @@ test("a Worker too old to report xpAwarded grants a signed-in learner no XP: the
   assert.ok(isLabUnverified("o/l1/a", "u3"));
 });
 
+test("a pass the Worker graded but did not record (recorded: false) earns no XP and stays unverified", () => {
+  const before = currentXp("u3");
+  // What the Worker answers (shared/api.ts: no xpAwarded with recorded: false), and the same with an xpAwarded 0.
+  for (const xpAwarded of [undefined, 0]) {
+    const grader = labGrader({ user: "u3", gradeSource: "server", xpAwarded, recorded: false });
+    assert.deepEqual(grader, { by: "unverified", user: "u3" });
+    assert.equal(markLabPassed("r/l1/a", grader), 0);
+    assert.equal(currentXp("u3"), before);
+    assert.ok(isLabUnverified("r/l1/a", "u3"), "the lesson block shows 'checked on the server', not 'You earned 15 XP'");
+  }
+});
+
 test("unverified is per user: one user's verified pass is unverified for another user on the same device", () => {
   assert.equal(serverPass("p/l1/a", "u4"), LAB_XP);
   assert.equal(isLabUnverified("p/l1/a", "u4"), false);

@@ -181,6 +181,36 @@ describe("Code Lab: deep links", () => {
     });
   });
 
+  it("signed in, a server pass the Worker did not record (recorded: false) or an old Worker's pass (no xpAwarded) earns no XP and says so", async () => {
+    const api = new MockApi();
+    const passing = gradeOf([
+      { name: "adds small numbers", passed: true },
+      { name: "adds negatives", passed: true },
+    ]);
+    // 1st: the account changed while the run was on the runner; 2nd: a Worker from before the ledger; 3rd: recorded and awarded.
+    api.run = (_req, n) => ({
+      body: { runId: `r${n}`, result: runResult({ stdout: "3\n" }), grade: passing, quota: quotaInfo(), ...(n === 0 ? { recorded: false } : n === 2 ? { xpAwarded: 15 } : {}) },
+    });
+    await withFixtures({ signedIn: true }, api, async (h) => {
+      await openLab(h, s.site, EX);
+      await h.page.getByTestId("task-panel").waitFor();
+      for (const n of [0, 1]) {
+        await h.page.evaluate(() => document.querySelector('[data-testid="xp"]')?.removeAttribute("data-unverified"));
+        await runButton(h.page).click();
+        await h.page.waitForFunction(() => document.querySelector('[data-testid="xp"]')?.getAttribute("data-unverified") === "true");
+        assert.match(await h.page.getByTestId("xp").innerText(), /XP is earned when the exercise is checked on the server/, `run ${n}`);
+        assert.doesNotMatch(await h.page.getByTestId("grade-banner").innerText(), /\+\d+ XP|You earned/, `run ${n}`);
+        const after = await stores(h.page);
+        assert.equal(after.server?.lab ?? 0, 0, `run ${n}: no lab XP`);
+        assert.ok(!(after.server?.refs ?? []).includes("frontend/html-css/sum-two"), `run ${n}: not a verified pass`);
+      }
+      await runButton(h.page).click();
+      await h.page.waitForFunction(() => /\+15 XP/.test(document.querySelector('[data-testid="xp"]')?.textContent ?? ""));
+      assert.deepEqual((await stores(h.page)).server, { user: "u-test", lab: 15, refs: ["frontend/html-css/sum-two"] });
+      assert.deepEqual(h.errors, []);
+    });
+  });
+
   it("signed in with the runner down: a lab graded in the browser passes without XP and says the server awards it", async () => {
     const api = new MockApi();
     api.languages = { runner: "down", languages: api.languages.languages.map((l) => ({ ...l, available: false })) };
