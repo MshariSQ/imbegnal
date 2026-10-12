@@ -9,6 +9,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { type Env, NO_STORE, corsHeaders, isValidId, json, readJson } from "./util";
 import { LEGACY_401, requireAuth } from "./auth/guard";
+import { positiveInt } from "./lab/config";
 
 const DEFAULT_MODEL = "claude-opus-5-5"; // override with the AI_MODEL var (e.g. claude-sonnet-5-5, claude-haiku-4-5)
 const MAX_MESSAGES = 10; // the client sends the last few turns only
@@ -70,8 +71,10 @@ type Quota = "ok" | "user_limit" | "global_limit" | "gone";
 async function reserveQuota(env: Env, sub: string, day: string): Promise<Quota> {
   const user = await env.DB.prepare("SELECT plan FROM users WHERE github_id = ?").bind(sub).first<{ plan: string | null }>();
   if (!user) return "gone"; // account deleted — a stale token must not keep using the tutor
-  const userLimit = Number(user.plan === "pro" ? env.AI_DAILY_LIMIT_PRO ?? 200 : env.AI_DAILY_LIMIT_FREE ?? 20);
-  const globalLimit = Number(env.AI_DAILY_LIMIT_GLOBAL ?? 600);
+  // positiveInt like every other Worker number: a value that is not a positive integer means the default
+  // (Number() made a non-numeric value NaN, and no count is ever > NaN, so the limit disappeared).
+  const userLimit = user.plan === "pro" ? positiveInt(env.AI_DAILY_LIMIT_PRO, 200) : positiveInt(env.AI_DAILY_LIMIT_FREE, 20);
+  const globalLimit = positiveInt(env.AI_DAILY_LIMIT_GLOBAL, 600);
 
   if ((await bump(env, sub, day)) > userLimit) {
     await unbump(env, sub, day);

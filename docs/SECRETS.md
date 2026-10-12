@@ -64,11 +64,11 @@ never add the tunables below to `[vars]` (a deploy would reset them).
 | `GITHUB_CLIENT_SECRET` | `worker/src/index.ts:139` | Cloudflare Worker secret | Required for GitHub sign-in (present in production per PLATFORM.md) | GitHub → Settings → Developer settings → OAuth Apps → the app → **Generate a new client secret**, then `npx wrangler secret put GITHUB_CLIENT_SECRET --config wrangler.toml`. |
 | `GOOGLE_CLIENT_ID` | `worker/src/auth-google.ts:14`, `:19`, `:49`, `:61` | Cloudflare Worker secret | Optional; unset = Google sign-in answers `404 google_disabled` | Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID → Web application, redirect URI `<WORKER_URL>/api/auth/google/callback`. Then `npx wrangler secret put GOOGLE_CLIENT_ID --config wrangler.toml`, and set the GitHub variable `GOOGLE_AUTH=1`. |
 | `GOOGLE_CLIENT_SECRET` | `worker/src/auth-google.ts:49`, `:62` | Cloudflare Worker secret | Optional (required together with `GOOGLE_CLIENT_ID`) | Same OAuth client → client secret → `npx wrangler secret put GOOGLE_CLIENT_SECRET --config wrangler.toml`. |
-| `ANTHROPIC_API_KEY` | `worker/src/ai.ts:89`, `:113` | Cloudflare Worker secret | Optional; unset = the AI tutor answers `503 ai_disabled` | console.anthropic.com → API Keys → Create Key, then `npx wrangler secret put ANTHROPIC_API_KEY --config wrangler.toml`. Also set a monthly spend limit in the Anthropic Console. |
-| `AI_MODEL` | `worker/src/ai.ts:109` | Worker dashboard variable (Text) | Optional, default `claude-opus-5-5` (`worker/src/ai.ts:13`) | Dashboard path above, Type Text. Cheaper: `claude-sonnet-5-5`, `claude-haiku-4-5`. |
-| `AI_DAILY_LIMIT_FREE` | `worker/src/ai.ts:73` | Worker dashboard variable (Text) | Optional, default 20 questions per user per day | Dashboard, Type Text. |
-| `AI_DAILY_LIMIT_PRO` | `worker/src/ai.ts:73` | Worker dashboard variable (Text) | Optional, default 200 | Dashboard, Type Text. |
-| `AI_DAILY_LIMIT_GLOBAL` | `worker/src/ai.ts:74` | Worker dashboard variable (Text) | Optional, default 600 (all users per day, the spend kill switch) | Dashboard, Type Text. |
+| `ANTHROPIC_API_KEY` | `worker/src/ai.ts:92`, `:116` | Cloudflare Worker secret | Optional; unset = the AI tutor answers `503 ai_disabled` | console.anthropic.com → API Keys → Create Key, then `npx wrangler secret put ANTHROPIC_API_KEY --config wrangler.toml`. Also set a monthly spend limit in the Anthropic Console. |
+| `AI_MODEL` | `worker/src/ai.ts:112` | Worker dashboard variable (Text) | Optional, default `claude-opus-5-5` (`worker/src/ai.ts:14`) | Dashboard path above, Type Text. Cheaper: `claude-sonnet-5-5`, `claude-haiku-4-5`. |
+| `AI_DAILY_LIMIT_FREE` | `worker/src/ai.ts:76` | Worker dashboard variable (Text) | Optional, default 20 questions per user per day | Dashboard, Type Text. |
+| `AI_DAILY_LIMIT_PRO` | `worker/src/ai.ts:76` | Worker dashboard variable (Text) | Optional, default 200 | Dashboard, Type Text. |
+| `AI_DAILY_LIMIT_GLOBAL` | `worker/src/ai.ts:77` | Worker dashboard variable (Text) | Optional, default 600 (all users per day, the spend kill switch) | Dashboard, Type Text. |
 | `RATE_LIMIT_PER_MIN` | `worker/src/index.ts:25` | Worker dashboard variable (Text) | Optional, default 60 requests per IP per minute (per isolate) | Dashboard, Type Text. |
 | `RATE_LIMIT_AUTH_PER_MIN` | `worker/src/index.ts:25` | Worker dashboard variable (Text) | Optional, default 10 on `/api/auth/*` | Dashboard, Type Text. |
 | `RUNNER_URL` | `worker/src/lab/runner.ts:78` | Cloudflare Worker secret (a Text variable works too) | Optional; unset = server runs answer `503 runner_unavailable` (not charged), `/api/lab/languages` reports `unconfigured` | The runner's public `https://` origin (Cloudflare Tunnel, see [PLATFORM.md](PLATFORM.md#deploying-the-runner-once)). `npx wrangler secret put RUNNER_URL --config wrangler.toml`. |
@@ -87,7 +87,7 @@ never add the tunables below to `[vars]` (a deploy would reset them).
 | `ABUSE_BRUTEFORCE_MAX` | `worker/src/abuse.ts:28` | Worker dashboard variable (Text) | Optional, default 30 | Dashboard, Type Text. |
 | `ABUSE_VOLUME_MAX` | `worker/src/abuse.ts:29` | Worker dashboard variable (Text) | Optional, default 5 | Dashboard, Type Text. |
 
-Invalid or non-positive numbers fall back to the default (`positiveInt` in `worker/src/lab/config.ts:33`). Local development
+Every number above, the `AI_DAILY_LIMIT_*` ones included, must be a positive integer: an invalid, empty, zero or negative value falls back to the default (`positiveInt` in `worker/src/lab/config.ts:33`), so 0 cannot turn the AI tutor off; remove `ANTHROPIC_API_KEY` for that. Local development
 reads the same names from `worker/.dev.vars` (git-ignored).
 
 ## Site build (`NEXT_PUBLIC_*`)
