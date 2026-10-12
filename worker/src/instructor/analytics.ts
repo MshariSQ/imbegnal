@@ -46,8 +46,12 @@ async function loadRuns(env: Env, since: string): Promise<InstructorAnalytics["r
 //
 // Only states synced inside the window are scanned: a lesson visited or done inside the window was
 // synced after it, so the pre-filter never drops a learner the window should count.
-// Per (learner, track): lessons done (only catalog lessons count), first visit, the completing
-// (latest) done timestamp of a catalog lesson, and whether any lesson timestamp falls in the window.
+// Per (learner, track): lessons done (only catalog lessons count), the start (the earliest timestamp of a
+// catalog lesson of the track: per lesson the earlier of `visited` and `done`, because `visited` is the
+// LAST visit, lib/study-store.ts, so a revisit after finishing must not move the start past the
+// completion), the completing (latest) done timestamp of a catalog lesson, and whether any lesson
+// timestamp falls in the window. The start is never after the completing done: that lesson's own start
+// is at or before it.
 // Lesson entries that are not objects and timestamps that are not numbers are ignored: the state is
 // client-written, and one malformed entry must not fail the whole query or count as activity.
 const PER_LEARNER = `
@@ -60,13 +64,15 @@ WITH st AS (
          CASE WHEN json_type(j.value, '$.done') IN ('integer', 'real') AND json_extract(j.value, '$.done') > 0 THEN json_extract(j.value, '$.done') END AS done
   FROM st, json_each(st.data, '$.lessons') j
   WHERE instr(j.key, '/') > 1 AND j.type = 'object'
+), lstart AS (
+  SELECT les.*, CASE WHEN visited IS NULL THEN done WHEN done IS NULL THEN visited ELSE MIN(visited, done) END AS start FROM les
 ), per AS (
   SELECT uid, track,
          COUNT(DISTINCT CASE WHEN done IS NOT NULL AND in_catalog THEN lesson END) AS done,
-         MIN(COALESCE(visited, done)) AS first_ts,
+         MIN(CASE WHEN in_catalog THEN start END) AS first_ts,
          MAX(CASE WHEN in_catalog THEN done END) AS last_done,
          MAX(CASE WHEN visited >= ?5 OR done >= ?5 THEN 1 ELSE 0 END) AS active
-  FROM les
+  FROM lstart
   GROUP BY uid, track
 )`;
 
@@ -87,7 +93,7 @@ async function loadTracks(env: Env, deps: ChallengeDeps, since: string, sinceMs:
     )
       .bind(lessonKeys, totals, MAX_STATE_ROWS, since, sinceMs)
       .all<{ track: string; learners: number; completed: number }>(),
-    // Median minutes between the first visit and the completing done, over the window's completions.
+    // Median minutes between the start and the completing done, over the window's completions.
     env.DB.prepare(
       `${PER_LEARNER}, dur AS (
          SELECT per.track AS track, (per.last_done - per.first_ts) / 60000.0 AS m

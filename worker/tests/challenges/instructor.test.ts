@@ -192,6 +192,30 @@ test("tracks honour the 7, 30 and 90 day windows: learners active, completions a
   assert.deepEqual(d365["cyber-security"], { track: "cyber-security", learners: 7, completed: 6, completionRate: 0.857, medianMinutesToComplete: 37.5 }, "+ done-120d, the 100-day completion and the 200-day-old sync");
 });
 
+test("tracks: time to complete starts at the earliest timestamp of the track's catalog lessons, so a revisit after finishing keeps the completion in the median", async () => {
+  const w = await makeWorld();
+  await w.addUser({ sub: "teacher", role: "instructor" });
+  const finished = T0 - 2 * DAY;
+  const course = {
+    "cyber-security/setup": { visited: finished - 60 * MIN, done: finished - 50 * MIN },
+    "cyber-security/networking": { visited: finished - 40 * MIN, done: finished - 20 * MIN },
+    "cyber-security/linux": { visited: finished - 10 * MIN, done: finished },
+  };
+  // `visited` is the LAST visit (lib/study-store.ts visitLesson): this learner reopened every lesson an hour ago.
+  const revisited = Object.fromEntries(Object.entries(course).map(([k, r]) => [k, { ...r, visited: T0 - 60 * MIN }]));
+  seedState(w, "revisits-all", T0, stateJson(revisited));
+  // Done but never visited on record: the earliest done is the start.
+  seedState(w, "no-visits", T0, stateJson({ "cyber-security/setup": { done: finished - 30 * MIN }, "cyber-security/networking": { done: finished - 10 * MIN }, "cyber-security/linux": { done: finished } }));
+  // A lesson key that is not in the catalog does not move the start (only the track's lessons count).
+  seedState(w, "old-key", T0, stateJson({ ...course, "cyber-security/renamed-lesson": { visited: finished - 300 * DAY } }));
+  const r = await analytics(w, await w.token("teacher"), "?days=7");
+  assert.equal(r.status, 200);
+  const cyber = r.body.tracks.find((t) => t.track === "cyber-security");
+  // revisits-all: its first visit was overwritten, so its earliest record is setup's done (50 minutes);
+  // before, its start was the revisit, after the completion, and the completion was left out of the median.
+  assert.deepEqual({ ...cyber }, { track: "cyber-security", learners: 3, completed: 3, completionRate: 1, medianMinutesToComplete: 50 }, "median of 50, 30 and 60 minutes");
+});
+
 test("tracks: a window with no activity has no learners, completions or median", async () => {
   const { w, teacher } = await trackWindowWorld();
   w.clock.now = T0 + 400 * DAY;
