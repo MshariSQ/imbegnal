@@ -3,6 +3,7 @@ import { type Env, NO_STORE, corsHeaders, json } from "./util";
 import { labAccountDeleteStatements } from "./lab/account-data";
 import { LEGACY_401, requireAuth } from "./auth/guard";
 import { audit } from "./audit";
+import { emailAccountKey } from "./auth-email";
 
 // ── DELETE /api/account ───────────────────────────────────────────────────────
 // Removes the user and everything keyed to them in one atomic batch, except the little
@@ -23,6 +24,7 @@ export async function handleAccountDelete(req: Request, env: Env, origin: string
     );
   }
   await audit(env, { userId: id, action: "account.delete", detail: "self-serve erasure" });
+  const rekey = await legacyEmailRekeyStatements(env, id);
   await env.DB.batch([
     env.DB.prepare("DELETE FROM user_state WHERE github_id = ?").bind(id),
     // Today's AI tutor counter is kept, older days are erased (why: lab/account-data.ts).
@@ -37,9 +39,42 @@ export async function handleAccountDelete(req: Request, env: Env, origin: string
     ),
     // Flag attempts of the last 24 hours are kept (the brute-force limits count them), older ones erased.
     env.DB.prepare("DELETE FROM challenge_attempts WHERE user_id = ? AND at < datetime('now', '-1 day')").bind(id),
+    ...rekey,
     env.DB.prepare("DELETE FROM users WHERE github_id = ?").bind(id),
   ]);
   return json({ ok: true }, 200, origin, NO_STORE);
+}
+
+/**
+ * An email account created before keys were derived from the email has the key email:<uuid>, and
+ * registering that email again creates email:<HMAC> (auth-email.ts emailAccountKey): the counters kept
+ * above would stay under a key nobody uses again. For such an account, the batch moves what it keeps
+ * (today's lab_usage and ai_usage, the last 24 h of abuse_signals and challenge_attempts; the statements
+ * run after the deletes of older rows) to the derived key. A derived-key row for the same day can only
+ * exist if an account with that key used it today; the counts are then added (ON CONFLICT ... count +
+ * excluded.count), so a move never lowers a counter. Signals and attempts have their own row ids, so
+ * they move with a plain UPDATE. audit_log rows keep the old key: they record what that account did.
+ */
+async function legacyEmailRekeyStatements(env: Env, id: string): Promise<D1PreparedStatement[]> {
+  const row = await env.DB.prepare("SELECT provider, email FROM users WHERE github_id = ?").bind(id).first<{ provider: string | null; email: string | null }>();
+  const email = row?.provider === "email" ? (row.email ?? "").trim().toLowerCase() : "";
+  if (!email) return [];
+  const derived = await emailAccountKey(env, email);
+  if (derived === id) return [];
+  return [
+    env.DB.prepare(
+      `INSERT INTO lab_usage (user_id, day, count) SELECT ?2, day, count FROM lab_usage WHERE user_id = ?1
+       ON CONFLICT(user_id, day) DO UPDATE SET count = count + excluded.count`,
+    ).bind(id, derived),
+    env.DB.prepare("DELETE FROM lab_usage WHERE user_id = ?").bind(id),
+    env.DB.prepare(
+      `INSERT INTO ai_usage (github_id, day, count) SELECT ?2, day, count FROM ai_usage WHERE github_id = ?1
+       ON CONFLICT(github_id, day) DO UPDATE SET count = count + excluded.count`,
+    ).bind(id, derived),
+    env.DB.prepare("DELETE FROM ai_usage WHERE github_id = ?").bind(id),
+    env.DB.prepare("UPDATE abuse_signals SET user_id = ? WHERE user_id = ?").bind(derived, id),
+    env.DB.prepare("UPDATE challenge_attempts SET user_id = ? WHERE user_id = ?").bind(derived, id),
+  ];
 }
 
 // ── POST /api/event ───────────────────────────────────────────────────────────

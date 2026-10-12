@@ -269,9 +269,11 @@ Every provider's key is deterministic, so signing up again lands on the same key
   registration whose key is already in use answers `409 email_taken`, like a taken email.
 
 Email accounts created before the derived keys keep their random `email:<uuid>` key (sign-in looks accounts up by
-email). When such an account is deleted and the address registered again, the new account gets the derived key, so
-that one re-registration starts with fresh counters; after that the key is stable. Rotating `JWT_SECRET` likewise
-changes the key of later registrations (existing accounts keep theirs).
+email). When such an account is deleted, the same batch moves the rows it keeps (today's `lab_usage` and
+`ai_usage`, the last 24 hours of `abuse_signals` and `challenge_attempts`) to the derived key of its email
+(`worker/src/account.ts`), adding counts if that key already has a row for the day, so registering the address
+again is still counted; after that the key is stable. Rotating `JWT_SECRET` changes the key of later registrations
+(existing accounts keep theirs), so an email account deleted before a rotation comes back without its counters.
 
 ## Tests
 

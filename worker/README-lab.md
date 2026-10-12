@@ -78,7 +78,7 @@ node scripts/grant-role.mjs --remote --github-id <numeric GitHub id> --role inst
 
 It writes the role and a `role.grant` audit row; the role is read from D1 on every request, so it applies at once.
 
-Accounts are identified by `users.github_id` for every provider (`"<num>"` GitHub, `"email:<uuid>"`, `"google:<sub>"`).
+Accounts are identified by `users.github_id` for every provider (`"<num>"` GitHub, `"email:<keyed hash of the email>"`, or `"email:<uuid>"` for email accounts created before the keyed hash, `"google:<sub>"`).
 Admins are never auto-suspended.
 
 ## Suspensions

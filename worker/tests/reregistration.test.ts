@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, test } from "node:test";
 import { hashPassword } from "../src/auth-email";
 import type { Env } from "../src/util";
 import { TestD1 } from "./helpers/d1";
-import { JWT_SECRET, type RunnerStub, call, jsonOf, makeEnv, okResult, stubRunner } from "./helpers/harness";
+import { JWT_SECRET, type RunnerStub, call, jsonOf, makeEnv, okResult, stubRunner, tokenFor as signedToken } from "./helpers/harness";
 
 const PASSWORD = "correct horse battery";
 const FLAG_CHALLENGE = "sec-auth-log-hunt"; // a flag challenge of the real registry
@@ -155,6 +155,67 @@ describe("email account keys", () => {
     assert.equal(fresh.status, 201);
     assert.equal(fresh.sub, keyFor("old@example.com"));
     assert.equal((await login("old@example.com")).sub, fresh.sub);
+  });
+});
+
+describe("an old-style email:<uuid> account: delete + register again", () => {
+  const legacy = "email:6f1c2a8e-4b7d-4e2a-9c3f-0d5e7a9b1c2d";
+  const addLegacy = async (email: string) =>
+    db.execute(
+      "INSERT INTO users (github_id, username, name, avatar_url, email, bio, provider, password_hash) VALUES (?, 'old', 'Old', '', ?, '', 'email', ?)",
+      legacy,
+      email,
+      await hashPassword(PASSWORD),
+    );
+
+  test("the kept counters move to the derived key, so the next registration is still counted", async () => {
+    await addLegacy("old@example.com");
+    const signedIn = await login("old@example.com");
+    assert.equal(signedIn.sub, legacy);
+    assert.equal((await ask(signedIn.token)).status, 200); // the day's only AI question
+    assert.equal((await run(signedIn.token, PROBE)).status, 200); // 1 of 2 runs, 1 of 2 network-probe signals
+    for (let i = 0; i < 5; i++) assert.equal((await guess(signedIn.token, `IMB{wrong_${i}}`)).status, 200);
+
+    await deleteAccount(signedIn.token);
+    const fresh = await register("Old@Example.com");
+    assert.equal(fresh.sub, keyFor("old@example.com"));
+    assert.notEqual(fresh.sub, legacy);
+    for (const t of ["lab_usage", "abuse_signals", "challenge_attempts"]) {
+      assert.equal(db.query(`SELECT 1 FROM ${t} WHERE user_id = ?`, legacy).length, 0, `${t}: nothing left under the old key`);
+    }
+    assert.deepEqual(aiRows(legacy), []);
+
+    const refused = await ask(fresh.token);
+    assert.equal(refused.status, 429, "today's AI question still counts");
+    assert.equal((await jsonOf<{ error: string }>(refused)).error, "limit_reached");
+    assert.equal((await guess(fresh.token, "IMB{one_more}")).status, 429, "the wrong flags still rate limit");
+    assert.equal((await run(fresh.token, PROBE)).status, 200); // run 2 of 2; the second probe signal
+    assert.deepEqual(db.query("SELECT status FROM users WHERE github_id = ?", fresh.sub), [{ status: "suspended" }], "the earlier signal still counts");
+    assert.deepEqual(db.query("SELECT count FROM lab_usage WHERE user_id = ? AND day = ?", fresh.sub, today()), [{ count: 2 }]);
+  });
+
+  test("rows already under the derived key are merged (counts add up), older rows are still erased", async () => {
+    await addLegacy("merge@example.com");
+    const derived = keyFor("merge@example.com");
+    db.execute("INSERT INTO lab_usage (user_id, day, count) VALUES (?, ?, 3), (?, ?, 4), (?, '2026-01-01', 9)", legacy, today(), derived, today(), legacy);
+    db.execute("INSERT INTO ai_usage (github_id, day, count) VALUES (?, ?, 2), (?, ?, 5)", legacy, today(), derived, today());
+    db.execute("INSERT INTO abuse_signals (user_id, kind, detail, at) VALUES (?, 'resource', 'x', datetime('now')), (?, 'resource', 'old', datetime('now', '-2 days'))", legacy, legacy);
+    const signedIn = await login("merge@example.com");
+    await deleteAccount(signedIn.token);
+    assert.deepEqual(db.query("SELECT user_id, day, count FROM lab_usage WHERE user_id IN (?, ?) ORDER BY day", legacy, derived), [{ user_id: derived, day: today(), count: 7 }]);
+    assert.deepEqual(aiRows(derived), [{ day: today(), count: 7 }]);
+    assert.deepEqual(db.query("SELECT user_id, detail FROM abuse_signals"), [{ user_id: derived, detail: "x" }]);
+  });
+
+  test("a current account (derived key) and other providers are not re-keyed", async () => {
+    const current = await register("now@example.com");
+    assert.equal((await ask(current.token)).status, 200);
+    await deleteAccount(current.token);
+    assert.deepEqual(aiRows(current.sub), [{ day: today(), count: 1 }]);
+    db.execute("INSERT INTO users (github_id, username, name, email, provider) VALUES ('4242', 'gh', 'GH', 'gh@example.com', 'github')");
+    db.execute("INSERT INTO ai_usage (github_id, day, count) VALUES ('4242', ?, 1)", today());
+    assert.equal((await call(env, "/api/account", { method: "DELETE", token: await signedToken("4242") })).status, 200);
+    assert.deepEqual(aiRows("4242"), [{ day: today(), count: 1 }], "a GitHub id stays a GitHub id");
   });
 });
 

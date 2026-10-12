@@ -16,7 +16,8 @@
 // opaque account key alone (GitHub's numeric id, google:<sub>, email:<keyed hash> from
 // auth-email.ts, or the email:<uuid> of older email accounts): no email address, name or content.
 // Every provider's key is deterministic, so signing up again with the same GitHub or Google
-// account or the same email address gets the same key and is still counted by these rows.
+// account or the same email address gets the same key and is still counted by these rows. An
+// email:<uuid> account's kept rows are moved to its email's derived key when it is deleted (account.ts).
 import type { Env } from "../util";
 import { utcDay } from "./config";
 
