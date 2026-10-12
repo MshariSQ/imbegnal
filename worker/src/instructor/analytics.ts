@@ -7,6 +7,7 @@
 import type { AuditEntry, ExerciseAnalytics, InstructorAnalytics, TrackAnalytics } from "../../../shared/api";
 import { apiError, round1, sqlTime, toIso } from "../challenges/http";
 import type { ChallengeDeps } from "../challenges/types";
+import { MIN_TIME } from "../state";
 import { type Env, json } from "../util";
 
 export const MAX_DAYS = 365;
@@ -46,12 +47,16 @@ async function loadRuns(env: Env, since: string): Promise<InstructorAnalytics["r
 //
 // Only states synced inside the window are scanned: a lesson visited or done inside the window was
 // synced after it, so the pre-filter never drops a learner the window should count.
-// Per (learner, track): lessons done (only catalog lessons count), the start (the earliest timestamp of a
-// catalog lesson of the track: per lesson the earlier of `visited` and `done`, because `visited` is the
-// LAST visit, lib/study-store.ts, so a revisit after finishing must not move the start past the
-// completion), the completing (latest) done timestamp of a catalog lesson, and whether any lesson
-// timestamp falls in the window. The start is never after the completing done: that lesson's own start
-// is at or before it.
+// Per (learner, track), over the track's catalog lessons only (a renamed or removed lesson key is neither
+// progress nor activity): lessons done, the start (the earliest timestamp: per lesson the earlier of
+// `visited` and `done`, because `visited` is the LAST visit, lib/study-store.ts, so a revisit after
+// finishing must not move the start past the completion), the completing (latest) done timestamp, and
+// whether any lesson timestamp falls in the window. The start is never after the completing done: that
+// lesson's own start is at or before it.
+// A lesson is done when `done` is true or a positive number, as certificates/handlers.ts countDone and
+// PUT /api/state (state.ts) accept it; only a value from 2020 on (MIN_TIME, as state.ts) is a timestamp.
+// Legacy `done: true`, and the 1 that mergeStates makes of it and a timestamp (Math.min), complete a
+// lesson but carry no time: read as epoch milliseconds they would start the clock in 1970.
 // Lesson entries that are not objects and timestamps that are not numbers are ignored: the state is
 // client-written, and one malformed entry must not fail the whole query or count as activity.
 const PER_LEARNER = `
@@ -59,18 +64,18 @@ WITH st AS (
   SELECT github_id, data FROM user_state WHERE updated_at >= ?4 AND json_valid(data) ORDER BY updated_at DESC LIMIT ?3
 ), les AS (
   SELECT st.github_id AS uid, substr(j.key, 1, instr(j.key, '/') - 1) AS track, j.key AS lesson,
-         j.key IN (SELECT value FROM json_each(?1)) AS in_catalog,
-         CASE WHEN json_type(j.value, '$.visited') IN ('integer', 'real') THEN json_extract(j.value, '$.visited') END AS visited,
-         CASE WHEN json_type(j.value, '$.done') IN ('integer', 'real') AND json_extract(j.value, '$.done') > 0 THEN json_extract(j.value, '$.done') END AS done
+         CASE WHEN json_type(j.value, '$.visited') IN ('integer', 'real') AND json_extract(j.value, '$.visited') >= ${MIN_TIME} THEN json_extract(j.value, '$.visited') END AS visited,
+         json_type(j.value, '$.done') = 'true' OR (json_type(j.value, '$.done') IN ('integer', 'real') AND json_extract(j.value, '$.done') > 0) AS completed,
+         CASE WHEN json_type(j.value, '$.done') IN ('integer', 'real') AND json_extract(j.value, '$.done') >= ${MIN_TIME} THEN json_extract(j.value, '$.done') END AS done
   FROM st, json_each(st.data, '$.lessons') j
-  WHERE instr(j.key, '/') > 1 AND j.type = 'object'
+  WHERE instr(j.key, '/') > 1 AND j.type = 'object' AND j.key IN (SELECT value FROM json_each(?1))
 ), lstart AS (
   SELECT les.*, CASE WHEN visited IS NULL THEN done WHEN done IS NULL THEN visited ELSE MIN(visited, done) END AS start FROM les
 ), per AS (
   SELECT uid, track,
-         COUNT(DISTINCT CASE WHEN done IS NOT NULL AND in_catalog THEN lesson END) AS done,
-         MIN(CASE WHEN in_catalog THEN start END) AS first_ts,
-         MAX(CASE WHEN in_catalog THEN done END) AS last_done,
+         COUNT(DISTINCT CASE WHEN completed THEN lesson END) AS done,
+         MIN(start) AS first_ts,
+         MAX(done) AS last_done,
          MAX(CASE WHEN visited >= ?5 OR done >= ?5 THEN 1 ELSE 0 END) AS active
   FROM lstart
   GROUP BY uid, track

@@ -9,7 +9,8 @@ import { type Env, NO_STORE, json, readJson } from "./util";
 import { LEGACY_401, requireAuth } from "./auth/guard";
 
 const MAX_BYTES = 512 * 1024;
-const MIN_TIME = Date.UTC(2020, 0, 1);
+/** The earliest lesson timestamp (`visited`, `done`) read as a time; also instructor/analytics.ts. */
+export const MIN_TIME = Date.UTC(2020, 0, 1);
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The stored document: lib/study-store.ts StudyState, after sanitizeStudyState. */

@@ -32,7 +32,7 @@ function seedRun(w: World, r: RunSeed): void {
   );
 }
 
-const stateJson = (lessons: Record<string, { visited?: number; done?: number }>) => JSON.stringify({ v: 1, lessons, notes: {}, days: [] });
+const stateJson = (lessons: Record<string, { visited?: number; done?: number | true }>) => JSON.stringify({ v: 1, lessons, notes: {}, days: [] });
 /** A synced study state, last written to the server at `syncedAt` (user_state.updated_at). */
 const seedState = (w: World, user: string, syncedAt: number, data: string) =>
   w.db.insert("INSERT INTO user_state (github_id, data, updated_at) VALUES (?, ?, ?)", user, data, sql(syncedAt));
@@ -214,6 +214,39 @@ test("tracks: time to complete starts at the earliest timestamp of the track's c
   // revisits-all: its first visit was overwritten, so its earliest record is setup's done (50 minutes);
   // before, its start was the revisit, after the completion, and the completion was left out of the median.
   assert.deepEqual({ ...cyber }, { track: "cyber-security", learners: 3, completed: 3, completionRate: 1, medianMinutesToComplete: 50 }, "median of 50, 30 and 60 minutes");
+});
+
+// Legacy `done` shapes and lesson keys outside the catalog, in a 7-day window around a course finished 2 days ago.
+async function cyberTrack(states: Record<string, string>) {
+  const w = await makeWorld();
+  await w.addUser({ sub: "teacher", role: "instructor" });
+  for (const [user, data] of Object.entries(states)) seedState(w, user, T0, data);
+  const r = await analytics(w, await w.token("teacher"), "?days=7");
+  assert.equal(r.status, 200);
+  return { ...r.body.tracks.find((t) => t.track === "cyber-security") };
+}
+const FINISHED = T0 - 2 * DAY;
+
+test("tracks: a legacy done: true lesson is done, as the certificates count it, but has no completion time", async () => {
+  // done: true is the legacy production shape (worker/tests/migrations.test.ts; PUT /api/state keeps it).
+  const legacy = JSON.stringify({ v: 1, lessons: { "cyber-security/setup": { visited: FINISHED - 90 * MIN, done: true }, "cyber-security/networking": { done: FINISHED - 30 * MIN }, "cyber-security/linux": { done: FINISHED } }, notes: {}, days: [] });
+  assert.deepEqual(await cyberTrack({ "legacy-true": legacy }), { track: "cyber-security", learners: 1, completed: 1, completionRate: 1, medianMinutesToComplete: 90 }, "started at setup's visit");
+});
+
+test("tracks: done: 1 (what mergeStates makes of done: true and a timestamp) and other pre-2020 numbers are not times", async () => {
+  assert.deepEqual(
+    await cyberTrack({
+      "legacy-one": stateJson({ "cyber-security/setup": { visited: FINISHED - 60 * MIN, done: 1 }, "cyber-security/networking": { visited: FINISHED - 40 * MIN, done: FINISHED - 20 * MIN }, "cyber-security/linux": { done: FINISHED } }),
+      "legacy-one-no-visit": stateJson({ "cyber-security/setup": { done: 1 }, "cyber-security/networking": { done: FINISHED - 20 * MIN }, "cyber-security/linux": { visited: 5, done: FINISHED } }),
+    }),
+    { track: "cyber-security", learners: 2, completed: 2, completionRate: 1, medianMinutesToComplete: 40 },
+    "median of 60 and 20 minutes, not 56 years from epoch ms 1",
+  );
+});
+
+test("tracks: a learner whose only activity is a lesson key outside the catalog is not a learner of the track", async () => {
+  const renamed = stateJson({ "cyber-security/renamed-lesson": { visited: FINISHED, done: FINISHED } });
+  assert.deepEqual(await cyberTrack({ "renamed-only": renamed }), { track: "cyber-security", learners: 0, completed: 0, completionRate: 0 });
 });
 
 test("tracks: a window with no activity has no learners, completions or median", async () => {
