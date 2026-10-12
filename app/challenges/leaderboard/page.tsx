@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import { Suspense } from "react";
 import { challenges } from "@/data/challenges";
 import { roadmaps } from "@/data/roadmaps";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: "Challenge leaderboard",
   description,
   alternates: { canonical: "/challenges/leaderboard/" },
-  openGraph: { title: "Challenge leaderboard", description, url: "/challenges/leaderboard/" },
+  openGraph: pageOpenGraph({ title: "Challenge leaderboard", description, url: "/challenges/leaderboard/" }),
 };
 
 export default function LeaderboardPage() {

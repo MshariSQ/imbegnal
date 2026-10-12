@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import { Suspense } from "react";
 import { challenges } from "@/data/challenges";
 import { roadmaps } from "@/data/roadmaps";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   title: "Challenges",
   description,
   alternates: { canonical: "/challenges/" },
-  openGraph: { title, description, url: "/challenges/" },
+  openGraph: pageOpenGraph({ title, description, url: "/challenges/" }),
 };
 
 export default function ChallengesPage() {

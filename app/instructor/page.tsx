@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import { challenges } from "@/data/challenges";
 import { roadmaps } from "@/data/roadmaps";
 import InstructorDashboard from "@/components/instructor/InstructorDashboard";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   description,
   robots: { index: false, follow: false },
   alternates: { canonical: "/instructor/" },
-  openGraph: { title: `${title} · IMBEGNAL`, description, url: "/instructor/" },
+  openGraph: pageOpenGraph({ title: `${title} · IMBEGNAL`, description, url: "/instructor/" }),
 };
 
 export default function InstructorPage() {

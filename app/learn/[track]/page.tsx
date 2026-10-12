@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { courses, getCourse, trackDescription, trackTitle } from "@/lib/catalog";
 import { getCourseOutline, getCurriculum, recommendedChallenges } from "@/lib/catalog-server";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, pageOpenGraph } from "@/lib/site";
 import CourseOverview from "@/components/learn/CourseOverview";
 
 export const dynamicParams = false;
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `/learn/${track}/` },
-    openGraph: { title, description: trackDescription(track), url: `/learn/${track}/` },
+    openGraph: pageOpenGraph({ title, description: trackDescription(track), url: `/learn/${track}/` }),
   };
 }
 

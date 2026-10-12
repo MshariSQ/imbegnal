@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import { Suspense } from "react";
 import { LabSkeleton } from "@/components/codelab/CodeLab";
 import SnippetView from "@/components/codelab/SnippetView";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   description,
   robots: { index: false },
   alternates: { canonical: "/code-lab/s/" },
-  openGraph: { title: `${title} · IMBEGNAL`, description, url: "/code-lab/s/" },
+  openGraph: pageOpenGraph({ title: `${title} · IMBEGNAL`, description, url: "/code-lab/s/" }),
 };
 
 export default function SnippetPage() {

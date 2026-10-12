@@ -5,7 +5,7 @@ import { loadLesson } from "@/data/lessons";
 import { roadmaps } from "@/data/roadmaps";
 import { relatedItems } from "@/lib/ctf/filters";
 import { toListItems, tracksWithChallenges } from "@/lib/ctf/types";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, pageOpenGraph } from "@/lib/site";
 import ChallengeDetail, { type LessonLink } from "@/components/challenges/ChallengeDetail";
 
 export const dynamicParams = false;
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description: c.summary.en,
     alternates: { canonical: `/challenges/${c.id}/` },
-    openGraph: { title, description: c.summary.en, url: `/challenges/${c.id}/` },
+    openGraph: pageOpenGraph({ title, description: c.summary.en, url: `/challenges/${c.id}/` }),
   };
 }
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import PricingClient from "@/components/PricingClient";
 
 const title = "Pricing";
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: "/pricing/" },
-  openGraph: { title: `${title} · IMBEGNAL`, description, url: "/pricing/" },
+  openGraph: pageOpenGraph({ title: `${title} · IMBEGNAL`, description, url: "/pricing/" }),
 };
 
 export default function PricingPage() {

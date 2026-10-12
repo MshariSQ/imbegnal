@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import { Suspense } from "react";
 import { roadmaps } from "@/data/roadmaps";
 import CertificateVerify, { CertificateFallback } from "@/components/certificates/CertificateVerify";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   description,
   robots: { index: false },
   alternates: { canonical: "/certificate/" },
-  openGraph: { title: `${title} · IMBEGNAL`, description, url: "/certificate/" },
+  openGraph: pageOpenGraph({ title: `${title} · IMBEGNAL`, description, url: "/certificate/" }),
 };
 
 export default function CertificatePage() {

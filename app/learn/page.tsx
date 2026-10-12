@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import { courses, trackTitle } from "@/lib/catalog";
 import { getCourseOutline } from "@/lib/catalog-server";
 import CourseCatalog, { type CatalogCourse } from "@/components/learn/CourseCatalog";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: "/learn/" },
-  openGraph: { title: `${title} · IMBEGNAL`, description, url: "/learn/" },
+  openGraph: pageOpenGraph({ title: `${title} · IMBEGNAL`, description, url: "/learn/" }),
 };
 
 export default async function LearnPage() {
