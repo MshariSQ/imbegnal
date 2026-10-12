@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, test } from "node:test";
 import { catalog } from "../src/generated/catalog";
+import { LAB_XP } from "../../shared/xp";
 import { sanitizeStudyState } from "../src/state";
 import type { Env } from "../src/util";
 import { TestD1 } from "./helpers/d1";
@@ -79,6 +80,39 @@ describe("PUT /api/state", () => {
     (doc.lessons[KEY] as Record<string, unknown>).bonus = "500";
     await put(doc);
     assert.equal(stored().lessons[KEY].bonus, undefined, "not a number");
+  });
+
+  test("a lab pass recorded before the XP ledger keeps its XP above maxBonus (the old client folded it into bonus)", async () => {
+    const lab = catalog.labs.find((l) => `${l.track}/${l.lesson}` === KEY)!;
+    assert.ok(lab, "the fixture lesson has a lab");
+    const legacyPass = () => db.execute("INSERT INTO lab_progress (user_id, ref, passed_at) VALUES ('u1', ?, '2026-01-02 03:04:05')", lab.ref);
+    legacyPass();
+    const doc = honest();
+    doc.lessons[KEY].bonus = MAX + LAB_XP; // what origin/main's client stored for this learner
+    await put(doc);
+    assert.equal(stored().lessons[KEY].bonus, MAX + LAB_XP, "the legacy pass keeps its 15");
+    doc.lessons[KEY].bonus = MAX + 2 * LAB_XP;
+    await put(doc);
+    assert.equal(stored().lessons[KEY].bonus, MAX + LAB_XP, "one legacy pass allows one LAB_XP, no more");
+    // Another learner's legacy pass, or a lab_progress row that is not a catalog lab, allows nothing.
+    db.execute("INSERT INTO lab_progress (user_id, ref) VALUES ('u2', ?), ('u1', 'cyber-security/python/removed-lab')", lab.ref);
+    db.execute("DELETE FROM lab_progress WHERE user_id = 'u1' AND ref = ?", lab.ref);
+    doc.lessons[KEY].bonus = MAX + LAB_XP;
+    await put(doc);
+    assert.equal(stored().lessons[KEY].bonus, MAX, "forged: clamped to maxBonus");
+  });
+
+  test("a pass the ledger awarded gives no extra allowance: its XP is the Worker's, not bonus", async () => {
+    const lab = catalog.labs.find((l) => `${l.track}/${l.lesson}` === KEY)!;
+    db.execute("INSERT INTO lab_progress (user_id, ref) VALUES ('u1', ?)", lab.ref);
+    db.execute("INSERT INTO xp_ledger (user_id, source, ref, xp) VALUES ('u1', 'lab', ?, ?)", lab.ref, LAB_XP);
+    const doc = honest();
+    doc.lessons[KEY].bonus = MAX + LAB_XP;
+    await put(doc);
+    assert.equal(stored().lessons[KEY].bonus, MAX);
+    // The allowance is per lesson: another lesson gets none from this lab.
+    await put({ ...honest(), lessons: { [OTHER]: { bonus: 999 } } });
+    assert.equal(stored().lessons[OTHER].bonus, catalog.tracks.find((t) => t.id === "frontend")!.maxBonus!["html-css"]);
   });
 
   test("visited outside 2020-01-01 .. now + 1 day, or not a number, is dropped", async () => {
