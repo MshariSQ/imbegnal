@@ -30,7 +30,8 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   copy (`worker/src/state.ts`: catalog lessons only, each lesson's bonus clamped to what its
   exercises and quizzes can award, sane timestamps). XP for graded lab exercises of
   signed-in learners is awarded by the Worker (`xp_ledger`); every XP total in the UI comes
-  from `lib/xp.ts` (study-state XP, plus that lab XP when signed in).
+  from `lib/xp.ts` (study-state XP, plus that lab XP when signed in). What is server-authoritative,
+  server-bounded or still client-trusted: [XP authority](#xp-authority).
 * **Sign-in**: GitHub and Google use the OAuth code flow on the Worker; the OAuth `state` round-trips
   through an HttpOnly cookie. The Worker hands the JWT back in the URL fragment
   (`/auth/callback/#token=...&nonce=...`). The `nonce` closes login CSRF on that last hop: the login
@@ -274,6 +275,59 @@ email). When such an account is deleted, the same batch moves the rows it keeps 
 (`worker/src/account.ts`), adding counts if that key already has a row for the day, so registering the address
 again is still counted; after that the key is stable. Rotating `JWT_SECRET` changes the key of later registrations
 (existing accounts keep theirs), so an email account deleted before a rotation comes back without its counters.
+
+A graded lab run or challenge code submission that is still on the runner when the deletion commits writes nothing
+back: the run log (code, output), the lab pass, its XP and a solve are written only while the account still exists
+with the `token_version` the request was authenticated with (`worker/src/lab/execute.ts` `recordRun`,
+`worker/src/lab/handlers.ts`, `worker/src/challenges/submit.ts`). The caller still gets the result, with
+`xpAwarded`/`awarded` 0. A sign-out on another device during the run also changes `token_version`, so that one run is
+not recorded either (running it again records it).
+
+## XP authority
+
+What the Worker decides, what it only bounds, and what it still takes from the browser:
+
+| | What | How |
+|---|---|---|
+| **Server-authoritative** | Lesson lab exercises (`lab` sections): the pass (`lab_progress`) and its 15 XP (`xp_ledger`, source `lab`, once per user and exercise) | Written only after the Worker graded the run itself (`POST /api/lab/run` with a lesson ref, `worker/src/lab/handlers.ts`). A pass graded in the browser earns a signed-in learner no XP (it is shown as unverified until the server grades it). |
+| **Server-bounded** | The synced study state (`PUT /api/state`, `sanitizeStudyState` in `worker/src/state.ts`) | Catalog lesson keys only; `done` is `true` (legacy) or a positive time, clamped to now + 1 day; `visited` between 2020-01-01 and now + 1 day; `quiz` in [0, 1]; `bonus` at most the lesson's `maxBonus` (its exercises with tests × 15 + quizzes × 10, in the generated catalog), plus 15 for each of the learner's lab passes recorded before the ledger existed (see below). |
+| **Still client-trusted** | Lesson completion (50 XP per `done`), the in-lesson exercise and quiz bonus up to that cap, and course certificates (issued once every lesson of the course is `done`) | The browser grades in-lesson exercises and quizzes and marks lessons done. |
+
+Why lesson XP is not graded on the server yet: quiz answers and in-lesson exercise tests ship in the public static
+bundle, so a server that "grades" them adds no real authority until that content moves to the Worker (a separate
+feature, like the private challenge hints). Requirement 1.1 names the lesson lab exercises (`worker/src/lab/`), and
+those are server-authoritative.
+
+**Lab passes from before the XP ledger.** The previous client added 15 XP to the lesson `bonus` for every lab pass,
+including the ones the Worker graded (`lab_progress`). Those passes never get a ledger row (the ledger skips refs
+already in `lab_progress`), so `PUT /api/state` allows that XP to stay in `bonus`: per lesson, 15 for each of the
+learner's `lab_progress` rows of that lesson's catalog labs without an `xp_ledger` row (one query per PUT). The ledger
+is not backfilled, which would count the same XP twice.
+
+**One exercise, counted once, on the site.** A lab passed in the browser by a guest (or by the previous client) put
+its 15 XP into the lesson bonus. When the Worker later awards the same exercise (a server-graded pass, or
+`GET /api/lab/progress` reporting it with `xp`), `lib/lab-progress.ts` takes that local award back out of the bonus
+once, and `lib/sync.ts` keeps it out of the next pull + merge until the reduced document is pushed. Residual case: a
+copy of a local award held by another device (made there, or synced there before the removal) can come back through
+that device's next push; the server never stores more than `maxBonus` (plus pre-ledger lab passes) for a lesson, so
+that double count is bounded by the lesson's `maxBonus`.
+
+**Known gap: certificates trust `done`.** `GET /api/certificates/:track` issues a publicly verifiable certificate once
+every lesson of the course is `done` in the synced study state, which the browser writes; one `PUT /api/state` can
+mark them all done. Requiring server-verified lab passes now would block every certificate, because the code runner
+is not deployed in production yet.
+
+**Recommended follow-up.** Server-graded quizzes with private answer keys (kept on the Worker, like the hint texts),
+so quiz XP and lesson completion can move to the ledger; and certificates that also require a server-verified pass
+(`lab_progress`) of every lab of the course once the runner is deployed in production.
+
+**Renaming or moving a lesson drops its server copy.** `PUT /api/state` keeps only keys of the generated catalog
+(`worker/src/generated/catalog.ts`). A renamed or moved lesson (a new `track/lesson` key) therefore loses its server
+copy (`done`, `bonus`, `visited`) at each learner's next sync, and a device that still has it locally keeps it only
+there (it pushes it under the old key, which is dropped again); removing an exercise or a quiz lowers `maxBonus` and
+clamps the stored bonus. There is no alias mechanism yet, so treat lesson ids as permanent; if one must move, first
+add an alias (old key -> new key, mapped by `sanitizeStudyState`). The generated catalog must match the content when
+the Worker deploys: `ci.yml` runs `npm run check:catalog`, `deploy.yml` does not, so deploy only commits that passed CI.
 
 ## Tests
 
