@@ -70,7 +70,7 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
     if (userId) syncLabProgress(userId); // server lab passes and lab XP, fresh on every dashboard visit
   }, [userId]);
 
-  const xp = useTotalXp(); // + the Worker's lab XP when signed in
+  const xp = useTotalXp(); // lib/xp.ts: + the Worker's lab XP when signed in, this browser's guest lab XP otherwise
   const lvl = levelInfo(xp);
   const days = streak(study);
   const doneToday = study.days.includes(today());
