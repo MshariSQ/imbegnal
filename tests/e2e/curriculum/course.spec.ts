@@ -54,6 +54,9 @@ for (const lang of LANGS) {
       try {
         await page.goto(`${site.url}/learn/${course.id}/`);
         await page.waitForSelector("h1#course-title");
+        // The export is prerendered in English; the stored language applies when React re-renders after
+        // hydration (useSyncExternalStore), which can land just after the load event. Wait for it.
+        await page.waitForFunction((t) => document.querySelector("h1#course-title")?.textContent === t, titleOf(course.id, lang), { timeout: 10_000 }).catch(() => {});
         assert.equal(await page.locator("h1#course-title").innerText(), titleOf(course.id, lang), `${course.id} title`);
         assert.equal(await page.locator("html").getAttribute("dir"), lang === "ar" ? "rtl" : "ltr");
         for (const id of SECTIONS) assert.equal(await page.locator(`#${id}`).count(), 1, `${course.id}: missing section ${id}`);
@@ -142,6 +145,75 @@ test("a lab block shows its passed state and sample solution only after the lab 
     assertNoProblems(passed.problems);
   } finally {
     await passed.context.close();
+  }
+});
+
+test("a lab passed in the browser while signed in shows Passed but no XP, with the note that the server awards it", async () => {
+  const ref = "cyber-security/python/failed-logins";
+  // Recorded while signed in, without guest XP (lib/lab-progress.ts), and not reported by the Worker.
+  const storage = { "imb-labs-v1": JSON.stringify({ [ref]: 1700000000000 }), "imb-labs-guest-xp-v1": JSON.stringify({ [ref]: 0 }), sf_token: fakeJwt() };
+  for (const lang of LANGS) {
+    const w = await newPage(browser, site.url, { lang, storage });
+    try {
+      await w.page.goto(`${site.url}/learn/cyber-security/python/`);
+      const block = w.page.locator('section[aria-labelledby="lab-failed-logins"]');
+      await block.getByText(lang === "en" ? "Passed" : curriculumAr.curriculum.labPassedBadge, { exact: true }).first().waitFor();
+      const text = await block.innerText();
+      assert.ok(text.includes(lang === "en" ? "XP is earned when the exercise is checked on the server" : curriculumAr.curriculum.labXpOnServer), text);
+      assert.doesNotMatch(text, /You earned/);
+      assert.equal(await block.getByText(lang === "en" ? "Sample solution" : curriculumAr.curriculum.labSolution).count(), 1, "passing still unlocks the solution");
+      assertNoProblems(w.problems);
+    } finally {
+      await w.context.close();
+    }
+  }
+});
+
+test("dashboard total XP: the study store's XP for guests, plus the Worker's lab XP when signed in", async () => {
+  // One completed lesson (XP.lesson = 50) with 25 bonus XP from its exercises and quizzes.
+  const study = JSON.stringify({ v: 1, lessons: { "frontend/html-css": { done: 1_700_000_000_000, bonus: 25 } }, notes: {}, days: [], updated: 1 });
+  /** Waits until the "Total XP" stat reads `want` (it updates when the Worker's lab XP arrives). */
+  const waitForXp = (page: import("playwright").Page, want: string) =>
+    page.waitForFunction(
+      (v) => [...document.querySelectorAll("main .card")].some((c) => c.textContent?.includes("Total XP") && c.querySelector("bdi")?.textContent?.trim() === v),
+      want,
+    );
+
+  const guest = await newPage(browser, site.url, { storage: { "imb-study-v1": study } });
+  try {
+    await guest.page.goto(`${site.url}/dashboard/`);
+    await waitForXp(guest.page, "75");
+    assertNoProblems(guest.problems);
+  } finally {
+    await guest.context.close();
+  }
+
+  const signedIn = await newPage(browser, site.url, { storage: { "imb-study-v1": study, sf_token: fakeJwt() } });
+  try {
+    let progressCalls = 0;
+    let auth = "";
+    await signedIn.page.route("**/api/lab/progress", (route) => {
+      progressCalls++;
+      auth = route.request().headers()["authorization"] ?? "";
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        headers: { "access-control-allow-origin": "*" },
+        body: JSON.stringify({ passed: [{ ref: "cyber-security/python/failed-logins", at: "2026-10-01T10:00:00Z" }], xp: { total: 30, lab: 30 } }),
+      });
+    });
+    await signedIn.page.goto(`${site.url}/dashboard/`);
+    await waitForXp(signedIn.page, "105"); // 75 from the study store + 30 lab XP from the Worker
+    assert.match(auth, /^Bearer /);
+    assert.ok(progressCalls >= 1);
+    // The server's passes are merged: the lesson's lab block now shows it passed, with XP earned.
+    await signedIn.page.goto(`${site.url}/learn/cyber-security/python/`);
+    const block = signedIn.page.locator('section[aria-labelledby="lab-failed-logins"]');
+    await block.getByText("Passed", { exact: true }).first().waitFor();
+    assert.match(await block.innerText(), /You earned 15 XP/);
+    assertNoProblems(signedIn.problems);
+  } finally {
+    await signedIn.context.close();
   }
 });
 
@@ -240,6 +312,8 @@ test("/courses filter chips render canonical roadmap titles (EN and AR)", async 
     try {
       await page.goto(`${site.url}/courses/`);
       await page.waitForSelector("button[aria-pressed]");
+      // Same as the course pages: wait for the stored language to apply after hydration.
+      await page.getByRole("button", { name: titleOf("devops", lang), exact: true }).waitFor({ timeout: 10_000 }).catch(() => {});
       const chips = await page.locator("button[aria-pressed]").allInnerTexts();
       for (const id of ["cyber-security", "artificial-intelligence", "frontend", "devops", "ui-ux"]) {
         assert.ok(chips.includes(titleOf(id, lang)), `${lang}: chip for ${id} (${titleOf(id, lang)}) in ${chips.join(" | ")}`);

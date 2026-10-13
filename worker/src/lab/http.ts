@@ -1,14 +1,21 @@
 // HTTP plumbing shared by the Code Lab handlers: authentication, bounded JSON
 // body reading and the JSON error shape of shared/api.ts (ApiErrorBody).
 import type { ApiErrorBody } from "../../../shared/api";
-import { evaluateSuspension } from "../abuse";
-import { type Env, NO_STORE, getUser, json } from "../util";
+import { optionalGuard, requireAuth } from "../auth/guard";
+import { type Env, NO_STORE, json } from "../util";
 import { MAX_BODY_BYTES } from "./config";
 
 export interface LabUser {
   sub: string;
   username?: string;
   name?: string;
+  /**
+   * users.token_version when the guard accepted the request. What a run writes back after the runner
+   * returns is written only while the account still exists with this version (recordRun, the lab
+   * pass and its XP), so a run that outlives DELETE /api/account cannot re-create the erased data, nor
+   * hand it to an account created again under the same key (a new account starts at a new version).
+   */
+  tokenVersion: number;
 }
 
 /** JSON response that is never cached (private, per-user data). */
@@ -21,15 +28,15 @@ export function apiError(error: string, status: number, origin: string, message?
   return reply(body, status, origin);
 }
 
-/** The signed-in user from the Bearer token, or null. Only the subject is trusted to be a string. */
+const labUser = (u: LabUser): LabUser => ({ sub: u.sub, username: u.username, name: u.name, tokenVersion: u.tokenVersion });
+
+/**
+ * The signed-in user (valid, unrevoked token of an existing account; suspended accounts included), or
+ * null. Endpoints use requireActiveUser; this is for callers that only personalise.
+ */
 export async function authenticate(req: Request, env: Env): Promise<LabUser | null> {
-  const payload = await getUser(req, env);
-  if (!payload || typeof payload.sub !== "string" || payload.sub.length === 0 || payload.sub.length > 128) return null;
-  return {
-    sub: payload.sub,
-    username: typeof payload.username === "string" ? payload.username : undefined,
-    name: typeof payload.name === "string" ? payload.name : undefined,
-  };
+  const u = await optionalGuard(req, env, { allowSuspended: true });
+  return u ? labUser(u) : null;
 }
 
 export type BodyResult = { ok: true; body: Record<string, unknown> } | { ok: false };
@@ -72,18 +79,10 @@ export async function readBody(req: Request): Promise<BodyResult> {
 export const toIso = (sqlite: string): string => `${sqlite.replace(" ", "T")}Z`;
 
 /**
- * Authenticated AND not suspended AND still existing. Used by every endpoint
- * except /run (which gets the same checks from reserveQuota) and the public ones.
+ * auth/guard.ts for every authenticated lab endpoint (run included): a valid, unrevoked token of an
+ * account that still exists and is not suspended. 401 unauthorized, 403 account_suspended.
  */
 export async function requireActiveUser(req: Request, env: Env, origin: string): Promise<{ ok: true; user: LabUser } | { ok: false; response: Response }> {
-  const user = await authenticate(req, env);
-  if (!user) return { ok: false, response: apiError("unauthorized", 401, origin) };
-  const row = await env.DB.prepare("SELECT status, suspended_until FROM users WHERE github_id = ?")
-    .bind(user.sub)
-    .first<{ status: string | null; suspended_until: string | null }>();
-  if (!row) return { ok: false, response: apiError("unauthorized", 401, origin) };
-  if (await evaluateSuspension(env, user.sub, row)) {
-    return { ok: false, response: apiError("account_suspended", 403, origin, "This account is suspended after automated abuse protection triggered.") };
-  }
-  return { ok: true, user };
+  const auth = await requireAuth(req, env, origin);
+  return auth.ok ? { ok: true, user: labUser(auth.user) } : auth;
 }

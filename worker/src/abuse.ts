@@ -40,6 +40,10 @@ interface SuspensionRow {
  * True when the account is currently suspended. A suspension whose
  * `suspended_until` has passed is lifted here (lazily, on the next request).
  * `suspended_until` NULL while suspended means "until an operator lifts it".
+ *
+ * When the conditional lift changes nothing, `row` may be a stale read (another request lifted the
+ * suspension, or it was changed, after the caller read it), so the row is read again and decides;
+ * `row` is updated with what was read, so the caller reports the current `suspended_until`.
  */
 export async function evaluateSuspension(env: Env, userId: string, row: SuspensionRow): Promise<boolean> {
   if (row.status !== "suspended") return false;
@@ -52,7 +56,10 @@ export async function evaluateSuspension(env: Env, userId: string, row: Suspensi
     await audit(env, { userId, action: "abuse.suspension_expired", detail: `suspension ended (was until ${row.suspended_until})` });
     return false;
   }
-  return true;
+  const now = await env.DB.prepare("SELECT status, suspended_until FROM users WHERE github_id = ?").bind(userId).first<SuspensionRow>();
+  row.status = now?.status ?? null;
+  row.suspended_until = now?.suspended_until ?? null;
+  return row.status === "suspended";
 }
 
 export async function isSuspended(env: Env, userId: string): Promise<boolean> {

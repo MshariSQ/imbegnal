@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { API_URL } from "./site";
 
 export interface AuthUser {
   sub: string;
@@ -46,7 +47,30 @@ export function getCurrentUser(): AuthUser | null {
   return parseToken(token);
 }
 
-export function signOut(): void {
+/** How long sign-out waits for the Worker before it signs out locally anyway. */
+const LOGOUT_WAIT_MS = 1500;
+let signingOut = false;
+
+/**
+ * Asks the Worker to revoke the session (POST /api/auth/logout: every token of the account stops
+ * working, on every device). Best effort: offline, an already revoked token, or the previous Worker
+ * without the route (404) change nothing here. `keepalive` lets the request finish after the page moved on.
+ */
+async function revokeSession(token: string): Promise<void> {
+  try {
+    const request = fetch(`${API_URL}/api/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, keepalive: true }).catch(() => undefined);
+    await Promise.race([request, new Promise((resolve) => setTimeout(resolve, LOGOUT_WAIT_MS))]);
+  } catch {
+    // signing out locally must never depend on the API
+  }
+}
+
+/** Revokes the session on the Worker (best effort), then clears the local token and goes home. */
+export async function signOut(): Promise<void> {
+  if (signingOut) return;
+  signingOut = true;
+  const token = getToken();
+  if (token) await revokeSession(token);
   removeToken();
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   window.location.href = `${base}/`;

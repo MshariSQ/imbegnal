@@ -39,7 +39,8 @@ export const removeBookmark = (type: string, itemId: string, token: string) =>
 
 // ── Email/password auth ───────────────────────────────────────────────────────
 export class ApiError extends Error {
-  constructor(public status: number, public code: string) {
+  /** `body`: the parsed JSON error body when there was one (e.g. `until` of 403 account_suspended). */
+  constructor(public status: number, public code: string, public body?: unknown) {
     super(`API ${status}: ${code}`);
   }
 }
@@ -88,7 +89,7 @@ export interface TutorRequest {
 
 /**
  * Streams the tutor's answer. Calls `onText` for each chunk; resolves when the
- * stream ends. Throws ApiError (401 sign-in needed, 429 daily limit, 503 off).
+ * stream ends. Throws ApiError (401 sign-in needed, 403 account_suspended, 429 daily limit, 503 off).
  */
 export async function streamTutor(
   req: TutorRequest,
@@ -104,7 +105,7 @@ export async function streamTutor(
   });
   if (!res.ok || !res.body) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new ApiError(res.status, data.error ?? "error");
+    throw new ApiError(res.status, data.error ?? "error", data);
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

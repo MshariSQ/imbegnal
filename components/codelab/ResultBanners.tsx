@@ -12,13 +12,16 @@ import { btnGhost, btnPrimary } from "./ui";
 export function GradeBanner({
   grade,
   xp,
+  unverified = false,
   track,
   lesson,
   next,
 }: {
   grade: GradeResult;
-  /** XP awarded now; 0 when the exercise was already completed. */
+  /** XP awarded now (the Worker's xpAwarded for server-graded runs); 0 when the exercise was already completed. */
   xp: number;
+  /** Signed in but graded in this browser: no XP until the server checks it. */
+  unverified?: boolean;
   track: string;
   lesson: string;
   next: { track: string; lesson: string } | null;
@@ -35,10 +38,16 @@ export function GradeBanner({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-extrabold text-fg">{e.passedTitle}</p>
             <p className="mt-1 text-sm text-fg-soft">{e.passedBody}</p>
-            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300" data-testid="xp">
-              <Sparkles size={12} aria-hidden="true" />
-              {xp > 0 ? fill(e.xp, { xp }) : e.alreadyDone}
-            </p>
+            {unverified ? (
+              <p className="mt-2 text-xs text-fg-muted" data-testid="xp" data-unverified="true">
+                {e.xpOnServer}
+              </p>
+            ) : (
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300" data-testid="xp">
+                <Sparkles size={12} aria-hidden="true" />
+                {xp > 0 ? fill(e.xp, { xp }) : e.alreadyDone}
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <Link href={lessonHref(track, lesson)} className={btnGhost}>
                 <ArrowLeft size={15} aria-hidden="true" className="rtl-flip" />

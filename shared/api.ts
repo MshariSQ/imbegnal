@@ -10,7 +10,7 @@
  *    `error` code to a localized message.
  *      400 invalid_request          malformed body / unknown language / too large
  *      401 unauthorized             missing or stale token
- *      403 account_suspended        abuse protection disabled the account
+ *      403 account_suspended        abuse protection (or an operator) disabled the account; `until` (ISO) when it ends
  *      403 forbidden                role required (instructor/admin)
  *      404 not_found
  *      429 quota_exceeded           see QuotaError.scope
@@ -104,6 +104,21 @@ export interface RunApiResponse {
   quota: QuotaInfo;
   /** Present when `ref` is a lesson exercise or a challenge with auto-graded tests. */
   grade?: GradeResult;
+  /**
+   * Graded lesson lab runs only: XP this run awarded (LAB_XP in shared/xp.ts on the first
+   * passing run, 0 when it failed or the exercise was already awarded). The Worker is the
+   * XP authority for lab exercises (xp_ledger). Additive and optional: an older Worker omits it,
+   * and it is omitted when `recorded` is false.
+   */
+  xpAwarded?: number;
+  /**
+   * Graded lesson lab passes only, and only ever `false`: the pass (lab_progress) and its XP were NOT
+   * recorded because the account stopped being the one that started the run while it was on the
+   * runner (DELETE /api/account, or POST /api/auth/logout ending every session). The grade is still
+   * the real result; the site shows the pass as not checked on the server (no XP). Additive and
+   * optional: absent when the pass was recorded, and from older Workers.
+   */
+  recorded?: false;
 }
 
 export interface LanguageAvailability {
@@ -171,8 +186,13 @@ export interface Snippet {
 
 /** GET /api/lab/progress — lab exercises the signed-in learner has passed (server is the source of truth). */
 export interface LabProgressResponse {
-  /** refs: `${track}/${lesson}/${exerciseId}` */
-  passed: { ref: string; at: string }[];
+  /**
+   * refs: `${track}/${lesson}/${exerciseId}`. `xp`: what the Worker's XP ledger awarded for that pass;
+   * absent for passes recorded before the ledger (their XP is in the synced study state) and from older Workers.
+   */
+  passed: { ref: string; at: string; xp?: number }[];
+  /** XP the Worker awarded this learner (xp_ledger): every source, and lab exercises alone. Additive: an older Worker omits it. */
+  xp?: { total: number; lab: number };
 }
 
 // ── Challenges ───────────────────────────────────────────────────────────────

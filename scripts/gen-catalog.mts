@@ -11,6 +11,7 @@ import { roadmaps } from "../data/roadmaps";
 import { courses } from "../lib/catalog";
 import { loadLesson } from "../data/lessons";
 import type { Catalog, CatalogLab, CatalogTrack } from "../shared/catalog";
+import { lessonMaxBonus } from "../shared/xp";
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), "../worker/src/generated/catalog.ts");
 
@@ -20,10 +21,12 @@ async function build(): Promise<Catalog> {
   for (const r of roadmaps) {
     const course = courses.find((c) => c.id === r.id);
     const lessonIds: string[] = [];
+    const maxBonus: Record<string, number> = {};
     for (const ref of course?.lessons ?? []) {
       const lesson = await loadLesson(r.id, ref.lessonId);
       if (!lesson) continue;
       lessonIds.push(ref.lessonId);
+      maxBonus[ref.lessonId] = lessonMaxBonus(lesson.sections);
       for (const s of lesson.sections) {
         if (s.type !== "lab") continue;
         labs.push({
@@ -42,7 +45,7 @@ async function build(): Promise<Catalog> {
         });
       }
     }
-    tracks.push({ id: r.id, title: r.title, lessons: lessonIds });
+    tracks.push({ id: r.id, title: r.title, lessons: lessonIds, maxBonus });
   }
   const refs = new Set<string>();
   for (const l of labs) {

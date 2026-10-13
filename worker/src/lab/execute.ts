@@ -10,6 +10,7 @@ import type { LangId } from "../../../shared/languages";
 import type { Plan, PublicRunResult, QuotaError, QuotaInfo, RunRef } from "../../../shared/api";
 import type { RunResult, RunStatus } from "../../../shared/protocol";
 import { evaluateSuspension, recordAbuseSignal } from "../abuse";
+import { sqlToIso, suspendedBody } from "../auth/guard";
 import type { Env } from "../util";
 import {
   GLOBAL_BUCKET,
@@ -75,7 +76,7 @@ async function dropReservation(env: Env, runId: string): Promise<void> {
  * Reserves `units` runs for the user. `origin` is only used for the CORS headers of a
  * rejection response (pass the request's Origin so browsers on localhost/E2E origins can read it).
  */
-export async function reserveQuota(env: Env, user: LabUser, units = 1, origin = ""): Promise<ReserveResult> {
+export async function reserveQuota(env: Env, user: Pick<LabUser, "sub">, units = 1, origin = ""): Promise<ReserveResult> {
   const deny = (error: string, status: number, message: string, extra: Record<string, unknown> = {}, headers: Record<string, string> = {}): ReserveResult => ({
     ok: false,
     response: reply({ error, message, ...extra }, status, origin, headers),
@@ -86,8 +87,10 @@ export async function reserveQuota(env: Env, user: LabUser, units = 1, origin = 
     .first<{ plan: string | null; status: string | null; suspended_until: string | null }>();
   // A deleted account with a still-valid token must not keep running code.
   if (!row) return deny("unauthorized", 401, "Sign in again.");
+  // Every caller has passed auth/guard.ts already (it lifts an expired suspension, with its audit row, and
+  // refuses a suspended account), so this only catches a suspension that began since, with the same body.
   if (await evaluateSuspension(env, user.sub, row)) {
-    return deny("account_suspended", 403, "This account is suspended after automated abuse protection triggered.");
+    return { ok: false, response: reply(suspendedBody(sqlToIso(row.suspended_until)), 403, origin) };
   }
 
   const plan = planOf(row.plan);
@@ -144,7 +147,7 @@ async function quotaInfoFor(env: Env, userId: string, plan: Plan): Promise<Quota
   return { plan, used, limit: limits.daily, remaining: Math.max(0, limits.daily - used), resetAt: nextResetIso(), perMinute: limits.perMinute };
 }
 
-export async function getQuotaInfo(env: Env, user: LabUser): Promise<QuotaInfo> {
+export async function getQuotaInfo(env: Env, user: Pick<LabUser, "sub">): Promise<QuotaInfo> {
   const row = await env.DB.prepare("SELECT plan FROM users WHERE github_id = ?").bind(user.sub).first<{ plan: string | null }>();
   return quotaInfoFor(env, user.sub, planOf(row?.plan));
 }
@@ -209,6 +212,8 @@ export function firstErrorLine(text: string): string | null {
 export interface RecordRunInput {
   id?: string;
   userId: string;
+  /** users.token_version the guard saw (LabUser.tokenVersion): the row is written only while the account still has it. */
+  tokenVersion: number;
   ref: RunRef;
   lang: LangId;
   result: RunResult;
@@ -221,6 +226,9 @@ export interface RecordRunInput {
 /**
  * Writes (or completes the in-flight reservation row of) one run: metrics for
  * analytics plus the user's own size-capped history copy. Returns the run id.
+ * Nothing is written when the account no longer exists as the one the guard saw (deleted, or
+ * deleted and created again, while the run was on the runner): account deletion also removed
+ * the reservation row, and this must not re-create the erased code and output.
  */
 export async function recordRun(env: Env, row: RecordRunInput): Promise<string> {
   const id = row.id ?? crypto.randomUUID();
@@ -233,7 +241,8 @@ export async function recordRun(env: Env, row: RecordRunInput): Promise<string> 
   await env.DB.prepare(
     `INSERT INTO lab_runs (id, user_id, ref_kind, track, lesson, exercise, challenge_id, lang, status, exit_code, run_ms, compile_ms,
        stdout_bytes, stderr_bytes, success, passed, first_error, code, stdin, stdout, stderr)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+     WHERE EXISTS (SELECT 1 FROM users WHERE github_id = ? AND token_version = ?)
      ON CONFLICT(id) DO UPDATE SET
        ref_kind = excluded.ref_kind, track = excluded.track, lesson = excluded.lesson, exercise = excluded.exercise,
        challenge_id = excluded.challenge_id, lang = excluded.lang, status = excluded.status, exit_code = excluded.exit_code,
@@ -264,6 +273,8 @@ export async function recordRun(env: Env, row: RecordRunInput): Promise<string> 
     (row.stdin ?? "").slice(0, STORE_STDIN_CHARS),
     r.stdout.slice(0, STORE_OUTPUT_CHARS),
     stderrCopy.slice(0, STORE_OUTPUT_CHARS),
+    row.userId,
+    row.tokenVersion,
   ).run();
   return id;
 }

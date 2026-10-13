@@ -32,7 +32,10 @@ function seedRun(w: World, r: RunSeed): void {
   );
 }
 
-const stateJson = (lessons: Record<string, { visited?: number; done?: number }>) => JSON.stringify({ v: 1, lessons, notes: {}, days: [] });
+const stateJson = (lessons: Record<string, { visited?: number; done?: number | true }>) => JSON.stringify({ v: 1, lessons, notes: {}, days: [] });
+/** A synced study state, last written to the server at `syncedAt` (user_state.updated_at). */
+const seedState = (w: World, user: string, syncedAt: number, data: string) =>
+  w.db.insert("INSERT INTO user_state (github_id, data, updated_at) VALUES (?, ?, ?)", user, data, sql(syncedAt));
 
 async function seededWorld() {
   const w = await makeWorld();
@@ -60,10 +63,10 @@ async function seededWorld() {
 
   // study state: alpha finished cyber-security (visit 90 min before the last completion), beta 1/3, gamma only visited, delta frontend done
   const done = T0;
-  w.db.insert("INSERT INTO user_state (github_id, data) VALUES (?, ?)", "stu-alpha", stateJson({ "cyber-security/setup": { visited: done - 90 * MIN, done: done - 80 * MIN }, "cyber-security/networking": { visited: done - 60 * MIN, done: done - 30 * MIN }, "cyber-security/linux": { done } }));
-  w.db.insert("INSERT INTO user_state (github_id, data) VALUES (?, ?)", "stu-beta", stateJson({ "cyber-security/setup": { done } }));
-  w.db.insert("INSERT INTO user_state (github_id, data) VALUES (?, ?)", "stu-gamma", stateJson({ "cyber-security/networking": { visited: done } }));
-  w.db.insert("INSERT INTO user_state (github_id, data) VALUES (?, ?)", "stu-delta", stateJson({ "frontend/html-css": { visited: done - 10 * MIN, done: done - 5 * MIN }, "frontend/javascript": { done } }));
+  seedState(w, "stu-alpha", T0, stateJson({ "cyber-security/setup": { visited: done - 90 * MIN, done: done - 80 * MIN }, "cyber-security/networking": { visited: done - 60 * MIN, done: done - 30 * MIN }, "cyber-security/linux": { done } }));
+  seedState(w, "stu-beta", T0, stateJson({ "cyber-security/setup": { done } }));
+  seedState(w, "stu-gamma", T0, stateJson({ "cyber-security/networking": { visited: done } }));
+  seedState(w, "stu-delta", T0, stateJson({ "frontend/html-css": { visited: done - 10 * MIN, done: done - 5 * MIN }, "frontend/javascript": { done } }));
 
   // challenge solves + attempts
   seedSolve(w.db, { challenge: "flag-basic", user: "stu-alpha", points: 100, at: sql(T0 - DAY), minutes: 10 });
@@ -130,6 +133,128 @@ test("tracks: learners, completers, completion rate and median minutes first vis
   assert.deepEqual(r.body.tracks.map((t) => t.track), ["cyber-security", "frontend"], "lesson-less tracks are not listed");
   assert.deepEqual({ ...r.body.tracks[0] }, { track: "cyber-security", learners: 3, completed: 1, completionRate: 0.333, medianMinutesToComplete: 90 });
   assert.deepEqual({ ...r.body.tracks[1] }, { track: "frontend", learners: 1, completed: 1, completionRate: 1, medianMinutesToComplete: 10 });
+});
+
+// Track activity spread around the 7, 30 and 90 day windows. Every learner synced after their
+// last lesson timestamp unless the case says otherwise.
+async function trackWindowWorld() {
+  const w = await makeWorld();
+  await w.addUser({ sub: "teacher", role: "instructor" });
+  const cyber = (visitedAt: number, doneAt: number, minutes: number) => ({
+    "cyber-security/setup": { visited: visitedAt, done: doneAt - minutes * MIN + 10 * MIN },
+    "cyber-security/networking": { done: doneAt - 5 * MIN },
+    "cyber-security/linux": { visited: doneAt - minutes * MIN, done: doneAt },
+  });
+  // finished cyber-security 3, 20, 60 and 120 days ago, taking 120, 60, 30 and 15 minutes
+  seedState(w, "done-3d", T0 - 3 * DAY, stateJson(cyber(T0 - 3 * DAY - 120 * MIN, T0 - 3 * DAY, 120)));
+  seedState(w, "done-20d", T0 - 20 * DAY, stateJson(cyber(T0 - 20 * DAY - 60 * MIN, T0 - 20 * DAY, 60)));
+  seedState(w, "done-60d", T0 - 60 * DAY, stateJson(cyber(T0 - 60 * DAY - 30 * MIN, T0 - 60 * DAY, 30)));
+  seedState(w, "done-120d", T0 - 120 * DAY, stateJson(cyber(T0 - 120 * DAY - 15 * MIN, T0 - 120 * DAY, 15)));
+  // one cyber-security lesson done 5 days ago; a frontend lesson done 50 days ago
+  seedState(w, "partial-5d", T0 - 5 * DAY, stateJson({ "cyber-security/setup": { done: T0 - 5 * DAY }, "frontend/html-css": { visited: T0 - 50 * DAY, done: T0 - 50 * DAY } }));
+  // finished cyber-security 100 days ago and only revisited a lesson 2 days ago: active, not a completion
+  const old = cyber(T0 - 100 * DAY - 45 * MIN, T0 - 100 * DAY, 45);
+  seedState(w, "revisit-2d", T0 - 2 * DAY, stateJson({ ...old, "cyber-security/setup": { ...old["cyber-security/setup"], visited: T0 - 2 * DAY } }));
+  // lesson timestamps say yesterday (client clock) but the state was last synced 200 days ago
+  seedState(w, "stale-sync", T0 - 200 * DAY, stateJson(cyber(T0 - DAY - 20 * MIN, T0 - DAY, 20)));
+  // frontend finished 5 days ago, started 40 days ago (35 days = 50,400 minutes)
+  seedState(w, "fe-span", T0 - 5 * DAY, stateJson({ "frontend/html-css": { visited: T0 - 40 * DAY, done: T0 - 35 * DAY }, "frontend/javascript": { visited: T0 - 6 * DAY, done: T0 - 5 * DAY } }));
+  // frontend visited exactly at the 7-day boundary (inclusive), and 1 ms before it (synced today)
+  seedState(w, "fe-boundary", T0 - 7 * DAY, stateJson({ "frontend/javascript": { visited: T0 - 7 * DAY } }));
+  seedState(w, "fe-before", T0, stateJson({ "frontend/javascript": { visited: T0 - 7 * DAY - 1 } }));
+  // malformed entries: not counted and never an error
+  seedState(w, "junk", T0, JSON.stringify({ v: 1, lessons: { "cyber-security/setup": "done", "cyber-security/networking": { done: "soon", visited: "now" }, "frontend/html-css": [T0] } }));
+  return { w, teacher: await w.token("teacher") };
+}
+
+test("tracks honour the 7, 30 and 90 day windows: learners active, completions and median inside the window only", async () => {
+  const { w, teacher } = await trackWindowWorld();
+  const tracksFor = async (qs: string) => {
+    const r = await analytics(w, teacher, qs);
+    assert.equal(r.status, 200, qs);
+    return Object.fromEntries(r.body.tracks.map((t) => [t.track, { ...t }]));
+  };
+
+  const d7 = await tracksFor("?days=7");
+  assert.deepEqual(d7["cyber-security"], { track: "cyber-security", learners: 3, completed: 1, completionRate: 0.333, medianMinutesToComplete: 120 }, "done-3d, partial-5d, revisit-2d; only done-3d completed inside 7 days");
+  assert.deepEqual(d7.frontend, { track: "frontend", learners: 2, completed: 1, completionRate: 0.5, medianMinutesToComplete: 50_400 }, "fe-span and the inclusive boundary; fe-before is 1 ms too old");
+
+  const d30 = await tracksFor("?days=30");
+  assert.deepEqual(d30["cyber-security"], { track: "cyber-security", learners: 4, completed: 2, completionRate: 0.5, medianMinutesToComplete: 90 }, "+ done-20d; median of 60 and 120");
+  assert.deepEqual(d30.frontend, { track: "frontend", learners: 3, completed: 1, completionRate: 0.333, medianMinutesToComplete: 50_400 }, "+ fe-before; partial-5d's frontend activity is 50 days old");
+  assert.deepEqual(await tracksFor(""), d30, "30 days is the default window");
+
+  const d90 = await tracksFor("?days=90");
+  assert.deepEqual(d90["cyber-security"], { track: "cyber-security", learners: 5, completed: 3, completionRate: 0.6, medianMinutesToComplete: 60 }, "+ done-60d; median of 30, 60 and 120; done-120d and the 100-day completion stay out");
+  assert.deepEqual(d90.frontend, { track: "frontend", learners: 4, completed: 1, completionRate: 0.25, medianMinutesToComplete: 50_400 }, "+ partial-5d's 50-day-old frontend lesson");
+
+  const d365 = await tracksFor("?days=365");
+  assert.deepEqual(d365["cyber-security"], { track: "cyber-security", learners: 7, completed: 6, completionRate: 0.857, medianMinutesToComplete: 37.5 }, "+ done-120d, the 100-day completion and the 200-day-old sync");
+});
+
+test("tracks: time to complete starts at the earliest timestamp of the track's catalog lessons, so a revisit after finishing keeps the completion in the median", async () => {
+  const w = await makeWorld();
+  await w.addUser({ sub: "teacher", role: "instructor" });
+  const finished = T0 - 2 * DAY;
+  const course = {
+    "cyber-security/setup": { visited: finished - 60 * MIN, done: finished - 50 * MIN },
+    "cyber-security/networking": { visited: finished - 40 * MIN, done: finished - 20 * MIN },
+    "cyber-security/linux": { visited: finished - 10 * MIN, done: finished },
+  };
+  // `visited` is the LAST visit (lib/study-store.ts visitLesson): this learner reopened every lesson an hour ago.
+  const revisited = Object.fromEntries(Object.entries(course).map(([k, r]) => [k, { ...r, visited: T0 - 60 * MIN }]));
+  seedState(w, "revisits-all", T0, stateJson(revisited));
+  // Done but never visited on record: the earliest done is the start.
+  seedState(w, "no-visits", T0, stateJson({ "cyber-security/setup": { done: finished - 30 * MIN }, "cyber-security/networking": { done: finished - 10 * MIN }, "cyber-security/linux": { done: finished } }));
+  // A lesson key that is not in the catalog does not move the start (only the track's lessons count).
+  seedState(w, "old-key", T0, stateJson({ ...course, "cyber-security/renamed-lesson": { visited: finished - 300 * DAY } }));
+  const r = await analytics(w, await w.token("teacher"), "?days=7");
+  assert.equal(r.status, 200);
+  const cyber = r.body.tracks.find((t) => t.track === "cyber-security");
+  // revisits-all: its first visit was overwritten, so its earliest record is setup's done (50 minutes);
+  // before, its start was the revisit, after the completion, and the completion was left out of the median.
+  assert.deepEqual({ ...cyber }, { track: "cyber-security", learners: 3, completed: 3, completionRate: 1, medianMinutesToComplete: 50 }, "median of 50, 30 and 60 minutes");
+});
+
+// Legacy `done` shapes and lesson keys outside the catalog, in a 7-day window around a course finished 2 days ago.
+async function cyberTrack(states: Record<string, string>) {
+  const w = await makeWorld();
+  await w.addUser({ sub: "teacher", role: "instructor" });
+  for (const [user, data] of Object.entries(states)) seedState(w, user, T0, data);
+  const r = await analytics(w, await w.token("teacher"), "?days=7");
+  assert.equal(r.status, 200);
+  return { ...r.body.tracks.find((t) => t.track === "cyber-security") };
+}
+const FINISHED = T0 - 2 * DAY;
+
+test("tracks: a legacy done: true lesson is done, as the certificates count it, but has no completion time", async () => {
+  // done: true is the legacy production shape (worker/tests/migrations.test.ts; PUT /api/state keeps it).
+  const legacy = JSON.stringify({ v: 1, lessons: { "cyber-security/setup": { visited: FINISHED - 90 * MIN, done: true }, "cyber-security/networking": { done: FINISHED - 30 * MIN }, "cyber-security/linux": { done: FINISHED } }, notes: {}, days: [] });
+  assert.deepEqual(await cyberTrack({ "legacy-true": legacy }), { track: "cyber-security", learners: 1, completed: 1, completionRate: 1, medianMinutesToComplete: 90 }, "started at setup's visit");
+});
+
+test("tracks: done: 1 (what mergeStates makes of done: true and a timestamp) and other pre-2020 numbers are not times", async () => {
+  assert.deepEqual(
+    await cyberTrack({
+      "legacy-one": stateJson({ "cyber-security/setup": { visited: FINISHED - 60 * MIN, done: 1 }, "cyber-security/networking": { visited: FINISHED - 40 * MIN, done: FINISHED - 20 * MIN }, "cyber-security/linux": { done: FINISHED } }),
+      "legacy-one-no-visit": stateJson({ "cyber-security/setup": { done: 1 }, "cyber-security/networking": { done: FINISHED - 20 * MIN }, "cyber-security/linux": { visited: 5, done: FINISHED } }),
+    }),
+    { track: "cyber-security", learners: 2, completed: 2, completionRate: 1, medianMinutesToComplete: 40 },
+    "median of 60 and 20 minutes, not 56 years from epoch ms 1",
+  );
+});
+
+test("tracks: a learner whose only activity is a lesson key outside the catalog is not a learner of the track", async () => {
+  const renamed = stateJson({ "cyber-security/renamed-lesson": { visited: FINISHED, done: FINISHED } });
+  assert.deepEqual(await cyberTrack({ "renamed-only": renamed }), { track: "cyber-security", learners: 0, completed: 0, completionRate: 0 });
+});
+
+test("tracks: a window with no activity has no learners, completions or median", async () => {
+  const { w, teacher } = await trackWindowWorld();
+  w.clock.now = T0 + 400 * DAY;
+  const r = await analytics(w, teacher, "?days=7");
+  assert.equal(r.status, 200);
+  assert.ok(r.body.tracks.every((t) => t.learners === 0 && t.completed === 0 && t.completionRate === 0 && t.medianMinutesToComplete === undefined));
 });
 
 test("challenges: solves and attempts inside the window and the median minutes to solve", async () => {

@@ -4,7 +4,7 @@ import { courses, getCourse, trackTitle } from "@/lib/catalog";
 import { getCourseOutline } from "@/lib/catalog-server";
 import { loadLesson } from "@/data/lessons";
 import { NODE_DATA } from "@/data/roadmap-nodes";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, pageOpenGraph } from "@/lib/site";
 import LessonPlayer from "@/components/learn/LessonPlayer";
 
 export const dynamicParams = false;
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${lesson.title.en} — ${trackTitle(track)}`,
     description,
     alternates: { canonical: `/learn/${track}/${lessonId}/` },
-    openGraph: { type: "article", title: lesson.title.en, description, url: `/learn/${track}/${lessonId}/` },
+    openGraph: pageOpenGraph({ type: "article", title: lesson.title.en, description, url: `/learn/${track}/${lessonId}/` }),
   };
 }
 

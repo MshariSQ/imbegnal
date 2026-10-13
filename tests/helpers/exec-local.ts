@@ -9,10 +9,11 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { getLanguage, type LangId } from "../../shared/languages";
+import { detectJavaTarget } from "../../runner/src/languages";
 
 export interface LocalResult {
   unsupported?: boolean;
@@ -38,7 +39,31 @@ const GOCACHE = join(tmpdir(), "imb-local-gocache");
 const TOOLCHAIN_HOMES = {
   RUSTUP_HOME: process.env.RUSTUP_HOME || join(homedir(), ".rustup"),
   CARGO_HOME: process.env.CARGO_HOME || join(homedir(), ".cargo"),
+  XDG_CONFIG_HOME: goTelemetryOffConfig(),
 };
+
+/**
+ * Go >= 1.23 starts a telemetry child process that keeps writing to $HOME/.config/go/telemetry
+ * after `go` itself has exited. With a temp HOME that child recreated the directory after rmSync
+ * and sometimes made rmSync throw ENOTEMPTY, which crashed the whole test file. The mode cannot
+ * be set through the environment, only by a `mode` file in the user config dir, so every local
+ * run shares one config dir (outside HOME) whose Go telemetry mode is "off": no files, no child.
+ */
+function goTelemetryOffConfig(): string {
+  const dir = join(tmpdir(), "imb-local-config");
+  const modeFile = join(dir, "go", "telemetry", "mode");
+  try {
+    if (readFileSync(modeFile, "utf8") === "off") return dir;
+  } catch {
+    // not written yet
+  }
+  mkdirSync(join(dir, "go", "telemetry"), { recursive: true });
+  // Test files run in parallel processes: write + rename, so `go` never reads a half-written file.
+  const tmp = `${modeFile}.${process.pid}`;
+  writeFileSync(tmp, "off");
+  renameSync(tmp, modeFile);
+  return dir;
+}
 
 /**
  * Compiled programs, built once per (language, source) and reused for every test case of that
@@ -78,11 +103,33 @@ function has(cmd: string): boolean {
   return ok;
 }
 
-const RECIPES: Partial<Record<LangId, { needs: string; compile?: (f: string) => string[]; run: (f: string) => string[] }>> = {
+interface Recipe {
+  needs: string;
+  /** Source file name when it depends on the code (default: the language's filename). */
+  file?: (code: string) => string;
+  compile?: (f: string) => string[];
+  run: (f: string, code: string) => string[];
+}
+
+/** Java's file and main class, decided as the runner decides them (runner/src/languages.ts). */
+const javaTarget = (code: string) => {
+  const t = detectJavaTarget(code);
+  return "error" in t ? { fileClass: "Main", mainClass: "Main" } : t;
+};
+
+const RECIPES: Partial<Record<LangId, Recipe>> = {
   python: { needs: "python3", run: (f) => ["python3", f] },
   javascript: { needs: "node", run: (f) => ["node", f] },
   typescript: { needs: "node", run: (f) => ["node", "--experimental-strip-types", "--no-warnings", f] },
-  java: { needs: "java", run: (f) => ["java", f] }, // single-file source-launch mode
+  // javac once, then `java -cp`, like the runner. Single-file source-launch mode (`java Main.java`) compiled
+  // the source again inside every case's time limit, about 1 CPU-second per case: on a loaded machine a
+  // correct reference solution's first case took over SOLUTION_TIMEOUT_MS and was reported as timed out.
+  java: {
+    needs: "javac",
+    file: (code) => `${javaTarget(code).fileClass}.java`,
+    compile: (f) => ["javac", "-encoding", "UTF-8", "-d", ".", f],
+    run: (_f, code) => ["java", "-cp", "./", javaTarget(code).mainClass],
+  },
   c: { needs: "gcc", compile: (f) => ["gcc", "-O2", "-std=c17", "-o", "prog", f, "-lm"], run: () => ["./prog"] },
   cpp: { needs: "g++", compile: (f) => ["g++", "-O2", "-std=c++20", "-o", "prog", f], run: () => ["./prog"] },
   go: { needs: "go", compile: (f) => ["go", "build", "-o", "prog", f], run: () => ["./prog"] },
@@ -123,14 +170,15 @@ export function runLocal(lang: LangId, code: string, stdin = "", timeoutMs = 20_
   const dir = mkdtempSync(join(tmpdir(), "imb-local-"));
   try {
     let argv: string[];
+    const filename = r.file ? r.file(code) : spec.filename;
     if (r.compile) {
-      const b = build(lang, spec.filename, code, r.compile);
+      const b = build(lang, filename, code, r.compile);
       if (!b.ok) return b.result;
-      // The recipe runs "./prog" from the build directory; each case still gets its own fresh cwd.
-      argv = r.run(spec.filename).map((a) => (a.startsWith("./") ? join(b.dir, a.slice(2)) : a));
+      // The recipe runs "./prog" (Java: classpath "./") from the build directory; each case still gets its own fresh cwd.
+      argv = r.run(filename, code).map((a) => (a.startsWith("./") ? join(b.dir, a.slice(2)) : a));
     } else {
-      writeFileSync(join(dir, spec.filename), code);
-      argv = r.run(spec.filename);
+      writeFileSync(join(dir, filename), code);
+      argv = r.run(filename, code);
     }
     const [cmd, ...args] = argv;
     const started = Date.now();

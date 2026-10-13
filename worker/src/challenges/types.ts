@@ -31,7 +31,7 @@ export interface LabApi {
   runOnRunner(env: Env, req: { lang: LangId; code: string; stdin: string; limits?: RunLimits }): Promise<RunResult>;
   recordRun(
     env: Env,
-    row: { id?: string; userId: string; ref: RunRef; lang: LangId; result: RunResult; passed?: boolean | null; code?: string; stdin?: string },
+    row: { id?: string; userId: string; tokenVersion: number; ref: RunRef; lang: LangId; result: RunResult; passed?: boolean | null; code?: string; stdin?: string },
   ): Promise<string>;
   toPublicResult(r: RunResult): PublicRunResult;
 }

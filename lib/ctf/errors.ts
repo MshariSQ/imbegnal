@@ -2,6 +2,7 @@
  * Maps API failures to a small set of UI situations. Pure; the localized copy
  * for each kind lives in lib/i18n-ctf.ts (`ctf.errors`).
  */
+import { suspensionOf } from "../suspension";
 import { CtfApiError } from "./api";
 
 export type SubmitFailureKind =
@@ -16,12 +17,13 @@ export type SubmitFailureKind =
   | "network" //    fetch failed / offline
   | "generic";
 
-export function classifyFailure(err: unknown): { kind: SubmitFailureKind; retryAfterSec?: number } {
+/** `until`: the ISO end of a suspension, when the Worker gave one (403 account_suspended). */
+export function classifyFailure(err: unknown): { kind: SubmitFailureKind; retryAfterSec?: number; until?: string } {
   if (!(err instanceof CtfApiError)) return { kind: "generic" };
   const { status, code } = err;
   if (status === 0 || code === "network") return { kind: "network" };
   if (status === 401 || code === "unauthorized") return { kind: "signin" };
-  if (code === "account_suspended") return { kind: "suspended" };
+  if (code === "account_suspended") return { kind: "suspended", ...suspensionOf(status, err.body) };
   if (status === 403) return { kind: "forbidden" };
   if (status === 404 || code === "not_found") return { kind: "notfound" };
   if (code === "rate_limited") return { kind: "rate", retryAfterSec: err.retryAfterSec };

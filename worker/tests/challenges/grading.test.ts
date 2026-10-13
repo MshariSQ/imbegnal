@@ -5,6 +5,7 @@ import type { SubmitResponse } from "../../../shared/api";
 import type { ChallengeGrader } from "../../../shared/challenges";
 import { buildProgram, gradeTests, redactResult } from "../../src/graders/engine";
 import { type World, makeWorld, metas, runResult, scriptedRunner } from "./helpers/world";
+import { handleAccountDelete } from "../../src/account";
 
 type Body = SubmitResponse & { error?: string; message?: string };
 
@@ -304,4 +305,38 @@ test("an honest submission raises no abuse signal", async () => {
   await submit(w, "out-sum", token, "python", "# #SUM");
   await submit(w, "out-sum", token, "python", "# #WRONG");
   assert.deepEqual(w.log.signals, []);
+});
+
+test("the account is deleted while the submission is on the runner: the result is returned, no solve or progress is written", async () => {
+  let deleted = false;
+  let w!: World;
+  const token = await (async () => {
+    w = await makeWorld({
+      runner: async (req) => {
+        if (!deleted) {
+          deleted = true;
+          const del = await handleAccountDelete(new Request("https://api.test/api/account", { method: "DELETE", headers: { Authorization: `Bearer ${await w.token("u1")}` } }), w.env, "");
+          assert.equal(del.status, 200, "DELETE /api/account commits mid-run");
+        }
+        return scriptedRunner(req);
+      },
+    });
+    await w.addUser({ sub: "u1" });
+    return w.token("u1");
+  })();
+  const recorded: unknown[] = [];
+  const realRecord = w.deps.lab.recordRun;
+  w.deps.lab.recordRun = async (env, row) => {
+    recorded.push(row.tokenVersion);
+    return realRecord(env, row);
+  };
+  const r = await submit(w, "out-sum", token, "python", "# #SUM");
+  assert.equal(r.status, 200);
+  assert.equal(r.body.correct, true, "the caller still gets the grade");
+  assert.equal(r.body.awarded, 0);
+  assert.equal(r.body.alreadySolved, false);
+  assert.equal(r.body.firstBlood, false);
+  assert.deepEqual(w.db.rows("SELECT * FROM challenge_solves"), []);
+  assert.deepEqual(w.db.rows("SELECT * FROM challenge_progress"), []);
+  assert.deepEqual(recorded, [0], "the run log gets the token_version the guard saw (lab/execute.ts writes it only for that account)");
 });

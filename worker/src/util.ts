@@ -108,10 +108,37 @@ export async function verifyJWT(token: string, secret: string): Promise<Record<s
 
 const TOKEN_TTL = 30 * 24 * 60 * 60;
 
-export function issueToken(user: TokenUser, env: Env): Promise<string> {
-  return signJWT({ ...user, exp: Math.floor(Date.now() / 1000) + TOKEN_TTL }, env.JWT_SECRET);
+/**
+ * users.token_version for a row being created: a random integer in 1..2^31-1 (never 0). Account keys are
+ * deterministic (GitHub id, google:<sub>, email:<HMAC>), so a deleted account signed up again gets the same
+ * key; starting it at a fresh random version means a token issued to the deleted account (its old `tv`, or
+ * no `tv`, which counts as 0) does not match the new account. Only INSERT ... VALUES uses it: an upsert's
+ * ON CONFLICT branch never changes token_version, so existing accounts (0 since migration 0008) keep theirs.
+ */
+export function newTokenVersion(): number {
+  const buf = new Uint32Array(1);
+  let v = 0;
+  while (v === 0) v = crypto.getRandomValues(buf)[0] & 0x7fffffff;
+  return v;
 }
 
+/**
+ * Signs a session token for an account that exists (every issuer upserts the row first). It embeds the
+ * account's current users.token_version as `tv`, which auth/guard.ts compares on every request, so a
+ * logout revokes it. The payload is built field by field: a token never carries a role or a plan.
+ */
+export async function issueToken(user: TokenUser, env: Env): Promise<string> {
+  const row = await env.DB.prepare("SELECT token_version FROM users WHERE github_id = ?").bind(user.sub).first<{ token_version: number | null }>();
+  return signJWT(
+    { sub: user.sub, username: user.username, name: user.name, avatar: user.avatar, tv: row?.token_version ?? 0, exp: Math.floor(Date.now() / 1000) + TOKEN_TTL },
+    env.JWT_SECRET,
+  );
+}
+
+/**
+ * Signature and expiry check ONLY: no revocation, account or suspension check. Routes must use
+ * auth/guard.ts (requireAuth / optionalGuard) instead.
+ */
 export async function getUser(req: Request, env: Env) {
   const auth = req.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return null;

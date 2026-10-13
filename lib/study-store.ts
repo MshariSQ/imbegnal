@@ -9,6 +9,9 @@
  * - Exposed to React via useSyncExternalStore (no provider, no re-render storms).
  */
 import { useSyncExternalStore } from "react";
+import { XP } from "../shared/xp";
+
+export { XP };
 
 export interface LessonRecord {
   visited?: number; // last visit (ms epoch)
@@ -30,8 +33,6 @@ export interface StudyState {
   last?: { key: string; at: number };
   updated: number;
 }
-
-export const XP = { lesson: 50, exercise: 15, quiz: 10 } as const;
 
 const KEY = "imb-study-v1";
 const MAX_DAYS = 400;

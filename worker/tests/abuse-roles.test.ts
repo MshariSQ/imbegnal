@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import type { LanguagesResponse } from "../../shared/api";
-import { isSuspended, recordAbuseSignal } from "../src/abuse";
+import { evaluateSuspension, isSuspended, recordAbuseSignal } from "../src/abuse";
 import { audit } from "../src/audit";
 import { getRole, requireRole } from "../src/roles";
 import type { Env } from "../src/util";
@@ -109,6 +109,23 @@ describe("abuse signals", () => {
     assert.equal(await isSuspended(env, "i"), true);
     assert.equal(await isSuspended(env, "ghost"), false);
     assert.deepEqual(auditRows().map((r) => [r.user_id, r.action]), [["e", "abuse.suspension_expired"]]);
+  });
+
+  test("two requests read the same expired suspension: the second sees it lifted by the first, one audit row", async () => {
+    addUser(db, { id: "r", status: "suspended", suspendedUntil: "2020-01-01 00:00:00" });
+    const rowA = { ...userRow("r") };
+    const rowB = { ...userRow("r") }; // read before request A lifted it
+    assert.equal(await evaluateSuspension(env, "r", rowA), false, "A lifts it");
+    assert.equal(await evaluateSuspension(env, "r", rowB), false, "B: the suspension has ended, not 403 with a past until");
+    assert.deepEqual(userRow("r"), { status: "active", suspended_until: null });
+    assert.deepEqual(auditRows().map((r) => [r.user_id, r.action]), [["r", "abuse.suspension_expired"]]);
+
+    // A stale read of a row that an operator (or a new signal) suspended again meanwhile: still suspended, with the new end.
+    addUser(db, { id: "s", status: "suspended", suspendedUntil: "2020-01-01 00:00:00" });
+    const stale = { ...userRow("s") };
+    db.execute("UPDATE users SET suspended_until = '2999-01-01 00:00:00' WHERE github_id = 's'");
+    assert.equal(await evaluateSuspension(env, "s", stale), true);
+    assert.equal(stale.suspended_until, "2999-01-01 00:00:00", "the caller reports the current end");
   });
 });
 

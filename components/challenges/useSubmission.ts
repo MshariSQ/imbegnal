@@ -11,7 +11,7 @@ export type SubmissionState =
   | { phase: "idle" }
   | { phase: "pending" }
   | { phase: "done"; res: SubmitResponse }
-  | { phase: "error"; kind: SubmitFailureKind; resetAt?: string };
+  | { phase: "error"; kind: SubmitFailureKind; resetAt?: string; until?: string };
 
 /**
  * Submit to POST /api/challenges/:id/submit and keep the shared stats in sync.
@@ -46,7 +46,7 @@ export function useSubmission(challengeId: string) {
         const f = classifyFailure(e);
         if (f.kind === "rate" && f.retryAfterSec !== undefined) setCooldown(Math.ceil(f.retryAfterSec));
         const resetAt = (e as { body?: { resetAt?: string } }).body?.resetAt;
-        setState({ phase: "error", kind: f.kind, resetAt });
+        setState({ phase: "error", kind: f.kind, resetAt, ...(f.until ? { until: f.until } : {}) });
       }
     },
     [challengeId, user]

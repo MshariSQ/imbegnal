@@ -26,7 +26,13 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
 * **Local-first**: progress, notes, XP and streak work for guests
   (`localStorage`). When signed in, `lib/sync.ts` merges with the server copy
   (union of completions, newest note wins, XP derived from per-lesson records so
-  merges never double-count) and pushes changes debounced.
+  merges never double-count) and pushes changes debounced. The Worker stores a sanitized
+  copy (`worker/src/state.ts`: catalog lessons only, each lesson's bonus clamped to what its
+  exercises and quizzes can award, sane timestamps). XP for graded lab exercises of
+  signed-in learners is awarded by the Worker (`xp_ledger`); lab XP is never part of the synced
+  study state. Every XP total in the UI comes from `lib/xp.ts`: study-state XP, plus the Worker's
+  lab XP when signed in, or a guest's lab awards kept in that browser. What is server-authoritative,
+  server-bounded or still client-trusted: [XP authority](#xp-authority).
 * **Sign-in**: GitHub and Google use the OAuth code flow on the Worker; the OAuth `state` round-trips
   through an HttpOnly cookie. The Worker hands the JWT back in the URL fragment
   (`/auth/callback/#token=...&nonce=...`). The `nonce` closes login CSRF on that last hop: the login
@@ -36,6 +42,30 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
   from that cookie. The callback page saves the token only when the echoed nonce matches its own, so a
   link carrying someone else's token (`#token=<attacker JWT>`) cannot sign a visitor in. Email/password
   sign-in returns the token in a JSON response and is not affected.
+* **Sessions and access control**: the JWT (HS256, 30 days) carries `sub`, `username`, `name`, `avatar`,
+  `tv`, `iat` and `exp`, never a role or a plan. Every route that needs a signed-in user goes through one
+  guard, `worker/src/auth/guard.ts`: the token must verify, its account must still exist, and its `tv` must
+  equal `users.token_version` (tokens from before migration `0008` have no `tv`, which counts as 0);
+  otherwise `401`. A suspended account then gets `403 account_suspended` (with `until`, ISO, when the
+  suspension has an end) on every route except `GET /api/auth/me` (it reports `suspended` and
+  `suspended_until`), `POST /api/auth/logout` and `DELETE /api/account` (`409` while suspended); an expired
+  suspension is lifted, with its audit row, by the next request to any guarded route. On the site a `403
+  account_suspended` never signs the tab out and never drops local data (the study-state sync keeps the local copy and
+  pushes again later, as after a network error); the certificate card, the AI tutor, Code Lab and the challenge
+  hints/submissions show an "Account suspended" message instead of their generic error, the first two with the end
+  date when `until` is present (`lib/suspension.ts`, `tests/e2e/phase3/suspension.spec.ts`). Roles are read from D1
+  on every request. **Signing out** calls `POST /api/auth/logout`, which increments `token_version` and so
+  revokes every token of the account on every device (there is no per-device sign-out); the site then
+  clears its copy, and a tab whose token the Worker rejects with `401` on the study-state sync signs itself
+  out; that is the only thing that does (a `401` from `GET /api/lab/progress` only re-checks the token on
+  `/api/state`; the rule is at the top of `lib/sync.ts`). Operators can end all sessions of an account with
+  `UPDATE users SET token_version = token_version + 1 WHERE github_id = '<id>'`. **Starting version**: a new
+  account row (GitHub callback, Google callback, email registration) starts at a random `token_version` in
+  1..2^31-1 (`newTokenVersion()` in `worker/src/util.ts`), and signing in again never changes it. Account keys
+  are deterministic (see [Account deletion](#account-deletion)), so an account that is deleted and created
+  again gets the same key; the fresh random version means a token issued to the deleted account (its old `tv`,
+  or no `tv`) is refused (`worker/tests/recreate-revocation.test.ts`). Accounts created before this keep
+  version 0, so their current tokens keep working.
 * **Theming**: semantic tokens in `app/globals.css` (`bg-surface`, `text-fg-muted`,
   `border-line`, …) flip on `<html data-theme>`. A tiny inline script applies the
   saved/system theme and RTL before first paint (no flash).
@@ -69,6 +99,9 @@ builds `./out` itself when it is missing), deploy command `npx wrangler deploy`,
 
 ### One-time setup (no credentials are ever shared in chat or committed)
 
+Every secret and variable, where it is read, where it is set and whether it is required: [`docs/SECRETS.md`](SECRETS.md)
+(with the order for a first deploy).
+
 1. **Cloudflare API token** — dash.cloudflare.com → My Profile → API Tokens → Create Token → **Create Custom Token** with exactly:
    **Account › Workers Scripts › Edit** and **Account › D1 › Edit**; Account Resources: your account only; **no Zone permissions**
    (the "Edit Cloudflare Workers" template also grants route access on every domain in the account, which CI does not need).
@@ -91,6 +124,8 @@ Deleting or rotating the secrets later silently returns the pipeline to frontend
 
 > **Rollbacks:** do not roll the Worker back to a version older than the email-accounts release once anyone has signed up
 > with email: the old `/api/auth/me` returned every column (including `password_hash`). Roll forward with a fix instead.
+> A Worker from before the auth guard ignores `tv`: the data stays compatible, but tokens revoked by a sign-out work
+> again until they expire.
 >
 > If the old `schema-v3.sql` was ever run by hand against production, migration `0002` would fail on the columns it already
 > added. The deploy handles this: `worker/scripts/d1-reconcile.mjs` runs first and, for a migration whose `ADD COLUMN`
@@ -173,10 +208,144 @@ output size, status and timestamp — never environment, secrets or host paths.
 
 Until `RUNNER_URL` is set the site keeps working: lessons, challenges with flag answers and the in-browser JavaScript/Python
 fallback work, and server runs answer a friendly "runner unavailable" (not charged).
-Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by the normal deploy.
+Migrations `0004`–`0008` (Code Lab, challenges, certificates, `0007`: XP ledger, `0008`: `users.token_version`) are
+applied by the normal deploy.
 
-**Roles**: `users.role` is `student` by default. Promote an instructor (analytics at `/api/instructor/analytics`) or admin
-(audit log) with `wrangler d1 execute` — see [`worker/README-lab.md`](../worker/README-lab.md).
+### Owner provisioning (roles)
+
+Roles: `student` (default) < `instructor` (analytics at `/instructor/`, `GET /api/instructor/analytics`) < `admin` (also
+`GET /api/admin/audit`). Only the owner grants them, from a machine where `npx wrangler login` works (or with a
+`CLOUDFLARE_API_TOKEN` that can edit D1 in the environment). No API route writes `users.role` or `users.plan`, signing in
+never changes them, and tokens carry neither (`worker/tests/owner-admin.test.ts`).
+
+```sh
+cd worker
+node scripts/grant-role.mjs --remote --github-id 583231 --role admin         # dry run: prints the account and the SQL
+node scripts/grant-role.mjs --remote --github-id 583231 --role admin --yes   # applies it
+```
+
+* `--github-id` is the numeric GitHub user id: it never changes (`https://api.github.com/users/<login>` shows it as `id`).
+  `--username <name>` also finds email and Google accounts, and is refused when several accounts share the name.
+  `--local [--persist-to DIR]` targets a local D1 instead of production.
+* It prints the matching account, then the exact SQL, and changes nothing without `--yes`. With `--yes` it writes the role
+  and an `audit_log` row (`role.grant`, e.g. `student -> admin (actor: cli)`) in one `wrangler d1 execute`, then prints the
+  account again. Running it twice is harmless; `--role student` demotes.
+* The role applies to the account's next request; no sign-out is needed.
+* `wrangler d1 execute` has no bind parameters, so the script accepts only digits, `[A-Za-z0-9-]` usernames (1-39) and the
+  role enum (`worker/tests/grant-role.test.ts`). It holds no credentials: wrangler uses the operator's own login.
+
+First setup: sign in once on the site with GitHub (that creates the account), then grant yourself `admin` as above.
+
+## Account deletion
+
+`DELETE /api/account` (`worker/src/account.ts`, the delete button on the dashboard) erases the account in one atomic D1
+batch: the user row, synced study state and notes, roadmap progress, bookmarks, Code Lab runs, snippets and lab
+progress, lab XP awards (`xp_ledger`), challenge progress and solves, and certificates
+(`worker/tests/account-delete.test.ts`). A suspended account cannot delete itself until the
+suspension ends (operators can still erase it on request).
+
+**What is kept, and why.** If deletion also erased the rows that rate limits and abuse checks count, "delete the
+account, sign up again" would hand out a fresh daily quota, a clean abuse history and new flag guesses. So the batch
+keeps, for at least as long as they count:
+
+| Kept | Counted by |
+|---|---|
+| today's `lab_usage` row (key, date, number) | Code Lab daily run quota |
+| today's `ai_usage` row (key, date, number) | AI tutor daily quota |
+| `abuse_signals` of the last 24 hours (kind and a fixed-format detail) | automatic suspension |
+| `challenge_attempts` of the last 24 hours (challenge id, correct or not, time; the submitted flag is never stored) | flag brute-force limits: 5 a minute and 30 an hour per challenge, 120 an hour overall |
+| `audit_log` | the operators' security record |
+
+Older rows of the four counter tables go with the account. The retained rows hold counters only, under the opaque account key:
+no email address, name, code, notes or other content. Nothing purges them afterwards (there is no scheduled job yet);
+a later deletion of the same key erases the ones that have stopped counting by then. The full list is in the comment
+at the top of `worker/src/lab/account-data.ts`.
+
+Every provider's key is deterministic, so signing up again lands on the same key and the retained rows apply again:
+
+- GitHub: the numeric GitHub user id.
+- Google: `google:<sub>`.
+- Email: `email:` + the first 32 hex characters of HMAC-SHA256(`JWT_SECRET`, `"imbegnal:email-account:v1|" + email`),
+  with the email trimmed and lower-cased exactly as at sign-in (`worker/src/auth-email.ts`). It is keyed because the
+  account key travels in the JWT `sub`: a plain hash of the email would let anyone confirm a guessed address. A
+  registration whose key is already in use answers `409 email_taken`, like a taken email.
+
+Email accounts created before the derived keys keep their random `email:<uuid>` key (sign-in looks accounts up by
+email). When such an account is deleted, the same batch moves the rows it keeps (today's `lab_usage` and
+`ai_usage`, the last 24 hours of `abuse_signals` and `challenge_attempts`) to the derived key of its email
+(`worker/src/account.ts`), adding counts if that key already has a row for the day, so registering the address
+again is still counted; after that the key is stable. Rotating `JWT_SECRET` changes the key of later registrations
+(existing accounts keep theirs), so an email account deleted before a rotation comes back without its counters.
+
+A graded lab run or challenge code submission that is still on the runner when the deletion commits writes nothing
+back: the run log (code, output), the lab pass, its XP and a solve are written only while the account still exists
+with the `token_version` the request was authenticated with (`worker/src/lab/execute.ts` `recordRun`,
+`worker/src/lab/handlers.ts`, `worker/src/challenges/submit.ts`). The caller still gets the result: a challenge
+submission with `awarded` 0, a lab pass with `recorded: false` and no `xpAwarded`, which the site shows as a pass not
+checked on the server (no XP). A sign-out on another device during the run also changes `token_version`, so that one
+run is not recorded either (running it again records it).
+
+## XP authority
+
+What the Worker decides, what it only bounds, and what it still takes from the browser:
+
+| | What | How |
+|---|---|---|
+| **Server-authoritative** | Lesson lab exercises (`lab` sections): the pass (`lab_progress`) and its 15 XP (`xp_ledger`, source `lab`, once per user and exercise) | Written only after the Worker graded the run itself (`POST /api/lab/run` with a lesson ref, `worker/src/lab/handlers.ts`). A pass graded in the browser earns a signed-in learner no XP (it is shown as unverified until the server grades it). |
+| **Server-bounded** | The synced study state (`PUT /api/state`, `sanitizeStudyState` in `worker/src/state.ts`) | Catalog lesson keys only; `done` is `true` (legacy) or a positive time, clamped to now + 1 day; `visited` between 2020-01-01 and now + 1 day; `quiz` in [0, 1]; `bonus` at most the lesson's `maxBonus` (its exercises with tests × 15 + quizzes × 10, in the generated catalog), plus 15 for each of the learner's lab passes recorded before the ledger existed (see below). |
+| **Still client-trusted** | Lesson completion (50 XP per `done`), the in-lesson exercise and quiz bonus up to that cap, and course certificates (issued once every lesson of the course is `done`) | The browser grades in-lesson exercises and quizzes and marks lessons done. |
+
+Why lesson XP is not graded on the server yet: quiz answers and in-lesson exercise tests ship in the public static
+bundle, so a server that "grades" them adds no real authority until that content moves to the Worker (a separate
+feature, like the private challenge hints). Requirement 1.1 names the lesson lab exercises (`worker/src/lab/`), and
+those are server-authoritative.
+
+**Lab passes from before the XP ledger.** The previous client added 15 XP to the lesson `bonus` for every lab pass,
+including the ones the Worker graded (`lab_progress`). Those passes never get a ledger row (the ledger skips refs
+already in `lab_progress`), so `PUT /api/state` allows that XP to stay in `bonus`: per lesson, 15 for each of the
+learner's `lab_progress` rows of that lesson's catalog labs without an `xp_ledger` row (one query per PUT). The ledger
+is not backfilled, which would count the same XP twice.
+
+**One exercise, counted once, on the site.** Lab XP never goes into the synced study state (whose `bonus` is
+max-merged between devices and the server copy, so XP put there could not be taken out again). `lib/xp.ts` is the
+one rule for every total: a guest sees the study-state XP plus the lab XP that guests earned in that browser (15 per
+exercise passed in the browser, kept per exercise in `localStorage` by `lib/lab-progress.ts`, never synced); a
+signed-in learner sees the study-state XP plus the Worker's lab XP for that account (`GET /api/lab/progress` `xp.lab`,
+plus `xpAwarded` of runs graded since). Guest awards never count for a signed-in learner: a pass the Worker has not
+recorded for that account (graded in the browser, by a Worker too old to report `xpAwarded`, `recorded: false`, or
+passed as a guest before signing in) shows the Passed badge and "XP is earned when the exercise is checked on the
+server" until the Worker awards it. Signing out returns to the guest rule. Each `GET /api/lab/progress` answer
+replaces the browser's figure for that account (a pass the Worker no longer has, e.g. after the account was deleted
+and created again, stops counting), except passes the Worker graded in that browser after the request was sent,
+which the answer may predate: those stay on top with their XP until an answer lists them.
+
+Deploy-window residual: a signed-in pass graded by a Worker that already has `/api/lab/*` but predates the ledger
+writes `lab_progress` without a ledger row, so the new Worker never awards it and the site shows it as earned with
+no XP. Production's current Worker has no lab API at all (its runs fall back to the browser), so this cannot happen
+on the next deploy; deploy the Worker before the site if an older lab-enabled Worker is ever live.
+
+Legacy residual: the client before this change (`origin/main` 79314d1 and earlier) added the 15 XP of every pass to
+the lesson `bonus`, and it stays there (`lib/lab-progress.ts` treats such passes as earned and never awards them
+again locally). If the Worker later awards the same exercise to that learner, the lab counts twice, bounded by the
+lesson's `maxBonus` on the server copy. (A pass the Worker itself recorded before the ledger is never awarded again,
+so the pre-ledger allowance above adds nothing to that bound.) This is documented, not corrected.
+
+**Known gap: certificates trust `done`.** `GET /api/certificates/:track` issues a publicly verifiable certificate once
+every lesson of the course is `done` in the synced study state, which the browser writes; one `PUT /api/state` can
+mark them all done. Requiring server-verified lab passes now would block every certificate, because the code runner
+is not deployed in production yet.
+
+**Recommended follow-up.** Server-graded quizzes with private answer keys (kept on the Worker, like the hint texts),
+so quiz XP and lesson completion can move to the ledger; and certificates that also require a server-verified pass
+(`lab_progress`) of every lab of the course once the runner is deployed in production.
+
+**Renaming or moving a lesson drops its server copy.** `PUT /api/state` keeps only keys of the generated catalog
+(`worker/src/generated/catalog.ts`). A renamed or moved lesson (a new `track/lesson` key) therefore loses its server
+copy (`done`, `bonus`, `visited`) at each learner's next sync, and a device that still has it locally keeps it only
+there (it pushes it under the old key, which is dropped again); removing an exercise or a quiz lowers `maxBonus` and
+clamps the stored bonus. There is no alias mechanism yet, so treat lesson ids as permanent; if one must move, first
+add an alias (old key -> new key, mapped by `sanitizeStudyState`). The generated catalog must match the content when
+the Worker deploys: `ci.yml` runs `npm run check:catalog`, `deploy.yml` does not, so deploy only commits that passed CI.
 
 ## Tests
 
@@ -186,10 +355,10 @@ Migrations `0004`–`0006` (Code Lab, challenges, certificates) are applied by t
 | `npx eslint .` | — | lint |
 | `npm run check:catalog` | — | `worker/src/generated/catalog.ts` matches the lesson/challenge data (`npm run gen:catalog` to refresh) |
 | `npm run test:unit` | host toolchains (optional) | contracts, output matching, curricula, canonical names, lessons; every lab and challenge reference solution is run against its tests on the host toolchains that exist (missing ones are skipped) |
-| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce |
+| `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce, the auth guard on every protected route (revoked tokens, deleted accounts, suspensions, roles), logout and `tv` issuance (a deleted, re-created account refuses the old tokens), role/plan never client-writable, the role CLI |
 | `npm run test:runner` | Docker + `runner/image/build.sh slim` | the sandbox against a real Docker daemon: per-language Hello World, stdout/stderr, timeouts, memory, fork bombs, output floods, no network, no persistence, read-only root, uid, HMAC/replay |
 | `npm run test:e2e` | Docker, a runner image, `worker/node_modules`, Chromium | the real stack (runner + `wrangler dev` with local D1 and the real migrations + the exported site + Playwright): Hello World in Python/JS/Java/C/C++ through the UI, stdout vs stderr, infinite loop killed, network blocked, quota exhaustion message and refunds, lesson → "Try in Code Lab" → starter code → pass → XP, challenge solve → points |
-| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard and the sign-in callback (login nonce); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
+| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard, the sign-in callback (login nonce) and sign-out (server revocation, a revoked token signs the tab out); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
 
 `npm run test:e2e` builds the site with `NEXT_PUBLIC_API_URL=http://127.0.0.1:8787`, starts everything on loopback
 (site 4173, Worker 8787, runner 4242) with throw-away secrets and a temporary D1, and tears it down afterwards.
@@ -224,6 +393,25 @@ SELECT date(created_at) AS day, provider, COUNT(*) AS signups FROM users GROUP B
 SELECT day, count FROM ai_usage WHERE github_id = '_global' ORDER BY day DESC LIMIT 14;
 ```
 
+## Legacy identifiers
+
+The platform was called SkillForge before it became IMBEGNAL. Everything a learner reads says IMBEGNAL, but a few
+identifiers that were already deployed, or that live in learners' browsers, keep the old name **on purpose**. Do not
+rename them in a normal change: each rename below either signs people out, loses progress that exists only on their
+device, or makes a deploy talk to a different Worker or database. New identifiers use `imbegnal` / `imb-` / `imb_`
+(as `imb-theme`, `imb-study-v1`, `imb_login_nonce` and `imb_google_state` already do).
+
+| Identifier | Used in | Why it stays | How to migrate safely later |
+|---|---|---|---|
+| Worker name `skillforge-api` | `worker/wrangler.toml:1`, `worker/package.json:2` (kept equal to the Worker it deploys), this guide (dashboard paths) | `wrangler deploy` with another `name` creates a **second, empty Worker**: no secrets (`JWT_SECRET`, `GITHUB_CLIENT_SECRET`, `ANTHROPIC_API_KEY`, `RUNNER_*`), none of the dashboard-only variables, and a different URL. The old Worker keeps serving every site build that points at it. | Create the new Worker beside the old one: set its secrets and dashboard variables first (`npx wrangler secret put NAME --name imbegnal-api --config wrangler.toml` in `worker/`, answer *yes* when wrangler offers to create it), keep the same `[[d1_databases]]` block so both use one database, give it a custom domain (Workers & Pages → the Worker → Settings → Domains & Routes → Add → Custom domain, e.g. `api.imbegnal.com`), then switch `WORKER_URL` as in the next row. Delete the old Worker only after no published site build calls it. |
+| API URL `https://skillforge-api.skillforge.workers.dev` (`skillforge` is the account's workers.dev subdomain) | `worker/wrangler.toml:17` (`WORKER_URL`), `lib/site.ts:11` (production fallback for `NEXT_PUBLIC_API_URL`), GitHub secret `WORKER_URL`, the GitHub OAuth App callback `<WORKER_URL>/api/auth/callback` and the Google client's redirect URI `<WORKER_URL>/api/auth/google/callback`; tests: `tests/unit/site-csp.test.ts:8,15,21`, `tests/e2e/phase3/harness.ts:9,21` | It is baked into every built page (API calls and the CSP `connect-src`), and it is the OAuth redirect URI GitHub and Google check on every sign-in. Changing the workers.dev subdomain also renames every other Worker on the account. | Add a custom domain to the Worker (row above) and register the new callback in the GitHub OAuth App and the Google client **before** switching. Then, in one change: `WORKER_URL` in `wrangler.toml`, the GitHub secret `WORKER_URL`, the fallback in `lib/site.ts` and its tests. Keep the workers.dev route enabled until old cached pages are gone. |
+| D1 database `skillforge-db` (binding `DB`, `database_id` in `worker/wrangler.toml:8-12`) | `worker/wrangler.toml:10`, `.github/workflows/deploy.yml:132`, `worker/scripts/d1-reconcile.mjs:78`, `worker/scripts/grant-role.mjs:25` (`DATABASE` of the role CLI, asserted in `worker/tests/grant-role.test.ts:113,115`), `tests/e2e/run.mjs:154` (local throw-away copy, must match `wrangler.toml`), operator commands in this guide and `worker/README-lab.md` | Wrangler and the deploy workflow find the production database by this name; the database in Cloudflare is called `skillforge-db` and holds every account, progress record, run and certificate. A renamed config entry that no longer matches the real database can send migrations to a different (or a new, empty) database. The binding name `DB` is what the code reads (`env.DB`) and is brand-neutral. | Export and import in a short write freeze: `npx wrangler d1 export skillforge-db --remote --output backup.sql --config wrangler.toml`, `npx wrangler d1 create imbegnal-db`, `npx wrangler d1 execute imbegnal-db --remote --file backup.sql --config wrangler.toml` (after adding it to `wrangler.toml`), check that `d1_migrations` came across (otherwise migrations re-run), then switch `database_name` / `database_id` and every command above in one change. Keep the old database untouched for rollback. |
+| `localStorage` `sf_token` | `lib/auth.ts:12`; e2e helpers under `tests/e2e/**`, `tests/unit/sync-signout.test.ts`, `tests/unit/xp-authority.test.ts` | The signed-in session (JWT). Renaming it signs every learner out. | Read-old-write-new shim: read the new key, fall back to `sf_token`, write the value back under the new key and remove the old one. Keep the fallback for at least the token lifetime (30 days, `TOKEN_TTL` in `worker/src/util.ts`). Update those tests in the same change. |
+| `localStorage` `sf-lang` | `lib/lang-context.tsx:6`, the pre-paint script in `lib/theme.ts:14`; e2e helpers | The learner's language choice. Renaming it resets Arabic readers to English and brings back a flash of the wrong direction before the language loads. | Same shim in `lib/lang-context.tsx` **and** in the pre-paint script (it must read both keys), kept for a few months. |
+| `localStorage` `sf-lesson:<roadmapId>:<nodeId>` | `lib/lesson-progress.ts:7` (writes per-section exercise and quiz progress), `lib/study-store.ts:62` (imports old completions) | For guests this is the only copy of which exercises and quizzes they passed. Renaming it loses that progress. | Shim in `lib/lesson-progress.ts`: on read, copy an old key to the new one before using it; keep the `study-store` import reading both prefixes. |
+| Cookie `sf_oauth_state` | `worker/src/index.ts:103,115-116`; tests `worker/tests/auth-nonce.test.ts:47`, `auth-logout.test.ts:137`, `owner-admin.test.ts:87`, `recreate-revocation.test.ts:133` | Holds the GitHub OAuth `state` and the login nonce for 10 minutes. A rename fails every GitHub sign-in that is in flight during the deploy. | On the callback, accept the new name and fall back to the old one; set only the new name. Remove the fallback one release later (the cookie lives 10 minutes). |
+| GitHub / Cloudflare resources | GitHub repository `MshariSQ/imbegnal` and the site's Workers Builds project `imbegnal` already use the new name; the GitHub OAuth App and the Google OAuth client may still be *labelled* SkillForge | Labels only; the client IDs and secrets are what matter. | Rename the OAuth apps' display names in GitHub (Settings → Developer settings → OAuth Apps) and Google Cloud Console (Google Auth Platform → Branding, formerly the OAuth consent screen) at any time; IDs and secrets do not change. |
+
 ## Product recommendations
 
 **Engagement**
@@ -246,8 +434,8 @@ SELECT day, count FROM ai_usage WHERE github_id = '_global' ORDER BY day DESC LI
    certification pages (disclose clearly).
 4. **Sponsorships/GitHub Sponsors** for the open-source project; employer-sponsored tracks.
 
-**Growth**: lesson pages carry `LearningResource` JSON-LD and a sitemap, so each
-of the 67 lessons can rank in English and Arabic; Arabic tech content is
+**Growth**: lesson pages carry `LearningResource` JSON-LD and a sitemap, so every
+lesson can rank in English and Arabic; Arabic tech content is
 under-served. Add an OG image per course and submit the sitemap to Search Console.
 
 ## Known gaps / next steps
@@ -264,6 +452,8 @@ under-served. Add an OG image per course and submit the sitemap to Search Consol
   the GitHub app) is refused, exactly as under the new Worker. A fragment that carries a nonce is always
   checked, and when the API is the new one or its generation cannot be determined, a missing nonce is
   refused. The window closes as soon as the new Worker is deployed; no site change is needed then.
+- Sessions are revoked per account: signing out ends every session of the account, and a token otherwise stays valid until
+  it expires (30 days) unless the account signs out or is deleted, or an operator bumps `token_version`.
 - Rate limiting is per-isolate (per IP: 60 requests/min, 10/min on `/api/auth/*`; override with the
   `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_AUTH_PER_MIN` variables); move to a Durable Object or Cloudflare Rate
   Limiting rules before large launches.

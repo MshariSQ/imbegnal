@@ -7,7 +7,9 @@
 //   ceiling (kill switch), 4. capped output + input sizes, 5. cached lesson
 //   block, 6. quota is refunded when the model call fails before any output.
 import Anthropic from "@anthropic-ai/sdk";
-import { type Env, NO_STORE, corsHeaders, getUser, isValidId, json, readJson } from "./util";
+import { type Env, NO_STORE, corsHeaders, isValidId, json, readJson } from "./util";
+import { LEGACY_401, requireAuth } from "./auth/guard";
+import { positiveInt } from "./lab/config";
 
 const DEFAULT_MODEL = "claude-opus-5-5"; // override with the AI_MODEL var (e.g. claude-sonnet-5-5, claude-haiku-4-5)
 const MAX_MESSAGES = 10; // the client sends the last few turns only
@@ -69,8 +71,10 @@ type Quota = "ok" | "user_limit" | "global_limit" | "gone";
 async function reserveQuota(env: Env, sub: string, day: string): Promise<Quota> {
   const user = await env.DB.prepare("SELECT plan FROM users WHERE github_id = ?").bind(sub).first<{ plan: string | null }>();
   if (!user) return "gone"; // account deleted — a stale token must not keep using the tutor
-  const userLimit = Number(user.plan === "pro" ? env.AI_DAILY_LIMIT_PRO ?? 200 : env.AI_DAILY_LIMIT_FREE ?? 20);
-  const globalLimit = Number(env.AI_DAILY_LIMIT_GLOBAL ?? 600);
+  // positiveInt like every other Worker number: a value that is not a positive integer means the default
+  // (Number() made a non-numeric value NaN, and no count is ever > NaN, so the limit disappeared).
+  const userLimit = user.plan === "pro" ? positiveInt(env.AI_DAILY_LIMIT_PRO, 200) : positiveInt(env.AI_DAILY_LIMIT_FREE, 20);
+  const globalLimit = positiveInt(env.AI_DAILY_LIMIT_GLOBAL, 600);
 
   if ((await bump(env, sub, day)) > userLimit) {
     await unbump(env, sub, day);
@@ -86,8 +90,9 @@ async function reserveQuota(env: Env, sub: string, day: string): Promise<Quota> 
 
 export async function handleTutor(req: Request, env: Env, origin: string, ctx: ExecutionContext): Promise<Response> {
   if (!env.ANTHROPIC_API_KEY) return json({ error: "ai_disabled" }, 503, origin, NO_STORE);
-  const user = await getUser(req, env);
-  if (!user) return json({ error: "Unauthorized" }, 401, origin, NO_STORE);
+  const auth = await requireAuth(req, env, origin, LEGACY_401);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   const body = await readJson(req);
   const messages = parseMessages(body?.messages);

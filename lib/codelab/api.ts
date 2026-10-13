@@ -4,6 +4,7 @@
  * failures to messages; an aborted request rethrows the platform AbortError.
  */
 import type {
+  LabProgressResponse,
   LanguagesApiResponse,
   QuotaInfo,
   RunApiRequest,
@@ -116,6 +117,8 @@ export const runCode = (req: RunApiRequest, signal?: AbortSignal) =>
   request<RunApiResponse>("/api/lab/run", { method: "POST", body: req, signal, timeoutMs: RUN_REQUEST_TIMEOUT_MS });
 
 export const fetchQuota = (signal?: AbortSignal) => request<QuotaInfo>("/api/lab/quota", { signal });
+
+export const fetchLabProgress = (signal?: AbortSignal) => request<LabProgressResponse>("/api/lab/progress", { signal });
 
 export function listRuns(opts: { limit?: number; before?: string; signal?: AbortSignal } = {}) {
   const q = new URLSearchParams();

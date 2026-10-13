@@ -5,6 +5,7 @@
 import { RUNNER_DEFAULTS, type RunStatus } from "../../shared/protocol";
 import type { QuotaInfo } from "../../shared/api";
 import type { Tx } from "../i18n";
+import { formatSuspensionEndIn, suspensionOf } from "../suspension";
 import { LabApiError } from "./api-error";
 import { fill, formatResetTime } from "./format";
 
@@ -93,7 +94,9 @@ export function describeError(err: unknown, ctx: ErrorContext): Problem {
         };
   }
   if (code === "account_suspended") {
-    return { kind: "suspended", title: p.suspendedTitle, body: p.suspendedBody, actions: [] };
+    const until = suspensionOf(status, err.body)?.until;
+    const date = until ? formatSuspensionEndIn(until, ctx.locale) : "";
+    return { kind: "suspended", title: p.suspendedTitle, body: date ? fill(p.suspendedBodyUntil, { date }) : p.suspendedBody, actions: [] };
   }
   if (status === 403) {
     return { kind: "forbidden", title: p.forbiddenTitle, body: p.forbiddenBody, actions: [] };

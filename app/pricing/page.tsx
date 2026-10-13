@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+import { pageOpenGraph } from "@/lib/site";
 import PricingClient from "@/components/PricingClient";
 
+const title = "Pricing";
+const description =
+  "IMBEGNAL courses are free forever. Pro adds more AI tutor capacity and power features for serious learners.";
+
 export const metadata: Metadata = {
-  title: "Pricing",
-  description: "IMBEGNAL courses are free forever. Pro adds more AI tutor capacity and power features for serious learners.",
+  title,
+  description,
   alternates: { canonical: "/pricing/" },
+  openGraph: pageOpenGraph({ title: `${title} · IMBEGNAL`, description, url: "/pricing/" }),
 };
 
 export default function PricingPage() {

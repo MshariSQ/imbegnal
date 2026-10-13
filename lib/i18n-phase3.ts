@@ -85,6 +85,7 @@ export const phase3En = {
     suspended: {
       title: "Account suspended",
       body: "Your account is suspended, so analytics are unavailable. If you think this is a mistake, open an issue on GitHub.",
+      bodyUntil: "Your account is suspended until {date}, so analytics are unavailable until then. If you think this is a mistake, open an issue on GitHub.",
     },
     error: {
       title: "Could not load analytics",
@@ -100,7 +101,7 @@ export const phase3En = {
       solves: "Challenge solves",
       solvesHint: "In the selected period",
       completions: "Course completions",
-      completionsHint: "All time",
+      completionsHint: "In the selected period",
     },
     runsByLang: { title: "Runs by language", empty: "No runs in this period." },
     runsByStatus: { title: "Runs by outcome", empty: "No runs in this period." },
@@ -117,7 +118,7 @@ export const phase3En = {
     } as Record<string, string>,
     tracks: {
       title: "Courses",
-      note: "Based on synced progress, so it is not limited to the selected period.",
+      note: "Based on synced progress: learners with lesson activity in the selected period, and completions whose last lesson was finished in it.",
       caption: "Course progress: learners, completions and median time to complete",
       empty: "No course progress has been synced yet.",
       cols: { course: "Course", learners: "Learners", completed: "Completed", rate: "Completion rate", median: "Median time to complete" },
@@ -236,6 +237,7 @@ export const phase3Ar: Phase3Tx = {
     suspended: {
       title: "الحساب موقوف",
       body: "حسابك موقوف، لذلك لا تتوفر التحليلات. إن كنت ترى أن هذا خطأ فافتح قضية على GitHub.",
+      bodyUntil: "حسابك موقوف حتى {date}، لذلك لا تتوفر التحليلات حتى ذلك الحين. إن كنت ترى أن هذا خطأ فافتح قضية على GitHub.",
     },
     error: {
       title: "تعذّر تحميل التحليلات",
@@ -251,7 +253,7 @@ export const phase3Ar: Phase3Tx = {
       solves: "حلول التحديات",
       solvesHint: "في الفترة المحددة",
       completions: "إتمام الدورات",
-      completionsHint: "منذ البداية",
+      completionsHint: "في الفترة المحددة",
     },
     runsByLang: { title: "عمليات التشغيل حسب اللغة", empty: "لا توجد عمليات تشغيل في هذه الفترة." },
     runsByStatus: { title: "عمليات التشغيل حسب النتيجة", empty: "لا توجد عمليات تشغيل في هذه الفترة." },
@@ -268,7 +270,7 @@ export const phase3Ar: Phase3Tx = {
     } as Record<string, string>,
     tracks: {
       title: "الدورات",
-      note: "يعتمد على التقدم المتزامن، لذلك لا يقتصر على الفترة المحددة.",
+      note: "يعتمد على التقدم المتزامن: المتعلمون الذين لهم نشاط في الدروس خلال الفترة المحددة، وحالات الإتمام التي أُنجز آخر دروسها فيها.",
       caption: "تقدم الدورات: المتعلمون والمكتملون ووسيط الزمن اللازم للإتمام",
       empty: "لم يتزامن أي تقدم في الدورات بعد.",
       cols: { course: "الدورة", learners: "المتعلمون", completed: "أتمّوا الدورة", rate: "نسبة الإتمام", median: "وسيط زمن الإتمام" },

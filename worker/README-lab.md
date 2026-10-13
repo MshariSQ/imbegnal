@@ -8,10 +8,10 @@ The spec is `docs/CODE_LAB.md`; the wire types are `shared/api.ts` and `shared/p
 | Method and path | Auth | Purpose |
 | --- | --- | --- |
 | `GET /api/lab/languages` | public | Languages the runner can execute right now (`runner`: `up`, `down` or `unconfigured`). Cached 30 s per isolate (10 s when down). |
-| `POST /api/lab/run` | user | Run code (free run) or grade a lesson lab exercise (`ref.kind = "lesson"`, one quota unit for the whole graded submission). |
+| `POST /api/lab/run` | user | Run code (free run) or grade a lesson lab exercise (`ref.kind = "lesson"`, one quota unit for the whole graded submission). The first passing graded run awards the exercise's XP once (`xp_ledger`, migration 0007) and answers `xpAwarded`; a pass whose account was deleted or signed out everywhere mid-run is not recorded and answers `recorded: false` instead. |
 | `GET /api/lab/quota` | user | Used / limit / remaining for today and the next reset (00:00 UTC). |
 | `GET /api/lab/runs`, `GET /api/lab/runs/:id` | user | Own history only (cursor pagination with `?before=`); other users' ids answer 404. |
-| `GET /api/lab/progress` | user | Lab exercises the user passed. |
+| `GET /api/lab/progress` | user | Lab exercises the user passed, and the XP the Worker awarded them (`xp: { total, lab }`). |
 | `POST /api/lab/snippets`, `GET /api/lab/snippets/:id` | user / public | Immutable shareable snippets (200 per user, 20 per hour). |
 
 Challenge submissions are not handled here (`POST /api/challenges/:id/submit`); `ref.kind = "challenge"` on `/run` is a 400.
@@ -64,20 +64,21 @@ npx wrangler d1 migrations apply skillforge-db --remote --config wrangler.toml
 ```
 
 `lab_runs` keeps the learner's own copy of code, stdin and output (size-capped: 64 KiB code, 16 KiB each for stdin/stdout/stderr).
-`labAccountDeleteStatements()` in `worker/src/lab/account-data.ts` lists what an account erasure must delete; it takes effect once `handleAccountDelete` (`worker/src/account.ts`, not owned by Code Lab) includes it in its batch. `audit_log` is kept on purpose.
+`labAccountDeleteStatements()` in `worker/src/lab/account-data.ts` lists the Code Lab rows an account erasure deletes (runs, snippets, progress, `xp_ledger`, older `lab_usage` and `abuse_signals`); `handleAccountDelete` (`worker/src/account.ts`) runs them in its one atomic batch. `audit_log`, today's `lab_usage` and the last 24 hours of `abuse_signals` are kept on purpose ([docs/PLATFORM.md](../docs/PLATFORM.md#account-deletion), "What is kept, and why").
 
 ## Roles
 
-Roles are `student` (default), `instructor` and `admin`. They are granted by an operator with SQL, never through the API:
+Roles are `student` (default), `instructor` and `admin`. Only the owner grants them, with the CLI (never through the API;
+details in [docs/PLATFORM.md](../docs/PLATFORM.md#owner-provisioning-roles)):
 
 ```sh
-npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
-  "UPDATE users SET role = 'instructor' WHERE username = 'someone'"      # or 'admin'; 'student' demotes
-npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
-  "INSERT INTO audit_log (user_id, action, detail) SELECT github_id, 'role.change', 'set to instructor by operator' FROM users WHERE username = 'someone'"
+node scripts/grant-role.mjs --remote --github-id <numeric GitHub id> --role instructor          # dry run
+node scripts/grant-role.mjs --remote --github-id <numeric GitHub id> --role instructor --yes    # apply ('student' demotes)
 ```
 
-Accounts are identified by `users.github_id` for every provider (`"<num>"` GitHub, `"email:<uuid>"`, `"google:<sub>"`).
+It writes the role and a `role.grant` audit row; the role is read from D1 on every request, so it applies at once.
+
+Accounts are identified by `users.github_id` for every provider (`"<num>"` GitHub, `"email:<keyed hash of the email>"`, or `"email:<uuid>"` for email accounts created before the keyed hash, `"google:<sub>"`).
 Admins are never auto-suspended.
 
 ## Suspensions
@@ -85,8 +86,16 @@ Admins are never auto-suspended.
 Abuse signals (`abuse_signals`) are advisory: timeouts and memory/output hits, code that looks like a network probe, and
 rate-limit floods. The sandbox is the real security boundary; the signals only catch people probing it. Reaching a threshold
 suspends the account for `ABUSE_SUSPEND_HOURS` and writes an `abuse.auto_suspend` audit row. A suspended user gets
-`403 account_suspended` from every lab and challenge endpoint. Expired suspensions are lifted lazily on the user's next request
-(`abuse.suspension_expired` audit row).
+`403 account_suspended` (with `until` when the suspension ends) from every authenticated endpoint (`worker/src/auth/guard.ts`)
+except `GET /api/auth/me`, `POST /api/auth/logout` and `DELETE /api/account` (`409`). Expired suspensions are lifted lazily
+on the user's next request to any of them (`abuse.suspension_expired` audit row).
+
+End every session of an account (its tokens stop working at once; signing in again issues new ones):
+
+```sh
+npx wrangler d1 execute skillforge-db --remote --config wrangler.toml --command \
+  "UPDATE users SET token_version = token_version + 1 WHERE username = 'someone'"
+```
 
 Lift one early:
 

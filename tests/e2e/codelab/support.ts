@@ -15,6 +15,7 @@ import { chromium, type Browser, type BrowserContext, type Page, type Route } fr
 import type {
   ApiErrorBody,
   GradeResult,
+  LabProgressResponse,
   LanguagesApiResponse,
   PublicRunResult,
   QuotaInfo,
@@ -240,6 +241,8 @@ export class MockApi {
   languages: LanguagesApiResponse = { runner: "up", languages: LANG_IDS.map((id) => ({ id, available: true, version: "test" })) };
   languagesReply?: MockReply;
   quota: QuotaInfo = quotaInfo();
+  /** GET /api/lab/progress (signed-in pages load it after sign-in / on load). */
+  progress: LabProgressResponse = { passed: [], xp: { total: 0, lab: 0 } };
   run: RunHandler = (req) => ({
     body: {
       runId: `run-${this.runs.length}`,
@@ -286,6 +289,7 @@ export class MockApi {
 
     if (path === "/api/lab/languages") return respond(this.languagesReply ?? { body: this.languages });
     if (path === "/api/lab/quota") return respond({ body: this.quota });
+    if (path === "/api/lab/progress") return respond({ body: this.progress });
     if (path === "/api/lab/run" && req.method() === "POST") {
       const body = json<RunApiRequest>();
       this.runs.push(body);

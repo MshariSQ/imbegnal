@@ -8,10 +8,18 @@ import { useAuthUser, getToken } from "@/lib/auth";
 import { useLang } from "@/lib/lang-context";
 import { API_URL } from "@/lib/site";
 import { certificateCodeFromInfo, printableCertificateHref } from "@/lib/certificates/printable";
+import { type Suspension, suspensionMessage, suspensionOf } from "@/lib/suspension";
 import ProgressBar from "@/components/ui/ProgressBar";
+import SuspendedNotice from "@/components/ui/SuspendedNotice";
 import { fmt } from "./PracticeLink";
 
-type Status = { kind: "idle" } | { kind: "busy" } | { kind: "opening" } | { kind: "done" } | { kind: "error"; message: string };
+type Status =
+  | { kind: "idle" }
+  | { kind: "busy" }
+  | { kind: "opening" }
+  | { kind: "done" }
+  | { kind: "error"; message: string }
+  | { kind: "suspended"; suspension: Suspension };
 
 /**
  * Certificate card. Progress is local; the PDF comes from the authenticated
@@ -22,7 +30,7 @@ type Status = { kind: "idle" } | { kind: "busy" } | { kind: "opening" } | { kind
  * `/certificate/?code=...&print=1`: the browser-rendered certificate, which can print an Arabic name.
  */
 export default function PracticeCertificate({ trackId, done, total }: { trackId: string; done: number; total: number }) {
-  const { tx } = useLang();
+  const { tx, lang } = useLang();
   const T = tx.curriculum;
   const user = useAuthUser(); // null for guests and during prerender
   const router = useRouter();
@@ -36,6 +44,12 @@ export default function PracticeCertificate({ trackId, done, total }: { trackId:
     : status === 400 || status === 403 || status === 409 || status === 422 ? T.certificateErrorNotReady
     : T.certificateErrorUnavailable;
 
+  /** A refused request: 403 account_suspended gets its own notice (the learner stays signed in), the rest errorFor. */
+  async function refused(res: Response): Promise<Status> {
+    const suspension = suspensionOf(res.status, await res.json().catch(() => null));
+    return suspension ? { kind: "suspended", suspension } : { kind: "error", message: errorFor(res.status) };
+  }
+
   async function download() {
     const token = getToken();
     if (!token || busyRef.current) return;
@@ -44,7 +58,7 @@ export default function PracticeCertificate({ trackId, done, total }: { trackId:
     try {
       const res = await fetch(`${API_URL}/api/certificates/${encodeURIComponent(trackId)}`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) {
-        setStatus({ kind: "error", message: errorFor(res.status) });
+        setStatus(await refused(res));
         return;
       }
       const blob = await res.blob();
@@ -72,7 +86,7 @@ export default function PracticeCertificate({ trackId, done, total }: { trackId:
     try {
       const res = await fetch(`${API_URL}/api/certificates/${encodeURIComponent(trackId)}?format=json`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) {
-        setStatus({ kind: "error", message: errorFor(res.status) });
+        setStatus(await refused(res));
         return;
       }
       const code = certificateCodeFromInfo(await res.json().catch(() => null));
@@ -133,6 +147,12 @@ export default function PracticeCertificate({ trackId, done, total }: { trackId:
         )}
         <div role="status" aria-live="polite" className="text-sm mt-3 empty:hidden">
           {status.kind === "error" && <p className="text-red-400">{status.message}</p>}
+          {status.kind === "suspended" && (
+            <SuspendedNotice
+              testId="certificate-suspended"
+              message={suspensionMessage(status.suspension, { open: T.certificateErrorSuspended, until: T.certificateErrorSuspendedUntil }, lang)}
+            />
+          )}
           {status.kind === "done" && <p className="text-emerald-400">{T.certificateDone}</p>}
         </div>
       </div>

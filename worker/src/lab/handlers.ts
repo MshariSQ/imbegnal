@@ -9,11 +9,12 @@ import type { LabProgressResponse, RunApiResponse, RunDetail, RunRef, RunsApiRes
 import type { LangId } from "../../../shared/languages";
 import { getLanguage } from "../../../shared/languages";
 import type { RunResult, RunStatus } from "../../../shared/protocol";
+import { LAB_XP } from "../../../shared/xp";
 import { recordAbuseSignal } from "../abuse";
 import { type Env, json } from "../util";
 import { getQuotaInfo, recordRun, reserveQuota, settleQuota, toPublicResult } from "./execute";
 import { findLab, gradeLab } from "./grade";
-import { apiError, authenticate, readBody, reply, requireActiveUser, toIso } from "./http";
+import { apiError, readBody, reply, requireActiveUser, toIso } from "./http";
 import { getLanguages, runOnRunner } from "./runner";
 import { handleSnippetCreate, handleSnippetGet } from "./snippets";
 import { looksLikeNetworkProbe } from "./suspicious";
@@ -28,8 +29,9 @@ async function handleLanguages(env: Env, origin: string): Promise<Response> {
 
 // ── POST /api/lab/run ─────────────────────────────────────────────────────────
 async function handleRun(req: Request, env: Env, origin: string): Promise<Response> {
-  const user = await authenticate(req, env);
-  if (!user) return apiError("unauthorized", 401, origin);
+  const auth = await requireActiveUser(req, env, origin);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   const body = await readBody(req);
   if (!body.ok) return apiError("invalid_request", 400, origin, "The body must be a JSON object of at most 200 KiB.");
@@ -74,6 +76,7 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
     const runId = await recordRun(env, {
       id: reservation.runId,
       userId: user.sub,
+      tokenVersion: user.tokenVersion,
       ref,
       lang,
       result,
@@ -81,15 +84,48 @@ async function handleRun(req: Request, env: Env, origin: string): Promise<Respon
       code,
       stdin: stdinUsed,
     });
-    if (ref.kind === "lesson" && grade?.passed) {
-      await env.DB.prepare("INSERT OR IGNORE INTO lab_progress (user_id, ref) VALUES (?, ?)").bind(user.sub, `${ref.track}/${ref.lesson}/${ref.exercise}`).run();
+    // The Worker is the XP authority for lab exercises: the pass and its XP are written
+    // together, and the ledger's primary key awards each exercise once per user. A pass
+    // recorded before the ledger existed already earned its XP in the synced study state,
+    // so it earns no ledger XP (NOT EXISTS runs before this batch records the pass).
+    // Both are written only while the account is still the one the guard saw (token_version),
+    // like recordRun: a run that outlives DELETE /api/account or a sign-out everywhere writes
+    // nothing, and its response says `recorded: false` instead of an xpAwarded (the batch is one
+    // transaction, so the account check sees what the two conditional inserts saw).
+    let xpAwarded: number | undefined;
+    let recorded = true;
+    if (ref.kind === "lesson" && grade) {
+      xpAwarded = 0;
+      if (grade.passed) {
+        const labRef = `${ref.track}/${ref.lesson}/${ref.exercise}`;
+        const [account, ledger] = await env.DB.batch([
+          env.DB.prepare("SELECT 1 AS ok FROM users WHERE github_id = ?1 AND token_version = ?2").bind(user.sub, user.tokenVersion),
+          env.DB.prepare(
+            `INSERT OR IGNORE INTO xp_ledger (user_id, source, ref, xp)
+             SELECT ?1, 'lab', ?2, ?3 WHERE NOT EXISTS (SELECT 1 FROM lab_progress WHERE user_id = ?1 AND ref = ?2)
+               AND EXISTS (SELECT 1 FROM users WHERE github_id = ?1 AND token_version = ?4)`,
+          ).bind(user.sub, labRef, LAB_XP, user.tokenVersion),
+          env.DB.prepare(
+            `INSERT OR IGNORE INTO lab_progress (user_id, ref)
+             SELECT ?1, ?2 WHERE EXISTS (SELECT 1 FROM users WHERE github_id = ?1 AND token_version = ?3)`,
+          ).bind(user.sub, labRef, user.tokenVersion),
+        ]);
+        recorded = account.results.length > 0;
+        xpAwarded = ledger.meta.changes > 0 ? LAB_XP : 0;
+      }
     }
     const quota = await settleQuota(env, reservation, outcome);
 
     if (result.status === "internal_error" && result.message === "runner_unavailable") {
       return apiError("runner_unavailable", 503, origin, "The code runner is unavailable. This run was not counted.", { quota, runId });
     }
-    const response: RunApiResponse = { runId, result: toPublicResult(result), quota, ...(grade ? { grade } : {}) };
+    const response: RunApiResponse = {
+      runId,
+      result: toPublicResult(result),
+      quota,
+      ...(grade ? { grade } : {}),
+      ...(!recorded ? { recorded: false as const } : xpAwarded !== undefined ? { xpAwarded } : {}),
+    };
     return reply(response, 200, origin);
   } catch (e) {
     console.error("lab run failed", e instanceof Error ? e.message : "unknown");
@@ -202,10 +238,24 @@ async function handleRunDetail(req: Request, env: Env, origin: string, id: strin
 async function handleProgress(req: Request, env: Env, origin: string): Promise<Response> {
   const auth = await requireActiveUser(req, env, origin);
   if (!auth.ok) return auth.response;
-  const rows = await env.DB.prepare("SELECT ref, passed_at FROM lab_progress WHERE user_id = ? ORDER BY passed_at, ref LIMIT 2000")
+  // xp: the ledger's award for that pass (none for passes recorded before the ledger, whose XP is in the
+  // synced study state). The site shows xp.lab as the learner's lab XP and these passes as verified (lib/lab-progress.ts).
+  const rows = await env.DB.prepare(
+    `SELECT p.ref AS ref, p.passed_at AS passed_at, COALESCE(l.xp, 0) AS xp FROM lab_progress p
+     LEFT JOIN xp_ledger l ON l.user_id = p.user_id AND l.source = 'lab' AND l.ref = p.ref
+     WHERE p.user_id = ? ORDER BY p.passed_at, p.ref LIMIT 2000`,
+  )
     .bind(auth.user.sub)
-    .all<{ ref: string; passed_at: string }>();
-  const body: LabProgressResponse = { passed: rows.results.map((r) => ({ ref: r.ref, at: toIso(r.passed_at) })) };
+    .all<{ ref: string; passed_at: string; xp: number }>();
+  const xp = await env.DB.prepare(
+    "SELECT COALESCE(SUM(xp), 0) AS total, COALESCE(SUM(CASE WHEN source = 'lab' THEN xp ELSE 0 END), 0) AS lab FROM xp_ledger WHERE user_id = ?",
+  )
+    .bind(auth.user.sub)
+    .first<{ total: number; lab: number }>();
+  const body: LabProgressResponse = {
+    passed: rows.results.map((r) => ({ ref: r.ref, at: toIso(r.passed_at), ...(r.xp > 0 ? { xp: r.xp } : {}) })),
+    xp: { total: xp?.total ?? 0, lab: xp?.lab ?? 0 },
+  };
   return reply(body, 200, origin);
 }
 

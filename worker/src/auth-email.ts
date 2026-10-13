@@ -2,7 +2,7 @@
 // Passwords are hashed with PBKDF2-SHA256 (100k iterations — the Workers
 // runtime maximum) and a per-user random salt. Stored as
 // `pbkdf2$<iterations>$<salt b64>$<hash b64>` so parameters can evolve.
-import { type Env, b64ToBytes, bytesToB64, issueToken, json, readJson, uniqueUsername } from "./util";
+import { type Env, b64ToBytes, bytesToB64, issueToken, json, newTokenVersion, readJson, uniqueUsername } from "./util";
 
 const ITERATIONS = 100_000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -43,6 +43,24 @@ function readCredentials(body: Record<string, unknown> | null) {
   return { email, password };
 }
 
+/**
+ * The account key (users.github_id, the JWT `sub`) of an email account: `email:<HMAC>` of the normalized
+ * (trimmed, lowercased) email. Deterministic, like GitHub ("<id>") and Google ("google:<sub>") keys, so
+ * deleting the account and registering again with the same email gets the same key back, and with it the
+ * counters that account deletion keeps (lab/account-data.ts). Keyed with JWT_SECRET because the key is
+ * the JWT `sub`: a plain hash would let anyone confirm a guessed email. Accounts created before this keep
+ * their email:<uuid> key (login looks them up by email); deleting one moves its kept counters to this
+ * key (account.ts).
+ */
+export async function emailAccountKey(env: Env, email: string): Promise<string> {
+  const mac = await crypto.subtle.sign(
+    "HMAC",
+    await crypto.subtle.importKey("raw", new TextEncoder().encode(env.JWT_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]),
+    new TextEncoder().encode(`imbegnal:email-account:v1|${email}`),
+  );
+  return `email:${Array.from(new Uint8Array(mac).slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("")}`;
+}
+
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 export async function handleRegister(req: Request, env: Env, origin: string): Promise<Response> {
   const body = await readJson(req);
@@ -55,13 +73,14 @@ export async function handleRegister(req: Request, env: Env, origin: string): Pr
   const exists = await env.DB.prepare("SELECT 1 FROM users WHERE email = ? AND provider = 'email'").bind(email).first();
   if (exists) return json({ error: "email_taken" }, 409, origin);
 
-  const sub = `email:${crypto.randomUUID()}`;
+  const sub = await emailAccountKey(env, email);
+  if (await env.DB.prepare("SELECT 1 FROM users WHERE github_id = ?").bind(sub).first()) return json({ error: "email_taken" }, 409, origin);
   const displayName = name || email.split("@")[0];
   const username = await uniqueUsername(env, displayName);
   await env.DB.prepare(
-    `INSERT INTO users (github_id, username, name, avatar_url, email, bio, provider, password_hash, last_login)
-     VALUES (?, ?, ?, '', ?, '', 'email', ?, CURRENT_TIMESTAMP)`
-  ).bind(sub, username, displayName, email, await hashPassword(password)).run();
+    `INSERT INTO users (github_id, username, name, avatar_url, email, bio, provider, password_hash, last_login, token_version)
+     VALUES (?, ?, ?, '', ?, '', 'email', ?, CURRENT_TIMESTAMP, ?)`
+  ).bind(sub, username, displayName, email, await hashPassword(password), newTokenVersion()).run(); // random start: util.ts newTokenVersion
 
   const token = await issueToken({ sub, username, name: displayName, avatar: "" }, env);
   return json({ token }, 201, origin, { "Cache-Control": "no-store" });

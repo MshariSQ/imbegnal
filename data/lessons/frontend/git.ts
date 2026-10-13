@@ -200,10 +200,10 @@ console.log(recentCommits(["Init", "Add navbar", "Fix bug", "Add footer"], 2));
       body: {
         en: `## Real-world case study: this exact platform 🔍
 
-This isn't hypothetical — the very site you're learning on is built exactly this way. Its [CONTRIBUTING.md](https://github.com/MshariSQ/skillforge/blob/main/CONTRIBUTING.md) tells every contributor to branch off \`main\`, commit their roadmap or lesson changes, and open a Pull Request for review before anything merges. Every lesson you've completed on this site shipped through that exact \`branch → commit → push → Pull Request → merge\` flow you just learned. Open-source projects you use every day — React, VS Code, Python itself — all run on this same rhythm.`,
+This isn't hypothetical — the very site you're learning on is built exactly this way. Its [CONTRIBUTING.md](https://github.com/MshariSQ/imbegnal/blob/main/CONTRIBUTING.md) tells every contributor to branch off \`main\`, commit their roadmap or lesson changes, and open a Pull Request for review before anything merges. Every lesson you've completed on this site shipped through that exact \`branch → commit → push → Pull Request → merge\` flow you just learned. Open-source projects you use every day — React, VS Code, Python itself — all run on this same rhythm.`,
         ar: `## دراسة حالة واقعية: هذه المنصة بالضبط 🔍
 
-هذا ليس افتراضياً — الموقع نفسه الذي تتعلم عليه مبني بهذه الطريقة بالضبط. ملف [CONTRIBUTING.md](https://github.com/MshariSQ/skillforge/blob/main/CONTRIBUTING.md) الخاص به يطلب من كل مساهم التفرّع من \`main\`، وإيداع تعديلاته على خرائط التعلم أو الدروس، وفتح Pull Request للمراجعة قبل أن يُدمج أي شيء. كل درس أنهيته على هذا الموقع وصل عبر نفس تدفق \`فرع ← commit ← push ← Pull Request ← دمج\` الذي تعلمته للتو. مشاريع مفتوحة المصدر تستخدمها يومياً — React، VS Code، بايثون نفسه — تعمل جميعها بنفس هذا الإيقاع.`,
+هذا ليس افتراضياً — الموقع نفسه الذي تتعلم عليه مبني بهذه الطريقة بالضبط. ملف [CONTRIBUTING.md](https://github.com/MshariSQ/imbegnal/blob/main/CONTRIBUTING.md) الخاص به يطلب من كل مساهم التفرّع من \`main\`، وإيداع تعديلاته على خرائط التعلم أو الدروس، وفتح Pull Request للمراجعة قبل أن يُدمج أي شيء. كل درس أنهيته على هذا الموقع وصل عبر نفس تدفق \`فرع ← commit ← push ← Pull Request ← دمج\` الذي تعلمته للتو. مشاريع مفتوحة المصدر تستخدمها يومياً — React، VS Code، بايثون نفسه — تعمل جميعها بنفس هذا الإيقاع.`,
       },
     },
     {
