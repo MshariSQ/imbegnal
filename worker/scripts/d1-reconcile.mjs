@@ -17,8 +17,9 @@ import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { executeFailure, executeRows } from "./d1-json.mjs";
 
-/** Same table wrangler 3 creates (wrangler-dist/cli.js, DEFAULT_MIGRATION_TABLE). */
+/** Same table wrangler 4 creates (wrangler-dist/cli.js, getCreateMigrationsTableQuery, name quoted there). */
 export const MIGRATIONS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS d1_migrations(
 		id         INTEGER PRIMARY KEY AUTOINCREMENT,
 		name       TEXT UNIQUE,
@@ -91,12 +92,8 @@ function d1(opts, sql) {
   const args = ["wrangler", "d1", "execute", opts.database, "--config", "wrangler.toml", opts.mode, "--json", "--command", sql];
   if (opts.persistTo) args.push("--persist-to", opts.persistTo);
   const r = spawnSync("npx", args, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
-  if (r.status !== 0) throw new Error(`wrangler d1 execute failed (${r.status}): ${(r.stderr || r.stdout).trim().slice(-2000)}`);
-  // --json prints a JSON array; anything before it (e.g. a proxy notice) is not part of the answer.
-  const start = r.stdout.indexOf("[");
-  if (start < 0) throw new Error(`no JSON in wrangler output: ${r.stdout.slice(0, 500)}`);
-  const parsed = JSON.parse(r.stdout.slice(start));
-  return parsed.flatMap((x) => x.results ?? []);
+  if (r.status !== 0) throw new Error(`wrangler d1 execute failed (${r.status}): ${executeFailure(r.stdout, r.stderr)}`);
+  return executeRows(r.stdout);
 }
 
 const quote = (s) => `'${String(s).replace(/'/g, "''")}'`;

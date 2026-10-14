@@ -21,6 +21,7 @@
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { executeFailure, executeRows } from "./d1-json.mjs";
 
 export const DATABASE = "skillforge-db";
 export const ROLES = Object.freeze(["student", "instructor", "admin"]);
@@ -112,10 +113,8 @@ function d1(opts, sql) {
   // argv, no shell: nothing in `sql` or the options is interpreted by a shell.
   const r = spawnSync("npx", wranglerArgs(opts, sql), { cwd: WORKER_DIR, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
   if (r.error) throw new Error(`could not start wrangler: ${r.error.message}`);
-  if (r.status !== 0) throw new Error(`wrangler d1 execute failed (${r.status}): ${(r.stderr || r.stdout).trim().slice(-2000)}`);
-  const start = r.stdout.indexOf("[");
-  if (start < 0) throw new Error(`no JSON in wrangler output: ${r.stdout.slice(0, 500)}`);
-  return JSON.parse(r.stdout.slice(start)).flatMap((x) => x.results ?? []);
+  if (r.status !== 0) throw new Error(`wrangler d1 execute failed (${r.status}): ${executeFailure(r.stdout, r.stderr)}`);
+  return executeRows(r.stdout);
 }
 
 // Rows are printed as JSON so a name with control characters cannot drive the operator's terminal.
