@@ -23,10 +23,10 @@ jobs:
     name: Lint, type-check and build the site
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Same Node as ci.yml and Cloudflare Workers Builds: the repo's .node-version (22).
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: "npm"
@@ -49,9 +49,11 @@ jobs:
           # Served from the root of imbegnal.com — no basePath prefix.
           NEXT_PUBLIC_BASE_PATH: ""
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: out
+          # v4+ drops dotfiles by default; keep out/.nojekyll (from public/) as v3 shipped it.
+          include-hidden-files: true
 
   # 2) API: database migrations, then the Cloudflare Worker. Runs only after the
   #    site verified/built, and BEFORE the site is published, so with credentials
@@ -72,10 +74,10 @@ jobs:
       run:
         working-directory: worker
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # `uses:` steps resolve paths from the repository root (defaults.run applies to `run:` only).
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: "npm"
@@ -147,4 +149,4 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

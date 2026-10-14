@@ -138,7 +138,7 @@ The runner is up on 127.0.0.1:${port:-4242}.
 
 Next steps
   * Read the secret once:   sudo sed -n 's/^RUNNER_SECRET=//p' ${ENV_FILE}
-    and give it to the Worker:  wrangler secret put RUNNER_SECRET
+    and give it to the Worker, from worker/:  npx wrangler secret put RUNNER_SECRET --config wrangler.toml
   * Expose the runner over HTTPS (Cloudflare Tunnel / Caddy) and set RUNNER_URL in the Worker,
     see runner/README.md.
   * Logs:  journalctl -u imbegnal-runner -f      Languages available:  see the start-up log line

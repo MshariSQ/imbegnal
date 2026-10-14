@@ -398,7 +398,7 @@ The runner listens on loopback. A Cloudflare Tunnel publishes it over HTTPS with
 3. Install and run the connector on the runner VM with the token the dashboard shows:
    - compose: put it in `deploy/.env` as `CLOUDFLARE_TUNNEL_TOKEN=...` and run `docker compose --profile tunnel up -d`;
    - or on the host: `sudo cloudflared service install <token>`.
-4. In the Worker: `wrangler secret put RUNNER_URL` (`https://runner.example.com`) and `wrangler secret put RUNNER_SECRET` (the value from `/etc/imbegnal-runner.env`).
+4. In the Worker, from `worker/`: `npx wrangler secret put RUNNER_URL --config wrangler.toml` (`https://runner.example.com`) and `npx wrangler secret put RUNNER_SECRET --config wrangler.toml` (the value from `/etc/imbegnal-runner.env`). Without `--config` wrangler picks the site's `../wrangler.jsonc` and sets the secret on the wrong Worker.
 5. Verify: `curl https://runner.example.com/healthz` -> `{"ok":true}`.
 6. Recommended: add a Cloudflare Access service-token policy or an IP allow-list for the Worker as a second factor in front of the HMAC.
    Keep the runner's own HMAC check on: it is what stands between the internet and a code-execution service.
