@@ -321,8 +321,9 @@ which the answer may predate: those stay on top with their XP until an answer li
 
 Deploy-window residual: a signed-in pass graded by a Worker that already has `/api/lab/*` but predates the ledger
 writes `lab_progress` without a ledger row, so the new Worker never awards it and the site shows it as earned with
-no XP. Production's current Worker has no lab API at all (its runs fall back to the browser), so this cannot happen
-on the next deploy; deploy the Worker before the site if an older lab-enabled Worker is ever live.
+no XP. This did not happen in production: the Worker it ran before Deploy run #25 (2026-10-13) had no lab API at all
+(its runs fell back to the browser), and that run deployed the ledger Worker. Deploy the Worker before the site if an
+older lab-enabled Worker is ever live.
 
 Legacy residual: the client before this change (`origin/main` 79314d1 and earlier) added the 15 XP of every pass to
 the lesson `bonus`, and it stays there (`lib/lab-progress.ts` treats such passes as earned and never awards them
