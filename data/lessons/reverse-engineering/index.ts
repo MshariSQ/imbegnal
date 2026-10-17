@@ -7,4 +7,5 @@ export const reverseEngineeringLessons: Record<string, () => Promise<{ lesson: L
   "reverse-engineering/static-analysis-deobfuscation": () => import("./static-analysis-deobfuscation"),
   "reverse-engineering/debugging-dynamic-analysis": () => import("./debugging-dynamic-analysis"),
   "reverse-engineering/binary-formats-tools": () => import("./binary-formats-tools"),
+  "reverse-engineering/malware-analysis-basics": () => import("./malware-analysis-basics"),
 };

@@ -270,14 +270,16 @@ export const catalog: Catalog = {
         "assembly-basics",
         "static-analysis-deobfuscation",
         "debugging-dynamic-analysis",
-        "binary-formats-tools"
+        "binary-formats-tools",
+        "malware-analysis-basics"
       ],
       "maxBonus": {
         "how-programs-run": 10,
         "assembly-basics": 10,
         "static-analysis-deobfuscation": 10,
         "debugging-dynamic-analysis": 10,
-        "binary-formats-tools": 10
+        "binary-formats-tools": 10,
+        "malware-analysis-basics": 10
       }
     }
   ],
@@ -3104,6 +3106,135 @@ export const catalog: Catalog = {
           "name": "A 64-bit-sized image with upper-case hex in the queries",
           "stdin": "headers 0x1000\nsections 2\n.text 0x1000 0x1f2e40 0x1000 0x1f3000\n.rsrc 0x3a0000 0x4a2b0 0x2b4000 0x4a400\nqueries 3\n0X1F2E3F\n0x3EA2AF\n0x3ea2b0\n",
           "expected": "0x1f2e3f -> .text+0x1f1e3f at file offset 0x1f2e3f\n0x3ea2af -> .rsrc+0x4a2af at file offset 0x2fe2af\n0x3ea2b0 -> not in any section\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/malware-analysis-basics/ioc-extract",
+      "track": "reverse-engineering",
+      "lesson": "malware-analysis-basics",
+      "id": "ioc-extract",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "The teaching sample (sha256 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824)\ncontacted http://update.example.com/check?id=7 and then 203.0.113.42 on port 8443.\n",
+          "expected": "ip 203[.]0[.]113[.]42\ndomain update[.]example[.]com\nurl hxxp://update[.]example[.]com/check?id=7\nsha256 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824\ntotal: 4 indicators\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Already-defanged input is refanged first and printed defanged once",
+          "stdin": "From the partner report (already defanged): hxxps://cdn.example[.]net/a.png, 198.51.100[.]7\nSame host again: 198.51.100.7. Internal machine 10.0.0.5 talked to it.\n",
+          "expected": "ip 10[.]0[.]0[.]5\nip 198[.]51[.]100[.]7\ndomain cdn[.]example[.]net\nurl hxxps://cdn[.]example[.]net/a[.]png\ntotal: 4 indicators\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Look-alikes that are not addresses, and punctuation around URLs",
+          "stdin": "Not indicators: version 1.2.3.4.5, build 10.0.0.256, serial 1234567890.1.2.3, time 12.30.\nReal ones: (see http://downloads.example.org/tool.zip), 192.0.2.1. Also https://api.example.test:8443/v1;\n",
+          "expected": "ip 192[.]0[.]2[.]1\ndomain api[.]example[.]test\ndomain downloads[.]example[.]org\nurl hxxp://downloads[.]example[.]org/tool[.]zip\nurl hxxps://api[.]example[.]test:8443/v1\ntotal: 5 indicators\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Hashes are classified by length; near misses are ignored",
+          "stdin": "md5 5D41402ABC4B2A76B9719D911017C592, sha1 aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d\nnot a hash: 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b982 (63 chars)\nid_2cf24dba5fb0a30e26e83b2ac5b9e29e (inside a word) and deadbeef (too short)\n",
+          "expected": "md5 5d41402abc4b2a76b9719d911017c592\nsha1 aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d\ntotal: 2 indicators\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Duplicates collapse and IPs sort numerically",
+          "stdin": "servers: 192.0.2.100, 192.0.2.20, 192.0.2.3 and 192.0.2.20 again\n",
+          "expected": "ip 192[.]0[.]2[.]3\nip 192[.]0[.]2[.]20\nip 192[.]0[.]2[.]100\ntotal: 3 indicators\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Nothing to report",
+          "stdin": "The user reported a slow laptop. No suspicious files or connections were found.\n",
+          "expected": "total: 0 indicators\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/malware-analysis-basics/yara-match",
+      "track": "reverse-engineering",
+      "lesson": "malware-analysis-basics",
+      "id": "yara-match",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "rule Demo_Greeting\n  $hello = \"hello\" nocase\n  $tail = { 00 ff }\n  condition: any of them\n---\nsample a.bin\n48 45 4c 4c 4f 00 ff\nsample b.bin\n62 79 65\n",
+          "expected": "Demo_Greeting a.bin\n0x0:$hello\n0x5:$tail\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two rules and three teaching samples",
+          "stdin": "rule Notes_Updater_Config\n  $host = \"update.example.test\"\n  $agent = \"TeachingAgent/1.0\" nocase\n  $key = { de ad be ef }\n  condition: 2 of them\nrule Packer_Section_Names\n  $s0 = \"UPX0\"\n  $s1 = \"UPX1\"\n  condition: all of them\n---\nsample updater_demo.bin\n47 45 54 20 2f 63 68 65 63 6b 20 48 54 54 50 2f\n31 2e 31 0d 0a 48 6f 73 74 3a 20 75 70 64 61 74\n65 2e 65 78 61 6d 70 6c 65 2e 74 65 73 74 0d 0a\n55 73 65 72 2d 41 67 65 6e 74 3a 20 74 65 61 63\n68 69 6e 67 61 67 65 6e 74 2f 31 2e 30 0d 0a de\nad be ef\nsample packed_demo.exe\n4d 5a 90 00 55 50 58 30 00 00 00 00 55 50 58 31\n00 68 61 72 6d 6c 65 73 73 0a\nsample shopping.txt\n6d 69 6c 6b 2c 20 62 72 65 61 64 2c 20 74 65 61\n0a\n",
+          "expected": "Notes_Updater_Config updater_demo.bin\n0x1b:$host\n0x3c:$agent\n0x4f:$key\nPacker_Section_Names packed_demo.exe\n0x4:$s0\n0xc:$s1\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Case sensitivity, and \"3 of them\" with only two present",
+          "stdin": "rule Exact_Case\n  $a = \"beacon\"\n  $b = \"interval=60\"\n  condition: all of them\nrule Any_Case\n  $a = \"beacon\" nocase\n  $b = \"interval=60\"\n  condition: all of them\nrule Three_Needed\n  $a = \"beacon\" nocase\n  $b = \"interval=60\"\n  $c = \"jitter\"\n  condition: 3 of them\n---\nsample config_demo.txt\n42 65 61 63 6f 6e 20 69 6e 74 65 72 76 61 6c 3d\n36 30 20 42 45 41 43 4f 4e\n",
+          "expected": "Any_Case config_demo.txt\n0x0:$a\n0x7:$b\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Rule order for strings, first occurrence only, and an empty sample",
+          "stdin": "rule Second_String_First\n  $late = \"XYZ\"\n  $early = \"abc\"\n  condition: all of them\nrule Hex_Only\n  $h = { 61 62 63 }\n  condition: any of them\n---\nsample repeat.bin\n61 62 63 58 59 5a 61 62 63 58 59 5a\nsample empty.bin\nsample tail.bin\n00 00 58 59 5a\n",
+          "expected": "Second_String_First repeat.bin\n0x3:$late\n0x0:$early\nHex_Only repeat.bin\n0x0:$h\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A string longer than the sample never matches",
+          "stdin": "rule Long_Needle\n  $n = \"this string is longer than the sample\"\n  condition: any of them\n---\nsample tiny.bin\n74 68 69 73\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/malware-analysis-basics/snapshot-diff",
+      "track": "reverse-engineering",
+      "lesson": "malware-analysis-basics",
+      "id": "snapshot-diff",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "[before]\n/home/lab/notes.txt 9f2c41aa\n/etc/hosts 1a2b3c4d\n/tmp/old.log 77e01c2b\n[after]\n/home/lab/notes.txt 9f2c41aa\n/etc/hosts 5e6f7a8b\n/home/lab/.config/autostart/notes-sync.desktop c0ffee11\n[watch]\n/home/lab/.config/autostart/\n/etc/hosts\n",
+          "expected": "~ /etc/hosts  [watched]\n+ /home/lab/.config/autostart/notes-sync.desktop  [watched]\n- /tmp/old.log\nsummary: 1 created, 1 modified, 1 deleted, 2 in watched locations\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A Windows run: registry Run key and a temporary file",
+          "stdin": "[before]\nHKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\OneDrive 3a1f9c20\nC:\\Users\\lab\\Documents\\report.docx 8b2e5d11\n[after]\nHKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\OneDrive 3a1f9c20\nHKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\NotesSync 7c4d0a3e\nC:\\Users\\lab\\AppData\\Local\\Temp\\ns_tmp.dat 1d9e44f0\nC:\\Users\\lab\\Documents\\report.docx 8b2e5d11\n[watch]\nHKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\\n",
+          "expected": "+ C:\\Users\\lab\\AppData\\Local\\Temp\\ns_tmp.dat\n+ HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\NotesSync  [watched]\nsummary: 2 created, 0 modified, 0 deleted, 1 in watched locations\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Exact entries versus folder entries",
+          "stdin": "[before]\n/etc/hosts 1a2b3c4d\n/etc/hosts.allow 0f0f0f0f\n/etc/cron.daily/logrotate 5a5a5a5a\n[after]\n/etc/hosts 1a2b3c4d\n/etc/hosts.allow 0e0e0e0e\n/etc/cron.daily/logrotate 5a5a5a5a\n/etc/cron.d/notes-sync 99887766\n/etc/cron.dx 12121212\n[watch]\n/etc/hosts\n/etc/cron.d/\n",
+          "expected": "+ /etc/cron.d/notes-sync  [watched]\n+ /etc/cron.dx\n~ /etc/hosts.allow\nsummary: 2 created, 1 modified, 0 deleted, 1 in watched locations\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Nothing changed (the order of lines does not matter)",
+          "stdin": "[before]\n/home/lab/a.txt 11111111\n/home/lab/b.txt 22222222\n[after]\n/home/lab/b.txt 22222222\n/home/lab/a.txt 11111111\n[watch]\n/home/lab/.config/autostart/\n",
+          "expected": "summary: 0 created, 0 modified, 0 deleted, 0 in watched locations\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Deleted and modified files in watched places count too",
+          "stdin": "[before]\n/home/lab/.config/autostart/old-helper.desktop aaaa0001\n/home/lab/.bashrc bbbb0002\n/var/log/syslog cccc0003\n/home/lab/z.txt dddd0004\n[after]\n/home/lab/.bashrc bbbb0099\n/var/log/syslog cccc0042\n/home/lab/z.txt dddd0004\n/home/lab/.cache/notes/index.db eeee0005\n[watch]\n/home/lab/.config/autostart/\n/home/lab/.bashrc\n",
+          "expected": "~ /home/lab/.bashrc  [watched]\n+ /home/lab/.cache/notes/index.db\n- /home/lab/.config/autostart/old-helper.desktop  [watched]\n~ /var/log/syslog\nsummary: 1 created, 2 modified, 1 deleted, 2 in watched locations\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty before-snapshot and no watch list",
+          "stdin": "[before]\n[after]\n/opt/notes-sync/bin/notes-sync 0badc0de\n/opt/notes-sync/README 600d600d\n[watch]\n",
+          "expected": "+ /opt/notes-sync/README\n+ /opt/notes-sync/bin/notes-sync\nsummary: 2 created, 0 modified, 0 deleted, 0 in watched locations\n",
           "mode": "trim"
         }
       ]
