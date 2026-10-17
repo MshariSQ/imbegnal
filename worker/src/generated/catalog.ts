@@ -225,7 +225,8 @@ export const catalog: Catalog = {
         "memory-management",
         "files-linux-shell",
         "concurrency-sync",
-        "file-systems"
+        "file-systems",
+        "virtualization-containers"
       ],
       "maxBonus": {
         "processes-threads": 10,
@@ -233,7 +234,8 @@ export const catalog: Catalog = {
         "memory-management": 10,
         "files-linux-shell": 10,
         "concurrency-sync": 10,
-        "file-systems": 10
+        "file-systems": 10,
+        "virtualization-containers": 10
       }
     },
     {
@@ -1864,6 +1866,123 @@ export const catalog: Catalog = {
           "name": "The same block twice in one transaction, and blank lines",
           "stdin": "s0 s1 s2 s3 s4\nbegin m1\nwrite m1 4 first\n\nwrite m1 4 second\nwrite m1 0 head\ncommit m1\n\nbegin m2\ncommit m2\n",
           "expected": "replayed: m1 m2\ndiscarded: none\ndisk: head s1 s2 s3 second",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/virtualization-containers/pid-namespaces",
+      "track": "operating-systems",
+      "lesson": "virtualization-containers",
+      "id": "pid-namespaces",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "spawn sshd init\nspawn box init newns\nspawn nginx box\nps init\nps nginx\npids nginx\nexit box\nps init\n",
+          "expected": "ps init: 1=init 2=sshd 3=box 4=nginx\nps nginx: 1=box 2=nginx\npids nginx: 2 4\nexit box: also killed nginx\nps init: 1=init 2=sshd",
+          "mode": "trim"
+        },
+        {
+          "name": "Namespaces inside namespaces",
+          "stdin": "spawn sshd init\nspawn box init newns\nspawn nginx box\nspawn worker nginx\nps init\nps nginx\npids worker\nspawn inner worker newns\nspawn job inner\npids job\nps box\nps job\nexit box\nps init\n",
+          "expected": "ps init: 1=init 2=sshd 3=box 4=nginx 5=worker\nps nginx: 1=box 2=nginx 3=worker\npids worker: 3 5\npids job: 2 5 7\nps box: 1=box 2=nginx 3=worker 4=inner 5=job\nps job: 1=inner 2=job\nexit box: also killed nginx worker inner job\nps init: 1=init 2=sshd",
+          "mode": "trim"
+        },
+        {
+          "name": "A normal exit kills nobody else and PIDs are not reused",
+          "stdin": "spawn a init\nspawn b init\nexit a\nspawn c init\nps init\npids c\nexit b\nps c\n",
+          "expected": "exit a\nps init: 1=init 3=b 4=c\npids c: 4\nexit b\nps c: 1=init 4=c",
+          "mode": "trim"
+        },
+        {
+          "name": "A nested init takes down only its own namespace",
+          "stdin": "spawn box init newns\nspawn web box\n\nspawn inner web newns\nspawn job inner\npids job\nexit inner\nps box\nps init\n",
+          "expected": "pids job: 2 4 5\nexit inner: also killed job\nps box: 1=box 2=web\nps init: 1=init 2=box 3=web",
+          "mode": "trim"
+        },
+        {
+          "name": "Only init",
+          "stdin": "ps init\npids init\n",
+          "expected": "ps init: 1=init\npids init: 1",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/virtualization-containers/image-layers",
+      "track": "operating-systems",
+      "lesson": "virtualization-containers",
+      "id": "image-layers",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "Example: an upper file wins, a whiteout deletes",
+          "stdin": "layer\n/etc/os-release debian 12\n/etc/motd welcome\n/bin/sh dash\nlayer\n/etc/.wh.motd\n/app/server.py v1\nlayer\n/app/server.py v2\n",
+          "expected": "/app/server.py v2\n/bin/sh dash\n/etc/os-release debian 12\nfiles: 3",
+          "mode": "trim"
+        },
+        {
+          "name": "An opaque directory and a directory whiteout",
+          "stdin": "layer\n/var/cache/apt/a.deb 1\n/var/cache/apt/b.deb 2\n/var/cache/x 3\n/var/log/syslog 4\n/var/lib/dpkg/status ok\nlayer\n/var/cache/.wh..wh..opq\n/var/cache/new fresh\nlayer\n/var/.wh.log\n",
+          "expected": "/var/cache/new fresh\n/var/lib/dpkg/status ok\nfiles: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "A whiteout hides /a and /a/b but not /ab",
+          "stdin": "layer\n/a/b 1\n/a 2\n/ab 3\nlayer\n/.wh.a\n",
+          "expected": "/ab 3\nfiles: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "A whiteout never hides a file of its own layer",
+          "stdin": "layer\n/x old\n/y keep\nlayer\n/x new\n/.wh.x\nlayer\n/.wh..wh..opq\n/z only\n",
+          "expected": "/z only\nfiles: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "No layers at all",
+          "stdin": "",
+          "expected": "files: 0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/virtualization-containers/cgroup-memory",
+      "track": "operating-systems",
+      "lesson": "virtualization-containers",
+      "id": "cgroup-memory",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Example: the cgroup's own limit",
+          "stdin": "mkdir /web 512\nmkdir /web/api 300\ncharge /web/api 200\ncharge /web/api 120\nshow\n",
+          "expected": "charge /web/api 200: ok\ncharge /web/api 120: OOM in /web/api\n/ current=200 max=max\n/web current=200 max=512\n/web/api current=200 max=300",
+          "mode": "trim"
+        },
+        {
+          "name": "A parent's limit stops a child without one",
+          "stdin": "mkdir /web 512\nmkdir /web/api 300\nmkdir /web/static max\ncharge /web/api 200\ncharge /web/static 250\ncharge /web/api 120\ncharge /web/static 100\nuncharge /web/api 200\ncharge /web/static 100\nshow\n",
+          "expected": "charge /web/api 200: ok\ncharge /web/static 250: ok\ncharge /web/api 120: OOM in /web/api\ncharge /web/static 100: OOM in /web\ncharge /web/static 100: ok\n/ current=350 max=max\n/web current=350 max=512\n/web/api current=0 max=300\n/web/static current=350 max=max",
+          "mode": "trim"
+        },
+        {
+          "name": "mkdir errors and reaching the limit exactly",
+          "stdin": "mkdir /a/b 10\nmkdir /a 10\nmkdir /a 5\n\ncharge / 1000000\ncharge /a 10\ncharge /a 1\nshow\n",
+          "expected": "mkdir /a/b: No such file or directory\nmkdir /a: File exists\ncharge / 1000000: ok\ncharge /a 10: ok\ncharge /a 1: OOM in /a\n/ current=1000010 max=max\n/a current=10 max=10",
+          "mode": "trim"
+        },
+        {
+          "name": "Three levels: the closest full cgroup is reported",
+          "stdin": "mkdir /k8s 1024\nmkdir /k8s/pod 256\nmkdir /k8s/pod/app max\nmkdir /k8s/other max\ncharge /k8s/other 900\ncharge /k8s/pod/app 200\ncharge /k8s/pod/app 50\nuncharge /k8s/other 900\ncharge /k8s/pod/app 100\ncharge /k8s/pod/app 107\nshow\n",
+          "expected": "charge /k8s/other 900: ok\ncharge /k8s/pod/app 200: OOM in /k8s\ncharge /k8s/pod/app 50: ok\ncharge /k8s/pod/app 100: ok\ncharge /k8s/pod/app 107: OOM in /k8s/pod\n/ current=150 max=max\n/k8s current=150 max=1024\n/k8s/pod current=150 max=256\n/k8s/pod/app current=150 max=max\n/k8s/other current=0 max=max",
+          "mode": "trim"
+        },
+        {
+          "name": "Only the root",
+          "stdin": "show\n",
+          "expected": "/ current=0 max=max",
           "mode": "trim"
         }
       ]
