@@ -22,7 +22,8 @@ Browser (static Next.js export: GitHub Pages / Cloudflare Workers assets)
 
 * **Content** lives in `data/` (roadmaps → nodes → lessons). `lib/catalog.ts`
   derives *courses → modules → lessons* from it, so there is a single source of
-  truth. Every lesson is its own statically generated, indexable page.
+  truth. Every lesson is its own statically generated, indexable page. **Career paths**
+  (`data/career-paths.ts`) are job roles built from several of those courses; see [Career paths](#career-paths).
 * **Local-first**: progress, notes, XP and streak work for guests
   (`localStorage`). When signed in, `lib/sync.ts` merges with the server copy
   (union of completions, newest note wins, XP derived from per-lesson records so
@@ -165,7 +166,7 @@ Also set a monthly spend limit in the Anthropic Console as the last line of defe
 |---|---|---|
 | Code Lab UI | `app/code-lab/`, `components/codelab/` | CodeMirror editor (14 languages), stdin, stdout/stderr panes, run history, read-only share links (`/code-lab/s/?id=`), "Open in Code Lab" from lessons and challenges. JavaScript and Python also run in the browser when signed out or when the runner is down. |
 | Challenges UI | `app/challenges/`, `components/challenges/` | List with track / difficulty / status filters, points, estimated time, solves, first blood; detail page with flag or code submission and hints; leaderboard (all-time / weekly, per track). Hint texts are Worker-only (`worker/src/graders/data/hints/`): the public data lists each hint's cost, and the text reaches the page only from `POST /api/challenges/:id/hint` (after the cost is charged) or from the learner's own progress; `tests/unit/hints-no-leak.test.ts` scans the data, the sources and `out/`. |
-| Curriculum | `data/roadmaps.ts`, `data/curricula.ts`, `data/lessons/**` | `roadmaps[]` is the one taxonomy: course pages, Code Lab tags, challenge categories, certificates and analytics all use the roadmap `id` and look the title up at render time. Lessons embed graded `lab` exercises. |
+| Curriculum | `data/roadmaps.ts`, `data/curricula.ts`, `data/lessons/**` | `roadmaps[]` is the one taxonomy: course pages, Code Lab tags, challenge categories, certificates and analytics all use the roadmap `id` and look the title up at render time. Lessons embed graded `lab` exercises. Career paths (`data/career-paths.ts`) reference these ids and never copy a course's name. |
 | Worker | `worker/src/lab/**`, `worker/src/challenges/**`, `worker/src/graders/**` | Quota reserve → signed runner call → grade → log (`lab_runs`) → refund on infrastructure failure. Flags are stored as SHA-256 hashes; hidden tests, harnesses and reference solutions exist only in the Worker bundle. |
 | Runner | `runner/` | Zero-dependency Node 22 service that executes one job per throw-away Docker container. |
 
@@ -235,6 +236,74 @@ node scripts/grant-role.mjs --remote --github-id 583231 --role admin --yes   # a
   role enum (`worker/tests/grant-role.test.ts`). It holds no credentials: wrangler uses the operator's own login.
 
 First setup: sign in once on the site with GitHub (that creates the account), then grant yourself `admin` as above.
+
+## Career paths
+
+A **course** is a track of `data/roadmaps.ts` with lessons (`/learn/<track>/`). A **career path** is a job role
+built from several courses in Beginner → Intermediate → Advanced order. A course can be in several paths, and
+progress in a course counts in every path that contains it (path progress is computed from the course's own
+lesson keys, `track/lesson`, in the study store; nothing is stored per path).
+
+### Data model
+
+| Where | What |
+|---|---|
+| `data/career-paths.ts` `careerPaths` | The 11 roles: `id` (URL segment), bilingual `title`, `description` (one paragraph), `ifYouLike` (3), `skills` (5-8), `jobs`, `category` (`security`, `software`, `data-ai`, `cloud-devops`, `design`: the filter chips), `icon` (emoji, like the tracks) and `accent`; `courses[]`: `{ course, level, why }` in study order, where `course` is a track id or a planned course id, `level` is the course's level **in this path** and `why` is one bilingual line. |
+| `data/career-paths.ts` `plannedCourses` | Courses that do not exist yet (`incident-response`, `web-app-pentesting`, `advanced-react`, `bi-dashboards`, `mlops`): bilingual title and description, icon, accent. Shown as **coming soon** and never linked. |
+| `lib/career-paths.ts` | Pure resolver, used by the server pages, the browser and the tests: `resolvePath(path, figures)` marks each course available (a track with lessons in `lib/catalog`) or coming soon and sums lessons and minutes of the available ones; `pathProgress` (states `not-started`, `in-progress`, `available-complete`, `complete`), `nextCourse`, `pathsWithCourse`, `hoursFromMinutes` (the rounding the course cards use). |
+| `lib/career-paths-server.ts` | Build time only: `courseFigures()` reads each course's lesson ids from `lib/catalog` (the same list `worker/src/generated/catalog.ts` is generated from) and sums the lessons' `estMinutes`. |
+
+No hour, lesson count, salary or statistic is stored in the path data (a unit test rejects them): a lesson added
+to a course shows up in the lesson count and hours of every path that includes it at the next build.
+`data/curricula.ts` and `data/roadmaps.ts` were not changed.
+
+Rules (`tests/unit/career-paths.test.ts`): the 11 approved paths with their courses in order; path ids are unique
+and never a track id; every referenced course is a track or a planned course, and a planned id is never a track id
+(when a planned course ships as a track with that id, delete its `plannedCourses` entry in the same change: the
+test fails until you do, and the path then links it and counts its lessons automatically); levels never go down
+along a path and start at Beginner; every string is bilingual; every course of the catalog is in at least one path.
+
+### Routes
+
+| Route | Page |
+|---|---|
+| `/roadmaps/` | Career paths grid (`components/paths/CareerPathsGrid.tsx`): one card per role with the description, "If you like", the first three courses then "+N more", the level range and the total hours; category and level filters (the level filter keeps paths that include a course at that level). |
+| `/roadmaps/<path-id>/` | Role page (`components/paths/CareerPathPage.tsx`): hero with the description, "If you like", facts and a Start/Continue button to the first unfinished course; the courses grouped by level as "Course k of N" cards (lessons, hours, the learner's progress, links to the course and its course map; coming-soon cards are not links); path progress; a completion section that lists the course certificates; skills and job titles. JSON-LD `EducationalOccupationalProgram` with the available courses. |
+| `/roadmaps/<track-id>/` | **Course map**: the topic-node map these URLs always showed (13 tracks), retitled "Course map", with a link back to `/learn/<track>/` and to the career paths that include the course. Kept at the same URL on purpose: the sitemap, lessons and external sites link it, and the node progress (`user_roadmap_progress`, `GET/POST/DELETE /api/progress`) is keyed by the track id, so no redirect (impossible in a static export) and no data migration were needed. |
+| `/courses/` | Catalog of IMBEGNAL's own courses (`components/courses/CourseDirectory.tsx`): lessons, hours, level, progress and "Part of these career paths" per course; level and career path filters. The navbar's **Courses** link points here. |
+| `/resources/` | **External resources**: the directory of other providers' courses (`data/courses.ts`) that used to be `/courses/`, with the same search, price and field filters. Course bookmarks on the profile link here. |
+| `/learn/` | Unchanged: the course list with the lesson search ("Search every lesson" on `/courses/` links it). |
+| `/learn/<track>/` | Unchanged apart from a "Part of these career paths" card in the sidebar (`components/paths/PathsForCourse.tsx`). |
+
+Every one of these pages has its own title, description, canonical URL and `og:url` (`pageOpenGraph`), and the
+sitemap lists `/courses/`, `/roadmaps/`, every path page, every course map and `/resources/`. `robots.txt` did not
+need a change (everything public is allowed).
+
+### Certificates for a path: not added (yet)
+
+Certificates stay per course (`GET /api/certificates/:track`, table `certificates`, `/certificate/?code=`
+verification). A path certificate does not fit that model cleanly today, so the role page shows the path's
+completion state and lists each course's certificate instead ("Certificate ready" links to the course page's
+certificate card, otherwise the lessons left), and says that each course certificate is the proof:
+
+* **Five of the 11 paths contain a coming-soon course**, so they cannot be completed until phase 2 ships them.
+* **A path's meaning changes when a course is added to it.** A course certificate covers a fixed course (its
+  lessons at issue time are what "every lesson done" meant); a path certificate issued for four courses would
+  silently claim a fifth once it is added. Doing it right means storing which courses (or a path version) a
+  certificate covers: a new column, i.e. a migration, which the brief allows only when unavoidable.
+* **The Worker does not know paths.** It validates certificate ids against the generated catalog
+  (`deps.catalog.tracks`); paths would have to be added to `scripts/gen-catalog.mts` and `shared/catalog.ts`, and the
+  verification page, the printable certificate and the PDF all say "the course" and look the title up as a track.
+* **Trust model.** A path certificate would be issued from the same client-written `done` flags (see *Known gap:
+  certificates trust `done`* above), multiplied across 2-5 courses. It should come after the server-verified lab
+  requirement, not before.
+
+**Follow-up** (when phase 2 has published the planned courses): add `paths` (id, ordered course ids, a `version`
+that changes whenever the course list changes) to the generated catalog; issue `GET /api/certificates/path/:id`
+when every course of the path has an issued course certificate (so no new trust is introduced); migration
+`0009_path_certificates.sql` adding `kind` (`course` | `path`) and `version` to `certificates` (the existing
+unique `(user_id, track)` keeps working because path ids never equal track ids); teach the verification page,
+the printable certificate and the PDF the path wording; tests for eligibility, versioning and verification.
 
 ## Account deletion
 
@@ -355,11 +424,11 @@ the Worker deploys: `ci.yml` runs `npm run check:catalog`, `deploy.yml` does not
 | `npm run typecheck` | — | site, Worker and runner TypeScript |
 | `npx eslint .` | — | lint |
 | `npm run check:catalog` | — | `worker/src/generated/catalog.ts` matches the lesson/challenge data (`npm run gen:catalog` to refresh) |
-| `npm run test:unit` | host toolchains (optional) | contracts, output matching, curricula, canonical names, lessons; every lab and challenge reference solution is run against its tests on the host toolchains that exist (missing ones are skipped) |
+| `npm run test:unit` | host toolchains (optional) | contracts, output matching, curricula, career paths (approved courses and order, ids, bilingual strings, computed hours, planned courses never linkable), canonical names, lessons; every lab and challenge reference solution is run against its tests on the host toolchains that exist (missing ones are skipped) |
 | `npm run test:worker` | `cd worker && npm ci` | every Worker endpoint on a D1 shim over `node:sqlite` with a stubbed runner: quotas, refunds, grading, flags, first blood, leaderboard, abuse, audit, certificates, account deletion, the OAuth login nonce, the auth guard on every protected route (revoked tokens, deleted accounts, suspensions, roles), logout and `tv` issuance (a deleted, re-created account refuses the old tokens), role/plan never client-writable, the role CLI |
 | `npm run test:runner` | Docker + `runner/image/build.sh slim` | the sandbox against a real Docker daemon: per-language Hello World, stdout/stderr, timeouts, memory, fork bombs, output floods, no network, no persistence, read-only root, uid, HMAC/replay |
 | `npm run test:e2e` | Docker, a runner image, `worker/node_modules`, Chromium | the real stack (runner + `wrangler dev` with local D1 and the real migrations + the exported site + Playwright): Hello World in Python/JS/Java/C/C++ through the UI, stdout vs stderr, infinite loop killed, network blocked, quota exhaustion message and refunds, lesson → "Try in Code Lab" → starter code → pass → XP, challenge solve → points |
-| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard, the sign-in callback (login nonce) and sign-out (server revocation, a revoked token signs the tab out); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
+| `npm run test:e2e:ui` | Chromium; `PYODIDE_DIR` (a local `pyodide@0.26.4`) for the Python specs | the site's UI against a mocked Worker: Code Lab (editor, every error state, history, share, permalinks, in-browser JS/Python runners, layout; the Pyodide specs are skipped without `PYODIDE_DIR` and always run in CI, which installs it), Challenges (a fixture export: list, filters, detail, submit, hints, leaderboard), course pages, career paths (`/roadmaps/`, role pages, course maps at the old URLs, `/courses/`, `/resources/`), certificate verification and the printable certificate (print media, EN/AR), the instructor dashboard, the sign-in callback (login nonce) and sign-out (server revocation, a revoked token signs the tab out); English and Arabic (RTL), 360-1280 px widths, axe-core, no hydration errors |
 
 `npm run test:e2e` builds the site with `NEXT_PUBLIC_API_URL=http://127.0.0.1:8787`, starts everything on loopback
 (site 4173, Worker 8787, runner 4242) with throw-away secrets and a temporary D1, and tears it down afterwards.
@@ -440,6 +509,10 @@ lesson can rank in English and Arabic; Arabic tech content is
 under-served. Add an OG image per course and submit the sitemap to Search Console.
 
 ## Known gaps / next steps
+- Career paths: a path completion certificate (see [Certificates for a path](#certificates-for-a-path-not-added-yet));
+  the five planned courses (phase 2); `/learn/` and `/courses/` both list the courses (the navbar points to
+  `/courses/`; merge them once `/learn/` may change); the course map at `/roadmaps/<track>/` keeps its fixed-width
+  sidebar and is cramped below ~640px.
 - Stripe billing, email verification and password reset (email auth currently has
   no verification — fine for progress sync, add before paid features).
 - Login CSRF, residual window while production runs the previous Worker (frontend-only mode): that Worker
