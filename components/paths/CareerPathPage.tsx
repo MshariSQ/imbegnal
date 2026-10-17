@@ -14,7 +14,7 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import ProgressRing from "@/components/ui/ProgressRing";
 import { fmt } from "@/components/learn/PracticeLink";
 import type { Tx } from "@/lib/i18n";
-import { LevelBadge, coursesCount, levelRange } from "./PathBits";
+import { COMING_SOON_CLASS, LevelBadge, coursesCount, levelRange } from "./PathBits";
 
 function SectionTitle({ id, icon, children }: { id: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -44,7 +44,7 @@ function CourseStep({ course, total, progress, tx, lang }: { course: PathCourse;
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span className="text-[11px] font-bold uppercase tracking-widest text-fg-subtle">{label}</span>
               <LevelBadge level={course.level} tx={tx} />
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400">
+              <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${COMING_SOON_CLASS}`}>
                 <Sparkles size={11} aria-hidden /> {T.comingSoon}
               </span>
             </div>

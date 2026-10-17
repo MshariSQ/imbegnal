@@ -101,7 +101,7 @@ export default function ExternalResources() {
         <span id={fieldLabelId} className="sr-only">{X.fieldLabel}</span>
         {FIELDS.map((f) => (
           <button key={f} onClick={() => setField(f)} aria-pressed={field === f}
-            className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${field === f ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400" : "border-line text-fg-subtle hover:text-fg hover:border-fg-faint"}`}>
+            className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${field === f ? "bg-brand border-brand text-brand-fg font-medium" : "border-line text-fg-subtle hover:text-fg hover:border-fg-faint"}`}>
             {fieldLabel(f)}
           </button>
         ))}

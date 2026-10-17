@@ -8,7 +8,7 @@ import { hoursLabel } from "@/lib/plural";
 import { useStudy } from "@/lib/study-store";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { fmt } from "@/components/learn/PracticeLink";
-import { coursesCount, levelRange } from "./PathBits";
+import { COMING_SOON_CLASS, coursesCount, levelRange } from "./PathBits";
 
 /** Courses listed on a card before "+N more". */
 const SHOWN = 3;
@@ -69,7 +69,7 @@ export default function PathCard({ path, headingLevel = 2 }: { path: PathSummary
               <span aria-hidden className="shrink-0">{c.icon}</span>
               <span className={`truncate ${c.available ? "text-fg-soft" : "text-fg-subtle"}`}>{c.title[lang]}</span>
               {!c.available && (
-                <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400">{T.comingSoon}</span>
+                <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${COMING_SOON_CLASS}`}>{T.comingSoon}</span>
               )}
             </li>
           ))}

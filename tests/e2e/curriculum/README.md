@@ -25,6 +25,26 @@ else the newest `chromium-*` / `chromium_headless_shell-*` under `PLAYWRIGHT_BRO
 
 ## What is covered
 
+`paths.spec.ts` (career paths):
+
+* `/roadmaps/`, EN + AR (RTL): one card per career path with its description, "If you like", the
+  first three courses then "+N more", the level range and the hours computed from the lessons;
+  category and level filters (`aria-pressed`), the empty state and "Clear filters"
+* a role page (`/roadmaps/soc-analyst/`), EN + AR: courses grouped by level as "Course k of N" with
+  their "why" line, available courses link to `/learn/<track>/` and their course map, coming-soon
+  courses contain no link (and no link on the page points at a planned course), JSON-LD
+* progress from the study store: a finished course moves every path that contains it; the
+  `complete` and `available-complete` states and the course certificate links
+* an old `/roadmaps/<track-id>/` URL: the course map, retitled, still reads node progress with
+  `GET /api/progress?roadmap_id=<track-id>`, links back to the course and to its career paths;
+  every track URL is still exported and in the sitemap
+* `/courses/`: every course with hours, career path links, the path and level filters, the
+  link to `/resources/`; the "Part of these career paths" block on a course page
+* 360px without horizontal scroll, axe (light/dark x EN/AR) on `/roadmaps/`, a role page, a
+  course map, `/courses/` and `/resources/`
+
+`course.spec.ts`:
+
 * every course page (all roadmaps that have lessons), EN + AR: all sections render, the
   `<h1>` equals the roadmap title (EN) or the curriculum's Arabic name (AR), `dir="rtl"`,
   JSON-LD (`Course`, `hasCourseInstance`, `educationalLevel`, `teaches`, `timeRequired`)
