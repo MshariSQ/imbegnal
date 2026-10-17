@@ -212,7 +212,8 @@ export const catalog: Catalog = {
         "dns-http-tls",
         "routing-switching",
         "network-troubleshooting",
-        "wireless-vpn-firewalls"
+        "wireless-vpn-firewalls",
+        "network-security-basics"
       ],
       "maxBonus": {
         "osi-tcpip": 10,
@@ -221,7 +222,8 @@ export const catalog: Catalog = {
         "dns-http-tls": 10,
         "routing-switching": 10,
         "network-troubleshooting": 10,
-        "wireless-vpn-firewalls": 10
+        "wireless-vpn-firewalls": 10,
+        "network-security-basics": 10
       }
     },
     {
@@ -1626,6 +1628,129 @@ export const catalog: Catalog = {
           "name": "No events: nothing is printed",
           "stdin": "public 198.51.100.1 ports 40000\n",
           "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-security-basics/arp-watch",
+      "track": "networking",
+      "lesson": "network-security-basics",
+      "id": "arp-watch",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example: a host takes over the gateway's address",
+          "stdin": "gateway 192.168.1.1\n100 192.168.1.1 is-at 02:00:00:00:00:01\n101 192.168.1.20 is-at 02:00:00:00:00:20\n102 192.168.1.66 is-at 02:00:00:00:00:66\n130 192.168.1.1 is-at 02:00:00:00:00:01\n131 192.168.1.20 is-at 02:00:00:00:00:20\n200 192.168.1.1 is-at 02:00:00:00:00:66\n",
+          "expected": "100 new station 192.168.1.1 02:00:00:00:00:01\n101 new station 192.168.1.20 02:00:00:00:00:20\n102 new station 192.168.1.66 02:00:00:00:00:66\n200 changed 192.168.1.1 02:00:00:00:00:01 -> 02:00:00:00:00:66\n200 ALERT gateway 192.168.1.1 moved to 02:00:00:00:00:66 (also used by 192.168.1.66)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A host address that flip-flops between two machines",
+          "stdin": "gateway 10.0.0.1\n1 10.0.0.30 is-at 02:00:00:00:00:30\n2 10.0.0.30 is-at 02:00:00:00:00:99\n3 10.0.0.30 is-at 02:00:00:00:00:30\n4 10.0.0.30 is-at 02:00:00:00:00:99\n5 10.0.0.30 is-at 02:00:00:00:00:77\n",
+          "expected": "1 new station 10.0.0.30 02:00:00:00:00:30\n2 changed 10.0.0.30 02:00:00:00:00:30 -> 02:00:00:00:00:99\n3 flip flop 10.0.0.30 02:00:00:00:00:99 -> 02:00:00:00:00:30\n4 flip flop 10.0.0.30 02:00:00:00:00:30 -> 02:00:00:00:00:99\n5 changed 10.0.0.30 02:00:00:00:00:99 -> 02:00:00:00:00:77\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The gateway itself flip-flops: an alert every time",
+          "stdin": "gateway 10.0.0.1\n10 10.0.0.1 is-at 02:00:00:00:aa:01\n20 10.0.0.1 is-at 02:00:00:00:bb:02\n30 10.0.0.1 is-at 02:00:00:00:aa:01\n40 10.0.0.5 is-at 02:00:00:00:aa:01\n50 10.0.0.1 is-at 02:00:00:00:bb:02\n",
+          "expected": "10 new station 10.0.0.1 02:00:00:00:aa:01\n20 changed 10.0.0.1 02:00:00:00:aa:01 -> 02:00:00:00:bb:02\n20 ALERT gateway 10.0.0.1 moved to 02:00:00:00:bb:02\n30 flip flop 10.0.0.1 02:00:00:00:bb:02 -> 02:00:00:00:aa:01\n30 ALERT gateway 10.0.0.1 moved to 02:00:00:00:aa:01\n40 new station 10.0.0.5 02:00:00:00:aa:01\n50 flip flop 10.0.0.1 02:00:00:00:aa:01 -> 02:00:00:00:bb:02\n50 ALERT gateway 10.0.0.1 moved to 02:00:00:00:bb:02\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Capital letters do not count as a change; several IPs share one MAC",
+          "stdin": "gateway 172.16.0.1\n1 172.16.0.1 is-at 02:00:00:00:00:AB\n2 172.16.0.1 is-at 02:00:00:00:00:ab\n3 172.16.0.9 is-at 02:00:00:00:00:CD\n4 172.16.0.10 is-at 02:00:00:00:00:cd\n5 172.16.0.11 is-at 02:00:00:00:00:cd\n6 172.16.0.1 is-at 02:00:00:00:00:Cd\n",
+          "expected": "1 new station 172.16.0.1 02:00:00:00:00:ab\n3 new station 172.16.0.9 02:00:00:00:00:cd\n4 new station 172.16.0.10 02:00:00:00:00:cd\n5 new station 172.16.0.11 02:00:00:00:00:cd\n6 changed 172.16.0.1 02:00:00:00:00:ab -> 02:00:00:00:00:cd\n6 ALERT gateway 172.16.0.1 moved to 02:00:00:00:00:cd (also used by 172.16.0.9,172.16.0.10,172.16.0.11)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No replies observed: nothing is printed",
+          "stdin": "gateway 192.168.1.1\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-security-basics/token-bucket",
+      "track": "networking",
+      "lesson": "network-security-basics",
+      "id": "token-bucket",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "The worked example, then too little time for another token",
+          "stdin": "rate 2 burst 3\n0 192.0.2.7\n0 192.0.2.7\n0 192.0.2.7\n0 192.0.2.7\n0 192.0.2.7\n500 192.0.2.7\n600 192.0.2.7\n",
+          "expected": "0 192.0.2.7 ACCEPT\n0 192.0.2.7 ACCEPT\n0 192.0.2.7 ACCEPT\n0 192.0.2.7 DROP\n0 192.0.2.7 DROP\n500 192.0.2.7 ACCEPT\n600 192.0.2.7 DROP\n192.0.2.7: 4 accepted, 3 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A flooding bot does not slow down a normal client",
+          "stdin": "rate 10 burst 2\n0 bot\n10 bot\n20 bot\n30 bot\n40 alice\n50 bot\n100 bot\n140 alice\n150 bot\n200 bot\n",
+          "expected": "0 bot ACCEPT\n10 bot ACCEPT\n20 bot DROP\n30 bot DROP\n40 alice ACCEPT\n50 bot DROP\n100 bot ACCEPT\n140 alice ACCEPT\n150 bot DROP\n200 bot ACCEPT\nalice: 2 accepted, 0 dropped\nbot: 4 accepted, 4 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A long pause refills only up to the burst size",
+          "stdin": "rate 1 burst 2\n0 a\n0 a\n0 a\n60000 a\n60000 a\n60000 a\n",
+          "expected": "0 a ACCEPT\n0 a ACCEPT\n0 a DROP\n60000 a ACCEPT\n60000 a ACCEPT\n60000 a DROP\na: 4 accepted, 2 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Partial tokens add up exactly (3 per second, burst 1)",
+          "stdin": "rate 3 burst 1\n0 s\n300 s\n600 s\n900 s\n1000 s\n1333 s\n1334 s\n",
+          "expected": "0 s ACCEPT\n300 s DROP\n600 s ACCEPT\n900 s DROP\n1000 s ACCEPT\n1333 s DROP\n1334 s ACCEPT\ns: 4 accepted, 3 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No requests: nothing is printed",
+          "stdin": "rate 5 burst 5\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-security-basics/scan-detector",
+      "track": "networking",
+      "lesson": "network-security-basics",
+      "id": "scan-detector",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example: a vertical scan next to normal HTTPS traffic",
+          "stdin": "window 10 threshold 5\n0 192.0.2.50 203.0.113.10 443\n1 198.51.100.7 203.0.113.10 21\n1 198.51.100.7 203.0.113.10 22\n2 198.51.100.7 203.0.113.10 23\n2 192.0.2.50 203.0.113.10 443\n3 198.51.100.7 203.0.113.10 25\n3 198.51.100.7 203.0.113.10 80\n4 198.51.100.7 203.0.113.10 110\n5 192.0.2.50 203.0.113.10 443\n",
+          "expected": "ALERT t=3 src=198.51.100.7 targets=5 hosts=1 type=vertical\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A horizontal sweep of port 22",
+          "stdin": "window 60 threshold 4\n10 198.51.100.9 203.0.113.1 22\n12 198.51.100.9 203.0.113.2 22\n15 198.51.100.9 203.0.113.3 22\n40 198.51.100.9 203.0.113.4 22\n41 198.51.100.9 203.0.113.5 22\n",
+          "expected": "ALERT t=40 src=198.51.100.9 targets=4 hosts=4 type=horizontal\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A slow scan stays under the window: a known blind spot",
+          "stdin": "window 10 threshold 4\n0 198.51.100.7 203.0.113.10 22\n15 198.51.100.7 203.0.113.10 23\n30 198.51.100.7 203.0.113.10 25\n45 198.51.100.7 203.0.113.10 80\n60 198.51.100.7 203.0.113.10 443\n",
+          "expected": "no scans detected\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Repeated connections count once; a mixed scan is still caught",
+          "stdin": "window 30 threshold 4\n0 192.0.2.80 203.0.113.10 443\n1 192.0.2.80 203.0.113.10 443\n2 192.0.2.80 203.0.113.11 443\n3 192.0.2.80 203.0.113.10 443\n4 192.0.2.80 203.0.113.11 443\n10 198.51.100.3 203.0.113.10 22\n11 198.51.100.3 203.0.113.11 80\n12 198.51.100.3 203.0.113.10 22\n13 198.51.100.3 203.0.113.12 3389\n14 198.51.100.3 203.0.113.10 445\n",
+          "expected": "ALERT t=14 src=198.51.100.3 targets=4 hosts=3 type=mixed\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The window edge: 4 seconds old counts, 5 seconds old does not",
+          "stdin": "window 5 threshold 3\n0 198.51.100.7 203.0.113.10 22\n4 198.51.100.7 203.0.113.10 23\n5 198.51.100.7 203.0.113.10 25\n6 198.51.100.7 203.0.113.10 80\n",
+          "expected": "ALERT t=6 src=198.51.100.7 targets=3 hosts=1 type=vertical\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty log: no scans detected",
+          "stdin": "window 10 threshold 3\n",
+          "expected": "no scans detected\n",
           "mode": "trim"
         }
       ]

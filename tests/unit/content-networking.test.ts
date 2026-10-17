@@ -19,7 +19,7 @@ import { LANG_IDS, type LangId } from "../../shared/languages";
 import { localSupports, runLocal } from "../helpers/exec-local";
 
 const LAB_LANGS: readonly LangId[] = ["python", "javascript", "typescript", "java", "c", "cpp", "go", "rust", "ruby", "php", "bash"];
-const EXPECTED_LESSONS = ["osi-tcpip", "ip-subnetting", "transport-tcp-udp", "dns-http-tls", "routing-switching", "network-troubleshooting", "wireless-vpn-firewalls"];
+const EXPECTED_LESSONS = ["osi-tcpip", "ip-subnetting", "transport-tcp-udp", "dns-http-tls", "routing-switching", "network-troubleshooting", "wireless-vpn-firewalls", "network-security-basics"];
 const ARABIC = /[؀-ۿ]/;
 const LATIN = /[A-Za-z]/;
 /** Numbers, IP/MAC/hex notation: identical in both languages by design. */
