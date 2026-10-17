@@ -210,14 +210,16 @@ export const catalog: Catalog = {
         "ip-subnetting",
         "transport-tcp-udp",
         "dns-http-tls",
-        "routing-switching"
+        "routing-switching",
+        "network-troubleshooting"
       ],
       "maxBonus": {
         "osi-tcpip": 10,
         "ip-subnetting": 10,
         "transport-tcp-udp": 10,
         "dns-http-tls": 10,
-        "routing-switching": 10
+        "routing-switching": 10,
+        "network-troubleshooting": 10
       }
     },
     {
@@ -1382,6 +1384,129 @@ export const catalog: Catalog = {
           "name": "No links: nothing is printed",
           "stdin": "R1\n",
           "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-troubleshooting/ping-summary",
+      "track": "networking",
+      "lesson": "network-troubleshooting",
+      "id": "ping-summary",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A healthy LAN: no loss",
+          "stdin": "sent 4\nPING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.512 ms\n64 bytes from 192.0.2.1: icmp_seq=2 ttl=64 time=0.498 ms\n64 bytes from 192.0.2.1: icmp_seq=3 ttl=64 time=0.731 ms\n64 bytes from 192.0.2.1: icmp_seq=4 ttl=64 time=0.455 ms\n",
+          "expected": "4 sent, 4 received, 0.0% loss\nrtt min/avg/max = 0.455/0.549/0.731 ms\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The worked example: one reply missing",
+          "stdin": "sent 5\nPING 198.51.100.20 (198.51.100.20) 56(84) bytes of data.\n64 bytes from 198.51.100.20: icmp_seq=1 ttl=54 time=21.4 ms\n64 bytes from 198.51.100.20: icmp_seq=2 ttl=54 time=19.8 ms\n64 bytes from 198.51.100.20: icmp_seq=4 ttl=54 time=88.9 ms\n64 bytes from 198.51.100.20: icmp_seq=5 ttl=54 time=20.3 ms\n",
+          "expected": "5 sent, 4 received, 20.0% loss\nrtt min/avg/max = 19.800/37.600/88.900 ms\nmissing icmp_seq: 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A duplicate is not a new reply; a late reply still counts",
+          "stdin": "sent 3\nPING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=1.20 ms\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=1.31 ms (DUP!)\n64 bytes from 192.0.2.1: icmp_seq=3 ttl=64 time=1.05 ms\n64 bytes from 192.0.2.1: icmp_seq=2 ttl=64 time=950 ms\n",
+          "expected": "3 sent, 3 received, 0.0% loss\nrtt min/avg/max = 1.050/317.417/950.000 ms\nduplicates: 1\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Destination Host Unreachable lines are errors",
+          "stdin": "sent 4\nPING 192.168.1.50 (192.168.1.50) 56(84) bytes of data.\nFrom 192.168.1.10 icmp_seq=1 Destination Host Unreachable\nFrom 192.168.1.10 icmp_seq=2 Destination Host Unreachable\nFrom 192.168.1.10 icmp_seq=3 Destination Host Unreachable\n",
+          "expected": "4 sent, 0 received, 100.0% loss\nrtt: none\nmissing icmp_seq: 1,2,3,4\nerrors: 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No replies at all (ICMP filtered or host down)",
+          "stdin": "sent 3\nPING 203.0.113.99 (203.0.113.99) 56(84) bytes of data.\n",
+          "expected": "3 sent, 0 received, 100.0% loss\nrtt: none\nmissing icmp_seq: 1,2,3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Out-of-order replies and unknown lines are ignored correctly",
+          "stdin": "sent 8\nPING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=8 ttl=64 time=2.5 ms\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=2.25 ms\nRequest timeout for icmp_seq 2\n",
+          "expected": "8 sent, 2 received, 75.0% loss\nrtt min/avg/max = 2.250/2.375/2.500 ms\nmissing icmp_seq: 2,3,4,5,6,7\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-troubleshooting/trace-reader",
+      "track": "networking",
+      "lesson": "network-troubleshooting",
+      "id": "trace-reader",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example: a silent hop on a working path",
+          "stdin": "traceroute to 198.51.100.20 (198.51.100.20), 30 hops max, 60 byte packets\n 1  192.168.1.1  0.812 ms  0.701 ms  0.655 ms\n 2  10.10.0.1  8.102 ms  7.950 ms  8.311 ms\n 3  * * *\n 4  203.0.113.9  15.214 ms  14.902 ms  15.050 ms\n 5  198.51.100.20  16.127 ms  16.301 ms  15.840 ms\n",
+          "expected": "hop 1: 192.168.1.1 avg 0.723 ms\nhop 2: 10.10.0.1 avg 8.121 ms\nhop 3: no reply\nhop 4: 203.0.113.9 avg 15.055 ms\nhop 5: 198.51.100.20 avg 16.089 ms\nsilent hops: 3\nlargest jump: hop 2 (+7.398 ms)\nresult: reached 198.51.100.20 at hop 5\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The trail goes cold after hop 3",
+          "stdin": "traceroute to www.example.com (192.0.2.80), 30 hops max, 60 byte packets\n 1  192.168.1.1  1.020 ms  0.950 ms  0.991 ms\n 2  100.64.0.1  9.870 ms  10.112 ms  9.954 ms\n 3  198.51.100.1  11.402 ms  11.380 ms  11.611 ms\n 4  * * *\n 5  * * *\n 6  * * *\n",
+          "expected": "hop 1: 192.168.1.1 avg 0.987 ms\nhop 2: 100.64.0.1 avg 9.979 ms\nhop 3: 198.51.100.1 avg 11.464 ms\nhop 4: no reply\nhop 5: no reply\nhop 6: no reply\nsilent hops: none\nlargest jump: hop 2 (+8.992 ms)\nresult: not reached, last reply from 198.51.100.1 at hop 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Lost single probes, and a long link whose delay stays",
+          "stdin": "traceroute to 203.0.113.50 (203.0.113.50), 30 hops max, 60 byte packets\n 1  10.0.0.1  0.511 ms  *  0.493 ms\n 2  192.0.2.254  12.100 ms  11.900 ms  *\n 3  198.51.100.66  95.300 ms  96.100 ms  95.800 ms\n 4  198.51.100.70  94.900 ms  95.200 ms  95.400 ms\n 5  203.0.113.50  96.200 ms  95.900 ms  96.000 ms\n",
+          "expected": "hop 1: 10.0.0.1 avg 0.502 ms\nhop 2: 192.0.2.254 avg 12.000 ms\nhop 3: 198.51.100.66 avg 95.733 ms\nhop 4: 198.51.100.70 avg 95.167 ms\nhop 5: 203.0.113.50 avg 96.033 ms\nsilent hops: none\nlargest jump: hop 3 (+83.733 ms)\nresult: reached 203.0.113.50 at hop 5\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No reply from any hop",
+          "stdin": "traceroute to 192.0.2.7 (192.0.2.7), 30 hops max, 60 byte packets\n 1  * * *\n 2  * * *\n 3  * * *\n",
+          "expected": "hop 1: no reply\nhop 2: no reply\nhop 3: no reply\nsilent hops: none\nlargest jump: none\nresult: not reached, no replies\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Averages that only go down: no jump",
+          "stdin": "traceroute to 203.0.113.80 (203.0.113.80), 30 hops max, 60 byte packets\n 1  192.168.1.1  5.000 ms  5.000 ms  5.000 ms\n 2  10.0.0.1  4.000 ms  4.500 ms  4.250 ms\n 3  203.0.113.80  3.900 ms  4.000 ms  4.100 ms\n",
+          "expected": "hop 1: 192.168.1.1 avg 5.000 ms\nhop 2: 10.0.0.1 avg 4.250 ms\nhop 3: 203.0.113.80 avg 4.000 ms\nsilent hops: none\nlargest jump: none\nresult: reached 203.0.113.80 at hop 3\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-troubleshooting/handshake-outcome",
+      "track": "networking",
+      "lesson": "network-troubleshooting",
+      "id": "handshake-outcome",
+      "lang": "rust",
+      "tests": [
+        {
+          "name": "The worked example plus the client's final ACK",
+          "stdin": "12:00:00.000000 IP 192.0.2.10.51514 > 203.0.113.80.443: Flags [S], seq 1000, win 64240, options [mss 1460], length 0\n12:00:00.023412 IP 203.0.113.80.443 > 192.0.2.10.51514: Flags [S.], seq 5000, ack 1001, win 65160, options [mss 1460], length 0\n12:00:00.023500 IP 192.0.2.10.51514 > 203.0.113.80.443: Flags [.], ack 5001, win 502, length 0\n12:00:00.030000 IP 192.0.2.10.51520 > 203.0.113.80.22: Flags [S], seq 77, win 64240, length 0\n12:00:00.030950 IP 203.0.113.80.22 > 192.0.2.10.51520: Flags [R.], seq 0, ack 78, win 0, length 0\n",
+          "expected": "192.0.2.10.51514 -> 203.0.113.80.443: established (SYN-ACK after 23.412 ms)\n192.0.2.10.51520 -> 203.0.113.80.22: refused (RST)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Retransmitted SYNs: one attempt times out, one succeeds on the retry",
+          "stdin": "08:15:59.900000 IP 192.0.2.10.40001 > 198.51.100.9.5432: Flags [S], seq 1, win 64240, length 0\n08:16:00.920000 IP 192.0.2.10.40001 > 198.51.100.9.5432: Flags [S], seq 1, win 64240, length 0\n08:16:02.960000 IP 192.0.2.10.40001 > 198.51.100.9.5432: Flags [S], seq 1, win 64240, length 0\n08:16:03.000000 IP 192.0.2.10.40002 > 198.51.100.9.443: Flags [S], seq 9, win 64240, length 0\n08:16:04.010000 IP 192.0.2.10.40002 > 198.51.100.9.443: Flags [S], seq 9, win 64240, length 0\n08:16:04.052001 IP 198.51.100.9.443 > 192.0.2.10.40002: Flags [S.], seq 3, ack 10, win 65160, length 0\n",
+          "expected": "192.0.2.10.40001 -> 198.51.100.9.5432: no answer (3 SYNs)\n192.0.2.10.40002 -> 198.51.100.9.443: established (SYN-ACK after 1052.001 ms)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "ECN flags, a reset after the handshake, and a single unanswered SYN",
+          "stdin": "10:00:00.000000 IP 192.0.2.10.50000 > 203.0.113.5.80: Flags [SEW], seq 10, win 64240, length 0\n10:00:00.000400 IP 203.0.113.5.80 > 192.0.2.10.50000: Flags [S.E], seq 20, ack 11, win 65160, length 0\n10:00:00.001000 IP 192.0.2.10.50001 > 203.0.113.6.80: Flags [S], seq 30, win 64240, length 0\n10:00:00.002000 IP 203.0.113.6.80 > 192.0.2.10.50001: Flags [R.], seq 0, ack 31, win 0, length 0\n10:00:00.003000 IP 203.0.113.5.80 > 192.0.2.10.50000: Flags [R], seq 21, win 0, length 0\n10:00:00.500000 IP 192.0.2.10.50002 > 203.0.113.7.443: Flags [S], seq 40, win 64240, length 0\n",
+          "expected": "192.0.2.10.50000 -> 203.0.113.5.80: established (SYN-ACK after 0.400 ms)\n192.0.2.10.50001 -> 203.0.113.6.80: refused (RST)\n192.0.2.10.50002 -> 203.0.113.7.443: no answer (1 SYN)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No TCP at all: ARP and DNS lines print nothing",
+          "stdin": "09:00:00.000000 ARP, Request who-has 192.0.2.1 tell 192.0.2.10, length 28\n09:00:00.100000 IP 192.0.2.10.53530 > 192.0.2.53.53: 4721+ A? www.example.com. (33)\n09:00:00.110000 IP 192.0.2.53.53 > 192.0.2.10.53530: 4721 1/0/0 A 192.0.2.80 (49)\n",
+          "expected": "",
+          "mode": "trim"
+        },
+        {
+          "name": "Microseconds are kept exactly",
+          "stdin": "23:59:59.990000 IP 192.0.2.10.50010 > 203.0.113.9.443: Flags [S], seq 1, win 64240, length 0\n23:59:59.999999 IP 203.0.113.9.443 > 192.0.2.10.50010: Flags [S.], seq 2, ack 2, win 65160, length 0\n",
+          "expected": "192.0.2.10.50010 -> 203.0.113.9.443: established (SYN-ACK after 9.999 ms)\n",
           "mode": "trim"
         }
       ]

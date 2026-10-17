@@ -7,4 +7,5 @@ export const networkingLessons: Record<string, () => Promise<{ lesson: Lesson }>
   "networking/transport-tcp-udp": () => import("./transport-tcp-udp"),
   "networking/dns-http-tls": () => import("./dns-http-tls"),
   "networking/routing-switching": () => import("./routing-switching"),
+  "networking/network-troubleshooting": () => import("./network-troubleshooting"),
 };
