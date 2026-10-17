@@ -2,11 +2,15 @@
 
 import { Zap, ExternalLink } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
+import { getCareerPath } from "@/data/career-paths";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
+/** Career paths listed in the footer (names come from data/career-paths.ts). */
+const FOOTER_PATHS = ["soc-analyst", "full-stack-developer", "data-analyst", "ai-engineer", "cloud-engineer", "ux-designer"];
+
 export default function Footer() {
-  const { tx } = useLang();
+  const { tx, lang } = useLang();
   const fl = tx.footer.links;
 
   const footerLinks = {
@@ -19,14 +23,10 @@ export default function Footer() {
       { label: tx.nav.pricing, href: `${BASE}/pricing/` },
       { label: fl.about, href: `${BASE}/about/` },
     ],
-    [tx.footer.sections.Fields]: [
-      { label: fl.cyberSecurity, href: `${BASE}/roadmaps/cyber-security/` },
-      { label: fl.ai, href: `${BASE}/roadmaps/artificial-intelligence/` },
-      { label: fl.dataScience, href: `${BASE}/roadmaps/data-science/` },
-      { label: fl.cloudComputing, href: `${BASE}/roadmaps/cloud-computing/` },
-      { label: fl.devops, href: `${BASE}/roadmaps/devops/` },
-      { label: fl.frontend, href: `${BASE}/roadmaps/frontend/` },
-    ],
+    [tx.footer.sections.Fields]: FOOTER_PATHS.flatMap((id) => {
+      const p = getCareerPath(id);
+      return p ? [{ label: p.title[lang], href: `${BASE}/roadmaps/${p.id}/` }] : [];
+    }),
     [tx.footer.sections.Resources]: [
       { label: fl.github, href: "https://github.com/MshariSQ/imbegnal", external: true },
       { label: fl.openSource, href: "https://github.com/MshariSQ/imbegnal/blob/main/LICENSE", external: true },
