@@ -22,6 +22,8 @@ const ROADMAP_CERT_FIELD: Record<string, string> = {
 import { getToken, useAuthUser } from "@/lib/auth";
 import { getProgress, markNodeDone, markNodeUndone } from "@/lib/api";
 import { useLang } from "@/lib/lang-context";
+import { getCourse, trackTitle } from "@/lib/catalog";
+import PathsForCourse from "@/components/paths/PathsForCourse";
 
 const LessonView = dynamic(() => import("@/components/lesson/LessonView"), {
   ssr: false,
@@ -182,19 +184,24 @@ export default function RoadmapClient({
 
   return (
     <div className="flex flex-col bg-bg h-screen overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 border-b border-line px-6 py-4 pt-20 flex items-center gap-4">
-        <a href={`${basePath}/roadmaps/`}
-          className="flex items-center gap-1 text-sm text-fg-subtle hover:text-fg transition-colors">
-          <ArrowLeft size={15} className={lang === "ar" ? "rotate-180" : ""} /> {r.back}
+      {/* Header: this is the course's map (the old /roadmaps/<track>/ URL); career paths live at /roadmaps/<path>/ */}
+      <div className="shrink-0 border-b border-line px-4 sm:px-6 py-3 pt-20 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <a href={getCourse(roadmapId) ? `${basePath}/learn/${roadmapId}/` : `${basePath}/roadmaps/`}
+          className="flex items-center gap-1 min-h-10 text-sm text-fg-subtle hover:text-fg transition-colors">
+          <ArrowLeft size={15} className={lang === "ar" ? "rotate-180" : ""} /> {getCourse(roadmapId) ? tx.paths.backToCourse : r.back}
         </a>
         <div className="w-px h-4 bg-surface-2" />
         {roadmapMeta && (
-          <>
-            <span className="text-xl">{roadmapMeta.icon}</span>
-            <h1 className="font-bold text-fg">{roadmapMeta.title}</h1>
-          </>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xl" aria-hidden>{roadmapMeta.icon}</span>
+            <h1 className="font-bold text-fg">
+              {trackTitle(roadmapId, lang)} <span className="text-fg-subtle font-medium">· {tx.paths.mapEyebrow}</span>
+            </h1>
+          </div>
         )}
+        <div className="sm:ms-auto">
+          <PathsForCourse trackId={roadmapId} variant="inline" />
+        </div>
       </div>
 
       {/* Split layout */}
