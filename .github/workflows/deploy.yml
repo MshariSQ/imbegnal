@@ -92,9 +92,21 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          raw_account="$CLOUDFLARE_ACCOUNT_ID" raw_token="$CLOUDFLARE_API_TOKEN"
+          . scripts/cf-env.sh
+          for name in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN; do
+            if [ "$name" = CLOUDFLARE_ACCOUNT_ID ]; then raw="$raw_account" clean="$CLOUDFLARE_ACCOUNT_ID"; else raw="$raw_token" clean="$CLOUDFLARE_API_TOKEN"; fi
+            if [ -n "$clean" ] && [ "$raw" != "$clean" ]; then
+              echo "::notice title=$name has whitespace::The secret contains spaces or a line break (usually a trailing newline from pasting). It is removed for this run; re-save the secret without it (Settings → Secrets and variables → Actions → $name → Update)."
+            fi
+          done
           missing=""
           [ -z "$CLOUDFLARE_API_TOKEN" ] && missing="CLOUDFLARE_API_TOKEN"
           [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && missing="${missing:+$missing, }CLOUDFLARE_ACCOUNT_ID"
+          if [ -z "$missing" ] && ! printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | grep -Eq '^[A-Za-z0-9_-]+$'; then
+            echo "::error title=Invalid CLOUDFLARE_ACCOUNT_ID::The secret is not a Cloudflare account ID (letters, digits, '-' and '_' only; the 32-character code after dash.cloudflare.com/ in the dashboard URL). Re-save it and re-run."
+            exit 1
+          fi
           if [ -n "$missing" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::warning title=API not deployed::Missing repository secret(s): $missing. The API and database were NOT touched; the site will be published without them (frontend-only). See docs/PLATFORM.md."
@@ -123,7 +135,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: node scripts/d1-reconcile.mjs --remote
+        run: |
+          . scripts/cf-env.sh
+          node scripts/d1-reconcile.mjs --remote
 
       - name: Apply D1 migrations (only new ones run)
         if: steps.creds.outputs.ready == 'true'
@@ -131,14 +145,18 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         # --config: the site's ../wrangler.jsonc would otherwise win wrangler's config lookup.
-        run: npx wrangler d1 migrations apply skillforge-db --remote --config wrangler.toml
+        run: |
+          . scripts/cf-env.sh
+          npx wrangler d1 migrations apply skillforge-db --remote --config wrangler.toml
 
       - name: Deploy worker
         if: steps.creds.outputs.ready == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler deploy --config wrangler.toml
+        run: |
+          . scripts/cf-env.sh
+          npx wrangler deploy --config wrangler.toml
 
   # 3) Publish the site (GitHub Pages)
   deploy:
