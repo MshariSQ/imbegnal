@@ -5,4 +5,5 @@ export const networkingLessons: Record<string, () => Promise<{ lesson: Lesson }>
   "networking/osi-tcpip": () => import("./osi-tcpip"),
   "networking/ip-subnetting": () => import("./ip-subnetting"),
   "networking/transport-tcp-udp": () => import("./transport-tcp-udp"),
+  "networking/dns-http-tls": () => import("./dns-http-tls"),
 };

@@ -208,12 +208,14 @@ export const catalog: Catalog = {
       "lessons": [
         "osi-tcpip",
         "ip-subnetting",
-        "transport-tcp-udp"
+        "transport-tcp-udp",
+        "dns-http-tls"
       ],
       "maxBonus": {
         "osi-tcpip": 10,
         "ip-subnetting": 10,
-        "transport-tcp-udp": 10
+        "transport-tcp-udp": 10,
+        "dns-http-tls": 10
       }
     },
     {
@@ -1114,6 +1116,141 @@ export const catalog: Catalog = {
           "name": "1400 bytes of data (many carries to fold)",
           "stdin": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f90\n",
           "expected": "checksum=0xd408\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/dns-http-tls/dns-lookup",
+      "track": "networking",
+      "lesson": "dns-http-tls",
+      "id": "dns-lookup",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Direct answers, several values in input order",
+          "stdin": "5\nwww.example.com A 192.0.2.10\nwww.example.com A 192.0.2.11\nwww.example.com AAAA 2001:db8::10\nexample.com MX 10 mail.example.com\nexample.com MX 20 backup.example.net\nwww.example.com A\nwww.example.com AAAA\nexample.com MX\n",
+          "expected": "www.example.com A: 192.0.2.10, 192.0.2.11\nwww.example.com AAAA: 2001:db8::10\nexample.com MX: 10 mail.example.com, 20 backup.example.net\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A two-step CNAME chain; a CNAME query returns the alias itself",
+          "stdin": "4\nshop.example.com CNAME shop.cdn.example.net\nshop.cdn.example.net CNAME edge7.cdn.example.net\nedge7.cdn.example.net A 198.51.100.7\nedge7.cdn.example.net AAAA 2001:db8:7::1\nshop.example.com A\nshop.example.com AAAA\nshop.example.com CNAME\nshop.cdn.example.net A\n",
+          "expected": "shop.example.com A: 198.51.100.7 (via shop.cdn.example.net -> edge7.cdn.example.net)\nshop.example.com AAAA: 2001:db8:7::1 (via shop.cdn.example.net -> edge7.cdn.example.net)\nshop.example.com CNAME: shop.cdn.example.net\nshop.cdn.example.net A: 198.51.100.7 (via edge7.cdn.example.net)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "NODATA versus NXDOMAIN, also at the end of a chain",
+          "stdin": "3\nexample.com MX 10 mail.example.com\nexample.com TXT v=spf1 -all\nold.example.com CNAME gone.example.net\nexample.com A\nexample.com TXT\nnope.example.com A\nold.example.com A\n",
+          "expected": "example.com A: NODATA\nexample.com TXT: v=spf1 -all\nnope.example.com A: NXDOMAIN\nold.example.com A: NXDOMAIN (via gone.example.net)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Names ignore case and a trailing dot",
+          "stdin": "2\nWWW.Example.COM. A 192.0.2.80\napi.example.com CNAME www.example.com.\nwww.EXAMPLE.com A\napi.example.com. A\n",
+          "expected": "www.example.com A: 192.0.2.80\napi.example.com A: 192.0.2.80 (via www.example.com)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A CNAME loop is a SERVFAIL",
+          "stdin": "3\na.example.com CNAME b.example.com\nb.example.com CNAME c.example.com\nc.example.com CNAME a.example.com\na.example.com A\nc.example.com MX\nc.example.com CNAME\n",
+          "expected": "a.example.com A: SERVFAIL (cname loop)\nc.example.com MX: SERVFAIL (cname loop)\nc.example.com CNAME: a.example.com\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty zone: every name is NXDOMAIN",
+          "stdin": "0\nwww.example.com A\nexample.com NS\n",
+          "expected": "www.example.com A: NXDOMAIN\nexample.com NS: NXDOMAIN\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/dns-http-tls/http-response",
+      "track": "networking",
+      "lesson": "dns-http-tls",
+      "id": "http-response",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\n<p>Hello</p>\n",
+          "expected": "status=200 class=success\nheaders=2\ncontent-type=text/html\nbody=12 bytes\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A redirect with CRLF line endings, odd capitals and extra spaces",
+          "stdin": "HTTP/1.1 301 Moved Permanently\r\nLOCATION:   /new-home  \r\ncontent-LENGTH: 0\r\nServer: demo\r\n\r\n",
+          "expected": "status=301 class=redirection\nheaders=3\ncontent-type=none\nlocation=/new-home\nbody=0 bytes\n",
+          "mode": "trim"
+        },
+        {
+          "name": "304 Not Modified never has a body, whatever Content-Length says",
+          "stdin": "HTTP/1.1 304 Not Modified\nETag: \"v2\"\nContent-Length: 1234\nCache-Control: max-age=60\n\n",
+          "expected": "status=304 class=redirection\nheaders=3\ncontent-type=none\nbody=none\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Content-Length counts bytes: 5 Arabic letters are 10 bytes, so 12 is incomplete",
+          "stdin": "HTTP/1.1 200 OK\nContent-Type: text/plain; charset=utf-8\nContent-Length: 12\n\nمرحبا",
+          "expected": "status=200 class=success\nheaders=2\ncontent-type=text/plain; charset=utf-8\nbody=incomplete (10/12 bytes)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No Content-Length: the body runs until the connection closes",
+          "stdin": "HTTP/1.0 500 Internal Server Error\nContent-Type: text/plain\n\nsomething broke\n",
+          "expected": "status=500 class=server error\nheaders=1\ncontent-type=text/plain\nbody=16 bytes (until close)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An invalid status line is an error",
+          "stdin": "HTP/1.1 200 OK\nContent-Length: 0\n\n",
+          "expected": "error: bad status line\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/dns-http-tls/cert-check",
+      "track": "networking",
+      "lesson": "dns-http-tls",
+      "id": "cert-check",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example: names, the last valid day, expired and not yet valid",
+          "stdin": "root Example Root CA\ncert www.example.com|Example Issuing CA 1|2026-06-01|2026-12-28|no|www.example.com,example.com\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2030-12-31|yes|\ncheck www.example.com 2026-10-17\ncheck EXAMPLE.com 2026-10-17\ncheck shop.example.com 2026-10-17\ncheck www.example.com 2026-12-28\ncheck www.example.com 2026-12-29\ncheck www.example.com 2026-05-31\n",
+          "expected": "www.example.com 2026-10-17: OK\nEXAMPLE.com 2026-10-17: OK\nshop.example.com 2026-10-17: FAIL hostname mismatch\nwww.example.com 2026-12-28: OK\nwww.example.com 2026-12-29: FAIL expired: www.example.com\nwww.example.com 2026-05-31: FAIL not yet valid: www.example.com\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A wildcard covers exactly one label; a partial wildcard covers nothing",
+          "stdin": "root Example Root CA\ncert *.example.com|Example Issuing CA 1|2026-01-01|2026-12-31|no|*.example.com,w*.example.net\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2030-12-31|yes|\ncheck api.example.com 2026-03-01\ncheck API.Example.COM 2026-03-01\ncheck example.com 2026-03-01\ncheck a.b.example.com 2026-03-01\ncheck www.example.net 2026-03-01\n",
+          "expected": "api.example.com 2026-03-01: OK\nAPI.Example.COM 2026-03-01: OK\nexample.com 2026-03-01: FAIL hostname mismatch\na.b.example.com 2026-03-01: FAIL hostname mismatch\nwww.example.net 2026-03-01: FAIL hostname mismatch\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A missing intermediate breaks the chain",
+          "stdin": "root Example Root CA\ncert www.example.com|Example Issuing CA 2|2026-01-01|2026-12-31|no|www.example.com\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2030-12-31|yes|\ncheck www.example.com 2026-03-01\ncheck mail.example.com 2026-03-01\n",
+          "expected": "www.example.com 2026-03-01: FAIL broken chain after: www.example.com\nmail.example.com 2026-03-01: FAIL hostname mismatch\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An expired intermediate fails the whole chain; sending the root as well is fine",
+          "stdin": "root Other Root\nroot Example Root CA\ncert www.example.com|Example Issuing CA 1|2025-01-01|2026-12-31|no|www.example.com\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2025-12-31|yes|\ncert Example Root CA|Example Root CA|2020-01-01|2040-12-31|yes|\ncheck www.example.com 2026-03-01\ncheck www.example.com 2025-06-01\n",
+          "expected": "www.example.com 2026-03-01: FAIL expired: Example Issuing CA 1\nwww.example.com 2025-06-01: OK\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A certificate that is not a CA cannot sign another one",
+          "stdin": "root Example Root CA\ncert www.example.com|shop.example.org|2026-01-01|2026-12-31|no|www.example.com\ncert shop.example.org|Example Root CA|2026-01-01|2026-12-31|no|shop.example.org\ncheck www.example.com 2026-03-01\n",
+          "expected": "www.example.com 2026-03-01: FAIL not a CA: shop.example.org\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown root: a self-signed certificate is not trusted",
+          "stdin": "root Example Root CA\ncert dev.example.com|dev.example.com|2026-01-01|2026-12-31|no|dev.example.com\ncheck dev.example.com 2026-03-01\n",
+          "expected": "dev.example.com 2026-03-01: FAIL untrusted root: dev.example.com\n",
           "mode": "trim"
         }
       ]
