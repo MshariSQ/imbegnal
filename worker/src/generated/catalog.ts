@@ -222,12 +222,14 @@ export const catalog: Catalog = {
       "lessons": [
         "processes-threads",
         "cpu-scheduling",
-        "memory-management"
+        "memory-management",
+        "files-linux-shell"
       ],
       "maxBonus": {
         "processes-threads": 10,
         "cpu-scheduling": 10,
-        "memory-management": 10
+        "memory-management": 10,
+        "files-linux-shell": 10
       }
     },
     {
@@ -1501,6 +1503,123 @@ export const catalog: Catalog = {
           "name": "No requests",
           "stdin": "first 2\n64 32\n",
           "expected": "free=96 largest=64",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/files-linux-shell/path-resolver",
+      "track": "operating-systems",
+      "lesson": "files-linux-shell",
+      "id": "path-resolver",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "/home/ana/projects\n/home/ana\nnotes.txt\n../photos/./cat.png\n/etc//ssh/\n~/.bashrc\n../../../../..\n",
+          "expected": "notes.txt -> /home/ana/projects/notes.txt\n../photos/./cat.png -> /home/ana/photos/cat.png\n/etc//ssh/ -> /etc/ssh\n~/.bashrc -> /home/ana/.bashrc\n../../../../.. -> /",
+          "mode": "trim"
+        },
+        {
+          "name": "Tilde is special only at the start",
+          "stdin": "/srv/app\n/home/omar\n~\n~/a/../b\n~x/y\ndocs/~\n",
+          "expected": "~ -> /home/omar\n~/a/../b -> /home/omar/b\n~x/y -> /srv/app/~x/y\ndocs/~ -> /srv/app/docs/~",
+          "mode": "trim"
+        },
+        {
+          "name": "Working from the root, with blank lines",
+          "stdin": "/\n/root\n.\n\n..\netc/./passwd\n\n./\n",
+          "expected": ". -> /\n.. -> /\netc/./passwd -> /etc/passwd\n./ -> /",
+          "mode": "trim"
+        },
+        {
+          "name": "Absolute paths ignore the current directory",
+          "stdin": "/var/log\n/home/ana\n/usr/bin/../lib/\n/../../tmp\n//\n/a/b/../../../c\n",
+          "expected": "/usr/bin/../lib/ -> /usr/lib\n/../../tmp -> /tmp\n// -> /\n/a/b/../../../c -> /c",
+          "mode": "trim"
+        },
+        {
+          "name": "No paths: nothing to print",
+          "stdin": "/home/ana\n/home/ana\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/files-linux-shell/permission-check",
+      "track": "operating-systems",
+      "lesson": "files-linux-shell",
+      "id": "permission-check",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "640 ana staff\nana ana r\nbob bob,staff w\ncarol carol r\nroot root x\n",
+          "expected": "-rw-r-----\nana r: allowed (owner)\nbob w: denied (group)\ncarol r: denied (other)\nroot x: denied (root)",
+          "mode": "trim"
+        },
+        {
+          "name": "The owner class applies even when it denies",
+          "stdin": "075 ana dev\nana ana,dev r\nbob bob,dev x\neve eve r\n",
+          "expected": "----rwxr-x\nana r: denied (owner)\nbob x: allowed (group)\neve r: allowed (other)",
+          "mode": "trim"
+        },
+        {
+          "name": "Supplementary groups count",
+          "stdin": "750 deploy www\nomar omar,docker,www x\nlina lina,docker x\ndeploy deploy w\n",
+          "expected": "-rwxr-x---\nomar x: allowed (group)\nlina x: denied (other)\ndeploy w: allowed (owner)",
+          "mode": "trim"
+        },
+        {
+          "name": "Root and the execute bits",
+          "stdin": "001 ana ana\nroot root r\nroot root w\nroot root x\nana ana x\n",
+          "expected": "---------x\nroot r: allowed (root)\nroot w: allowed (root)\nroot x: allowed (root)\nana x: denied (owner)",
+          "mode": "trim"
+        },
+        {
+          "name": "Mode only, no requests",
+          "stdin": "777 nobody nogroup\n",
+          "expected": "-rwxrwxrwx",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/files-linux-shell/passwd-report",
+      "track": "operating-systems",
+      "lesson": "files-linux-shell",
+      "id": "passwd-report",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nana:x:1000:1000:Ana Silva,,,:/home/ana:/bin/bash\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\n",
+          "expected": "2 /bin/bash\n2 /usr/sbin/nologin\nhumans: ana",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties, an empty shell field and nobody",
+          "stdin": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nsshd:x:110:65534::/run/sshd:/usr/sbin/nologin\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\nana:x:1000:1000:Ana Silva,,,:/home/ana:/bin/bash\nomar:x:1001:1001:Omar:/home/omar:/bin/zsh\nsync:x:4:65534:sync:/bin:/bin/sync\nlegacy:x:1002:1002::/home/legacy:\n",
+          "expected": "3 /usr/sbin/nologin\n2 /bin/bash\n1 /bin/sh\n1 /bin/sync\n1 /bin/zsh\nhumans: ana omar legacy",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "humans: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Only system accounts",
+          "stdin": "root:x:0:0:root:/root:/bin/bash\nsync:x:4:65534:sync:/bin:/bin/sync\n",
+          "expected": "1 /bin/bash\n1 /bin/sync\nhumans: none",
+          "mode": "trim"
+        },
+        {
+          "name": "UIDs compare as numbers: 999 is a system account",
+          "stdin": "svc:x:999:999::/var/lib/svc:/usr/sbin/nologin\nlina:x:1000:1000:Lina:/home/lina:/bin/zsh\nzed:x:60001:60001:Zed:/home/zed:/bin/zsh\n",
+          "expected": "2 /bin/zsh\n1 /usr/sbin/nologin\nhumans: lina zed",
           "mode": "trim"
         }
       ]
