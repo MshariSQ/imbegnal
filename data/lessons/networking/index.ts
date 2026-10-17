@@ -8,4 +8,5 @@ export const networkingLessons: Record<string, () => Promise<{ lesson: Lesson }>
   "networking/dns-http-tls": () => import("./dns-http-tls"),
   "networking/routing-switching": () => import("./routing-switching"),
   "networking/network-troubleshooting": () => import("./network-troubleshooting"),
+  "networking/wireless-vpn-firewalls": () => import("./wireless-vpn-firewalls"),
 };

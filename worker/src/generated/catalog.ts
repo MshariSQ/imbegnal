@@ -211,7 +211,8 @@ export const catalog: Catalog = {
         "transport-tcp-udp",
         "dns-http-tls",
         "routing-switching",
-        "network-troubleshooting"
+        "network-troubleshooting",
+        "wireless-vpn-firewalls"
       ],
       "maxBonus": {
         "osi-tcpip": 10,
@@ -219,7 +220,8 @@ export const catalog: Catalog = {
         "transport-tcp-udp": 10,
         "dns-http-tls": 10,
         "routing-switching": 10,
-        "network-troubleshooting": 10
+        "network-troubleshooting": 10,
+        "wireless-vpn-firewalls": 10
       }
     },
     {
@@ -1507,6 +1509,123 @@ export const catalog: Catalog = {
           "name": "Microseconds are kept exactly",
           "stdin": "23:59:59.990000 IP 192.0.2.10.50010 > 203.0.113.9.443: Flags [S], seq 1, win 64240, length 0\n23:59:59.999999 IP 203.0.113.9.443 > 192.0.2.10.50010: Flags [S.], seq 2, ack 2, win 65160, length 0\n",
           "expected": "192.0.2.10.50010 -> 203.0.113.9.443: established (SYN-ACK after 9.999 ms)\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/wireless-vpn-firewalls/wg-cryptokey",
+      "track": "networking",
+      "lesson": "wireless-vpn-firewalls",
+      "id": "wg-cryptokey",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example, plus a gateway that claims an office address",
+          "stdin": "peer laptop 10.0.0.2/32\npeer office 10.0.0.3/32,192.168.50.0/24\npeer gateway 0.0.0.0/0\nsend 192.168.50.17\nsend 10.0.0.2\nsend 198.51.100.7\nrecv office 192.168.50.9\nrecv laptop 10.0.0.3\nrecv gateway 198.51.100.7\nrecv gateway 192.168.50.9\n",
+          "expected": "send 192.168.50.17: encrypt for office\nsend 10.0.0.2: encrypt for laptop\nsend 198.51.100.7: encrypt for gateway\nrecv office 192.168.50.9: accept\nrecv laptop 10.0.0.3: drop (source belongs to office)\nrecv gateway 198.51.100.7: accept\nrecv gateway 192.168.50.9: drop (source belongs to office)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A more specific range inside another peer's range; unknown peers and unknown sources",
+          "stdin": "peer phone 10.0.0.4/32\npeer nas 10.0.0.5/32,10.10.0.0/16\npeer lab 10.10.20.0/24\nsend 10.10.20.30\nsend 10.10.21.30\nsend 10.0.0.4\nsend 10.0.0.6\nsend 192.0.2.1\nrecv lab 10.10.20.30\nrecv nas 10.10.20.30\nrecv phone 10.0.0.9\nrecv printer 10.0.0.4\n",
+          "expected": "send 10.10.20.30: encrypt for lab\nsend 10.10.21.30: encrypt for nas\nsend 10.0.0.4: encrypt for phone\nsend 10.0.0.6: drop (no peer)\nsend 192.0.2.1: drop (no peer)\nrecv lab 10.10.20.30: accept\nrecv nas 10.10.20.30: drop (source belongs to lab)\nrecv phone 10.0.0.9: drop (source not allowed)\nrecv printer 10.0.0.4: drop (unknown peer)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Three nested ranges and their exact edges",
+          "stdin": "peer a 10.1.0.0/16\npeer b 10.1.2.0/24\npeer c 10.1.2.128/25\nsend 10.1.2.200\nsend 10.1.2.100\nsend 10.1.3.1\nsend 10.1.2.127\nsend 10.1.2.128\n",
+          "expected": "send 10.1.2.200: encrypt for c\nsend 10.1.2.100: encrypt for b\nsend 10.1.3.1: encrypt for a\nsend 10.1.2.127: encrypt for b\nsend 10.1.2.128: encrypt for c\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A peer without allowed IPs can send nothing and claim nothing",
+          "stdin": "peer spare\npeer laptop 10.0.0.2/32\nsend 10.0.0.2\nrecv spare 10.0.0.2\nrecv spare 10.9.9.9\n",
+          "expected": "send 10.0.0.2: encrypt for laptop\nrecv spare 10.0.0.2: drop (source belongs to laptop)\nrecv spare 10.9.9.9: drop (source not allowed)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No peers at all",
+          "stdin": "send 10.0.0.1\nrecv laptop 10.0.0.2\n",
+          "expected": "send 10.0.0.1: drop (no peer)\nrecv laptop 10.0.0.2: drop (unknown peer)\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/wireless-vpn-firewalls/acl-first-match",
+      "track": "networking",
+      "lesson": "wireless-vpn-firewalls",
+      "id": "acl-first-match",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example, plus a deny rule that comes too late",
+          "stdin": "allow tcp any 203.0.113.10/32 80-443\nallow tcp 198.51.100.0/24 203.0.113.10/32 22\ndeny any 192.0.2.66/32 any any\nallow icmp any 203.0.113.0/24 any\n---\ntcp 192.0.2.7 203.0.113.10 443\ntcp 192.0.2.7 203.0.113.10 22\ntcp 198.51.100.40 203.0.113.10 22\ntcp 192.0.2.66 203.0.113.10 80\nudp 192.0.2.66 203.0.113.10 53\nicmp 192.0.2.7 203.0.113.99 -\n",
+          "expected": "tcp 192.0.2.7 203.0.113.10 443: ALLOW (rule 1)\ntcp 192.0.2.7 203.0.113.10 22: DENY (default)\ntcp 198.51.100.40 203.0.113.10 22: ALLOW (rule 2)\ntcp 192.0.2.66 203.0.113.10 80: ALLOW (rule 1)\nudp 192.0.2.66 203.0.113.10 53: DENY (rule 3)\nicmp 192.0.2.7 203.0.113.99 -: ALLOW (rule 4)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "First match wins: a specific deny before a broad allow",
+          "stdin": "deny tcp 10.0.0.0/8 any 23\nallow tcp 10.0.0.0/8 any any\nallow tcp 10.1.0.0/16 any 23\n---\ntcp 10.1.2.3 192.0.2.1 23\ntcp 10.1.2.3 192.0.2.1 24\ntcp 11.0.0.1 192.0.2.1 80\n",
+          "expected": "tcp 10.1.2.3 192.0.2.1 23: DENY (rule 1)\ntcp 10.1.2.3 192.0.2.1 24: ALLOW (rule 2)\ntcp 11.0.0.1 192.0.2.1 80: DENY (default)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Protocols differ, ranges include both ends, ICMP needs port any",
+          "stdin": "allow udp any 192.0.2.53/32 53\nallow tcp any any 1024-65535\n---\nudp 203.0.113.5 192.0.2.53 53\ntcp 203.0.113.5 192.0.2.53 53\ntcp 203.0.113.5 192.0.2.80 1023\ntcp 203.0.113.5 192.0.2.80 1024\ntcp 203.0.113.5 192.0.2.80 65535\nicmp 203.0.113.5 192.0.2.80 -\n",
+          "expected": "udp 203.0.113.5 192.0.2.53 53: ALLOW (rule 1)\ntcp 203.0.113.5 192.0.2.53 53: DENY (default)\ntcp 203.0.113.5 192.0.2.80 1023: DENY (default)\ntcp 203.0.113.5 192.0.2.80 1024: ALLOW (rule 2)\ntcp 203.0.113.5 192.0.2.80 65535: ALLOW (rule 2)\nicmp 203.0.113.5 192.0.2.80 -: DENY (default)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The edge of a /25 source block",
+          "stdin": "allow any 192.168.1.0/25 any any\n---\nudp 192.168.1.127 198.51.100.53 53\nudp 192.168.1.128 192.0.2.1 53\nicmp 192.168.1.1 192.0.2.1 -\n",
+          "expected": "udp 192.168.1.127 198.51.100.53 53: ALLOW (rule 1)\nudp 192.168.1.128 192.0.2.1 53: DENY (default)\nicmp 192.168.1.1 192.0.2.1 -: ALLOW (rule 1)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No rules: everything is denied by default",
+          "stdin": "---\ntcp 192.0.2.1 192.0.2.2 80\nicmp 192.0.2.1 192.0.2.2 -\n",
+          "expected": "tcp 192.0.2.1 192.0.2.2 80: DENY (default)\nicmp 192.0.2.1 192.0.2.2 -: DENY (default)\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/wireless-vpn-firewalls/napt",
+      "track": "networking",
+      "lesson": "wireless-vpn-firewalls",
+      "id": "napt",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example, then the reply for the second host",
+          "stdin": "public 198.51.100.1 ports 40000\nout tcp 192.168.1.10:51514 203.0.113.80:443\nin tcp 203.0.113.80:443 198.51.100.1:40000\nout tcp 192.168.1.11:51514 203.0.113.80:443\nin tcp 203.0.113.80:443 198.51.100.1:40001\nin tcp 203.0.113.80:443 198.51.100.1:40002\n",
+          "expected": "out tcp 192.168.1.10:51514 203.0.113.80:443: as 198.51.100.1:40000\nin tcp 203.0.113.80:443 198.51.100.1:40000: to 192.168.1.10:51514\nout tcp 192.168.1.11:51514 203.0.113.80:443: as 198.51.100.1:40001\nin tcp 203.0.113.80:443 198.51.100.1:40001: to 192.168.1.11:51514\nin tcp 203.0.113.80:443 198.51.100.1:40002: drop (no mapping)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "One mapping for two remotes; a stranger is filtered",
+          "stdin": "public 198.51.100.1 ports 50000\nout udp 192.168.1.20:5060 203.0.113.5:3478\nout udp 192.168.1.20:5060 203.0.113.9:5060\nin udp 203.0.113.9:5060 198.51.100.1:50000\nin udp 203.0.113.66:5060 198.51.100.1:50000\nin udp 203.0.113.5:3478 198.51.100.1:50000\nin tcp 203.0.113.5:3478 198.51.100.1:50000\n",
+          "expected": "out udp 192.168.1.20:5060 203.0.113.5:3478: as 198.51.100.1:50000\nout udp 192.168.1.20:5060 203.0.113.9:5060: as 198.51.100.1:50000\nin udp 203.0.113.9:5060 198.51.100.1:50000: to 192.168.1.20:5060\nin udp 203.0.113.66:5060 198.51.100.1:50000: drop (not contacted)\nin udp 203.0.113.5:3478 198.51.100.1:50000: to 192.168.1.20:5060\nin tcp 203.0.113.5:3478 198.51.100.1:50000: drop (no mapping)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "TCP and UDP from the same inside port get separate mappings",
+          "stdin": "public 198.51.100.1 ports 40000\nout tcp 192.168.1.10:40000 203.0.113.80:443\nout udp 192.168.1.10:40000 203.0.113.53:53\nin udp 203.0.113.53:53 198.51.100.1:40001\nin udp 203.0.113.53:53 198.51.100.1:40000\nin tcp 203.0.113.80:443 198.51.100.1:40000\n",
+          "expected": "out tcp 192.168.1.10:40000 203.0.113.80:443: as 198.51.100.1:40000\nout udp 192.168.1.10:40000 203.0.113.53:53: as 198.51.100.1:40001\nin udp 203.0.113.53:53 198.51.100.1:40001: to 192.168.1.10:40000\nin udp 203.0.113.53:53 198.51.100.1:40000: drop (no mapping)\nin tcp 203.0.113.80:443 198.51.100.1:40000: to 192.168.1.10:40000\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A port forward is open to everyone; other ports and addresses are not",
+          "stdin": "public 198.51.100.1 ports 40000\nforward tcp 8443 192.168.1.50:443\nin tcp 203.0.113.7:51000 198.51.100.1:8443\nin tcp 192.0.2.99:60000 198.51.100.1:8443\nin tcp 203.0.113.7:51000 198.51.100.1:22\nin tcp 203.0.113.7:51000 198.51.100.2:8443\n",
+          "expected": "forward tcp 8443 192.168.1.50:443: ok\nin tcp 203.0.113.7:51000 198.51.100.1:8443: to 192.168.1.50:443\nin tcp 192.0.2.99:60000 198.51.100.1:8443: to 192.168.1.50:443\nin tcp 203.0.113.7:51000 198.51.100.1:22: drop (no mapping)\nin tcp 203.0.113.7:51000 198.51.100.2:8443: drop (no mapping)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No events: nothing is printed",
+          "stdin": "public 198.51.100.1 ports 40000\n",
+          "expected": "",
           "mode": "trim"
         }
       ]
