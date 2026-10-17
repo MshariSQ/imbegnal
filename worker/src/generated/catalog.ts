@@ -269,12 +269,14 @@ export const catalog: Catalog = {
         "how-programs-run",
         "assembly-basics",
         "static-analysis-deobfuscation",
+        "debugging-dynamic-analysis",
         "binary-formats-tools"
       ],
       "maxBonus": {
         "how-programs-run": 10,
         "assembly-basics": 10,
         "static-analysis-deobfuscation": 10,
+        "debugging-dynamic-analysis": 10,
         "binary-formats-tools": 10
       }
     }
@@ -2850,6 +2852,135 @@ export const catalog: Catalog = {
           "name": "No key reveals the crib",
           "stdin": "zebra\n2f2e3529282f266129243324\n",
           "expected": "no key found\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/debugging-dynamic-analysis/rebase-addresses",
+      "track": "reverse-engineering",
+      "lesson": "debugging-dynamic-analysis",
+      "id": "rebase-addresses",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "module checksum 555555554000-555555559000 0x100000\nrt 0x555555555202\nst checksum 0x101169\n",
+          "expected": "0x555555555202 -> checksum+0x1202 (static 0x101202)\nchecksum 0x101169 -> runtime 0x555555555169\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A backtrace through the program and libc, and a stack address",
+          "stdin": "module checksum 555555554000-555555559000 0x100000\nmodule libc.so.6 7ffff7c00000-7ffff7e05000 0x0\nrt 0x555555555179\nrt 0x7ffff7c2a1ca\nrt 0x7fffffffc6d0\n",
+          "expected": "0x555555555179 -> checksum+0x1179 (static 0x101179)\n0x7ffff7c2a1ca -> libc.so.6+0x2a1ca (static 0x2a1ca)\n0x7fffffffc6d0 -> not in any module\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Another run, another base: the static answer stays the same",
+          "stdin": "module checksum 5643a1b2e000-5643a1b33000 0x100000\nrt 0x5643a1b2f202\nst checksum 0x101169\n",
+          "expected": "0x5643a1b2f202 -> checksum+0x1202 (static 0x101202)\nchecksum 0x101169 -> runtime 0x5643a1b2f169\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Boundaries: the end address is outside, the start is inside",
+          "stdin": "module demo 400000-401000 0x400000\nrt 0x400000\nrt 0x400fff\nrt 0x401000\nst demo 0x400fff\nst demo 0x401000\nst demo 0x3fffff\n",
+          "expected": "0x400000 -> demo+0x0 (static 0x400000)\n0x400fff -> demo+0xfff (static 0x400fff)\n0x401000 -> not in any module\ndemo 0x400fff -> runtime 0x400fff\ndemo 0x401000 -> outside demo\ndemo 0x3fffff -> outside demo\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Static addresses from objdump (base 0) and an unknown module",
+          "stdin": "module notes 55d0c4e4a000-55d0c4e4f000 0x0\nst notes 0x1149\nst ld.so 0x1000\nmodule libc.so.6 7f12a3c00000-7f12a3e05000 0x0\nst libc.so.6 0x87be0\n",
+          "expected": "notes 0x1149 -> runtime 0x55d0c4e4b149\nld.so 0x1000 -> unknown module\nlibc.so.6 0x87be0 -> runtime 0x7f12a3c87be0\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/debugging-dynamic-analysis/trace-report",
+      "track": "reverse-engineering",
+      "lesson": "debugging-dynamic-analysis",
+      "id": "trace-report",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "openat(AT_FDCWD, \"notes.txt\", O_RDONLY) = 3\nread(3, \"buy milk\\n\", 64)               = 9\nwrite(1, \"buy milk\\n\", 9)               = 9\nclose(3)                                = 0\nopenat(AT_FDCWD, \"missing.txt\", O_RDONLY) = -1 ENOENT (No such file or directory)\n+++ exited with 0 +++\n",
+          "expected": "notes.txt: read 9, wrote 0\nstdout: read 0, wrote 9\nfailed: openat missing.txt ENOENT\nexit: 0\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The lesson's real trace, loader lines included",
+          "stdin": "execve(\"./notes\", [\"./notes\"], 0x7ffd3c1a2b40 /* 24 vars */) = 0\naccess(\"/etc/ld.so.preload\", R_OK)      = -1 ENOENT (No such file or directory)\nopenat(AT_FDCWD, \"/lib/x86_64-linux-gnu/libc.so.6\", O_RDONLY|O_CLOEXEC) = 3\nread(3, \"\\177ELF\\2\\1\\1\\3\\0\\0\\0\\0\\0\\0\\0\\0\\3\\0>\\0\\1\\0\\0\\0\\220\\243\\2\\0\\0\\0\\0\\0\"..., 832) = 832\nclose(3)                                = 0\nopenat(AT_FDCWD, \"notes.txt\", O_RDONLY) = 3\nread(3, \"buy milk\\n\", 64)               = 9\nwrite(1, \"buy milk\\n\", 9)               = 9\nclose(3)                                = 0\nopenat(AT_FDCWD, \"log.txt\", O_WRONLY|O_CREAT|O_APPEND, 0644) = 3\nwrite(3, \"read notes\\n\", 11)            = 11\nclose(3)                                = 0\nexit_group(0)                           = ?\n+++ exited with 0 +++\n",
+          "expected": "/lib/x86_64-linux-gnu/libc.so.6: read 832, wrote 0\nnotes.txt: read 9, wrote 0\nstdout: read 0, wrote 9\nlog.txt: read 0, wrote 11\nfailed: access /etc/ld.so.preload ENOENT\nexit: 0\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Reused descriptors, a file opened twice, an inherited fd and tricky strings",
+          "stdin": "openat(AT_FDCWD, \"config.ini\", O_RDONLY) = 3\nread(3, \"[app]\\nname=demo\\n\", 4096)     = 16\nread(3, \"\", 4096)                       = 0\nclose(3)                                = 0\nopenat(AT_FDCWD, \"data.csv\", O_RDONLY)  = 3\nread(3, \"a,b\\n1,2\\n\", 4096)             = 8\nclose(3)                                = 0\nopenat(AT_FDCWD, \"config.ini\", O_RDONLY) = 4\nread(4, \"[app]\\nname=demo\\n\", 4096)     = 16\nclose(4)                                = 0\nwrite(5, \"inherited\\n\", 10)             = 10\nwrite(1, \"a, \\\"b\\\" = c\\n\", 11)          = 11\nexit_group(0)                           = ?\n+++ exited with 0 +++\n",
+          "expected": "config.ini: read 32, wrote 0\ndata.csv: read 8, wrote 0\nfd 5: read 0, wrote 10\nstdout: read 0, wrote 11\nexit: 0\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Failures of every kind and a non-zero exit",
+          "stdin": "openat(AT_FDCWD, \"notes.txt\", O_RDONLY) = -1 ENOENT (No such file or directory)\nwrite(2, \"notes.txt: No such file or directory\\n\", 37) = 37\nmkdir(\"out\", 0755)                      = -1 EEXIST (File exists)\nwrite(7, \"x\", 1)                        = -1 EBADF (Bad file descriptor)\nclose(9)                                = -1 EBADF (Bad file descriptor)\nexit_group(1)                           = ?\n+++ exited with 1 +++\n",
+          "expected": "stderr: read 0, wrote 37\nfailed: openat notes.txt ENOENT\nfailed: mkdir EEXIST\nfailed: write fd 7 EBADF\nfailed: close fd 9 EBADF\nexit: 1\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Killed by a signal",
+          "stdin": "openat(AT_FDCWD, \"input.bin\", O_RDONLY) = 3\nread(3, \"\\0\\0\\0\\20\", 4)                 = 4\n--- SIGSEGV {si_signo=SIGSEGV, si_code=SEGV_MAPERR, si_addr=NULL} ---\n+++ killed by SIGSEGV (core dumped) +++\n",
+          "expected": "input.bin: read 4, wrote 0\nexit: killed by SIGSEGV\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty trace",
+          "stdin": "",
+          "expected": "exit: unknown\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/debugging-dynamic-analysis/vm-breakpoints",
+      "track": "reverse-engineering",
+      "lesson": "debugging-dynamic-analysis",
+      "id": "vm-breakpoints",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "The worked example: a countdown with a breakpoint",
+          "stdin": "break 0x05\n01 00 03 07 00 05 00 06 00 03 00\n",
+          "expected": "3\nbreak 0x05: r0=3 r1=0 r2=0 r3=0\n2\nbreak 0x05: r0=2 r1=0 r2=0 r3=0\n1\nbreak 0x05: r0=1 r1=0 r2=0 r3=0\nhalted after 11 steps\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No breakpoints: the sum 5 + 4 + 3 + 2 + 1",
+          "stdin": "break\n01 00 05 01 01 00 02 01 00 05 00 06 00 06 07 01 00\n",
+          "expected": "15\nhalted after 19 steps\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Watch an XOR decode a value; one breakpoint is never hit and the program runs off its end",
+          "stdin": "break 6 0x09 0x40\n01 02 5a 01 03 2a 04 02 03 07 02\n",
+          "expected": "break 0x06: r0=0 r1=0 r2=90 r3=42\nbreak 0x09: r0=0 r1=0 r2=112 r3=42\n112\nhalted after 4 steps\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Output first, then an unknown opcode",
+          "stdin": "break 0x03\n01 01 07 07 01 09 01\n",
+          "expected": "break 0x03: r0=0 r1=7 r2=0 r3=0\n7\nfault at 0x05: unknown opcode 0x09\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A jump that is not taken may point anywhere; a taken one may not",
+          "stdin": "break\n01 00 00 06 00 ff 01 01 01 06 01 ff\n",
+          "expected": "fault at 0x09: jump outside program\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An endless loop meets the watchdog",
+          "stdin": "break\n01 00 01 08 03\n",
+          "expected": "step limit reached\n",
           "mode": "trim"
         }
       ]

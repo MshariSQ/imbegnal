@@ -5,5 +5,6 @@ export const reverseEngineeringLessons: Record<string, () => Promise<{ lesson: L
   "reverse-engineering/how-programs-run": () => import("./how-programs-run"),
   "reverse-engineering/assembly-basics": () => import("./assembly-basics"),
   "reverse-engineering/static-analysis-deobfuscation": () => import("./static-analysis-deobfuscation"),
+  "reverse-engineering/debugging-dynamic-analysis": () => import("./debugging-dynamic-analysis"),
   "reverse-engineering/binary-formats-tools": () => import("./binary-formats-tools"),
 };
