@@ -41,16 +41,18 @@ export default function Navbar() {
     setDropOpen(false);
   }
 
-  const navLinks = [
-    { label: tx.nav.learn, href: "/learn/" },
+  // `also`: other sections that belong to the link (the course catalog covers course and lesson pages).
+  const navLinks: { label: string; href: string; also?: string[] }[] = [
+    { label: tx.nav.learn, href: "/courses/", also: ["/learn/"] },
     { label: tx.nav.codeLab, href: "/code-lab/" },
     { label: tx.nav.challenges, href: "/challenges/" },
     { label: tx.nav.roadmaps, href: "/roadmaps/" },
     { label: tx.nav.certifications, href: "/certifications/" },
-    { label: tx.nav.resources, href: "/courses/" },
+    { label: tx.nav.resources, href: "/resources/" },
     { label: tx.nav.pricing, href: "/pricing/" },
   ];
-  const isActive = (href: string) => pathname.startsWith(href.replace(/\/$/, ""));
+  const under = (prefix: string) => pathname.startsWith(prefix.replace(/\/$/, ""));
+  const isActive = (href: string) => under(href) || !!navLinks.find((l) => l.href === href)?.also?.some(under);
   const toggleLang = () => setLang(lang === "en" ? "ar" : "en");
 
   return (

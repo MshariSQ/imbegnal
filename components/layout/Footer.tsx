@@ -2,31 +2,32 @@
 
 import { Zap, ExternalLink } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
-import { getCareerPath } from "@/data/career-paths";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-/** Career paths listed in the footer (names come from data/career-paths.ts). */
-const FOOTER_PATHS = ["soc-analyst", "full-stack-developer", "data-analyst", "ai-engineer", "cloud-engineer", "ux-designer"];
-
 export default function Footer() {
-  const { tx, lang } = useLang();
+  const { tx } = useLang();
   const fl = tx.footer.links;
 
   const footerLinks = {
     [tx.footer.sections.Platform]: [
-      { label: tx.nav.learn, href: `${BASE}/learn/` },
+      { label: tx.nav.learn, href: `${BASE}/courses/` },
       { label: tx.nav.dashboard, href: `${BASE}/dashboard/` },
       { label: fl.roadmaps, href: `${BASE}/roadmaps/` },
       { label: fl.certifications, href: `${BASE}/certifications/` },
-      { label: tx.nav.resources, href: `${BASE}/courses/` },
+      { label: tx.nav.resources, href: `${BASE}/resources/` },
       { label: tx.nav.pricing, href: `${BASE}/pricing/` },
       { label: fl.about, href: `${BASE}/about/` },
     ],
-    [tx.footer.sections.Fields]: FOOTER_PATHS.flatMap((id) => {
-      const p = getCareerPath(id);
-      return p ? [{ label: p.title[lang], href: `${BASE}/roadmaps/${p.id}/` }] : [];
-    }),
+    // Course pages (the course maps at /roadmaps/<track>/ stay reachable from each course)
+    [tx.footer.sections.Fields]: [
+      { label: fl.cyberSecurity, href: `${BASE}/learn/cyber-security/` },
+      { label: fl.ai, href: `${BASE}/learn/artificial-intelligence/` },
+      { label: fl.dataScience, href: `${BASE}/learn/data-science/` },
+      { label: fl.cloudComputing, href: `${BASE}/learn/cloud-computing/` },
+      { label: fl.devops, href: `${BASE}/learn/devops/` },
+      { label: fl.frontend, href: `${BASE}/learn/frontend/` },
+    ],
     [tx.footer.sections.Resources]: [
       { label: fl.github, href: "https://github.com/MshariSQ/imbegnal", external: true },
       { label: fl.openSource, href: "https://github.com/MshariSQ/imbegnal/blob/main/LICENSE", external: true },
