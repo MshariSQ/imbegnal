@@ -6,4 +6,5 @@ export const operatingSystemsLessons: Record<string, () => Promise<{ lesson: Les
   "operating-systems/cpu-scheduling": () => import("./cpu-scheduling"),
   "operating-systems/memory-management": () => import("./memory-management"),
   "operating-systems/files-linux-shell": () => import("./files-linux-shell"),
+  "operating-systems/file-systems": () => import("./file-systems"),
 };

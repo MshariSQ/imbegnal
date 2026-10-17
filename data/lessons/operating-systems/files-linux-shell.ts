@@ -1008,7 +1008,7 @@ humans: lina zed`,
 - **Redirection** rewires fds 0, 1 and 2 before \`exec\` (\`2>&1\` order matters); a **pipe** connects two concurrently running processes through a kernel buffer
 - \`cut\`, \`sort\`, \`uniq -c\` and \`awk\` turn text into answers; you wrote a path resolver, a permission checker and a passwd report
 
-**Practice:** on a Linux machine run \`ls -l /etc/passwd /etc/shadow\`, \`id\`, \`umask\` and \`stat -c '%a %U %G %n' ~\`, then rebuild the IP counting pipeline on any log file you own. **Next:** file systems, where you will see how a path turns into an inode and disk blocks.`,
+**Practice:** on a Linux machine run \`ls -l /etc/passwd /etc/shadow\`, \`id\`, \`umask\` and \`stat -c '%a %U %G %n' ~\`, then rebuild the IP counting pipeline on any log file you own. **Next:** concurrency and locks, and then file systems, where you will see how a path turns into an inode and disk blocks.`,
         ar: `## الخلاصة
 
 - للينكس **شجرة واحدة** جذرها \`/\`؛ وتُركَّب الأقراص الأخرى فيها. المسارات المطلقة تبدأ من \`/\`، والنسبية من **المجلد الحالي** للعملية؛ وتُحلَّل \`.\` و\`..\` والشرطات المتكررة مكوّناً تلو مكوّن
@@ -1018,7 +1018,7 @@ humans: lina zed`,
 - **إعادة التوجيه** تعيد توصيل الواصفات 0 و1 و2 قبل \`exec\` (وترتيب \`2>&1\` مهم)؛ و**الأنبوب** يصل عمليتين تعملان في الوقت نفسه عبر مخزن مؤقت في النواة
 - تحوّل \`cut\` و\`sort\` و\`uniq -c\` و\`awk\` النص إلى إجابات؛ وقد كتبت محلّل مسارات ومدقّق صلاحيات وتقريراً عن ملف passwd
 
-**تدرّب:** على جهاز لينكس نفّذ \`ls -l /etc/passwd /etc/shadow\` و\`id\` و\`umask\` و\`stat -c '%a %U %G %n' ~\`، ثم أعد بناء خط أنابيب عدّ عناوين IP على أي ملف سجلّ تملكه. **التالي:** أنظمة الملفات، حيث سترى كيف يتحول المسار إلى inode وكتل على القرص.`,
+**تدرّب:** على جهاز لينكس نفّذ \`ls -l /etc/passwd /etc/shadow\` و\`id\` و\`umask\` و\`stat -c '%a %U %G %n' ~\`، ثم أعد بناء خط أنابيب عدّ عناوين IP على أي ملف سجلّ تملكه. **التالي:** التزامن والأقفال، ثم أنظمة الملفات حيث سترى كيف يتحول المسار إلى inode وكتل على القرص.`,
       },
     },
   ],

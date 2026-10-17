@@ -223,13 +223,15 @@ export const catalog: Catalog = {
         "processes-threads",
         "cpu-scheduling",
         "memory-management",
-        "files-linux-shell"
+        "files-linux-shell",
+        "file-systems"
       ],
       "maxBonus": {
         "processes-threads": 10,
         "cpu-scheduling": 10,
         "memory-management": 10,
-        "files-linux-shell": 10
+        "files-linux-shell": 10,
+        "file-systems": 10
       }
     },
     {
@@ -1620,6 +1622,129 @@ export const catalog: Catalog = {
           "name": "UIDs compare as numbers: 999 is a system account",
           "stdin": "svc:x:999:999::/var/lib/svc:/usr/sbin/nologin\nlina:x:1000:1000:Lina:/home/lina:/bin/zsh\nzed:x:60001:60001:Zed:/home/zed:/bin/zsh\n",
           "expected": "2 /bin/zsh\n1 /usr/sbin/nologin\nhumans: lina zed",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/file-systems/inode-block-map",
+      "track": "operating-systems",
+      "lesson": "file-systems",
+      "id": "inode-block-map",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "4096 4 12\n0 49152 4243456\n",
+          "expected": "max file size: 4402345721856 bytes\n0 -> block 0 via direct[0], reads=1\n49152 -> block 12 via single[0], reads=2\n4243456 -> block 1036 via double[0][0], reads=3",
+          "mode": "trim"
+        },
+        {
+          "name": "Last byte of each region",
+          "stdin": "4096 4 12\n49151\n4243455\n4299210751\n4402345721855\n",
+          "expected": "max file size: 4402345721856 bytes\n49151 -> block 11 via direct[11], reads=1\n4243455 -> block 1035 via single[1023], reads=2\n4299210751 -> block 1049611 via double[1023][1023], reads=3\n4402345721855 -> block 1074791435 via triple[1023][1023][1023], reads=4",
+          "mode": "trim"
+        },
+        {
+          "name": "Triple indirect and beyond the limit",
+          "stdin": "4096 4 12\n4299210752\n4402345721856\n",
+          "expected": "max file size: 4402345721856 bytes\n4299210752 -> block 1049612 via triple[0][0][0], reads=4\n4402345721856 -> TOO LARGE",
+          "mode": "trim"
+        },
+        {
+          "name": "1 KiB blocks",
+          "stdin": "1024 4 12\n13000\n281600\n",
+          "expected": "max file size: 17247252480 bytes\n13000 -> block 12 via single[0], reads=2\n281600 -> block 275 via double[0][7], reads=3",
+          "mode": "trim"
+        },
+        {
+          "name": "8-byte pointers and only 4 direct blocks",
+          "stdin": "512 8 4\n2047 2048 34816 2000000000\n",
+          "expected": "max file size: 136349696 bytes\n2047 -> block 3 via direct[3], reads=1\n2048 -> block 4 via single[0], reads=2\n34816 -> block 68 via double[0][0], reads=3\n2000000000 -> TOO LARGE",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/file-systems/link-table",
+      "track": "operating-systems",
+      "lesson": "file-systems",
+      "id": "link-table",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example: a hard link survives rm, a symlink dangles",
+          "stdin": "create report.txt draft v1\nlink report.txt final.txt\nsymlink report.txt latest\nrm report.txt\ncat final.txt\ncat latest\n",
+          "expected": "draft v1\ncat latest: No such file or directory\n1 1 final.txt\n2 1 latest -> report.txt\ninodes in use: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "A symlink chain works, a symlink loop does not",
+          "stdin": "symlink b a\nsymlink a b\ncat a\ncreate c hello world\nsymlink c d\nsymlink d e\ncat e\n",
+          "expected": "cat a: Too many levels of symbolic links\nhello world\n1 1 a -> b\n2 1 b -> a\n3 1 c\n4 1 d -> c\n5 1 e -> d\ninodes in use: 5",
+          "mode": "trim"
+        },
+        {
+          "name": "Errors change nothing",
+          "stdin": "create a x\ncreate a y\nlink a a\nlink nope b\nrm nope\ncat nope\nsymlink a a\ncat a\n",
+          "expected": "create a: File exists\nlink a: File exists\nlink nope: No such file or directory\nrm nope: No such file or directory\ncat nope: No such file or directory\nsymlink a: File exists\nx\n1 1 a\ninodes in use: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Link counts and inode numbers that are never reused",
+          "stdin": "create f data\nlink f g\nlink g h\nrm f\nrm g\ncat h\ncreate i new file\nrm h\n",
+          "expected": "data\n2 1 i\ninodes in use: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "A hard link to a symlink shares the symlink's inode",
+          "stdin": "create t text\nsymlink t s\nlink s s2\nrm t\ncat s2\ncreate t back again\ncat s2\n",
+          "expected": "cat s2: No such file or directory\nback again\n2 2 s -> t\n2 2 s2 -> t\n3 1 t\ninodes in use: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "inodes in use: 0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/file-systems/journal-replay",
+      "track": "operating-systems",
+      "lesson": "file-systems",
+      "id": "journal-replay",
+      "lang": "java",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "a b c d\nbegin T1\nwrite T1 0 A\nwrite T1 2 C\ncommit T1\nbegin T2\nwrite T2 1 B\n",
+          "expected": "replayed: T1\ndiscarded: T2\ndisk: A b C d",
+          "mode": "trim"
+        },
+        {
+          "name": "Interleaved transactions: commit order decides",
+          "stdin": "free free free\nbegin t9\nbegin t3\nwrite t9 0 x\nwrite t3 0 y\ncommit t3\nwrite t9 1 z\ncommit t9\nbegin t4\nwrite t4 2 lost\n",
+          "expected": "replayed: t3 t9\ndiscarded: t4\ndisk: x z free",
+          "mode": "trim"
+        },
+        {
+          "name": "Crash before any commit",
+          "stdin": "old old\nbegin A\nwrite A 0 new\nbegin B\nwrite B 1 new\n",
+          "expected": "replayed: none\ndiscarded: A B\ndisk: old old",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty journal",
+          "stdin": "only\n",
+          "expected": "replayed: none\ndiscarded: none\ndisk: only",
+          "mode": "trim"
+        },
+        {
+          "name": "The same block twice in one transaction, and blank lines",
+          "stdin": "s0 s1 s2 s3 s4\nbegin m1\nwrite m1 4 first\n\nwrite m1 4 second\nwrite m1 0 head\ncommit m1\n\nbegin m2\ncommit m2\n",
+          "expected": "replayed: m1 m2\ndiscarded: none\ndisk: head s1 s2 s3 second",
           "mode": "trim"
         }
       ]
