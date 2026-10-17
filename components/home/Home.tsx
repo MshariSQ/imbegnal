@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import {
-  ArrowRight, BookOpenCheck, Bot, CheckCircle2, Code2, Flame, Languages, NotebookPen, Map, Sparkles, Award,
+  ArrowRight, BookOpenCheck, Bot, CheckCircle2, Code2, Flame, Languages, NotebookPen, Route, Sparkles, Award,
 } from "lucide-react";
 import { useLang } from "@/lib/lang-context";
 import { useAuthUser } from "@/lib/auth";
 import CourseCard, { type CourseCardData } from "@/components/learn/CourseCard";
+import PathCard from "@/components/paths/PathCard";
+import type { PathSummary } from "@/lib/career-paths";
 
 export type HomeCourse = CourseCardData;
 
@@ -48,7 +50,7 @@ function ProductPreview() {
   );
 }
 
-export default function Home({ courses, totals }: { courses: HomeCourse[]; totals: { lessons: number; exercises: number } }) {
+export default function Home({ courses, totals, paths = [] }: { courses: HomeCourse[]; totals: { lessons: number; exercises: number }; paths?: PathSummary[] }) {
   const { tx } = useLang();
   const t = tx.landing;
   const user = useAuthUser();
@@ -79,7 +81,7 @@ export default function Home({ courses, totals }: { courses: HomeCourse[]; total
               {user ? t.ctaContinue : t.ctaPrimary} <ArrowRight size={17} className="rtl-flip" />
             </Link>
             <Link href="/roadmaps/" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl border border-line-strong text-fg-soft hover:text-fg hover:bg-fg/5 font-semibold transition-colors">
-              <Map size={17} /> {t.ctaSecondary}
+              <Route size={17} aria-hidden /> {t.ctaSecondary}
             </Link>
           </div>
           <ul className="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-fg-subtle">
@@ -131,7 +133,7 @@ export default function Home({ courses, totals }: { courses: HomeCourse[]; total
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400 mb-3">{t.coursesEyebrow}</p>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-fg">{t.coursesTitle}</h2>
           </div>
-          <Link href="/learn/" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-400 hover:underline shrink-0">
+          <Link href="/courses/" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-400 hover:underline shrink-0">
             {t.viewAll} <ArrowRight size={15} className="rtl-flip" />
           </Link>
         </div>
@@ -139,6 +141,28 @@ export default function Home({ courses, totals }: { courses: HomeCourse[]; total
           {courses.map((c) => <CourseCard key={c.id} course={c} />)}
         </div>
       </section>
+
+      {/* Career paths */}
+      {paths.length > 0 && (
+        <section aria-labelledby="home-paths" className="max-w-7xl mx-auto px-4 sm:px-6 pt-28">
+          <div className="flex items-end justify-between gap-4 mb-10">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400 mb-3">{tx.paths.homeEyebrow}</p>
+              <h2 id="home-paths" className="text-3xl sm:text-4xl font-black tracking-tight text-fg">{tx.paths.homeTitle}</h2>
+              <p className="text-fg-muted mt-3 max-w-2xl">{tx.paths.homeSubtitle}</p>
+            </div>
+            <Link href="/roadmaps/" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-400 hover:underline shrink-0">
+              {tx.paths.allPaths} <ArrowRight size={15} className="rtl-flip" />
+            </Link>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {paths.map((p) => <PathCard key={p.id} path={p} headingLevel={3} />)}
+          </div>
+          <Link href="/roadmaps/" className="sm:hidden inline-flex items-center gap-1.5 min-h-10 mt-5 text-sm font-semibold text-emerald-400 hover:underline">
+            {tx.paths.allPaths} <ArrowRight size={15} className="rtl-flip" />
+          </Link>
+        </section>
+      )}
 
       {/* How it works */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-28">
@@ -166,7 +190,7 @@ export default function Home({ courses, totals }: { courses: HomeCourse[]; total
             <p className="text-sm text-fg-muted leading-relaxed">{t.resourcesText}</p>
           </div>
           <div className="flex gap-3 shrink-0">
-            <Link href="/roadmaps/" className="h-10 px-4 grid place-items-center rounded-lg border border-line-strong text-sm font-semibold text-fg hover:bg-fg/5">{tx.nav.roadmaps}</Link>
+            <Link href="/resources/" className="h-10 px-4 grid place-items-center rounded-lg border border-line-strong text-sm font-semibold text-fg hover:bg-fg/5">{tx.nav.resources}</Link>
             <Link href="/certifications/" className="h-10 px-4 grid place-items-center rounded-lg border border-line-strong text-sm font-semibold text-fg hover:bg-fg/5">{tx.nav.certifications}</Link>
           </div>
         </div>
