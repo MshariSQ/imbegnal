@@ -209,13 +209,15 @@ export const catalog: Catalog = {
         "osi-tcpip",
         "ip-subnetting",
         "transport-tcp-udp",
-        "dns-http-tls"
+        "dns-http-tls",
+        "routing-switching"
       ],
       "maxBonus": {
         "osi-tcpip": 10,
         "ip-subnetting": 10,
         "transport-tcp-udp": 10,
-        "dns-http-tls": 10
+        "dns-http-tls": 10,
+        "routing-switching": 10
       }
     },
     {
@@ -1251,6 +1253,135 @@ export const catalog: Catalog = {
           "name": "Unknown root: a self-signed certificate is not trusted",
           "stdin": "root Example Root CA\ncert dev.example.com|dev.example.com|2026-01-01|2026-12-31|no|dev.example.com\ncheck dev.example.com 2026-03-01\n",
           "expected": "dev.example.com 2026-03-01: FAIL untrusted root: dev.example.com\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/routing-switching/mac-learning",
+      "track": "networking",
+      "lesson": "routing-switching",
+      "id": "mac-learning",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example: flood once, then forward",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n1 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n2 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n",
+          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n1 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n2 02:00:00:00:00:0a -> 02:00:00:00:00:0b: forward 2\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Broadcast and multicast frames are always flooded",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a ff:ff:ff:ff:ff:ff\n1 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n2 2 02:00:00:00:00:0b 01:00:5e:00:00:fb\n3 3 02:00:00:00:00:0c 33:33:00:00:00:01\n4 1 02:00:00:00:00:0a 02:00:00:00:00:0c\n",
+          "expected": "0 02:00:00:00:00:0a -> ff:ff:ff:ff:ff:ff: flood 2,3,4\n1 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n2 02:00:00:00:00:0b -> 01:00:5e:00:00:fb: flood 1,3,4\n3 02:00:00:00:00:0c -> 33:33:00:00:00:01: flood 1,2,4\n4 02:00:00:00:00:0a -> 02:00:00:00:00:0c: forward 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two devices behind the same port: their frames are filtered",
+          "stdin": "ports 3\n0 3 02:00:00:00:00:0c 02:00:00:00:00:0d\n1 3 02:00:00:00:00:0d 02:00:00:00:00:0c\n2 1 02:00:00:00:00:0a 02:00:00:00:00:0d\n3 3 02:00:00:00:00:0c 02:00:00:00:00:0d\n",
+          "expected": "0 02:00:00:00:00:0c -> 02:00:00:00:00:0d: flood 1,2\n1 02:00:00:00:00:0d -> 02:00:00:00:00:0c: filter\n2 02:00:00:00:00:0a -> 02:00:00:00:00:0d: forward 3\n3 02:00:00:00:00:0c -> 02:00:00:00:00:0d: filter\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Ageing: 299 seconds is still valid, 300 seconds is forgotten",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n10 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n309 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n310 3 02:00:00:00:00:0c 02:00:00:00:00:0a\n311 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n",
+          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n10 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n309 02:00:00:00:00:0c -> 02:00:00:00:00:0b: forward 2\n310 02:00:00:00:00:0c -> 02:00:00:00:00:0a: flood 1,2,4\n311 02:00:00:00:00:0c -> 02:00:00:00:00:0b: flood 1,2,4\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A laptop moves to another port and is found there",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n5 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n6 4 02:00:00:00:00:0a 02:00:00:00:00:0b\n7 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n",
+          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n5 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n6 02:00:00:00:00:0a -> 02:00:00:00:00:0b: forward 2\n7 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 4\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No frames: nothing is printed",
+          "stdin": "ports 8\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/routing-switching/arp-resolve",
+      "track": "networking",
+      "lesson": "routing-switching",
+      "id": "arp-resolve",
+      "lang": "java",
+      "tests": [
+        {
+          "name": "The worked example, then a second off-link destination",
+          "stdin": "host 192.168.1.10/24 gw 192.168.1.1\nsend 192.168.1.20\nreply 192.168.1.20 02:00:00:00:00:20\nsend 192.168.1.20\nsend 203.0.113.5\nreply 192.168.1.1 02:00:00:00:00:01\nsend 198.51.100.7\n",
+          "expected": "send 192.168.1.20: next hop 192.168.1.20 (on-link), ARP who-has 192.168.1.20\nreply 192.168.1.20: learned 02:00:00:00:00:20\nsend 192.168.1.20: next hop 192.168.1.20 (on-link), frame to 02:00:00:00:00:20\nsend 203.0.113.5: next hop 192.168.1.1 (gateway), ARP who-has 192.168.1.1\nreply 192.168.1.1: learned 02:00:00:00:00:01\nsend 198.51.100.7: next hop 192.168.1.1 (gateway), frame to 02:00:00:00:00:01\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Broadcast, a refreshed entry and a gateway whose MAC changes",
+          "stdin": "host 10.1.2.3/16 gw 10.1.0.1\nsend 10.1.255.255\nreply 10.1.0.1 02:00:00:00:aa:01\nreply 10.1.0.1 02:00:00:00:AA:01\nreply 10.1.0.1 02:00:00:00:bb:02\nsend 198.51.100.1\nsend 10.1.200.9\n",
+          "expected": "send 10.1.255.255: frame to ff:ff:ff:ff:ff:ff (broadcast)\nreply 10.1.0.1: learned 02:00:00:00:aa:01\nreply 10.1.0.1: refreshed 02:00:00:00:aa:01\nreply 10.1.0.1: changed 02:00:00:00:aa:01 -> 02:00:00:00:bb:02\nsend 198.51.100.1: next hop 10.1.0.1 (gateway), frame to 02:00:00:00:bb:02\nsend 10.1.200.9: next hop 10.1.200.9 (on-link), ARP who-has 10.1.200.9\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A /25: the other half of the /24 is off-link",
+          "stdin": "host 192.168.1.130/25 gw 192.168.1.129\nsend 192.168.1.200\nsend 192.168.1.100\nreply 192.168.1.100 02:00:00:00:00:64\nsend 192.168.1.255\nsend 192.168.1.127\n",
+          "expected": "send 192.168.1.200: next hop 192.168.1.200 (on-link), ARP who-has 192.168.1.200\nsend 192.168.1.100: next hop 192.168.1.129 (gateway), ARP who-has 192.168.1.129\nreply 192.168.1.100: ignored (not on-link)\nsend 192.168.1.255: frame to ff:ff:ff:ff:ff:ff (broadcast)\nsend 192.168.1.127: next hop 192.168.1.129 (gateway), ARP who-has 192.168.1.129\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No gateway: off-link destinations have no route",
+          "stdin": "host 172.16.5.10/24 gw none\nsend 172.16.5.1\nsend 172.16.6.1\nreply 172.16.5.1 02:00:00:00:00:01\nsend 172.16.5.1\n",
+          "expected": "send 172.16.5.1: next hop 172.16.5.1 (on-link), ARP who-has 172.16.5.1\nsend 172.16.6.1: no route\nreply 172.16.5.1: learned 02:00:00:00:00:01\nsend 172.16.5.1: next hop 172.16.5.1 (on-link), frame to 02:00:00:00:00:01\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No events: nothing is printed",
+          "stdin": "host 192.168.0.2/24 gw 192.168.0.1\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/routing-switching/ospf-spf",
+      "track": "networking",
+      "lesson": "routing-switching",
+      "id": "ospf-spf",
+      "lang": "cpp",
+      "tests": [
+        {
+          "name": "The worked example: the long way round is cheaper",
+          "stdin": "R1\nlink R1 R2 10\nlink R2 R3 5\nlink R1 R3 20\n",
+          "expected": "R2 cost=10 via R2\nR3 cost=15 via R2\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Six routers: every shortest path leaves through B",
+          "stdin": "A\nlink A B 2\nlink A C 5\nlink B C 1\nlink B D 7\nlink C D 2\nlink C E 6\nlink D E 1\nlink D F 4\nlink E F 1\n",
+          "expected": "B cost=2 via B\nC cost=3 via B\nD cost=5 via B\nE cost=6 via B\nF cost=7 via B\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Equal-cost paths: the alphabetically smaller first hop wins",
+          "stdin": "core\nlink core west 10\nlink core east 10\nlink west dc 10\nlink east dc 10\nlink core dc 30\nlink dc branch 1\n",
+          "expected": "branch cost=21 via east\ndc cost=20 via east\neast cost=10 via east\nwest cost=10 via west\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A 10 x 10 grid of 100 routers",
+          "stdin": "r00-00\nlink r00-00 r00-01 1\nlink r00-00 r01-00 1\nlink r00-01 r00-02 1\nlink r00-01 r01-01 1\nlink r00-02 r00-03 1\nlink r00-02 r01-02 1\nlink r00-03 r00-04 1\nlink r00-03 r01-03 1\nlink r00-04 r00-05 1\nlink r00-04 r01-04 1\nlink r00-05 r00-06 1\nlink r00-05 r01-05 1\nlink r00-06 r00-07 1\nlink r00-06 r01-06 1\nlink r00-07 r00-08 1\nlink r00-07 r01-07 1\nlink r00-08 r00-09 1\nlink r00-08 r01-08 1\nlink r00-09 r01-09 1\nlink r01-00 r01-01 1\nlink r01-00 r02-00 1\nlink r01-01 r01-02 1\nlink r01-01 r02-01 1\nlink r01-02 r01-03 1\nlink r01-02 r02-02 1\nlink r01-03 r01-04 1\nlink r01-03 r02-03 1\nlink r01-04 r01-05 1\nlink r01-04 r02-04 1\nlink r01-05 r01-06 1\nlink r01-05 r02-05 1\nlink r01-06 r01-07 1\nlink r01-06 r02-06 1\nlink r01-07 r01-08 1\nlink r01-07 r02-07 1\nlink r01-08 r01-09 1\nlink r01-08 r02-08 1\nlink r01-09 r02-09 1\nlink r02-00 r02-01 1\nlink r02-00 r03-00 1\nlink r02-01 r02-02 1\nlink r02-01 r03-01 1\nlink r02-02 r02-03 1\nlink r02-02 r03-02 1\nlink r02-03 r02-04 1\nlink r02-03 r03-03 1\nlink r02-04 r02-05 1\nlink r02-04 r03-04 1\nlink r02-05 r02-06 1\nlink r02-05 r03-05 1\nlink r02-06 r02-07 1\nlink r02-06 r03-06 1\nlink r02-07 r02-08 1\nlink r02-07 r03-07 1\nlink r02-08 r02-09 1\nlink r02-08 r03-08 1\nlink r02-09 r03-09 1\nlink r03-00 r03-01 1\nlink r03-00 r04-00 1\nlink r03-01 r03-02 1\nlink r03-01 r04-01 1\nlink r03-02 r03-03 1\nlink r03-02 r04-02 1\nlink r03-03 r03-04 1\nlink r03-03 r04-03 1\nlink r03-04 r03-05 1\nlink r03-04 r04-04 1\nlink r03-05 r03-06 1\nlink r03-05 r04-05 1\nlink r03-06 r03-07 1\nlink r03-06 r04-06 1\nlink r03-07 r03-08 1\nlink r03-07 r04-07 1\nlink r03-08 r03-09 1\nlink r03-08 r04-08 1\nlink r03-09 r04-09 1\nlink r04-00 r04-01 1\nlink r04-00 r05-00 1\nlink r04-01 r04-02 1\nlink r04-01 r05-01 1\nlink r04-02 r04-03 1\nlink r04-02 r05-02 1\nlink r04-03 r04-04 1\nlink r04-03 r05-03 1\nlink r04-04 r04-05 1\nlink r04-04 r05-04 1\nlink r04-05 r04-06 1\nlink r04-05 r05-05 1\nlink r04-06 r04-07 1\nlink r04-06 r05-06 1\nlink r04-07 r04-08 1\nlink r04-07 r05-07 1\nlink r04-08 r04-09 1\nlink r04-08 r05-08 1\nlink r04-09 r05-09 1\nlink r05-00 r05-01 1\nlink r05-00 r06-00 1\nlink r05-01 r05-02 1\nlink r05-01 r06-01 1\nlink r05-02 r05-03 1\nlink r05-02 r06-02 1\nlink r05-03 r05-04 1\nlink r05-03 r06-03 1\nlink r05-04 r05-05 1\nlink r05-04 r06-04 1\nlink r05-05 r05-06 1\nlink r05-05 r06-05 1\nlink r05-06 r05-07 1\nlink r05-06 r06-06 1\nlink r05-07 r05-08 1\nlink r05-07 r06-07 1\nlink r05-08 r05-09 1\nlink r05-08 r06-08 1\nlink r05-09 r06-09 1\nlink r06-00 r06-01 1\nlink r06-00 r07-00 1\nlink r06-01 r06-02 1\nlink r06-01 r07-01 1\nlink r06-02 r06-03 1\nlink r06-02 r07-02 1\nlink r06-03 r06-04 1\nlink r06-03 r07-03 1\nlink r06-04 r06-05 1\nlink r06-04 r07-04 1\nlink r06-05 r06-06 1\nlink r06-05 r07-05 1\nlink r06-06 r06-07 1\nlink r06-06 r07-06 1\nlink r06-07 r06-08 1\nlink r06-07 r07-07 1\nlink r06-08 r06-09 1\nlink r06-08 r07-08 1\nlink r06-09 r07-09 1\nlink r07-00 r07-01 1\nlink r07-00 r08-00 1\nlink r07-01 r07-02 1\nlink r07-01 r08-01 1\nlink r07-02 r07-03 1\nlink r07-02 r08-02 1\nlink r07-03 r07-04 1\nlink r07-03 r08-03 1\nlink r07-04 r07-05 1\nlink r07-04 r08-04 1\nlink r07-05 r07-06 1\nlink r07-05 r08-05 1\nlink r07-06 r07-07 1\nlink r07-06 r08-06 1\nlink r07-07 r07-08 1\nlink r07-07 r08-07 1\nlink r07-08 r07-09 1\nlink r07-08 r08-08 1\nlink r07-09 r08-09 1\nlink r08-00 r08-01 1\nlink r08-00 r09-00 1\nlink r08-01 r08-02 1\nlink r08-01 r09-01 1\nlink r08-02 r08-03 1\nlink r08-02 r09-02 1\nlink r08-03 r08-04 1\nlink r08-03 r09-03 1\nlink r08-04 r08-05 1\nlink r08-04 r09-04 1\nlink r08-05 r08-06 1\nlink r08-05 r09-05 1\nlink r08-06 r08-07 1\nlink r08-06 r09-06 1\nlink r08-07 r08-08 1\nlink r08-07 r09-07 1\nlink r08-08 r08-09 1\nlink r08-08 r09-08 1\nlink r08-09 r09-09 1\nlink r09-00 r09-01 1\nlink r09-01 r09-02 1\nlink r09-02 r09-03 1\nlink r09-03 r09-04 1\nlink r09-04 r09-05 1\nlink r09-05 r09-06 1\nlink r09-06 r09-07 1\nlink r09-07 r09-08 1\nlink r09-08 r09-09 1\n",
+          "expected": "r00-01 cost=1 via r00-01\nr00-02 cost=2 via r00-01\nr00-03 cost=3 via r00-01\nr00-04 cost=4 via r00-01\nr00-05 cost=5 via r00-01\nr00-06 cost=6 via r00-01\nr00-07 cost=7 via r00-01\nr00-08 cost=8 via r00-01\nr00-09 cost=9 via r00-01\nr01-00 cost=1 via r01-00\nr01-01 cost=2 via r00-01\nr01-02 cost=3 via r00-01\nr01-03 cost=4 via r00-01\nr01-04 cost=5 via r00-01\nr01-05 cost=6 via r00-01\nr01-06 cost=7 via r00-01\nr01-07 cost=8 via r00-01\nr01-08 cost=9 via r00-01\nr01-09 cost=10 via r00-01\nr02-00 cost=2 via r01-00\nr02-01 cost=3 via r00-01\nr02-02 cost=4 via r00-01\nr02-03 cost=5 via r00-01\nr02-04 cost=6 via r00-01\nr02-05 cost=7 via r00-01\nr02-06 cost=8 via r00-01\nr02-07 cost=9 via r00-01\nr02-08 cost=10 via r00-01\nr02-09 cost=11 via r00-01\nr03-00 cost=3 via r01-00\nr03-01 cost=4 via r00-01\nr03-02 cost=5 via r00-01\nr03-03 cost=6 via r00-01\nr03-04 cost=7 via r00-01\nr03-05 cost=8 via r00-01\nr03-06 cost=9 via r00-01\nr03-07 cost=10 via r00-01\nr03-08 cost=11 via r00-01\nr03-09 cost=12 via r00-01\nr04-00 cost=4 via r01-00\nr04-01 cost=5 via r00-01\nr04-02 cost=6 via r00-01\nr04-03 cost=7 via r00-01\nr04-04 cost=8 via r00-01\nr04-05 cost=9 via r00-01\nr04-06 cost=10 via r00-01\nr04-07 cost=11 via r00-01\nr04-08 cost=12 via r00-01\nr04-09 cost=13 via r00-01\nr05-00 cost=5 via r01-00\nr05-01 cost=6 via r00-01\nr05-02 cost=7 via r00-01\nr05-03 cost=8 via r00-01\nr05-04 cost=9 via r00-01\nr05-05 cost=10 via r00-01\nr05-06 cost=11 via r00-01\nr05-07 cost=12 via r00-01\nr05-08 cost=13 via r00-01\nr05-09 cost=14 via r00-01\nr06-00 cost=6 via r01-00\nr06-01 cost=7 via r00-01\nr06-02 cost=8 via r00-01\nr06-03 cost=9 via r00-01\nr06-04 cost=10 via r00-01\nr06-05 cost=11 via r00-01\nr06-06 cost=12 via r00-01\nr06-07 cost=13 via r00-01\nr06-08 cost=14 via r00-01\nr06-09 cost=15 via r00-01\nr07-00 cost=7 via r01-00\nr07-01 cost=8 via r00-01\nr07-02 cost=9 via r00-01\nr07-03 cost=10 via r00-01\nr07-04 cost=11 via r00-01\nr07-05 cost=12 via r00-01\nr07-06 cost=13 via r00-01\nr07-07 cost=14 via r00-01\nr07-08 cost=15 via r00-01\nr07-09 cost=16 via r00-01\nr08-00 cost=8 via r01-00\nr08-01 cost=9 via r00-01\nr08-02 cost=10 via r00-01\nr08-03 cost=11 via r00-01\nr08-04 cost=12 via r00-01\nr08-05 cost=13 via r00-01\nr08-06 cost=14 via r00-01\nr08-07 cost=15 via r00-01\nr08-08 cost=16 via r00-01\nr08-09 cost=17 via r00-01\nr09-00 cost=9 via r01-00\nr09-01 cost=10 via r00-01\nr09-02 cost=11 via r00-01\nr09-03 cost=12 via r00-01\nr09-04 cost=13 via r00-01\nr09-05 cost=14 via r00-01\nr09-06 cost=15 via r00-01\nr09-07 cost=16 via r00-01\nr09-08 cost=17 via r00-01\nr09-09 cost=18 via r00-01\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Parallel links use the cheapest one; an island is unreachable",
+          "stdin": "R1\nlink R1 R2 50\nlink R2 R1 5\nlink R3 R4 1\nlink R4 R5 2\nlink R3 R3 1\n",
+          "expected": "R2 cost=5 via R2\nR3 unreachable\nR4 unreachable\nR5 unreachable\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No links: nothing is printed",
+          "stdin": "R1\n",
+          "expected": "",
           "mode": "trim"
         }
       ]
