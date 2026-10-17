@@ -19,6 +19,7 @@ import PracticeCertificate from "./PracticeCertificate";
 import PracticeChips from "./PracticeChips";
 import { fmt } from "./PracticeLink";
 import PracticeSample from "./PracticeSample";
+import PathsForCourse from "@/components/paths/PathsForCourse";
 
 export interface CourseOverviewProps {
   trackId: string;
@@ -296,6 +297,8 @@ export default function CourseOverview({ trackId, curriculum: cur, lessons, chal
               </div>
             )}
           </div>
+
+          <PathsForCourse trackId={trackId} />
 
           <div className="card p-6">
             <div className="flex items-center gap-2 text-sm font-bold text-fg mb-4"><Briefcase size={15} aria-hidden /> {tx.learn.careers}</div>
