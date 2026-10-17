@@ -9,4 +9,5 @@ export const operatingSystemsLessons: Record<string, () => Promise<{ lesson: Les
   "operating-systems/file-systems": () => import("./file-systems"),
   "operating-systems/concurrency-sync": () => import("./concurrency-sync"),
   "operating-systems/virtualization-containers": () => import("./virtualization-containers"),
+  "operating-systems/os-security": () => import("./os-security"),
 };

@@ -226,7 +226,8 @@ export const catalog: Catalog = {
         "files-linux-shell",
         "concurrency-sync",
         "file-systems",
-        "virtualization-containers"
+        "virtualization-containers",
+        "os-security"
       ],
       "maxBonus": {
         "processes-threads": 10,
@@ -235,7 +236,8 @@ export const catalog: Catalog = {
         "files-linux-shell": 10,
         "concurrency-sync": 10,
         "file-systems": 10,
-        "virtualization-containers": 10
+        "virtualization-containers": 10,
+        "os-security": 10
       }
     },
     {
@@ -1983,6 +1985,123 @@ export const catalog: Catalog = {
           "name": "Only the root",
           "stdin": "show\n",
           "expected": "/ current=0 max=max",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/os-security/capeff-decoder",
+      "track": "operating-systems",
+      "lesson": "os-security",
+      "id": "capeff-decoder",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Example: a container with Docker's default set",
+          "stdin": "CapEff:\t00000000a80425fb\n",
+          "expected": "CapEff (14): cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap\nCapEff dangerous: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Full root on a recent kernel",
+          "stdin": "CapBnd:\t000001ffffffffff\n",
+          "expected": "CapBnd (41): cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore\nCapBnd dangerous: cap_dac_read_search,cap_sys_module,cap_sys_rawio,cap_sys_ptrace,cap_sys_admin",
+          "mode": "trim"
+        },
+        {
+          "name": "A container given ptrace and admin rights",
+          "stdin": "CapEff:\t0000000000280000\n",
+          "expected": "CapEff (2): cap_sys_ptrace,cap_sys_admin\nCapEff dangerous: cap_sys_ptrace,cap_sys_admin",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty set and an ambient capability",
+          "stdin": "CapInh:\t0000000000000000\nCapAmb:\t0000000000000400\n",
+          "expected": "CapInh (0): none\nCapInh dangerous: none\nCapAmb (1): cap_net_bind_service\nCapAmb dangerous: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Upper-case hex and the highest bit",
+          "stdin": "X 0000010000000001\nY 00000000000301C4\n",
+          "expected": "X (2): cap_chown,cap_checkpoint_restore\nX dangerous: none\nY (6): cap_dac_read_search,cap_setgid,cap_setuid,cap_setpcap,cap_sys_module,cap_sys_rawio\nY dangerous: cap_dac_read_search,cap_sys_module,cap_sys_rawio",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/os-security/seccomp-stack",
+      "track": "operating-systems",
+      "lesson": "os-security",
+      "id": "seccomp-stack",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "filter\ndefault ALLOW\nptrace ERRNO\nreboot KILL\nfilter\ndefault ERRNO\nread ALLOW\nwrite ALLOW\nptrace ALLOW\ntrace\nread write openat\nptrace\nreboot\nwrite\n",
+          "expected": "read -> ALLOW\nwrite -> ALLOW\nopenat -> ERRNO\nptrace -> ERRNO\nreboot -> KILL\nprocess killed\nsummary: ALLOW=2 LOG=0 ERRNO=2 KILL=1",
+          "mode": "trim"
+        },
+        {
+          "name": "No filter installed",
+          "stdin": "trace\nread write mount\n",
+          "expected": "read -> ALLOW\nwrite -> ALLOW\nmount -> ALLOW\nsummary: ALLOW=3 LOG=0 ERRNO=0 KILL=0",
+          "mode": "trim"
+        },
+        {
+          "name": "LOG beats ALLOW, ERRNO beats LOG",
+          "stdin": "filter\ndefault LOG\nread ALLOW\n\nfilter\ndefault ALLOW\nopenat LOG\nunshare ERRNO\ntrace\nread\nopenat\nunshare\nexecve\n",
+          "expected": "read -> ALLOW\nopenat -> LOG\nunshare -> ERRNO\nexecve -> LOG\nsummary: ALLOW=1 LOG=2 ERRNO=1 KILL=0",
+          "mode": "trim"
+        },
+        {
+          "name": "An allow-list filter kills on the first forbidden call",
+          "stdin": "filter\ndefault KILL\nread ALLOW\nwrite ALLOW\nexit_group ALLOW\ntrace\nread write\nwrite\nsocket\nexit_group\n",
+          "expected": "read -> ALLOW\nwrite -> ALLOW\nwrite -> ALLOW\nsocket -> KILL\nprocess killed\nsummary: ALLOW=3 LOG=0 ERRNO=0 KILL=1",
+          "mode": "trim"
+        },
+        {
+          "name": "A filter but an empty trace",
+          "stdin": "filter\ndefault ERRNO\ntrace\n",
+          "expected": "summary: ALLOW=0 LOG=0 ERRNO=0 KILL=0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/os-security/perm-audit",
+      "track": "operating-systems",
+      "lesson": "os-security",
+      "id": "perm-audit",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "allow: /usr/bin/passwd /usr/bin/sudo\n4755 root /usr/bin/passwd\n4755 root /opt/backup/run\n0666 www /var/www/config.php\n1777 root /tmp/\n0777 root /srv/upload/\n",
+          "expected": "REVIEW setuid /opt/backup/run (owner root)\nFIX world-writable file /var/www/config.php\nFIX world-writable directory without sticky bit /srv/upload/\nfindings: 3",
+          "mode": "trim"
+        },
+        {
+          "name": "setgid files versus setgid directories",
+          "stdin": "allow: /usr/bin/passwd /usr/bin/sudo\n4755 root /usr/bin/passwd\n4755 root /usr/bin/sudo\n4755 root /opt/backup/run\n2755 root /usr/bin/ssh-agent\n0644 root /etc/hosts\n0666 www /var/www/config.php\n1777 root /tmp/\n0777 root /srv/upload/\n2775 root /srv/team/\n",
+          "expected": "REVIEW setuid /opt/backup/run (owner root)\nREVIEW setgid /usr/bin/ssh-agent (owner root)\nFIX world-writable file /var/www/config.php\nFIX world-writable directory without sticky bit /srv/upload/\nfindings: 4",
+          "mode": "trim"
+        },
+        {
+          "name": "Several findings on one line; allowed is not the same as safe",
+          "stdin": "allow: /bin/x\n6777 root /bin/x\n6777 root /bin/y\n0757 ana /home/ana/\n0002 ana /home/ana/.netrc\n",
+          "expected": "FIX world-writable file /bin/x\nREVIEW setuid /bin/y (owner root)\nREVIEW setgid /bin/y (owner root)\nFIX world-writable file /bin/y\nFIX world-writable directory without sticky bit /home/ana/\nFIX world-writable file /home/ana/.netrc\nfindings: 6",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty allow list",
+          "stdin": "allow:\n4711 root /usr/local/bin/helper\n2711 root /usr/local/bin/mailer\n",
+          "expected": "REVIEW setuid /usr/local/bin/helper (owner root)\nREVIEW setgid /usr/local/bin/mailer (owner root)\nfindings: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "A clean system",
+          "stdin": "allow: /usr/bin/passwd\n4755 root /usr/bin/passwd\n0755 root /usr/bin/ls\n1777 root /tmp/\n2775 root /srv/team/\n0640 root /etc/shadow\n",
+          "expected": "findings: 0",
           "mode": "trim"
         }
       ]
