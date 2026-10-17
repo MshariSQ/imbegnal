@@ -22,7 +22,7 @@ const ARABIC = /[؀-ۿ]/;
 const LAB_LANGS = new Set(["python", "javascript", "typescript", "java", "c", "cpp", "go", "rust", "ruby", "php", "bash"]);
 
 /** Lessons that must exist (the node-only roadmap entries have none). */
-const EXPECTED_LESSONS = ["processes-threads", "cpu-scheduling", "memory-management", "files-linux-shell", "file-systems"];
+const EXPECTED_LESSONS = ["processes-threads", "cpu-scheduling", "memory-management", "files-linux-shell", "file-systems", "concurrency-sync"];
 
 async function loadAll(): Promise<{ key: string; lesson: Lesson }[]> {
   const out: { key: string; lesson: Lesson }[] = [];

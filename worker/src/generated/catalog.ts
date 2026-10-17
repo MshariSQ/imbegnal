@@ -224,6 +224,7 @@ export const catalog: Catalog = {
         "cpu-scheduling",
         "memory-management",
         "files-linux-shell",
+        "concurrency-sync",
         "file-systems"
       ],
       "maxBonus": {
@@ -231,6 +232,7 @@ export const catalog: Catalog = {
         "cpu-scheduling": 10,
         "memory-management": 10,
         "files-linux-shell": 10,
+        "concurrency-sync": 10,
         "file-systems": 10
       }
     },
@@ -1622,6 +1624,123 @@ export const catalog: Catalog = {
           "name": "UIDs compare as numbers: 999 is a system account",
           "stdin": "svc:x:999:999::/var/lib/svc:/usr/sbin/nologin\nlina:x:1000:1000:Lina:/home/lina:/bin/zsh\nzed:x:60001:60001:Zed:/home/zed:/bin/zsh\n",
           "expected": "2 /bin/zsh\n1 /usr/sbin/nologin\nhumans: lina zed",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/concurrency-sync/bounded-buffer",
+      "track": "operating-systems",
+      "lesson": "concurrency-sync",
+      "id": "bounded-buffer",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "4 6\n5 3 8 1 9 2\n",
+          "expected": "order: 5 3 8 1 9 2\ntotal: 28",
+          "mode": "trim"
+        },
+        {
+          "name": "Capacity 1: strict hand-over",
+          "stdin": "1 5\n10 20 30 40 50\n",
+          "expected": "order: 10 20 30 40 50\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "A buffer bigger than the input, negative items",
+          "stdin": "64 3\n7 -2 7\n",
+          "expected": "order: 7 -2 7\ntotal: 12",
+          "mode": "trim"
+        },
+        {
+          "name": "No items at all",
+          "stdin": "3 0\n",
+          "expected": "order:\ntotal: 0",
+          "mode": "trim"
+        },
+        {
+          "name": "100 items through 2 slots",
+          "stdin": "2 100\n100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1\n",
+          "expected": "order: 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1\ntotal: 5050",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/concurrency-sync/semaphore-trace",
+      "track": "operating-systems",
+      "lesson": "concurrency-sync",
+      "id": "semaphore-trace",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example: a semaphore used as a lock",
+          "stdin": "mutex=1\nA wait mutex\nB wait mutex\nA signal mutex\nB signal mutex\n",
+          "expected": "A wait mutex -> ok (mutex=0)\nB wait mutex -> blocked\nA signal mutex -> wakes B\nB signal mutex -> mutex=1\nvalues: mutex=1\nblocked: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Producer and consumer with slots and items",
+          "stdin": "slots=2 items=0\nC wait items\nP wait slots\nP signal items\nP wait slots\nP signal items\nP wait slots\nC signal slots\nC wait items\nX wait items\n",
+          "expected": "C wait items -> blocked\nP wait slots -> ok (slots=1)\nP signal items -> wakes C\nP wait slots -> ok (slots=0)\nP signal items -> items=1\nP wait slots -> blocked\nC signal slots -> wakes P\nC wait items -> ok (items=0)\nX wait items -> blocked\nvalues: slots=0 items=0\nblocked: X(items)",
+          "mode": "trim"
+        },
+        {
+          "name": "Two threads waiting for each other: a deadlock",
+          "stdin": "a=0 b=0\nT1 wait a\nT2 wait b\nT1 signal b\nT2 signal a\n",
+          "expected": "T1 wait a -> blocked\nT2 wait b -> blocked\nT1 is blocked on a, ignored\nT2 is blocked on b, ignored\nvalues: a=0 b=0\nblocked: T1(a) T2(b)",
+          "mode": "trim"
+        },
+        {
+          "name": "A pool of three, and a semaphore has no owner",
+          "stdin": "pool=3\nA wait pool\nB wait pool\nC wait pool\nD wait pool\nE wait pool\nB signal pool\nA signal pool\nA signal pool\n",
+          "expected": "A wait pool -> ok (pool=2)\nB wait pool -> ok (pool=1)\nC wait pool -> ok (pool=0)\nD wait pool -> blocked\nE wait pool -> blocked\nB signal pool -> wakes D\nA signal pool -> wakes E\nA signal pool -> pool=1\nvalues: pool=1\nblocked: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Declarations only",
+          "stdin": "x=0 y=5\n",
+          "expected": "values: x=0 y=5\nblocked: none",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/concurrency-sync/lock-order",
+      "track": "operating-systems",
+      "lesson": "concurrency-sync",
+      "id": "lock-order",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Example: two locks taken in opposite orders",
+          "stdin": "T1: accounts audit\nT2: audit accounts\nT3: log\n",
+          "expected": "potential deadlock: accounts audit\nthreads: T1 T2",
+          "mode": "trim"
+        },
+        {
+          "name": "A consistent order with an independent lock",
+          "stdin": "T1: A B\nT2: B C\nT3: A C\nT4: log\n",
+          "expected": "consistent order: A B C log",
+          "mode": "trim"
+        },
+        {
+          "name": "A three-way cycle and a separate pair",
+          "stdin": "w1: a b\nw2: b c\nw3: c a\nw4: a d\nw5: x y\nw6: y x\n",
+          "expected": "potential deadlock: a b c x y\nthreads: w1 w2 w3 w5 w6",
+          "mode": "trim"
+        },
+        {
+          "name": "The order follows the edges, not the alphabet",
+          "stdin": "T1:\n\nT2: zeta alpha mid\n",
+          "expected": "consistent order: zeta alpha mid",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "consistent order: none",
           "mode": "trim"
         }
       ]
