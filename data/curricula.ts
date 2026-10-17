@@ -696,10 +696,11 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
       l("Explain what each OSI and TCP/IP layer does and place protocols (Ethernet, IP, TCP, HTTP) on the right layer.", "اشرح وظيفة كل طبقة في OSI وTCP/IP وضع البروتوكولات (Ethernet وIP وTCP وHTTP) في الطبقة الصحيحة."),
       l("Convert between binary and dotted-decimal and compute the network, broadcast and usable host range of any IPv4 CIDR block.", "حوّل بين الثنائي والعشري المنقّط واحسب عنوان الشبكة والبث ونطاق المضيفين المتاح لأي كتلة IPv4 بـ CIDR."),
       l("Plan a subnetting scheme (VLSM) for an office from host-count requirements without wasting addresses.", "خطّط لمخطط شبكات فرعية (VLSM) لمكتب انطلاقاً من أعداد الأجهزة دون هدر العناوين."),
-      l("Read a routing table and predict the next hop using longest-prefix match.", "اقرأ جدول توجيه وتنبّأ بالقفزة التالية بمطابقة أطول بادئة."),
+      l("Explain how switches, VLANs and ARP deliver frames inside a LAN, and predict a router's next hop with longest-prefix match.", "اشرح كيف تسلّم السويتشات والشبكات المحلية الافتراضية (VLANs) وARP الإطارات داخل الشبكة المحلية، وتنبّأ بالقفزة التالية للراوتر بمطابقة أطول بادئة."),
       l("Trace a DNS lookup from resolver to root, TLD and authoritative server and diagnose failures with dig.", "تتبّع بحث DNS من المحلّل إلى الجذر والنطاق الأعلى والخادم المخوَّل وشخّص الأعطال بـ dig."),
       l("Walk through a TCP handshake and a TLS connection and read HTTP request and response headers.", "تتبّع مصافحة TCP واتصال TLS واقرأ ترويسات طلب HTTP واستجابته."),
       l("Troubleshoot connectivity layer by layer with ping, traceroute, ss and a packet capture.", "شخّص مشكلات الاتصال طبقة بطبقة بـ ping وtraceroute وss والتقاط الحزم."),
+      l("Design a segmented network with default-deny firewall rules, NAT, a VPN and WPA3 Wi-Fi, and name the attack each control stops.", "صمّم شبكة مجزّأة بقواعد جدار ناري ترفض افتراضياً، وNAT، وشبكة افتراضية خاصة (VPN)، وWi-Fi بـ WPA3، وسمِّ الهجوم الذي يوقفه كل ضابط."),
     ],
     audience: l(
       "Future network engineers, sysadmins, developers and security analysts who need to understand how data really travels.",
@@ -707,13 +708,12 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
     ),
     prerequisites: [{ text: l("None. Comfort with binary numbers helps and is taught early.", "لا شيء. الإلمام بالأعداد الثنائية يفيد ويُدرَّس مبكراً.") }],
     estimatedHours: 6,
-    estimateOnly: true,
     recommendedOrder: 1,
     recommendedAfter: [],
     modules: {
-      required: { title: l("How data travels", "كيف تنتقل البيانات"), summary: l("Layers, addressing, subnetting and routing: the core model.", "الطبقات والعنونة والشبكات الفرعية والتوجيه: النموذج الأساسي.") },
-      important: { title: l("Services on the network", "الخدمات على الشبكة"), summary: l("DNS, HTTP, TLS and the protocols apps depend on.", "DNS وHTTP وTLS والبروتوكولات التي تعتمد عليها التطبيقات.") },
-      optional: { title: l("Troubleshooting and design", "التشخيص والتصميم"), summary: l("Find faults fast and design small networks.", "اعثر على الأعطال بسرعة وصمّم شبكات صغيرة.") },
+      required: { title: l("How data travels", "كيف تنتقل البيانات"), summary: l("Layers, addressing, transport, and the DNS, HTTP and TLS steps behind every web page: the core model.", "الطبقات والعنونة والنقل، وخطوات DNS وHTTP وTLS وراء كل صفحة ويب: النموذج الأساسي.") },
+      important: { title: l("Running a network", "تشغيل الشبكة"), summary: l("Switching and routing, troubleshooting tools, Wi-Fi, VPNs and firewalls.", "التبديل والتوجيه، وأدوات التشخيص، وWi-Fi والشبكات الافتراضية الخاصة والجدران النارية.") },
+      optional: { title: l("Securing the network", "تأمين الشبكة"), summary: l("Common attacks, the defences that stop them and the principles behind them.", "الهجمات الشائعة، والدفاعات التي توقفها، والمبادئ التي تقوم عليها.") },
     },
     assessment: {
       summary: l(
@@ -722,7 +722,7 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
       ),
       passing: passing(0.7, 2, 1),
       criteria: [
-        { source: "lessons", title: l("Learn the model", "تعلّم النموذج"), detail: l("Complete every foundations lesson: layers, IP addressing, subnetting and routing.", "أكمل كل دروس الأساسيات: الطبقات وعنونة IP وتقسيم الشبكات والتوجيه.") },
+        { source: "lessons", title: l("Learn the model", "تعلّم النموذج"), detail: l("Complete every foundations lesson: layers, IP addressing and subnetting, TCP and UDP, and DNS, HTTP and TLS.", "أكمل كل دروس الأساسيات: الطبقات، وعنونة IP وتقسيم الشبكات، وTCP وUDP، وDNS وHTTP وTLS.") },
         { source: "quizzes", title: l("Explain the layers", "اشرح الطبقات"), detail: l("Average at least 70% on first-try quizzes about protocols, handshakes and name resolution.", "حقق متوسط 70% على الأقل من المحاولة الأولى في اختبارات البروتوكولات والمصافحات وحلّ الأسماء.") },
         { source: "labs", title: l("Do the arithmetic", "أجرِ الحسابات"), detail: l("Pass graded labs on CIDR calculation and longest-prefix routing with visible tests.", "اجتز مختبرات مصحَّحة عن حساب CIDR والتوجيه بأطول بادئة باختبارات ظاهرة.") },
         { source: "challenges", title: l("Read the packets", "اقرأ الحزم"), detail: l("Solve one networking challenge such as decoding a captured exchange.", "حُلّ تحدّي شبكات واحداً مثل فك رموز تبادل ملتقَط.") },
@@ -751,6 +751,11 @@ print("same subnet as .62?", ipaddress.ip_address("192.168.10.62") in net)
 `,
       caption: l("The calculation every network engineer does by hand: one /26 holds 64 addresses, 62 of them usable. Change the prefix to /27 and predict the new range first.", "الحساب الذي يجريه كل مهندس شبكات يدوياً: شبكة /26 تضم 64 عنواناً منها 62 صالحاً. غيّر البادئة إلى /27 وتوقع النطاق الجديد أولاً."),
       output: "network    192.168.10.0\nbroadcast  192.168.10.63\nnetmask    255.255.255.192\nusable     62 hosts: 192.168.10.1 to 192.168.10.62\nsame subnet as .62? True\n",
+    },
+    lessonLinks: {
+      // The capture-dissection challenge practises reading 802.1Q tags and TCP flags.
+      "routing-switching": { challenges: ["net-frame-dissect"] },
+      "network-troubleshooting": { challenges: ["net-frame-dissect"] },
     },
   },
 
