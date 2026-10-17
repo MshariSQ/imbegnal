@@ -268,12 +268,14 @@ export const catalog: Catalog = {
       "lessons": [
         "how-programs-run",
         "assembly-basics",
-        "static-analysis-deobfuscation"
+        "static-analysis-deobfuscation",
+        "binary-formats-tools"
       ],
       "maxBonus": {
         "how-programs-run": 10,
         "assembly-basics": 10,
-        "static-analysis-deobfuscation": 10
+        "static-analysis-deobfuscation": 10,
+        "binary-formats-tools": 10
       }
     }
   ],
@@ -2848,6 +2850,129 @@ export const catalog: Catalog = {
           "name": "No key reveals the crib",
           "stdin": "zebra\n2f2e3529282f266129243324\n",
           "expected": "no key found\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/binary-formats-tools/segment-map",
+      "track": "reverse-engineering",
+      "lesson": "binary-formats-tools",
+      "id": "segment-map",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "segments 3\nLOAD 0x1000 0x200 RE\nLOAD 0x3000 0x100 RW\nGNU_STACK 0x0 0x0 RW\nsections 4\n.text 0x1000 0x1f0 AX\n.data 0x3000 0x20 WA\n.bss 0x3020 0x10 WA\n.comment 0x0 0x2d MS\n",
+          "expected": "00 LOAD r-x: .text\n01 LOAD rw-: .data .bss\n02 GNU_STACK rw-: (none)\nnot loaded: .comment\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The lesson's real PIE: sections in several segments at once",
+          "stdin": "segments 8\nINTERP 0x318 0x1c R\nLOAD 0x0 0x628 R\nLOAD 0x1000 0x18d RE\nLOAD 0x2000 0x100 R\nLOAD 0x3db8 0x268 RW\nDYNAMIC 0x3dc8 0x1f0 RW\nGNU_STACK 0x0 0x0 RW\nGNU_RELRO 0x3db8 0x248 R\nsections 15\n.interp 0x318 0x1c A\n.dynsym 0x3d8 0xa8 A\n.rela.plt 0x610 0x18 AI\n.plt 0x1020 0x20 AX\n.text 0x1060 0x11f AX\n.rodata 0x2000 0xa A\n.eh_frame 0x2048 0xb8 A\n.init_array 0x3db8 0x8 WA\n.dynamic 0x3dc8 0x1f0 WA\n.got 0x3fb8 0x48 WA\n.data 0x4000 0x14 WA\n.bss 0x4014 0xc WA\n.comment 0x0 0x2d MS\n.symtab 0x0 0x3a8 -\n.shstrtab 0x0 0x11a -\n",
+          "expected": "00 INTERP r--: .interp\n01 LOAD r--: .interp .dynsym .rela.plt\n02 LOAD r-x: .plt .text\n03 LOAD r--: .rodata .eh_frame\n04 LOAD rw-: .init_array .dynamic .got .data .bss\n05 DYNAMIC rw-: .dynamic\n06 GNU_STACK rw-: (none)\n07 GNU_RELRO r--: .init_array .dynamic .got\nnot loaded: .comment .symtab .shstrtab\n",
+          "mode": "trim"
+        },
+        {
+          "name": "One writable and executable segment, and an executable stack",
+          "stdin": "segments 2\nLOAD 0x400000 0x1000 RWE\nGNU_STACK 0x0 0x0 RWE\nsections 2\n.text 0x400080 0x40 AX\n.data 0x4000c0 0x10 WA\n",
+          "expected": "00 LOAD rwx: .text .data\n01 GNU_STACK rwx: (none)\nnot loaded: (none)\nwarning: 00 LOAD is writable and executable\nwarning: 01 GNU_STACK is writable and executable\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Boundaries: an exact fit, one byte too many, and a zero-size section",
+          "stdin": "segments 2\nLOAD 0x1000 0x100 RE\nLOAD 0x2000 0x100 RW\nsections 4\n.text 0x1000 0x100 AX\n.tm_clone_table 0x2000 0x0 WA\n.data 0x2000 0x100 WA\n.got 0x20f8 0x10 WA\n",
+          "expected": "00 LOAD r-x: .text\n01 LOAD rw-: .data\nnot loaded: .got\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An object file (.o) has no program headers at all",
+          "stdin": "segments 0\nsections 9\n.text 0x0 0x51 AX\n.rela.text 0x0 0x78 I\n.data 0x0 0x4 WA\n.bss 0x0 0x4 WA\n.rodata 0x0 0x6 A\n.comment 0x0 0x2e MS\n.note.GNU-stack 0x0 0x0 -\n.symtab 0x0 0xd8 -\n.strtab 0x0 0x27 -\n",
+          "expected": "not loaded: .text .rela.text .data .bss .rodata .comment .symtab .strtab\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/binary-formats-tools/pe-header",
+      "track": "reverse-engineering",
+      "lesson": "binary-formats-tools",
+      "id": "pe-header",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "The worked example: a 64-bit EXE",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n50 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n00 00 00 00 f0 00 22 00 0b 02 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 14 00 00 00 00 00 00\n00 00 00 40 01 00 00 00\n",
+          "expected": "format: PE32+\nmachine: x64\nsections: 3\nkind: EXE\nentry RVA: 0x1400\nimage base: 0x140000000\nentry VA: 0x140001400\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A 32-bit DLL: ImageBase moves to offset 28",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n50 45 00 00 4c 01 05 00 00 00 00 00 00 00 00 00\n00 00 00 00 e0 00 02 21 0b 01 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 a0 12 00 00 00 00 00 00\n00 00 00 00 00 00 00 10\n",
+          "expected": "format: PE32\nmachine: x86\nsections: 5\nkind: DLL\nentry RVA: 0x12a0\nimage base: 0x10000000\nentry VA: 0x100012a0\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An ARM64 EXE whose PE header starts at 0x80",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 80 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n50 45 00 00 64 aa 04 00 00 00 00 00 00 00 00 00\n00 00 00 00 f0 00 22 00 0b 02 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00\n00 00 00 40 01 00 00 00\n",
+          "expected": "format: PE32+\nmachine: ARM64\nsections: 4\nkind: EXE\nentry RVA: 0x2000\nimage base: 0x140000000\nentry VA: 0x140002000\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An old DOS-era file: MZ, but no PE signature",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n4e 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n",
+          "expected": "MZ file without a PE header\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An ELF file is not an MZ file",
+          "stdin": "7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00\n",
+          "expected": "not an MZ file\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Cut off inside the optional header",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n50 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n00 00 00 00 f0 00 22 00 0b 02 00 00 00 00 00 00\n00 00 00 00\n",
+          "expected": "truncated or corrupt PE header\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/binary-formats-tools/rva-to-offset",
+      "track": "reverse-engineering",
+      "lesson": "binary-formats-tools",
+      "id": "rva-to-offset",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example",
+          "stdin": "headers 0x400\nsections 3\n.text 0x1000 0x1a2c 0x400 0x1c00\n.rdata 0x3000 0x7f0 0x2000 0x800\n.data 0x4000 0x2000 0x2800 0x200\nqueries 4\n0x1010\n0x3100\n0x4500\n0x9000\n",
+          "expected": "0x1010 -> .text+0x10 at file offset 0x410\n0x3100 -> .rdata+0x100 at file offset 0x2100\n0x4500 -> .data+0x500 not in the file (zero-filled at load)\n0x9000 -> not in any section\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Headers and the edges of a section",
+          "stdin": "headers 0x400\nsections 1\n.text 0x1000 0xa2c 0x400 0xc00\nqueries 6\n0x0\n0x3ff\n0x400\n0x1000\n0x1a2b\n0x1a2c\n",
+          "expected": "0x0 -> headers at file offset 0x0\n0x3ff -> headers at file offset 0x3ff\n0x400 -> not in any section\n0x1000 -> .text+0x0 at file offset 0x400\n0x1a2b -> .text+0xa2b at file offset 0xe2b\n0x1a2c -> not in any section\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A section with no bytes in the file",
+          "stdin": "headers 0x400\nsections 2\n.text 0x1000 0x800 0x400 0x800\n.bss 0x2000 0x1000 0x0 0x0\nqueries 3\n0x2000\n0x2fff\n0x3000\n",
+          "expected": "0x2000 -> .bss+0x0 not in the file (zero-filled at load)\n0x2fff -> .bss+0xfff not in the file (zero-filled at load)\n0x3000 -> not in any section\n",
+          "mode": "trim"
+        },
+        {
+          "name": "VirtualSize 0: fall back to SizeOfRawData",
+          "stdin": "headers 0x200\nsections 2\nCODE 0x1000 0x0 0x200 0x600\nDATA 0x2000 0x0 0x800 0x200\nqueries 4\n0x15ff\n0x1600\n0x21ff\n0x2200\n",
+          "expected": "0x15ff -> CODE+0x5ff at file offset 0x7ff\n0x1600 -> not in any section\n0x21ff -> DATA+0x1ff at file offset 0x9ff\n0x2200 -> not in any section\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A 64-bit-sized image with upper-case hex in the queries",
+          "stdin": "headers 0x1000\nsections 2\n.text 0x1000 0x1f2e40 0x1000 0x1f3000\n.rsrc 0x3a0000 0x4a2b0 0x2b4000 0x4a400\nqueries 3\n0X1F2E3F\n0x3EA2AF\n0x3ea2b0\n",
+          "expected": "0x1f2e3f -> .text+0x1f1e3f at file offset 0x1f2e3f\n0x3ea2af -> .rsrc+0x4a2af at file offset 0x2fe2af\n0x3ea2b0 -> not in any section\n",
           "mode": "trim"
         }
       ]
