@@ -110,7 +110,7 @@ This is also why code that checksums itself notices software breakpoints: the by
 
 على Linux تُبنى المنقّحات وأدوات التتبّع على استدعاء نظام واحد هو **\`ptrace(2)\`**: يسمح لعملية *متتبِّعة (tracer)* بإيقاف عملية *متتبَّعة (tracee)*، وقراءة registers وذاكرتها والكتابة فيها، ثم استئنافها. ‏GDB و\`strace\` وأدوات كثيرة غيرها عملاء لـ ptrace.
 
-**نقاط التوقف البرمجية.** ليتوقف المنقّح عند عنوان، يكتب فوق أول بايت من التعليمة هناك القيمة \`0xCC\`، وهي تعليمة x86 ذات البايت الواحد \`int3\`، بعد أن يحفظ البايت الأصلي. وعندما ينفّذها المعالج، يوقف النواة العملية المتتبَّعة بالإشارة \`SIGTRAP\` ويُعلم المنقّح. في تلك اللحظة يكون \`rip\` قد صار يشير إلى بايت واحد *بعد* \`int3\`، فيقوم المنقّح بما يلي:
+**نقاط التوقف البرمجية.** ليتوقف المنقّح عند عنوان، يكتب فوق أول بايت من التعليمة هناك القيمة \`0xCC\`، وهي تعليمة x86 ذات البايت الواحد \`int3\`، بعد أن يحفظ البايت الأصلي. وعندما ينفّذها المعالج، تُوقف النواةُ العمليةَ المتتبَّعة بالإشارة \`SIGTRAP\` وتُعلِم المنقّح. في تلك اللحظة يكون \`rip\` قد صار يشير إلى بايت واحد *بعد* \`int3\`، فيقوم المنقّح بما يلي:
 
 1. يعيد \`rip\` إلى الخلف بايتاً واحداً
 2. يعيد البايت الأصلي إلى مكانه
@@ -189,7 +189,28 @@ info proc mappings             # the live memory map
 continue                       # run until the next stop (c)
 \`\`\`
 
-A real session on the lesson's checksum program (built with \`-O0 -g\`, shortened):
+The program under the debugger is the lesson's checksum calculator, \`checksum.c\`:
+
+\`\`\`c
+#include <stdio.h>
+#include <string.h>
+
+/* A tiny program written for the lesson: a checksum of its argument. */
+unsigned checksum(const char *s) {
+    unsigned sum = 0;
+    for (size_t i = 0; i < strlen(s); i++) sum = sum * 31 + (unsigned char)s[i];
+    return sum;
+}
+
+int main(int argc, char **argv) {
+    const char *word = argc > 1 ? argv[1] : "hello";
+    unsigned value = checksum(word);
+    printf("checksum(%s) = %u\\n", word, value);
+    return value == 0;
+}
+\`\`\`
+
+A real session on it (built with \`gcc -O0 -g checksum.c -o checksum\`, shortened):
 
 \`\`\`
 (gdb) break *0x555555555169
@@ -211,7 +232,7 @@ rsp            0x7fffffffc6d0      0x7fffffffc6d0
 Value returned is $1 = 106893
 \`\`\`
 
-Read the stack dump with the previous lesson in mind: after \`push rbp\`, the top of the stack holds the caller's saved \`rbp\`, and right above it is the **return address** \`0x555555555202\` that \`call\` pushed, a place inside \`main\`. (GDB shows \`s=0x0\` because the prologue has not yet copied the argument from \`rdi\` into the stack slot where the debug information says it lives.)
+Read the stack dump with the assembly lesson in mind: after \`push rbp\`, the top of the stack holds the caller's saved \`rbp\`, and right above it is the **return address** \`0x555555555202\` that \`call\` pushed, a place inside \`main\`. (GDB shows \`s=0x0\` because the prologue has not yet copied the argument from \`rdi\` into the stack slot where the debug information says it lives.)
 
 Notice the addresses: \`0x5555555...\`. GDB turns ASLR **off** for programs it starts (\`set disable-randomization on\` is the default), and a 64-bit PIE then lands at \`0x555555554000\`. Outside GDB the base changes on every run.`,
         ar: `## أساسيات GDB
@@ -237,7 +258,28 @@ info proc mappings             # the live memory map
 continue                       # run until the next stop (c)
 \`\`\`
 
-جلسة حقيقية على برنامج الـchecksum في هذا الدرس (مبني بـ \`-O0 -g\`، مختصرة):
+البرنامج الذي نشغّله تحت المنقّح هو حاسبة الـchecksum في هذا الدرس، \`checksum.c\`:
+
+\`\`\`c
+#include <stdio.h>
+#include <string.h>
+
+/* A tiny program written for the lesson: a checksum of its argument. */
+unsigned checksum(const char *s) {
+    unsigned sum = 0;
+    for (size_t i = 0; i < strlen(s); i++) sum = sum * 31 + (unsigned char)s[i];
+    return sum;
+}
+
+int main(int argc, char **argv) {
+    const char *word = argc > 1 ? argv[1] : "hello";
+    unsigned value = checksum(word);
+    printf("checksum(%s) = %u\\n", word, value);
+    return value == 0;
+}
+\`\`\`
+
+وهذه جلسة حقيقية عليه (مبني بـ \`gcc -O0 -g checksum.c -o checksum\`، مختصرة):
 
 \`\`\`
 (gdb) break *0x555555555169
@@ -259,7 +301,7 @@ rsp            0x7fffffffc6d0      0x7fffffffc6d0
 Value returned is $1 = 106893
 \`\`\`
 
-اقرأ تفريغ الـstack وأنت تتذكّر الدرس السابق: بعد \`push rbp\` تحمل قمة الـstack قيمة \`rbp\` المحفوظة للدالة المستدعية، وفوقها مباشرة **عنوان العودة** \`0x555555555202\` الذي دفعته \`call\`، وهو موضع داخل \`main\`. (يعرض GDB القيمة \`s=0x0\` لأن الـprologue لم ينسخ الوسيط بعدُ من \`rdi\` إلى خانة الـstack التي تقول معلومات التنقيح إنه يعيش فيها.)
+اقرأ تفريغ الـstack وأنت تتذكّر درس التجميع: بعد \`push rbp\` تحمل قمة الـstack قيمة \`rbp\` المحفوظة للدالة المستدعية، وفوقها مباشرة **عنوان العودة** \`0x555555555202\` الذي دفعته \`call\`، وهو موضع داخل \`main\`. (يعرض GDB القيمة \`s=0x0\` لأن الـprologue لم ينسخ الوسيط بعدُ من \`rdi\` إلى خانة الـstack التي تقول معلومات التنقيح إنه يعيش فيها.)
 
 لاحظ العناوين: ‏\`0x5555555...\`. يُعطّل GDB ميزة ASLR للبرامج التي يشغّلها (‏\`set disable-randomization on\` هو الافتراضي)، فيهبط ملف PIE بـ 64-bit عند \`0x555555554000\`. أما خارج GDB فتتغيّر القاعدة في كل تشغيل.`,
       },
@@ -520,10 +562,12 @@ st checksum 0x101169
 
 A program can only touch files, the network or other processes by asking the kernel through **system calls**. Watching those calls gives you a summary of its behavior without reading a single instruction. On Linux the tool is \`strace\`; on Windows, Sysinternals **Process Monitor** plays a similar role for file, registry and process activity.
 
-\`strace\` **runs the program**, so it belongs in the lab, never on a file you do not trust on your own machine. Real output (strace 6.8) for the lesson's notes program, which copies \`notes.txt\` to the screen and appends a line to \`log.txt\`:
+\`strace\` **runs the program**, so it belongs in the lab, never on a file you do not trust on your own machine. Real output (strace 6.8) for the lesson's notes program, which copies \`notes.txt\` to the screen and appends a line to \`log.txt\` (the program's own output goes to \`/dev/null\` here, so it does not mix with the trace):
 
 \`\`\`
-$ strace -e trace=openat,read,write,close ./notes
+$ strace -e trace=openat,read,write,close ./notes > /dev/null
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+close(3)                                = 0
 openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
 read(3, "\\177ELF\\2\\1\\1\\3\\0\\0\\0\\0\\0\\0\\0\\0\\3\\0>\\0\\1\\0\\0\\0\\220\\243\\2\\0\\0\\0\\0\\0"..., 832) = 832
 close(3)                                = 0
@@ -543,15 +587,17 @@ How to read a line: **name(arguments) = result**. \`openat\` returns a **file de
 openat(AT_FDCWD, "notes.txt", O_RDONLY) = -1 ENOENT (No such file or directory)
 \`\`\`
 
-Useful options: \`-f\` follows child processes, \`-e trace=file\` or \`-e trace=network\` selects families, \`-o trace.txt\` writes to a file (so the program's own output does not mix in), \`-s 200\` shows longer strings (the default is 32 characters), \`-p PID\` attaches to a running process, and \`-c\` prints a table of counts. The first lines of any dynamically linked program are the loader at work: opening libc, reading its ELF header, mapping it. Learn to skip them.`,
+Useful options: \`-f\` follows child processes, \`-e trace=file\` or \`-e trace=network\` selects families, \`-o trace.txt\` writes to a file (so the program's own output does not mix in), \`-s 200\` shows longer strings (the default is 32 characters), \`-p PID\` attaches to a running process, and \`-c\` prints a table of counts. The first lines of any dynamically linked program are the loader at work: opening \`/etc/ld.so.cache\` (the index of installed libraries), then libc, reading its ELF header, mapping it. Learn to skip them.`,
         ar: `## تتبّع استدعاءات النظام بـ strace
 
 لا يستطيع البرنامج لمس الملفات أو الشبكة أو العمليات الأخرى إلا بأن يطلب ذلك من النواة عبر **استدعاءات النظام (system calls)**. ومراقبة هذه الاستدعاءات تعطيك ملخصاً لسلوكه دون قراءة تعليمة واحدة. على Linux الأداة هي \`strace\`؛ وعلى Windows يؤدي **Process Monitor** من Sysinternals دوراً مشابهاً لنشاط الملفات والسجل (registry) والعمليات.
 
-الأداة \`strace\` **تشغّل البرنامج**، فمكانها المختبر، ولا تستخدمها أبداً على ملف لا تثق به في جهازك. هذا ناتج حقيقي (‏strace 6.8) لبرنامج الملاحظات في هذا الدرس، الذي ينسخ \`notes.txt\` إلى الشاشة ويضيف سطراً إلى \`log.txt\`:
+الأداة \`strace\` **تشغّل البرنامج**، فمكانها المختبر، ولا تستخدمها أبداً على ملف لا تثق به في جهازك. هذا ناتج حقيقي (‏strace 6.8) لبرنامج الملاحظات في هذا الدرس، الذي ينسخ \`notes.txt\` إلى الشاشة ويضيف سطراً إلى \`log.txt\` (ويذهب ناتج البرنامج نفسه هنا إلى \`/dev/null\` حتى لا يختلط بالتتبّع):
 
 \`\`\`
-$ strace -e trace=openat,read,write,close ./notes
+$ strace -e trace=openat,read,write,close ./notes > /dev/null
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+close(3)                                = 0
 openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
 read(3, "\\177ELF\\2\\1\\1\\3\\0\\0\\0\\0\\0\\0\\0\\0\\3\\0>\\0\\1\\0\\0\\0\\220\\243\\2\\0\\0\\0\\0\\0"..., 832) = 832
 close(3)                                = 0
@@ -571,7 +617,7 @@ close(3)                                = 0
 openat(AT_FDCWD, "notes.txt", O_RDONLY) = -1 ENOENT (No such file or directory)
 \`\`\`
 
-خيارات مفيدة: ‏\`-f\` يتبع العمليات الأبناء، و\`-e trace=file\` أو \`-e trace=network\` يختار عائلات من الاستدعاءات، و\`-o trace.txt\` يكتب في ملف (فلا يختلط ناتج البرنامج نفسه بالتتبّع)، و\`-s 200\` يعرض نصوصاً أطول (الافتراضي 32 محرفاً)، و\`-p PID\` يلتصق بعملية تعمل، و\`-c\` يطبع جدولاً بالأعداد. والأسطر الأولى في أي برنامج مربوط ديناميكياً هي عمل المُحمِّل: فتح libc وقراءة ترويسة ELF الخاصة بها وتحميلها. تعلّم أن تتخطاها.`,
+خيارات مفيدة: ‏\`-f\` يتبع العمليات الأبناء، و\`-e trace=file\` أو \`-e trace=network\` يختار عائلات من الاستدعاءات، و\`-o trace.txt\` يكتب في ملف (فلا يختلط ناتج البرنامج نفسه بالتتبّع)، و\`-s 200\` يعرض نصوصاً أطول (الافتراضي 32 محرفاً)، و\`-p PID\` يلتصق بعملية تعمل، و\`-c\` يطبع جدولاً بالأعداد. والأسطر الأولى في أي برنامج مربوط ديناميكياً هي عمل المُحمِّل: فتح \`/etc/ld.so.cache\` (فهرس المكتبات المثبَّتة)، ثم فتح libc وقراءة ترويسة ELF الخاصة بها وتحميلها. تعلّم أن تتخطاها.`,
       },
     },
     {
@@ -760,8 +806,12 @@ stdout: read 0, wrote 9
 failed: openat missing.txt ENOENT
 exit: 0
 ` },
-        { name: { en: "The lesson's real trace, loader lines included", ar: "التتبّع الحقيقي في الدرس، مع أسطر المُحمِّل" }, stdin: `execve("./notes", ["./notes"], 0x7ffd3c1a2b40 /* 24 vars */) = 0
+        { name: { en: "The lesson's real trace (shortened), loader lines included", ar: "التتبّع الحقيقي في الدرس (مختصراً)، مع أسطر المُحمِّل" }, stdin: `execve("./notes", ["./notes"], 0x7ffd362de8c0 /* 157 vars */) = 0
 access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=43123, ...}) = 0
+mmap(NULL, 43123, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f5c98495000
+close(3)                                = 0
 openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
 read(3, "\\177ELF\\2\\1\\1\\3\\0\\0\\0\\0\\0\\0\\0\\0\\3\\0>\\0\\1\\0\\0\\0\\220\\243\\2\\0\\0\\0\\0\\0"..., 832) = 832
 close(3)                                = 0
@@ -774,7 +824,8 @@ write(3, "read notes\\n", 11)            = 11
 close(3)                                = 0
 exit_group(0)                           = ?
 +++ exited with 0 +++
-`, expected: `/lib/x86_64-linux-gnu/libc.so.6: read 832, wrote 0
+`, expected: `/etc/ld.so.cache: read 0, wrote 0
+/lib/x86_64-linux-gnu/libc.so.6: read 832, wrote 0
 notes.txt: read 9, wrote 0
 stdout: read 0, wrote 9
 log.txt: read 0, wrote 11
@@ -1141,12 +1192,13 @@ halted after 11 steps
 `, expected: `15
 halted after 19 steps
 ` },
-        { name: { en: "Watch an XOR decode a value; one breakpoint is never hit and the program runs off its end", ar: "راقب XOR وهو يفك قيمة؛ نقطة توقف لا تُصاب أبداً والبرنامج يتجاوز نهايته" }, stdin: `break 6 0x09 0x40
-01 02 5a 01 03 2a 04 02 03 07 02
+        { name: { en: "Watch an XOR decode a value and a SUB go negative; one breakpoint is never hit and the program runs off its end", ar: "راقب XOR وهو يفك قيمة وSUB وهو ينتج قيمة سالبة؛ نقطة توقف لا تُصاب أبداً والبرنامج يتجاوز نهايته" }, stdin: `break 6 0x09 0x40
+01 02 5a 01 03 2a 04 02 03 07 02 03 03 02 07 03
 `, expected: `break 0x06: r0=0 r1=0 r2=90 r3=42
 break 0x09: r0=0 r1=0 r2=112 r3=42
 112
-halted after 4 steps
+-70
+halted after 6 steps
 ` },
         { name: { en: "Output first, then an unknown opcode", ar: "مخرجات أولاً ثم رمز عملية غير معروف" }, stdin: `break 0x03
 01 01 07 07 01 09 01
@@ -1254,7 +1306,7 @@ fault at 0x05: unknown opcode 0x09
 - \`strace\` shows **system calls**: track descriptors carefully, since they are reused
 - Bytecode VMs are studied through their **dispatch loop**: recover the opcodes, then write your own disassembler and interpreter with breakpoints
 
-**Practice next:** compile the lesson's checksum program yourself, run it under GDB, and find the loop's backward jump with \`x/20i\`; set a \`watch\` on \`sum\` and watch it change. Trace your own small programs with \`strace -f -o trace.txt\` and feed the log to your trace-report tool. Extend your VM with a \`trace\` mode that prints every instruction, and a tiny disassembler for the same bytecode. Next: the rules of the road in depth, with law, ethics and responsible disclosure.`,
+**Practice next:** compile the lesson's \`checksum.c\` yourself with \`-O0 -g\`, run it under GDB, and find the loop's backward jump in \`disassemble checksum\`; set a \`watch\` on \`sum\` and watch it change. Trace your own small programs with \`strace -o trace.txt\` and feed the log to your trace-report tool (leave out \`-f\` here: with it, every line starts with a process id that the tool does not expect). Extend your VM with a \`trace\` mode that prints every instruction, and a tiny disassembler for the same bytecode. Next: the rules of the road in depth, with law, ethics and responsible disclosure.`,
         ar: `## الخلاصة وماذا تتدرّب عليه بعد ذلك
 
 - التحليل الديناميكي **يشغّل الكود**: دائماً داخل جهاز افتراضي يمكن التخلص منه مع لقطات، ودون مجلدات مشتركة، وبشبكة مضبوطة، وعلى برامج مصرَّح بها فقط
@@ -1264,7 +1316,7 @@ fault at 0x05: unknown opcode 0x09
 - يعرض \`strace\` **استدعاءات النظام**: تتبّع الواصفات بعناية لأنها يُعاد استخدامها
 - تُدرس آلات الـbytecode الافتراضية عبر **حلقة التوزيع**: استعد رموز العمليات ثم اكتب مفكِّكك ومفسِّرك الخاصين بنقاط توقف
 
-**تدرّب بعد ذلك:** صرّف برنامج الـchecksum في هذا الدرس بنفسك، وشغّله تحت GDB، وابحث عن قفزة الحلقة للخلف بالأمر \`x/20i\`؛ وضع \`watch\` على \`sum\` وشاهده يتغير. تتبّع برامجك الصغيرة بـ \`strace -f -o trace.txt\` وأعطِ السجل لأداة تلخيص التتبّع التي كتبتها. ووسّع آلتك الافتراضية بوضع \`trace\` يطبع كل تعليمة، وبمفكِّك صغير للـbytecode نفسه. والتالي: قواعد الطريق بالتفصيل، مع القانون والأخلاقيات والإفصاح المسؤول.`,
+**تدرّب بعد ذلك:** صرّف الملف \`checksum.c\` في هذا الدرس بنفسك بالخيارين \`-O0 -g\`، وشغّله تحت GDB، وابحث عن قفزة الحلقة للخلف في ناتج \`disassemble checksum\`؛ وضع \`watch\` على \`sum\` وشاهده يتغير. تتبّع برامجك الصغيرة بـ \`strace -o trace.txt\` وأعطِ السجل لأداة تلخيص التتبّع التي كتبتها (ولا تستخدم \`-f\` هنا: فمعه يبدأ كل سطر برقم العملية، وهذا ما لا تتوقعه الأداة). ووسّع آلتك الافتراضية بوضع \`trace\` يطبع كل تعليمة، وبمفكِّك صغير للـbytecode نفسه. والتالي: قواعد الطريق بالتفصيل، مع القانون والأخلاقيات والإفصاح المسؤول.`,
       },
     },
   ],
