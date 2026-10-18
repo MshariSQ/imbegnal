@@ -1802,9 +1802,9 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "A symlink chain works, a symlink loop does not",
-          "stdin": "symlink b a\nsymlink a b\ncat a\ncreate c hello world\nsymlink c d\nsymlink d e\ncat e\n",
-          "expected": "cat a: Too many levels of symbolic links\nhello world\n1 1 a -> b\n2 1 b -> a\n3 1 c\n4 1 d -> c\n5 1 e -> d\ninodes in use: 5",
+          "name": "A chain of 40 symlinks works; 41, or a loop, is too many",
+          "stdin": "create f data\nsymlink f s1\nsymlink s1 s2\nsymlink s2 s3\nsymlink s3 s4\nsymlink s4 s5\nsymlink s5 s6\nsymlink s6 s7\nsymlink s7 s8\nsymlink s8 s9\nsymlink s9 s10\nsymlink s10 s11\nsymlink s11 s12\nsymlink s12 s13\nsymlink s13 s14\nsymlink s14 s15\nsymlink s15 s16\nsymlink s16 s17\nsymlink s17 s18\nsymlink s18 s19\nsymlink s19 s20\nsymlink s20 s21\nsymlink s21 s22\nsymlink s22 s23\nsymlink s23 s24\nsymlink s24 s25\nsymlink s25 s26\nsymlink s26 s27\nsymlink s27 s28\nsymlink s28 s29\nsymlink s29 s30\nsymlink s30 s31\nsymlink s31 s32\nsymlink s32 s33\nsymlink s33 s34\nsymlink s34 s35\nsymlink s35 s36\nsymlink s36 s37\nsymlink s37 s38\nsymlink s38 s39\nsymlink s39 s40\nsymlink s40 s41\ncat s40\ncat s41\nsymlink b a\nsymlink a b\ncat a\n",
+          "expected": "data\ncat s41: Too many levels of symbolic links\ncat a: Too many levels of symbolic links\n43 1 a -> b\n44 1 b -> a\n1 1 f\n2 1 s1 -> f\n11 1 s10 -> s9\n12 1 s11 -> s10\n13 1 s12 -> s11\n14 1 s13 -> s12\n15 1 s14 -> s13\n16 1 s15 -> s14\n17 1 s16 -> s15\n18 1 s17 -> s16\n19 1 s18 -> s17\n20 1 s19 -> s18\n3 1 s2 -> s1\n21 1 s20 -> s19\n22 1 s21 -> s20\n23 1 s22 -> s21\n24 1 s23 -> s22\n25 1 s24 -> s23\n26 1 s25 -> s24\n27 1 s26 -> s25\n28 1 s27 -> s26\n29 1 s28 -> s27\n30 1 s29 -> s28\n4 1 s3 -> s2\n31 1 s30 -> s29\n32 1 s31 -> s30\n33 1 s32 -> s31\n34 1 s33 -> s32\n35 1 s34 -> s33\n36 1 s35 -> s34\n37 1 s36 -> s35\n38 1 s37 -> s36\n39 1 s38 -> s37\n40 1 s39 -> s38\n5 1 s4 -> s3\n41 1 s40 -> s39\n42 1 s41 -> s40\n6 1 s5 -> s4\n7 1 s6 -> s5\n8 1 s7 -> s6\n9 1 s8 -> s7\n10 1 s9 -> s8\ninodes in use: 44",
           "mode": "trim"
         },
         {
@@ -1820,9 +1820,9 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "A hard link to a symlink shares the symlink's inode",
-          "stdin": "create t text\nsymlink t s\nlink s s2\nrm t\ncat s2\ncreate t back again\ncat s2\n",
-          "expected": "cat s2: No such file or directory\nback again\n2 2 s -> t\n2 2 s2 -> t\n3 1 t\ninodes in use: 2",
+          "name": "A hard link to a symlink shares its inode; rm removes the link, not its target",
+          "stdin": "create t text\nsymlink t s\nlink s s2\nrm t\ncat s2\ncreate t back again\ncat s2\nrm s\ncat t\n",
+          "expected": "cat s2: No such file or directory\nback again\nback again\n2 1 s2 -> t\n3 1 t\ninodes in use: 2",
           "mode": "trim"
         },
         {

@@ -1,5 +1,25 @@
 import type { Lesson } from "../types";
 
+// link-table: f is inode 1, s1 -> f is inode 2, s2 -> s1 is inode 3, ..., s41 -> s40 is inode 42,
+// then the loop a -> b (43), b -> a (44). cat s40 follows exactly 40 symlinks (allowed); cat s41
+// needs 41 and cat a never ends (both ELOOP).
+const chainLinks = Array.from({ length: 41 }, (_, i) => ({ name: "s" + (i + 1), target: i === 0 ? "f" : "s" + i, inode: i + 2 }));
+const chainStdin =
+  "create f data\n" + chainLinks.map((s) => "symlink " + s.target + " " + s.name).join("\n") + "\ncat s40\ncat s41\nsymlink b a\nsymlink a b\ncat a\n";
+const chainExpected = [
+  "data",
+  "cat s41: Too many levels of symbolic links",
+  "cat a: Too many levels of symbolic links",
+  "43 1 a -> b",
+  "44 1 b -> a",
+  "1 1 f",
+  ...chainLinks
+    .map((s) => ({ name: s.name, line: `${s.inode} 1 ${s.name} -> ${s.target}` }))
+    .sort((x, y) => (x.name < y.name ? -1 : 1))
+    .map((e) => e.line),
+  "inodes in use: 44",
+].join("\n");
+
 export const lesson: Lesson = {
   nodeId: "file-systems",
   title: { en: "File Systems & Storage — From a Name to Disk Blocks", ar: "أنظمة الملفات والتخزين — من الاسم إلى كتل القرص" },
@@ -629,16 +649,9 @@ cat latest: No such file or directory
 inodes in use: 2`,
         },
         {
-          name: { en: "A symlink chain works, a symlink loop does not", ar: "سلسلة روابط رمزية تعمل وحلقة روابط لا تعمل" },
-          stdin: "symlink b a\nsymlink a b\ncat a\ncreate c hello world\nsymlink c d\nsymlink d e\ncat e\n",
-          expected: `cat a: Too many levels of symbolic links
-hello world
-1 1 a -> b
-2 1 b -> a
-3 1 c
-4 1 d -> c
-5 1 e -> d
-inodes in use: 5`,
+          name: { en: "A chain of 40 symlinks works; 41, or a loop, is too many", ar: "سلسلة من 40 رابطاً رمزياً تعمل؛ و41 رابطاً أو حلقة أكثر من اللازم" },
+          stdin: chainStdin,
+          expected: chainExpected,
         },
         {
           name: { en: "Errors change nothing", ar: "الأخطاء لا تغيّر شيئاً" },
@@ -661,12 +674,12 @@ inodes in use: 1`,
 inodes in use: 1`,
         },
         {
-          name: { en: "A hard link to a symlink shares the symlink's inode", ar: "الرابط الصلب إلى رابط رمزي يشاركه الـ inode" },
-          stdin: "create t text\nsymlink t s\nlink s s2\nrm t\ncat s2\ncreate t back again\ncat s2\n",
+          name: { en: "A hard link to a symlink shares its inode; rm removes the link, not its target", ar: "الرابط الصلب إلى رابط رمزي يشاركه الـ inode؛ ويزيل rm الرابط لا هدفه" },
+          stdin: "create t text\nsymlink t s\nlink s s2\nrm t\ncat s2\ncreate t back again\ncat s2\nrm s\ncat t\n",
           expected: `cat s2: No such file or directory
 back again
-2 2 s -> t
-2 2 s2 -> t
+back again
+2 1 s2 -> t
 3 1 t
 inodes in use: 2`,
         },
