@@ -154,6 +154,8 @@ for (const lang of LANGS) {
       // Skills and job titles are in the hero too (before the courses on a phone)
       for (const skill of s.skills) assert.ok(hero.includes(skill[lang]), `skill ${skill[lang]}`);
       for (const job of s.jobs) assert.ok(hero.includes(job[lang]), `job ${job[lang]}`);
+      // The navbar highlights Career paths on a role page
+      assert.equal(await page.getByRole("navigation", { name: "Main" }).locator('a[href="/roadmaps/"]').first().getAttribute("aria-current"), "page");
       // Breadcrumb: the role is the current page, the category is not
       const current = page.locator("section[aria-labelledby=path-title] nav [aria-current]");
       assert.equal(await current.count(), 1);
@@ -264,6 +266,10 @@ for (const lang of LANGS) {
       const h1 = page.locator("h1");
       await h1.filter({ hasText: trackName(track, lang) }).waitFor({ timeout: 10_000 });
       assert.ok((await h1.innerText()).includes(T.mapEyebrow), "retitled Course map");
+      // The navbar files a course map under Courses, not Career paths
+      const mainNav = page.getByRole("navigation", { name: "Main" });
+      assert.equal(await mainNav.locator('a[href="/courses/"]').first().getAttribute("aria-current"), "page");
+      assert.equal(await mainNav.locator('a[href="/roadmaps/"]').first().getAttribute("aria-current"), null);
       // the stored progress is still read with the track id
       await page.getByText(`2 / ${nodes.length}`).waitFor({ timeout: 10_000 });
       assert.equal(asked, track);

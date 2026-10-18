@@ -6,11 +6,15 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { CAREER_PATH_IDS, isCourseMapPath } from "../../data/career-path-keys";
 import { PATH_CATEGORIES, PATH_LEVELS, careerPaths, plannedCourses, type CareerPath } from "../../data/career-paths";
 import { roadmaps } from "../../data/roadmaps";
 import { loadLesson } from "../../data/lessons";
 import { courses } from "../../lib/catalog";
 import {
+  coursePathLinks,
   hoursFromMinutes,
   nextCourse,
   pathProgress,
@@ -287,3 +291,55 @@ test("track levels map onto path levels ('All Levels' matches every level)", () 
   assert.deepEqual(trackLevels("Advanced"), ["advanced"]);
   assert.deepEqual(trackLevels("All Levels"), ["beginner", "intermediate", "advanced"]);
 });
+
+test("CAREER_PATH_IDS (the light list the navbar reads) is the path data's ids, in order", () => {
+  assert.deepEqual([...CAREER_PATH_IDS], careerPaths.map((p) => p.id));
+});
+
+test("isCourseMapPath: /roadmaps/<track-id>/ is a course map, /roadmaps/<path-id>/ and /roadmaps/ are not", () => {
+  for (const id of trackIds) {
+    assert.equal(isCourseMapPath(`/roadmaps/${id}/`), true, id);
+    assert.equal(isCourseMapPath(`/roadmaps/${id}`), true, id);
+  }
+  for (const id of CAREER_PATH_IDS) assert.equal(isCourseMapPath(`/roadmaps/${id}/`), false, id);
+  for (const p of ["/roadmaps/", "/roadmaps", "/", "/learn/networking/", "/courses/"]) assert.equal(isCourseMapPath(p), false, p);
+});
+
+test("coursePathLinks: the props the course page and course map get, in path order", () => {
+  for (const id of trackIds) {
+    assert.deepEqual(
+      coursePathLinks(id),
+      pathsWithCourse(id).map(({ path, position, total, level }) => ({ id: path.id, title: path.title, icon: path.icon, position, total, level })),
+      id
+    );
+  }
+  assert.deepEqual(coursePathLinks("networking").map((x) => x.id), ["soc-analyst", "penetration-tester", "cloud-engineer", "devops-engineer"]);
+});
+
+/**
+ * The paths' text (data/career-paths.ts, ~50 KB) must not reach pages that only show paths they get
+ * as props (home, course pages, course maps, role pages): these client modules may import only types
+ * from the modules that load it.
+ */
+test("client components that get paths as props never import the path data", () => {
+  const ROOT = join(__dirname, "../..");
+  // a value import (not `import type`) from data/career-paths or lib/career-paths
+  const heavy = /^import\s+(?!type\b)[^;]*from\s+"(@\/data\/career-paths|@\/lib\/career-paths|\.\/career-paths)"/m;
+  for (const f of [
+    "lib/path-progress.ts",
+    "components/paths/PathCard.tsx",
+    "components/paths/PathBits.tsx",
+    "components/paths/CareerPathPage.tsx",
+    "components/paths/CareerPathsGrid.tsx",
+    "components/paths/PathsForCourse.tsx",
+    "components/home/Home.tsx",
+    "components/layout/Navbar.tsx",
+    "components/learn/CourseOverview.tsx",
+    "app/roadmaps/[slug]/RoadmapClient.tsx",
+    "app/roadmaps/[slug]/RoadmapWrapper.tsx",
+  ]) {
+    const src = readFileSync(join(ROOT, f), "utf8");
+    assert.ok(!heavy.test(src), `${f} imports a value from the path data`);
+  }
+});
+

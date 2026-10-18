@@ -4,8 +4,8 @@ import Link from "next/link";
 import {
   ArrowRight, Award, BarChart3, BookOpen, Briefcase, CheckCircle2, Circle, Clock, Heart, Map, PlayCircle, Sparkles, Trophy,
 } from "lucide-react";
-import { PATH_LEVELS } from "@/data/career-paths";
-import { hoursFromMinutes, nextCourse, pathProgress, type PathCourse, type PathProgress, type PathSummary } from "@/lib/career-paths";
+import { PATH_LEVELS } from "@/data/career-path-keys";
+import { hoursFromMinutes, nextCourse, pathProgress, type PathCourse, type PathProgress, type PathSummary } from "@/lib/path-progress";
 import { useLang } from "@/lib/lang-context";
 import { countLabel, hoursLabel } from "@/lib/plural";
 import { useStudy } from "@/lib/study-store";

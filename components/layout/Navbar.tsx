@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Zap, LogOut, User, ChevronDown, LayoutDashboard, Languages } from "lucide-react";
 import { useAuthUser, signOut } from "@/lib/auth";
 import { useLang } from "@/lib/lang-context";
+import { isCourseMapPath } from "@/data/career-path-keys";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import Avatar from "@/components/ui/Avatar";
 
@@ -52,7 +53,12 @@ export default function Navbar() {
     { label: tx.nav.pricing, href: "/pricing/" },
   ];
   const under = (prefix: string) => pathname.startsWith(prefix.replace(/\/$/, ""));
-  const isActive = (href: string) => under(href) || !!navLinks.find((l) => l.href === href)?.also?.some(under);
+  // A course map (/roadmaps/<track-id>/) is part of its course: Courses, not Career paths.
+  const courseMap = isCourseMapPath(pathname);
+  const isActive = (href: string) =>
+    courseMap && (href === "/roadmaps/" || href === "/courses/")
+      ? href === "/courses/"
+      : under(href) || !!navLinks.find((l) => l.href === href)?.also?.some(under);
   const toggleLang = () => setLang(lang === "en" ? "ar" : "en");
 
   return (

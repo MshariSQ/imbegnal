@@ -24,6 +24,7 @@ import { getProgress, markNodeDone, markNodeUndone } from "@/lib/api";
 import { useLang } from "@/lib/lang-context";
 import { getCourse, trackTitle } from "@/lib/catalog";
 import PathsForCourse from "@/components/paths/PathsForCourse";
+import type { CoursePathLink } from "@/lib/career-paths";
 
 const LessonView = dynamic(() => import("@/components/lesson/LessonView"), {
   ssr: false,
@@ -89,9 +90,12 @@ function ResourceCard({
 export default function RoadmapClient({
   nodeData,
   roadmapId,
+  paths,
 }: {
   nodeData: RoadmapNodeInfo[];
   roadmapId: string;
+  /** The career paths that include this course (computed by the server page). */
+  paths: CoursePathLink[];
 }) {
   const [selectedId, setSelectedId] = useState(nodeData[0]?.id ?? "");
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -201,7 +205,7 @@ export default function RoadmapClient({
           </div>
         )}
         <div className="sm:ms-auto">
-          <PathsForCourse trackId={roadmapId} variant="inline" />
+          <PathsForCourse paths={paths} variant="inline" />
         </div>
       </div>
 

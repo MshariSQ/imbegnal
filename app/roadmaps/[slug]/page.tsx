@@ -4,7 +4,7 @@ import { roadmaps } from "@/data/roadmaps";
 import { careerPaths, getCareerPath } from "@/data/career-paths";
 import { NODE_DATA } from "@/data/roadmap-nodes";
 import { trackDescription, trackTitle } from "@/lib/catalog";
-import { resolvePath } from "@/lib/career-paths";
+import { coursePathLinks, resolvePath } from "@/lib/career-paths";
 import { courseFigures } from "@/lib/career-paths-server";
 import { SITE_URL, pageOpenGraph } from "@/lib/site";
 import CareerPathPage from "@/components/paths/CareerPathPage";
@@ -91,5 +91,5 @@ export default async function RoadmapPage({ params }: Props) {
     );
   }
 
-  return <RoadmapWrapper nodeData={nodeData} roadmapId={slug} />;
+  return <RoadmapWrapper nodeData={nodeData} roadmapId={slug} paths={coursePathLinks(slug)} />;
 }

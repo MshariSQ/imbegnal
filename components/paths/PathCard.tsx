@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { BarChart3, BookOpen, Check, Clock } from "lucide-react";
-import { hoursFromMinutes, pathProgress, type PathSummary } from "@/lib/career-paths";
+import { hoursFromMinutes, pathProgress, type PathSummary } from "@/lib/path-progress";
 import { useLang } from "@/lib/lang-context";
 import { hoursLabel } from "@/lib/plural";
 import { useStudy } from "@/lib/study-store";

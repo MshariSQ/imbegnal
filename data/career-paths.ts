@@ -11,19 +11,18 @@
  * of the courses that exist (lib/catalog + lesson minutes), so lessons added later are counted.
  *
  * Rules enforced by tests/unit/career-paths.test.ts:
- *  - ids are unique and never equal a track id (/roadmaps/<track-id>/ is that course's map)
+ *  - ids are unique, never equal a track id (/roadmaps/<track-id>/ is that course's map) and are
+ *    listed in CAREER_PATH_IDS (data/career-path-keys.ts, read by the navbar)
  *  - every referenced course is a track or a planned course; planned ids are not track ids
  *    (delete the planned entry in the change that ships the course)
  *  - levels never go down along a path; every learner-facing string is bilingual
  *  - 3 "if you like" items, 5-8 skills, at least 2 job titles, a "why" line per course
  */
 import type { L10n } from "./lessons/types";
+import type { PathCategory, PathLevel } from "./career-path-keys";
 
-export const PATH_LEVELS = ["beginner", "intermediate", "advanced"] as const;
-export type PathLevel = (typeof PATH_LEVELS)[number];
-
-export const PATH_CATEGORIES = ["security", "software", "data-ai", "cloud-devops", "design"] as const;
-export type PathCategory = (typeof PATH_CATEGORIES)[number];
+// Ids, levels and categories live in the light module (no path text), re-exported here.
+export { CAREER_PATH_IDS, PATH_CATEGORIES, PATH_LEVELS, type PathCategory, type PathLevel } from "./career-path-keys";
 
 export interface PathStep {
   /** Track id (data/roadmaps.ts) or planned course id (`plannedCourses`). */

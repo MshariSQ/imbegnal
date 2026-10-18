@@ -8,7 +8,7 @@ import { useLang } from "@/lib/lang-context";
 import { useAuthUser } from "@/lib/auth";
 import CourseCard, { type CourseCardData } from "@/components/learn/CourseCard";
 import PathCard from "@/components/paths/PathCard";
-import type { PathSummary } from "@/lib/career-paths";
+import type { PathSummary } from "@/lib/path-progress";
 
 export type HomeCourse = CourseCardData;
 

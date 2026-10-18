@@ -1,6 +1,6 @@
 "use client";
 
-import type { PathLevel } from "@/data/career-paths";
+import type { PathLevel } from "@/data/career-path-keys";
 import type { Tx } from "@/lib/i18n";
 import { fmt } from "@/components/learn/PracticeLink";
 

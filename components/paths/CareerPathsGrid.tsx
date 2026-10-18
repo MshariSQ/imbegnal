@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
-import { PATH_CATEGORIES, PATH_LEVELS, type PathCategory, type PathLevel } from "@/data/career-paths";
-import type { PathSummary } from "@/lib/career-paths";
+import { PATH_CATEGORIES, PATH_LEVELS, type PathCategory, type PathLevel } from "@/data/career-path-keys";
+import type { PathSummary } from "@/lib/path-progress";
 import { useLang } from "@/lib/lang-context";
 import PageHeader from "@/components/ui/PageHeader";
 import { fmt } from "@/components/learn/PracticeLink";
