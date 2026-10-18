@@ -20,12 +20,12 @@ This lesson is about **defending systems you are responsible for**. You will wri
         ar: `## ماذا ستتعلم
 
 - كيف تقرّر النواة ما يحق للعملية فعله: **نمط النواة ونمط المستخدم (kernel mode / user mode)**، ومعرّفات **UID** الحقيقية والفعّالة، و**مبدأ أقل الامتيازات (least privilege)**
-- كيف تقسّم **امتيازات (capabilities)** لينكس قوة الجذر إلى نحو أربعين قطعة، وكيف تقرأ مجموعات امتيازات عملية ما
+- كيف تقسّم **قدرات (capabilities)** لينكس قوة الجذر إلى نحو أربعين قطعة، وكيف تقرأ مجموعات قدرات عملية ما
 - كيف تعزل عملية في **صندوق رمل (sandbox)** باستخدام **seccomp** و**no_new_privs** وفضاءات الأسماء وخيارات العزل في systemd
 - مِمَّ تحمي **NX** و**ASLR** و**كناري المكدّس (stack canaries)** و**RELRO**، ومِمَّ لا تحمي
 - روتين **تقوية (hardening)** عملي: التحديثات الأمنية، والحد الأدنى من الخدمات، وSSH، والجدران النارية، وصلاحيات الملفات، والتدقيق
 
-يتناول هذا الدرس **الدفاع عن الأنظمة التي أنت مسؤول عنها**. ستكتب مفكّك امتيازات بلغة C، ومقيّم سياسات seccomp بلغة Python، وتدقيقاً للصلاحيات بلغة Bash، وكلها تعمل على بيانات مختلَقة.`,
+يتناول هذا الدرس **الدفاع عن الأنظمة التي أنت مسؤول عنها**. ستكتب مفكّك قدرات بلغة C، ومقيّم سياسات seccomp بلغة Python، وتدقيقاً للصلاحيات بلغة Bash، وكلها تعمل على بيانات مختلَقة.`,
       },
     },
     {
@@ -159,9 +159,9 @@ CapAmb: 0000000000000000
 \`capsh --decode=00000000a80425fb\` turns a mask into names. Least privilege with capabilities means giving a program **only** the one it needs: \`setcap cap_net_bind_service=+ep ./server\` lets a web server bind port 443 without running as root, and \`docker run --cap-drop ALL --cap-add NET_BIND_SERVICE\` does the same for a container. The Code Lab runner that executes your lab code drops **all** capabilities and sets \`no-new-privileges\`.
 
 Some capabilities are, in practice, as good as root, because each one opens a path to full control of the machine: \`CAP_SYS_ADMIN\`, \`CAP_SYS_MODULE\` (load code into the kernel), \`CAP_SYS_RAWIO\` (raw access to devices and I/O ports), \`CAP_SYS_PTRACE\` and \`CAP_DAC_READ_SEARCH\` (read any file). Seeing one of them on a service is worth a question.`,
-        ar: `## الامتيازات: الجذر قطعاً 🧩
+        ar: `## القدرات: الجذر قطعاً 🧩
 
-منذ لينكس 2.2 تقسّم النواة قوة الجذر إلى **امتيازات (capabilities)** (\`capabilities(7)\`)؛ وتعرّف النوى الحديثة 41 امتيازاً مرقّمة من 0 إلى 40. بعض الأمثلة:
+منذ لينكس 2.2 تقسّم النواة قوة الجذر إلى **قدرات (capabilities)** (\`capabilities(7)\`)؛ وتعرّف النوى الحديثة 41 قدرة مرقّمة من 0 إلى 40. بعض الأمثلة:
 
 - \`CAP_NET_BIND_SERVICE\` (10): الربط بالمنافذ الأقل من 1024
 - \`CAP_CHOWN\` (0): تغيير مالك أي ملف
@@ -169,7 +169,7 @@ Some capabilities are, in practice, as good as root, because each one opens a pa
 - \`CAP_SYS_PTRACE\` (19): تتبّع العمليات الأخرى وقراءة ذاكرتها
 - \`CAP_SYS_ADMIN\` (21): حقيبة ضخمة من الصلاحيات (التركيب، والتحكم في كثير من الأجهزة وغير ذلك)؛ وصفحة الدليل نفسها تسمّيه "الجذر الجديد"
 
-لكل عملية عدة **مجموعات** من الامتيازات: **المسموحة (permitted)** (ما يحق لها استخدامه)، و**الفعّالة (effective)** (ما هو مفعّل الآن)، و**القابلة للتوريث (inheritable)**، و**المحدِّدة (bounding)** (سقف لها ولأبنائها)، و**المحيطة (ambient)** (تُحفظ عبر \`execve\` للبرامج غير المميَّزة). وتعرضها النواة أقنعةً سداسية عشرية من 64 بتّاً في \`/proc/<pid>/status\`، حيث يعني ضبط البتّ *n* وجود الامتياز *n*:
+لكل عملية عدة **مجموعات** من القدرات: **المسموحة (permitted)** (ما يحق لها استخدامه)، و**الفعّالة (effective)** (ما هو مفعّل الآن)، و**القابلة للتوريث (inheritable)**، و**المحدِّدة (bounding)** (سقف لها ولأبنائها)، و**المحيطة (ambient)** (تُحفظ عبر \`execve\` للبرامج غير المميَّزة). وتعرضها النواة أقنعةً سداسية عشرية من 64 بتّاً في \`/proc/<pid>/status\`، حيث يعني ضبط البتّ *n* وجود القدرة *n*:
 
 \`\`\`
 $ grep Cap /proc/self/status       # as root inside a container with Docker's defaults
@@ -180,9 +180,9 @@ CapBnd: 00000000a80425fb
 CapAmb: 0000000000000000
 \`\`\`
 
-يحوّل \`capsh --decode=00000000a80425fb\` القناع إلى أسماء. ومبدأ أقل الامتيازات مع الامتيازات يعني أن تعطي البرنامج **فقط** ما يحتاجه: يتيح \`setcap cap_net_bind_service=+ep ./server\` لخادم ويب أن يربط المنفذ 443 دون أن يعمل بالجذر، ويفعل \`docker run --cap-drop ALL --cap-add NET_BIND_SERVICE\` الشيء نفسه لحاوية. ومشغّل Code Lab الذي ينفّذ كود مختبراتك يُسقط **كل** الامتيازات ويضبط \`no-new-privileges\`.
+يحوّل \`capsh --decode=00000000a80425fb\` القناع إلى أسماء. وتطبيق مبدأ أقل الامتيازات على القدرات يعني أن تعطي البرنامج **فقط** ما يحتاجه: يتيح \`setcap cap_net_bind_service=+ep ./server\` لخادم ويب أن يربط المنفذ 443 دون أن يعمل بالجذر، ويفعل \`docker run --cap-drop ALL --cap-add NET_BIND_SERVICE\` الشيء نفسه لحاوية. ومشغّل Code Lab الذي ينفّذ كود مختبراتك يُسقط **كل** القدرات ويضبط \`no-new-privileges\`.
 
-بعض الامتيازات تعادل الجذر عملياً، لأن كلاً منها يفتح طريقاً إلى السيطرة الكاملة على الجهاز: \`CAP_SYS_ADMIN\`، و\`CAP_SYS_MODULE\` (تحميل كود إلى النواة)، و\`CAP_SYS_RAWIO\` (الوصول الخام إلى الأجهزة ومنافذ الإدخال/الإخراج)، و\`CAP_SYS_PTRACE\`، و\`CAP_DAC_READ_SEARCH\` (قراءة أي ملف). ورؤية واحد منها على خدمة أمر يستحق السؤال.`,
+بعض القدرات تعادل الجذر عملياً، لأن كلاً منها يفتح طريقاً إلى السيطرة الكاملة على الجهاز: \`CAP_SYS_ADMIN\`، و\`CAP_SYS_MODULE\` (تحميل كود إلى النواة)، و\`CAP_SYS_RAWIO\` (الوصول الخام إلى الأجهزة ومنافذ الإدخال/الإخراج)، و\`CAP_SYS_PTRACE\`، و\`CAP_DAC_READ_SEARCH\` (قراءة أي ملف). ورؤية واحد منها على خدمة أمر يستحق السؤال.`,
       },
     },
     {
@@ -206,7 +206,7 @@ The starter contains the 41 names in bit order (\`NAMES[n]\` is capability \`n\`
 CapEff (14): cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap
 CapEff dangerous: none
 \`\`\``,
-        ar: `فكّك **أقنعة الامتيازات** كما يفعل \`capsh --decode\`، وأشِر إلى الامتيازات الخطرة.
+        ar: `فكّك **أقنعة القدرات** كما يفعل \`capsh --decode\`، وأشِر إلى القدرات الخطرة.
 
 **المدخل:** صفر أو أكثر من الأسطر \`<label> <hex mask>\`، مثل أسطر \`Cap*\` في \`/proc/<pid>/status\` (مثلاً \`CapEff:\` ثم مسافة جدولة (tab) ثم 16 رقماً سداسياً عشرياً). لا يمكن أن تُضبط إلا البتّات من 0 إلى 40؛ وقد تكون الأرقام السداسية العشرية بأحرف صغيرة أو كبيرة.
 
@@ -214,7 +214,7 @@ CapEff dangerous: none
 - \`<label> (<count>): <names>\`: أسماء البتّات المضبوطة بترتيب البتّات، مفصولة بفواصل، أو \`<label> (0): none\`
 - \`<label> dangerous: <names>\`: البتّات المضبوطة التي تنتمي إلى الخمسة الخطرة، بترتيب البتّات، مفصولة بفواصل، أو \`none\`
 
-يحتوي كود البداية على الأسماء الـ 41 بترتيب البتّات (\`NAMES[n]\` هو الامتياز \`n\`) وعلى الخمسة الخطرة: \`cap_dac_read_search\` (2) و\`cap_sys_module\` (16) و\`cap_sys_rawio\` (17) و\`cap_sys_ptrace\` (19) و\`cap_sys_admin\` (21).
+يحتوي كود البداية على الأسماء الـ 41 بترتيب البتّات (\`NAMES[n]\` هو القدرة \`n\`) وعلى الخمسة الخطرة: \`cap_dac_read_search\` (2) و\`cap_sys_module\` (16) و\`cap_sys_rawio\` (17) و\`cap_sys_ptrace\` (19) و\`cap_sys_admin\` (21).
 
 **مثال:** السطر \`CapEff: 00000000a80425fb\` يطبع
 
@@ -348,12 +348,12 @@ CapEff dangerous: none`,
 CapBnd dangerous: cap_dac_read_search,cap_sys_module,cap_sys_rawio,cap_sys_ptrace,cap_sys_admin`,
         },
         {
-          name: { en: "A container given ptrace and admin rights", ar: "حاوية مُنحت امتيازي ptrace وadmin" },
+          name: { en: "A container given ptrace and admin rights", ar: "حاوية مُنحت قدرتَي ptrace وadmin" },
           stdin: "CapEff:\t0000000000280000\n",
           expected: "CapEff (2): cap_sys_ptrace,cap_sys_admin\nCapEff dangerous: cap_sys_ptrace,cap_sys_admin",
         },
         {
-          name: { en: "An empty set and an ambient capability", ar: "مجموعة فارغة وامتياز محيط" },
+          name: { en: "An empty set and an ambient capability", ar: "مجموعة فارغة وقدرة محيطة" },
           stdin: "CapInh:\t0000000000000000\nCapAmb:\t0000000000000400\n",
           expected: "CapInh (0): none\nCapInh dangerous: none\nCapAmb (1): cap_net_bind_service\nCapAmb dangerous: none",
         },
@@ -402,7 +402,7 @@ The namespaces from the previous lesson are sandboxing tools too (a private moun
 - **الوضع الصارم (strict mode)** (الأصلي، 2005): بعد الدخول فيه لا يحق للعملية إلا استدعاء \`read\` و\`write\` و\`_exit\` و\`sigreturn\`
 - **وضع المرشّح (filter mode)** (seccomp-bpf، منذ لينكس 3.5): تثبّت العملية برنامج BPF صغيراً ينظر في رقم كل استدعاء نظام ومعاملاته ويعيد إجراءً: \`SECCOMP_RET_ALLOW\`، و\`SECCOMP_RET_LOG\` (اسمح مع التسجيل)، و\`SECCOMP_RET_ERRNO\` (افشل بخطأ مثل \`EPERM\`)، و\`SECCOMP_RET_KILL_PROCESS\`، وغيرها قليل
 - المرشّحات **تتكدّس**: يعمل كل مرشّح مثبَّت، ويفوز الإجراء ذو **الأسبقية الأعلى** (KILL يغلب ERRNO، الذي يغلب LOG، الذي يغلب ALLOW). ولا يمكن إزالة المرشّح أبداً، ويُورَّث عبر \`fork\` ويبقى عبر \`execve\`
-- لتثبيت مرشّح دون \`CAP_SYS_ADMIN\` يجب على العملية أن تضبط أولاً **no_new_privs** (\`prctl(PR_SET_NO_NEW_PRIVS)\`). وهو يضمن ألا تمنح \`execve\` أي صلاحيات إضافية أبداً: فتُتجاهل بتّات setuid وامتيازات الملفات من تلك اللحظة
+- لتثبيت مرشّح دون \`CAP_SYS_ADMIN\` يجب على العملية أن تضبط أولاً **no_new_privs** (\`prctl(PR_SET_NO_NEW_PRIVS)\`). وهو يضمن ألا تمنح \`execve\` أي صلاحيات إضافية أبداً: فتُتجاهل بتّات setuid وقدرات الملفات من تلك اللحظة
 
 يستخدم Docker وPodman وChrome وFirefox وOpenSSH وsystemd كلها مرشّحات seccomp. ويحوّل systemd صندوق الأدوات كله إلى بضعة أسطر في ملف وحدة (\`systemd.exec(5)\`)، ويقيّم \`systemd-analyze security <unit>\` مدى انكشاف الخدمة:
 
@@ -935,7 +935,7 @@ findings: 6`,
           answer: 2,
           explain: {
             en: "Binding a port below 1024 needs exactly one capability. Granting just that one means a compromise of the server gives the attacker an ordinary account, not root. chmod 777 would let anyone replace the binary.",
-            ar: "الربط بمنفذ أقل من 1024 يحتاج إلى امتياز واحد بالضبط. ومنح هذا الامتياز وحده يعني أن اختراق الخادم يعطي المهاجم حساباً عادياً لا الجذر. أما chmod 777 فتتيح لأي أحد استبدال الملف التنفيذي.",
+            ar: "الربط بمنفذ أقل من 1024 يحتاج إلى قدرة واحدة بالضبط. ومنح هذه القدرة وحدها يعني أن اختراق الخادم يعطي المهاجم حساباً عادياً لا الجذر. أما chmod 777 فتتيح لأي أحد استبدال الملف التنفيذي.",
           },
         },
         {
@@ -1020,11 +1020,11 @@ findings: 6`,
 
 - لا تتدرّب إلا على أنظمة تملكها أو مأذون لك باختبارها، وعامل تقوية أنظمة الإنتاج كتغيير يخضع للمراجعة
 - تفحص النواة **بيانات الاعتماد** عند كل استدعاء نظام. وبرامج setuid تعمل بالـ UID الفعّال لمالكها؛ و**مبدأ أقل الامتيازات** يعني حسابات خدمة مخصّصة، وفصل الصلاحيات، وقواعد sudo ضيقة، والتخلي عن الصلاحيات بالترتيب الصحيح (المجموعات ثم GID ثم UID)
-- **الامتيازات** تقسّم الجذر إلى 41 قطعة تظهر أقنعةً سداسية عشرية في \`/proc/<pid>/status\`؛ فامنح ما يلزم فقط (\`setcap\` و\`--cap-drop ALL\`) واسأل عن \`CAP_SYS_ADMIN\` و\`CAP_SYS_MODULE\` و\`CAP_SYS_RAWIO\` و\`CAP_SYS_PTRACE\` و\`CAP_DAC_READ_SEARCH\`
+- **القدرات** تقسّم الجذر إلى 41 قطعة تظهر أقنعةً سداسية عشرية في \`/proc/<pid>/status\`؛ فامنح ما يلزم فقط (\`setcap\` و\`--cap-drop ALL\`) واسأل عن \`CAP_SYS_ADMIN\` و\`CAP_SYS_MODULE\` و\`CAP_SYS_RAWIO\` و\`CAP_SYS_PTRACE\` و\`CAP_DAC_READ_SEARCH\`
 - مرشّحات **seccomp** تتكدّس ويفوز الإجراء ذو الأسبقية الأعلى، ولا يمكن إزالتها أبداً، و**no_new_privs** يجعلها آمنة للعمليات غير المميَّزة؛ ويكمل systemd وفضاءات الأسماء وSELinux/AppArmor صندوق الرمل
 - تجعل **NX** و**ASLR** و**الكناري** و**RELRO** وFORTIFY استغلال علل الذاكرة أصعب، لكن الكود الصحيح وحده يزيلها
 - التقوية روتين: حدّث، وقلّل الخدمات، وأحكِم SSH، واجعل الجدار الناري رافضاً افتراضياً، ودقّق الصلاحيات، وسجّل خارج المضيف، وقِس على خط أساس
-- كتبت مفكّك امتيازات ومقيّم seccomp وتدقيقاً للصلاحيات
+- كتبت مفكّك قدرات ومقيّم seccomp وتدقيقاً للصلاحيات
 
 **تدرّب:** في جهاز افتراضي تملكه، نفّذ \`grep Cap /proc/self/status\` بمستخدم عادي ثم بالجذر، وجرّب \`systemd-analyze security\` على بضع خدمات، ونفّذ أمري \`find\` من الروتين. **التالي:** الإدخال/الإخراج وبرامج تشغيل الأجهزة، بالمصادر المدرجة لهذا الموضوع في خريطة المقرر.`,
       },
