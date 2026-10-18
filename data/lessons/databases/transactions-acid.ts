@@ -130,7 +130,7 @@ COMMIT;                                                        -- make both chan
 ROLLBACK;                                                      -- undo everything since BEGIN
 \`\`\`
 
-\`BEGIN TRANSACTION\` and \`START TRANSACTION\` are common spellings of the same idea. Until \`COMMIT\`, other connections do not see the changes, and \`ROLLBACK\` erases them as if they never happened.
+\`BEGIN TRANSACTION\` and \`START TRANSACTION\` are common spellings of the same idea. Until \`COMMIT\`, other connections do not see the changes (except at the READ UNCOMMITTED level described below), and \`ROLLBACK\` erases them as if they never happened.
 
 **Autocommit:** when you do not write \`BEGIN\`, PostgreSQL, MySQL and SQLite run each statement as its own tiny transaction and commit it immediately. That is fine for one statement, and exactly the bug in the story for two. One trap in Python: by default the \`sqlite3\` module opens a transaction for you before \`INSERT\`, \`UPDATE\` and \`DELETE\`, and waits for \`commit()\`. The labs pass \`isolation_level=None\` so that nothing happens implicitly and you write \`BEGIN\` yourself.
 
@@ -162,7 +162,7 @@ COMMIT;                                                        -- make both chan
 ROLLBACK;                                                      -- undo everything since BEGIN
 \`\`\`
 
-\`BEGIN TRANSACTION\` و\`START TRANSACTION\` صيغتان شائعتان للفكرة نفسها. وحتى \`COMMIT\` لا ترى الاتصالات الأخرى التغييرات، و\`ROLLBACK\` يمحوها كأنها لم تحدث.
+\`BEGIN TRANSACTION\` و\`START TRANSACTION\` صيغتان شائعتان للفكرة نفسها. وحتى \`COMMIT\` لا ترى الاتصالات الأخرى التغييرات (إلا في مستوى العزل READ UNCOMMITTED الموصوف أدناه)، و\`ROLLBACK\` يمحوها كأنها لم تحدث.
 
 **الالتزام التلقائي (autocommit):** حين لا تكتب \`BEGIN\` تنفّذ PostgreSQL وMySQL وSQLite كل عبارة معاملةً صغيرة مستقلة وتلتزم بها فوراً. هذا مناسب لعبارة واحدة، وهو بالضبط الخلل الذي في القصة حين تكون عبارتين. وفي بايثون فخ: وحدة \`sqlite3\` تفتح افتراضياً معاملة بالنيابة عنك قبل \`INSERT\` و\`UPDATE\` و\`DELETE\` وتنتظر \`commit()\`. لذلك تمرّر المختبرات \`isolation_level=None\` كي لا يحدث شيء ضمنياً وتكتب \`BEGIN\` بنفسك.
 
@@ -599,6 +599,7 @@ ${WAITS_TAIL}`,
         { name: { en: "A waiting chain without a cycle is not a deadlock", ar: "سلسلة انتظار بلا دورة ليست جموداً" }, stdin: "T1 waits T2\nT2 waits T3\nT4 waits T3\n", expected: "no deadlock" },
         { name: { en: "A three-way cycle with a waiting tail", ar: "دورة ثلاثية مع ذيل منتظر" }, stdin: "T7 waits T4\nT4 waits T9\nT9 waits T6\nT6 waits T4\n", expected: "deadlock: T4 -> T9 -> T6 -> T4\nabort T9" },
         { name: { en: "Two separate deadlocks, sorted", ar: "حالتا جمود منفصلتان ومرتبتان" }, stdin: "T3 waits T8\nT8 waits T3\nT5 waits T1\nT1 waits T2\nT2 waits T5\nT11 waits T12\n", expected: "deadlock: T1 -> T2 -> T5 -> T1\nabort T5\ndeadlock: T3 -> T8 -> T3\nabort T8" },
+        { name: { en: "A tail with a smaller number stays out; the cycle starts at its own smallest", ar: "الذيل ذو الرقم الأصغر يبقى خارجاً؛ والدورة تبدأ بأصغر رقم فيها" }, stdin: "T1 waits T5\nT5 waits T9\nT9 waits T3\nT3 waits T5\n", expected: "deadlock: T3 -> T5 -> T9 -> T3\nabort T9" },
         { name: { en: "Numbers compare as numbers (T10 after T2)", ar: "الأرقام تُقارن أرقاماً (T10 بعد T2)" }, stdin: "T10 waits T2\nT2 waits T10\n", expected: "deadlock: T2 -> T10 -> T2\nabort T10" },
       ],
       sampleInput: "T1 waits T2\nT2 waits T3\nT3 waits T1\n",

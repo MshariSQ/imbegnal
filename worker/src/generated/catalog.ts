@@ -2577,6 +2577,12 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
+          "name": "A tail with a smaller number stays out; the cycle starts at its own smallest",
+          "stdin": "T1 waits T5\nT5 waits T9\nT9 waits T3\nT3 waits T5\n",
+          "expected": "deadlock: T3 -> T5 -> T9 -> T3\nabort T9",
+          "mode": "trim"
+        },
+        {
           "name": "Numbers compare as numbers (T10 after T2)",
           "stdin": "T10 waits T2\nT2 waits T10\n",
           "expected": "deadlock: T2 -> T10 -> T2\nabort T10",
