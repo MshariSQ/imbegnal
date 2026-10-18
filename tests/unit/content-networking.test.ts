@@ -19,7 +19,7 @@ import { LANG_IDS, type LangId } from "../../shared/languages";
 import { localSupports, runLocal } from "../helpers/exec-local";
 
 const LAB_LANGS: readonly LangId[] = ["python", "javascript", "typescript", "java", "c", "cpp", "go", "rust", "ruby", "php", "bash"];
-const EXPECTED_LESSONS = ["osi-tcpip", "ip-subnetting", "transport-tcp-udp"];
+const EXPECTED_LESSONS = ["osi-tcpip", "ip-subnetting", "transport-tcp-udp", "dns-http-tls", "routing-switching", "network-troubleshooting", "wireless-vpn-firewalls", "network-security-basics"];
 const ARABIC = /[؀-ۿ]/;
 const LATIN = /[A-Za-z]/;
 /** Numbers, IP/MAC/hex notation: identical in both languages by design. */
@@ -235,6 +235,9 @@ describe("networking lessons: structure", async () => {
           assert.doesNotMatch(lab.solution, /TODO/, `${at}: solution has TODO`);
           assert.notEqual(lab.starterCode.trim(), lab.solution.trim(), `${at}: starter equals solution`);
           assert.ok(lab.tests.some((t) => (t.stdin ?? "").trim() === "" || /(^|\n)0(\n|$)/.test(t.stdin ?? "") || /error|empty|zero|short|invalid|unknown|no /i.test(t.name.en)), `${at}: needs an edge-case test`);
+          // Trivial attempts must not pass: a program that prints nothing, or one fixed answer, fails a test.
+          assert.ok(lab.tests.some((t) => t.expected.trim() !== ""), `${at}: an empty program would pass every test`);
+          assert.ok(new Set(lab.tests.map((t) => t.expected.trim())).size >= 2, `${at}: one hard-coded output would pass every test`);
           if (lab.sampleInput !== undefined) assert.ok(lab.sampleInput.length < 4000, `${at}: sampleInput`);
         }
       });

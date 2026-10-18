@@ -208,12 +208,22 @@ export const catalog: Catalog = {
       "lessons": [
         "osi-tcpip",
         "ip-subnetting",
-        "transport-tcp-udp"
+        "transport-tcp-udp",
+        "dns-http-tls",
+        "routing-switching",
+        "network-troubleshooting",
+        "wireless-vpn-firewalls",
+        "network-security-basics"
       ],
       "maxBonus": {
         "osi-tcpip": 10,
         "ip-subnetting": 10,
-        "transport-tcp-udp": 10
+        "transport-tcp-udp": 10,
+        "dns-http-tls": 10,
+        "routing-switching": 10,
+        "network-troubleshooting": 10,
+        "wireless-vpn-firewalls": 10,
+        "network-security-basics": 10
       }
     },
     {
@@ -1114,6 +1124,639 @@ export const catalog: Catalog = {
           "name": "1400 bytes of data (many carries to fold)",
           "stdin": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fa000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f90\n",
           "expected": "checksum=0xd408\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/dns-http-tls/dns-lookup",
+      "track": "networking",
+      "lesson": "dns-http-tls",
+      "id": "dns-lookup",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Direct answers, several values in input order",
+          "stdin": "5\nwww.example.com A 192.0.2.10\nwww.example.com A 192.0.2.11\nwww.example.com AAAA 2001:db8::10\nexample.com MX 10 mail.example.com\nexample.com MX 20 backup.example.net\nwww.example.com A\nwww.example.com AAAA\nexample.com MX\n",
+          "expected": "www.example.com A: 192.0.2.10, 192.0.2.11\nwww.example.com AAAA: 2001:db8::10\nexample.com MX: 10 mail.example.com, 20 backup.example.net\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A two-step CNAME chain; a CNAME query returns the alias itself",
+          "stdin": "4\nshop.example.com CNAME shop.cdn.example.net\nshop.cdn.example.net CNAME edge7.cdn.example.net\nedge7.cdn.example.net A 198.51.100.7\nedge7.cdn.example.net AAAA 2001:db8:7::1\nshop.example.com A\nshop.example.com AAAA\nshop.example.com CNAME\nshop.cdn.example.net A\n",
+          "expected": "shop.example.com A: 198.51.100.7 (via shop.cdn.example.net -> edge7.cdn.example.net)\nshop.example.com AAAA: 2001:db8:7::1 (via shop.cdn.example.net -> edge7.cdn.example.net)\nshop.example.com CNAME: shop.cdn.example.net\nshop.cdn.example.net A: 198.51.100.7 (via edge7.cdn.example.net)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "NODATA versus NXDOMAIN, also at the end of a chain",
+          "stdin": "3\nexample.com MX 10 mail.example.com\nexample.com TXT v=spf1 -all\nold.example.com CNAME gone.example.net\nexample.com A\nexample.com TXT\nnope.example.com A\nold.example.com A\n",
+          "expected": "example.com A: NODATA\nexample.com TXT: v=spf1 -all\nnope.example.com A: NXDOMAIN\nold.example.com A: NXDOMAIN (via gone.example.net)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Names ignore case and a trailing dot",
+          "stdin": "2\nWWW.Example.COM. A 192.0.2.80\napi.example.com CNAME www.example.com.\nwww.EXAMPLE.com A\napi.example.com. A\n",
+          "expected": "www.example.com A: 192.0.2.80\napi.example.com A: 192.0.2.80 (via www.example.com)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A CNAME loop is a SERVFAIL",
+          "stdin": "3\na.example.com CNAME b.example.com\nb.example.com CNAME c.example.com\nc.example.com CNAME a.example.com\na.example.com A\nc.example.com MX\nc.example.com CNAME\n",
+          "expected": "a.example.com A: SERVFAIL (cname loop)\nc.example.com MX: SERVFAIL (cname loop)\nc.example.com CNAME: a.example.com\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty zone: every name is NXDOMAIN",
+          "stdin": "0\nwww.example.com A\nexample.com NS\n",
+          "expected": "www.example.com A: NXDOMAIN\nexample.com NS: NXDOMAIN\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/dns-http-tls/http-response",
+      "track": "networking",
+      "lesson": "dns-http-tls",
+      "id": "http-response",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "A redirect with CRLF line endings, odd capitals, extra spaces and repeated headers (the first one counts)",
+          "stdin": "HTTP/1.1 301 Moved Permanently\r\nLOCATION:   /new-home  \r\ncontent-LENGTH: 5\r\nServer: demo\r\nLocation: /old-home\r\nContent-Length: 5\r\n\r\nmoved\r\n",
+          "expected": "status=301 class=redirection\nheaders=5\ncontent-type=none\nlocation=/new-home\nbody=5 bytes\n",
+          "mode": "trim"
+        },
+        {
+          "name": "304 Not Modified never has a body, whatever Content-Length says",
+          "stdin": "HTTP/1.1 304 Not Modified\nETag: \"v2\"\nContent-Length: 1234\nCache-Control: max-age=60\n\n",
+          "expected": "status=304 class=redirection\nheaders=3\ncontent-type=none\nbody=none\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Content-Length counts bytes: 5 Arabic letters are 10 bytes, so 12 is incomplete",
+          "stdin": "HTTP/1.1 200 OK\nContent-Type: text/plain; charset=utf-8\nContent-Length: 12\n\nمرحبا",
+          "expected": "status=200 class=success\nheaders=2\ncontent-type=text/plain; charset=utf-8\nbody=incomplete (10/12 bytes)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No Content-Length: the body runs until the connection closes",
+          "stdin": "HTTP/1.0 500 Internal Server Error\nContent-Type: text/plain\n\nsomething broke\n",
+          "expected": "status=500 class=server error\nheaders=1\ncontent-type=text/plain\nbody=16 bytes (until close)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two different Content-Length values are an error (request smuggling)",
+          "stdin": "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 5\ncontent-length: 12\n\nhello world!",
+          "expected": "error: conflicting content-length\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An invalid status line is an error",
+          "stdin": "HTP/1.1 200 OK\nContent-Length: 0\n\n",
+          "expected": "error: bad status line\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/dns-http-tls/cert-check",
+      "track": "networking",
+      "lesson": "dns-http-tls",
+      "id": "cert-check",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example: names, the last valid day, expired and not yet valid",
+          "stdin": "root Example Root CA\ncert www.example.com|Example Issuing CA 1|2026-06-01|2026-12-28|no|www.example.com,example.com\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2030-12-31|yes|\ncheck www.example.com 2026-10-17\ncheck EXAMPLE.com 2026-10-17\ncheck shop.example.com 2026-10-17\ncheck www.example.com 2026-12-28\ncheck www.example.com 2026-12-29\ncheck www.example.com 2026-05-31\n",
+          "expected": "www.example.com 2026-10-17: OK\nEXAMPLE.com 2026-10-17: OK\nshop.example.com 2026-10-17: FAIL hostname mismatch\nwww.example.com 2026-12-28: OK\nwww.example.com 2026-12-29: FAIL expired: www.example.com\nwww.example.com 2026-05-31: FAIL not yet valid: www.example.com\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A wildcard covers exactly one label; a partial wildcard covers nothing",
+          "stdin": "root Example Root CA\ncert *.example.com|Example Issuing CA 1|2026-01-01|2026-12-31|no|*.example.com,w*.example.net\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2030-12-31|yes|\ncheck api.example.com 2026-03-01\ncheck API.Example.COM 2026-03-01\ncheck example.com 2026-03-01\ncheck a.b.example.com 2026-03-01\ncheck www.example.net 2026-03-01\n",
+          "expected": "api.example.com 2026-03-01: OK\nAPI.Example.COM 2026-03-01: OK\nexample.com 2026-03-01: FAIL hostname mismatch\na.b.example.com 2026-03-01: FAIL hostname mismatch\nwww.example.net 2026-03-01: FAIL hostname mismatch\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A missing intermediate breaks the chain",
+          "stdin": "root Example Root CA\ncert www.example.com|Example Issuing CA 2|2026-01-01|2026-12-31|no|www.example.com\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2030-12-31|yes|\ncheck www.example.com 2026-03-01\ncheck mail.example.com 2026-03-01\n",
+          "expected": "www.example.com 2026-03-01: FAIL broken chain after: www.example.com\nmail.example.com 2026-03-01: FAIL hostname mismatch\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An expired intermediate fails the whole chain; sending the root as well is fine",
+          "stdin": "root Other Root\nroot Example Root CA\ncert www.example.com|Example Issuing CA 1|2025-01-01|2026-12-31|no|www.example.com\ncert Example Issuing CA 1|Example Root CA|2024-01-01|2025-12-31|yes|\ncert Example Root CA|Example Root CA|2020-01-01|2040-12-31|yes|\ncheck www.example.com 2026-03-01\ncheck www.example.com 2025-06-01\n",
+          "expected": "www.example.com 2026-03-01: FAIL expired: Example Issuing CA 1\nwww.example.com 2025-06-01: OK\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A certificate that is not a CA cannot sign another one",
+          "stdin": "root Example Root CA\ncert www.example.com|shop.example.org|2026-01-01|2026-12-31|no|www.example.com\ncert shop.example.org|Example Root CA|2026-01-01|2026-12-31|no|shop.example.org\ncheck www.example.com 2026-03-01\n",
+          "expected": "www.example.com 2026-03-01: FAIL not a CA: shop.example.org\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown root: a self-signed certificate is not trusted",
+          "stdin": "root Example Root CA\ncert dev.example.com|dev.example.com|2026-01-01|2026-12-31|no|dev.example.com\ncheck dev.example.com 2026-03-01\n",
+          "expected": "dev.example.com 2026-03-01: FAIL untrusted root: dev.example.com\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/routing-switching/mac-learning",
+      "track": "networking",
+      "lesson": "routing-switching",
+      "id": "mac-learning",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example: flood once, then forward",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n1 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n2 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n",
+          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n1 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n2 02:00:00:00:00:0a -> 02:00:00:00:00:0b: forward 2\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Broadcast and multicast frames are always flooded",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a ff:ff:ff:ff:ff:ff\n1 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n2 2 02:00:00:00:00:0b 01:00:5e:00:00:fb\n3 3 02:00:00:00:00:0c 33:33:00:00:00:01\n4 1 02:00:00:00:00:0a 02:00:00:00:00:0c\n",
+          "expected": "0 02:00:00:00:00:0a -> ff:ff:ff:ff:ff:ff: flood 2,3,4\n1 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n2 02:00:00:00:00:0b -> 01:00:5e:00:00:fb: flood 1,3,4\n3 02:00:00:00:00:0c -> 33:33:00:00:00:01: flood 1,2,4\n4 02:00:00:00:00:0a -> 02:00:00:00:00:0c: forward 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two devices behind the same port: their frames are filtered",
+          "stdin": "ports 3\n0 3 02:00:00:00:00:0c 02:00:00:00:00:0d\n1 3 02:00:00:00:00:0d 02:00:00:00:00:0c\n2 1 02:00:00:00:00:0a 02:00:00:00:00:0d\n3 3 02:00:00:00:00:0c 02:00:00:00:00:0d\n",
+          "expected": "0 02:00:00:00:00:0c -> 02:00:00:00:00:0d: flood 1,2\n1 02:00:00:00:00:0d -> 02:00:00:00:00:0c: filter\n2 02:00:00:00:00:0a -> 02:00:00:00:00:0d: forward 3\n3 02:00:00:00:00:0c -> 02:00:00:00:00:0d: filter\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Ageing: 299 seconds is still valid, 300 seconds is forgotten",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n10 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n300 3 02:00:00:00:00:0c 02:00:00:00:00:0a\n309 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n310 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n",
+          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n10 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n300 02:00:00:00:00:0c -> 02:00:00:00:00:0a: flood 1,2,4\n309 02:00:00:00:00:0c -> 02:00:00:00:00:0b: forward 2\n310 02:00:00:00:00:0c -> 02:00:00:00:00:0b: flood 1,2,4\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A laptop moves to another port and is found there",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n5 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n6 4 02:00:00:00:00:0a 02:00:00:00:00:0b\n7 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n",
+          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n5 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n6 02:00:00:00:00:0a -> 02:00:00:00:00:0b: forward 2\n7 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 4\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No frames: nothing is printed",
+          "stdin": "ports 8\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/routing-switching/arp-resolve",
+      "track": "networking",
+      "lesson": "routing-switching",
+      "id": "arp-resolve",
+      "lang": "java",
+      "tests": [
+        {
+          "name": "The worked example, then a second off-link destination",
+          "stdin": "host 192.168.1.10/24 gw 192.168.1.1\nsend 192.168.1.20\nreply 192.168.1.20 02:00:00:00:00:20\nsend 192.168.1.20\nsend 203.0.113.5\nreply 192.168.1.1 02:00:00:00:00:01\nsend 198.51.100.7\n",
+          "expected": "send 192.168.1.20: next hop 192.168.1.20 (on-link), ARP who-has 192.168.1.20\nreply 192.168.1.20: learned 02:00:00:00:00:20\nsend 192.168.1.20: next hop 192.168.1.20 (on-link), frame to 02:00:00:00:00:20\nsend 203.0.113.5: next hop 192.168.1.1 (gateway), ARP who-has 192.168.1.1\nreply 192.168.1.1: learned 02:00:00:00:00:01\nsend 198.51.100.7: next hop 192.168.1.1 (gateway), frame to 02:00:00:00:00:01\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Broadcast, a refreshed entry and a gateway whose MAC changes",
+          "stdin": "host 10.1.2.3/16 gw 10.1.0.1\nsend 10.1.255.255\nreply 10.1.0.1 02:00:00:00:aa:01\nreply 10.1.0.1 02:00:00:00:AA:01\nreply 10.1.0.1 02:00:00:00:bb:02\nsend 198.51.100.1\nsend 10.1.200.9\n",
+          "expected": "send 10.1.255.255: frame to ff:ff:ff:ff:ff:ff (broadcast)\nreply 10.1.0.1: learned 02:00:00:00:aa:01\nreply 10.1.0.1: refreshed 02:00:00:00:aa:01\nreply 10.1.0.1: changed 02:00:00:00:aa:01 -> 02:00:00:00:bb:02\nsend 198.51.100.1: next hop 10.1.0.1 (gateway), frame to 02:00:00:00:bb:02\nsend 10.1.200.9: next hop 10.1.200.9 (on-link), ARP who-has 10.1.200.9\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A /25: the other half of the /24 is off-link",
+          "stdin": "host 192.168.1.130/25 gw 192.168.1.129\nsend 192.168.1.200\nsend 192.168.1.100\nreply 192.168.1.100 02:00:00:00:00:64\nsend 192.168.1.255\nsend 192.168.1.127\n",
+          "expected": "send 192.168.1.200: next hop 192.168.1.200 (on-link), ARP who-has 192.168.1.200\nsend 192.168.1.100: next hop 192.168.1.129 (gateway), ARP who-has 192.168.1.129\nreply 192.168.1.100: ignored (not on-link)\nsend 192.168.1.255: frame to ff:ff:ff:ff:ff:ff (broadcast)\nsend 192.168.1.127: next hop 192.168.1.129 (gateway), ARP who-has 192.168.1.129\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No gateway: off-link destinations have no route",
+          "stdin": "host 172.16.5.10/24 gw none\nsend 172.16.5.1\nsend 172.16.6.1\nreply 172.16.5.1 02:00:00:00:00:01\nsend 172.16.5.1\n",
+          "expected": "send 172.16.5.1: next hop 172.16.5.1 (on-link), ARP who-has 172.16.5.1\nsend 172.16.6.1: no route\nreply 172.16.5.1: learned 02:00:00:00:00:01\nsend 172.16.5.1: next hop 172.16.5.1 (on-link), frame to 02:00:00:00:00:01\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No events: nothing is printed",
+          "stdin": "host 192.168.0.2/24 gw 192.168.0.1\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/routing-switching/ospf-spf",
+      "track": "networking",
+      "lesson": "routing-switching",
+      "id": "ospf-spf",
+      "lang": "cpp",
+      "tests": [
+        {
+          "name": "The worked example: the long way round is cheaper",
+          "stdin": "R1\nlink R1 R2 10\nlink R2 R3 5\nlink R1 R3 20\n",
+          "expected": "R2 cost=10 via R2\nR3 cost=15 via R2\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Six routers: every shortest path leaves through B",
+          "stdin": "A\nlink A B 2\nlink A C 5\nlink B C 1\nlink B D 7\nlink C D 2\nlink C E 6\nlink D E 1\nlink D F 4\nlink E F 1\n",
+          "expected": "B cost=2 via B\nC cost=3 via B\nD cost=5 via B\nE cost=6 via B\nF cost=7 via B\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Equal-cost paths: the alphabetically smaller first hop wins",
+          "stdin": "core\nlink core west 10\nlink core east 10\nlink west dc 10\nlink east dc 10\nlink core dc 30\nlink dc branch 1\n",
+          "expected": "branch cost=21 via east\ndc cost=20 via east\neast cost=10 via east\nwest cost=10 via west\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A 10 x 10 grid of 100 routers",
+          "stdin": "r00-00\nlink r00-00 r00-01 1\nlink r00-00 r01-00 1\nlink r00-01 r00-02 1\nlink r00-01 r01-01 1\nlink r00-02 r00-03 1\nlink r00-02 r01-02 1\nlink r00-03 r00-04 1\nlink r00-03 r01-03 1\nlink r00-04 r00-05 1\nlink r00-04 r01-04 1\nlink r00-05 r00-06 1\nlink r00-05 r01-05 1\nlink r00-06 r00-07 1\nlink r00-06 r01-06 1\nlink r00-07 r00-08 1\nlink r00-07 r01-07 1\nlink r00-08 r00-09 1\nlink r00-08 r01-08 1\nlink r00-09 r01-09 1\nlink r01-00 r01-01 1\nlink r01-00 r02-00 1\nlink r01-01 r01-02 1\nlink r01-01 r02-01 1\nlink r01-02 r01-03 1\nlink r01-02 r02-02 1\nlink r01-03 r01-04 1\nlink r01-03 r02-03 1\nlink r01-04 r01-05 1\nlink r01-04 r02-04 1\nlink r01-05 r01-06 1\nlink r01-05 r02-05 1\nlink r01-06 r01-07 1\nlink r01-06 r02-06 1\nlink r01-07 r01-08 1\nlink r01-07 r02-07 1\nlink r01-08 r01-09 1\nlink r01-08 r02-08 1\nlink r01-09 r02-09 1\nlink r02-00 r02-01 1\nlink r02-00 r03-00 1\nlink r02-01 r02-02 1\nlink r02-01 r03-01 1\nlink r02-02 r02-03 1\nlink r02-02 r03-02 1\nlink r02-03 r02-04 1\nlink r02-03 r03-03 1\nlink r02-04 r02-05 1\nlink r02-04 r03-04 1\nlink r02-05 r02-06 1\nlink r02-05 r03-05 1\nlink r02-06 r02-07 1\nlink r02-06 r03-06 1\nlink r02-07 r02-08 1\nlink r02-07 r03-07 1\nlink r02-08 r02-09 1\nlink r02-08 r03-08 1\nlink r02-09 r03-09 1\nlink r03-00 r03-01 1\nlink r03-00 r04-00 1\nlink r03-01 r03-02 1\nlink r03-01 r04-01 1\nlink r03-02 r03-03 1\nlink r03-02 r04-02 1\nlink r03-03 r03-04 1\nlink r03-03 r04-03 1\nlink r03-04 r03-05 1\nlink r03-04 r04-04 1\nlink r03-05 r03-06 1\nlink r03-05 r04-05 1\nlink r03-06 r03-07 1\nlink r03-06 r04-06 1\nlink r03-07 r03-08 1\nlink r03-07 r04-07 1\nlink r03-08 r03-09 1\nlink r03-08 r04-08 1\nlink r03-09 r04-09 1\nlink r04-00 r04-01 1\nlink r04-00 r05-00 1\nlink r04-01 r04-02 1\nlink r04-01 r05-01 1\nlink r04-02 r04-03 1\nlink r04-02 r05-02 1\nlink r04-03 r04-04 1\nlink r04-03 r05-03 1\nlink r04-04 r04-05 1\nlink r04-04 r05-04 1\nlink r04-05 r04-06 1\nlink r04-05 r05-05 1\nlink r04-06 r04-07 1\nlink r04-06 r05-06 1\nlink r04-07 r04-08 1\nlink r04-07 r05-07 1\nlink r04-08 r04-09 1\nlink r04-08 r05-08 1\nlink r04-09 r05-09 1\nlink r05-00 r05-01 1\nlink r05-00 r06-00 1\nlink r05-01 r05-02 1\nlink r05-01 r06-01 1\nlink r05-02 r05-03 1\nlink r05-02 r06-02 1\nlink r05-03 r05-04 1\nlink r05-03 r06-03 1\nlink r05-04 r05-05 1\nlink r05-04 r06-04 1\nlink r05-05 r05-06 1\nlink r05-05 r06-05 1\nlink r05-06 r05-07 1\nlink r05-06 r06-06 1\nlink r05-07 r05-08 1\nlink r05-07 r06-07 1\nlink r05-08 r05-09 1\nlink r05-08 r06-08 1\nlink r05-09 r06-09 1\nlink r06-00 r06-01 1\nlink r06-00 r07-00 1\nlink r06-01 r06-02 1\nlink r06-01 r07-01 1\nlink r06-02 r06-03 1\nlink r06-02 r07-02 1\nlink r06-03 r06-04 1\nlink r06-03 r07-03 1\nlink r06-04 r06-05 1\nlink r06-04 r07-04 1\nlink r06-05 r06-06 1\nlink r06-05 r07-05 1\nlink r06-06 r06-07 1\nlink r06-06 r07-06 1\nlink r06-07 r06-08 1\nlink r06-07 r07-07 1\nlink r06-08 r06-09 1\nlink r06-08 r07-08 1\nlink r06-09 r07-09 1\nlink r07-00 r07-01 1\nlink r07-00 r08-00 1\nlink r07-01 r07-02 1\nlink r07-01 r08-01 1\nlink r07-02 r07-03 1\nlink r07-02 r08-02 1\nlink r07-03 r07-04 1\nlink r07-03 r08-03 1\nlink r07-04 r07-05 1\nlink r07-04 r08-04 1\nlink r07-05 r07-06 1\nlink r07-05 r08-05 1\nlink r07-06 r07-07 1\nlink r07-06 r08-06 1\nlink r07-07 r07-08 1\nlink r07-07 r08-07 1\nlink r07-08 r07-09 1\nlink r07-08 r08-08 1\nlink r07-09 r08-09 1\nlink r08-00 r08-01 1\nlink r08-00 r09-00 1\nlink r08-01 r08-02 1\nlink r08-01 r09-01 1\nlink r08-02 r08-03 1\nlink r08-02 r09-02 1\nlink r08-03 r08-04 1\nlink r08-03 r09-03 1\nlink r08-04 r08-05 1\nlink r08-04 r09-04 1\nlink r08-05 r08-06 1\nlink r08-05 r09-05 1\nlink r08-06 r08-07 1\nlink r08-06 r09-06 1\nlink r08-07 r08-08 1\nlink r08-07 r09-07 1\nlink r08-08 r08-09 1\nlink r08-08 r09-08 1\nlink r08-09 r09-09 1\nlink r09-00 r09-01 1\nlink r09-01 r09-02 1\nlink r09-02 r09-03 1\nlink r09-03 r09-04 1\nlink r09-04 r09-05 1\nlink r09-05 r09-06 1\nlink r09-06 r09-07 1\nlink r09-07 r09-08 1\nlink r09-08 r09-09 1\n",
+          "expected": "r00-01 cost=1 via r00-01\nr00-02 cost=2 via r00-01\nr00-03 cost=3 via r00-01\nr00-04 cost=4 via r00-01\nr00-05 cost=5 via r00-01\nr00-06 cost=6 via r00-01\nr00-07 cost=7 via r00-01\nr00-08 cost=8 via r00-01\nr00-09 cost=9 via r00-01\nr01-00 cost=1 via r01-00\nr01-01 cost=2 via r00-01\nr01-02 cost=3 via r00-01\nr01-03 cost=4 via r00-01\nr01-04 cost=5 via r00-01\nr01-05 cost=6 via r00-01\nr01-06 cost=7 via r00-01\nr01-07 cost=8 via r00-01\nr01-08 cost=9 via r00-01\nr01-09 cost=10 via r00-01\nr02-00 cost=2 via r01-00\nr02-01 cost=3 via r00-01\nr02-02 cost=4 via r00-01\nr02-03 cost=5 via r00-01\nr02-04 cost=6 via r00-01\nr02-05 cost=7 via r00-01\nr02-06 cost=8 via r00-01\nr02-07 cost=9 via r00-01\nr02-08 cost=10 via r00-01\nr02-09 cost=11 via r00-01\nr03-00 cost=3 via r01-00\nr03-01 cost=4 via r00-01\nr03-02 cost=5 via r00-01\nr03-03 cost=6 via r00-01\nr03-04 cost=7 via r00-01\nr03-05 cost=8 via r00-01\nr03-06 cost=9 via r00-01\nr03-07 cost=10 via r00-01\nr03-08 cost=11 via r00-01\nr03-09 cost=12 via r00-01\nr04-00 cost=4 via r01-00\nr04-01 cost=5 via r00-01\nr04-02 cost=6 via r00-01\nr04-03 cost=7 via r00-01\nr04-04 cost=8 via r00-01\nr04-05 cost=9 via r00-01\nr04-06 cost=10 via r00-01\nr04-07 cost=11 via r00-01\nr04-08 cost=12 via r00-01\nr04-09 cost=13 via r00-01\nr05-00 cost=5 via r01-00\nr05-01 cost=6 via r00-01\nr05-02 cost=7 via r00-01\nr05-03 cost=8 via r00-01\nr05-04 cost=9 via r00-01\nr05-05 cost=10 via r00-01\nr05-06 cost=11 via r00-01\nr05-07 cost=12 via r00-01\nr05-08 cost=13 via r00-01\nr05-09 cost=14 via r00-01\nr06-00 cost=6 via r01-00\nr06-01 cost=7 via r00-01\nr06-02 cost=8 via r00-01\nr06-03 cost=9 via r00-01\nr06-04 cost=10 via r00-01\nr06-05 cost=11 via r00-01\nr06-06 cost=12 via r00-01\nr06-07 cost=13 via r00-01\nr06-08 cost=14 via r00-01\nr06-09 cost=15 via r00-01\nr07-00 cost=7 via r01-00\nr07-01 cost=8 via r00-01\nr07-02 cost=9 via r00-01\nr07-03 cost=10 via r00-01\nr07-04 cost=11 via r00-01\nr07-05 cost=12 via r00-01\nr07-06 cost=13 via r00-01\nr07-07 cost=14 via r00-01\nr07-08 cost=15 via r00-01\nr07-09 cost=16 via r00-01\nr08-00 cost=8 via r01-00\nr08-01 cost=9 via r00-01\nr08-02 cost=10 via r00-01\nr08-03 cost=11 via r00-01\nr08-04 cost=12 via r00-01\nr08-05 cost=13 via r00-01\nr08-06 cost=14 via r00-01\nr08-07 cost=15 via r00-01\nr08-08 cost=16 via r00-01\nr08-09 cost=17 via r00-01\nr09-00 cost=9 via r01-00\nr09-01 cost=10 via r00-01\nr09-02 cost=11 via r00-01\nr09-03 cost=12 via r00-01\nr09-04 cost=13 via r00-01\nr09-05 cost=14 via r00-01\nr09-06 cost=15 via r00-01\nr09-07 cost=16 via r00-01\nr09-08 cost=17 via r00-01\nr09-09 cost=18 via r00-01\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Parallel links use the cheapest one; an island is unreachable",
+          "stdin": "R1\nlink R1 R2 50\nlink R2 R1 5\nlink R3 R4 1\nlink R4 R5 2\nlink R3 R3 1\n",
+          "expected": "R2 cost=5 via R2\nR3 unreachable\nR4 unreachable\nR5 unreachable\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No links: nothing is printed",
+          "stdin": "R1\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-troubleshooting/ping-summary",
+      "track": "networking",
+      "lesson": "network-troubleshooting",
+      "id": "ping-summary",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A healthy LAN: no loss",
+          "stdin": "sent 4\nPING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.512 ms\n64 bytes from 192.0.2.1: icmp_seq=2 ttl=64 time=0.498 ms\n64 bytes from 192.0.2.1: icmp_seq=3 ttl=64 time=0.731 ms\n64 bytes from 192.0.2.1: icmp_seq=4 ttl=64 time=0.455 ms\n",
+          "expected": "4 sent, 4 received, 0.0% loss\nrtt min/avg/max = 0.455/0.549/0.731 ms\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The worked example: one reply missing",
+          "stdin": "sent 5\nPING 198.51.100.20 (198.51.100.20) 56(84) bytes of data.\n64 bytes from 198.51.100.20: icmp_seq=1 ttl=54 time=21.4 ms\n64 bytes from 198.51.100.20: icmp_seq=2 ttl=54 time=19.8 ms\n64 bytes from 198.51.100.20: icmp_seq=4 ttl=54 time=88.9 ms\n64 bytes from 198.51.100.20: icmp_seq=5 ttl=54 time=20.3 ms\n",
+          "expected": "5 sent, 4 received, 20.0% loss\nrtt min/avg/max = 19.800/37.600/88.900 ms\nmissing icmp_seq: 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A duplicate is not a new reply; a late reply still counts",
+          "stdin": "sent 3\nPING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=1.20 ms\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=1.31 ms (DUP!)\n64 bytes from 192.0.2.1: icmp_seq=3 ttl=64 time=1.05 ms\n64 bytes from 192.0.2.1: icmp_seq=2 ttl=64 time=950 ms\n",
+          "expected": "3 sent, 3 received, 0.0% loss\nrtt min/avg/max = 1.050/317.417/950.000 ms\nduplicates: 1\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Destination Host Unreachable lines are errors",
+          "stdin": "sent 4\nPING 192.168.1.50 (192.168.1.50) 56(84) bytes of data.\nFrom 192.168.1.10 icmp_seq=1 Destination Host Unreachable\nFrom 192.168.1.10 icmp_seq=2 Destination Host Unreachable\nFrom 192.168.1.10 icmp_seq=3 Destination Host Unreachable\n",
+          "expected": "4 sent, 0 received, 100.0% loss\nrtt: none\nmissing icmp_seq: 1,2,3,4\nerrors: 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No replies at all (ICMP filtered or host down)",
+          "stdin": "sent 3\nPING 203.0.113.99 (203.0.113.99) 56(84) bytes of data.\n",
+          "expected": "3 sent, 0 received, 100.0% loss\nrtt: none\nmissing icmp_seq: 1,2,3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Out-of-order replies and unknown lines are ignored correctly",
+          "stdin": "sent 8\nPING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=8 ttl=64 time=2.5 ms\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=2.25 ms\nRequest timeout for icmp_seq 2\n",
+          "expected": "8 sent, 2 received, 75.0% loss\nrtt min/avg/max = 2.250/2.375/2.500 ms\nmissing icmp_seq: 2,3,4,5,6,7\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-troubleshooting/trace-reader",
+      "track": "networking",
+      "lesson": "network-troubleshooting",
+      "id": "trace-reader",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example: a silent hop on a working path",
+          "stdin": "traceroute to 198.51.100.20 (198.51.100.20), 30 hops max, 60 byte packets\n 1  192.168.1.1  0.812 ms  0.701 ms  0.655 ms\n 2  10.10.0.1  8.102 ms  7.950 ms  8.311 ms\n 3  * * *\n 4  203.0.113.9  15.214 ms  14.902 ms  15.050 ms\n 5  198.51.100.20  16.127 ms  16.301 ms  15.840 ms\n",
+          "expected": "hop 1: 192.168.1.1 avg 0.723 ms\nhop 2: 10.10.0.1 avg 8.121 ms\nhop 3: no reply\nhop 4: 203.0.113.9 avg 15.055 ms\nhop 5: 198.51.100.20 avg 16.089 ms\nsilent hops: 3\nlargest jump: hop 2 (+7.398 ms)\nresult: reached 198.51.100.20 at hop 5\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The trail goes cold after hop 3",
+          "stdin": "traceroute to www.example.com (192.0.2.80), 30 hops max, 60 byte packets\n 1  192.168.1.1  1.020 ms  0.950 ms  0.991 ms\n 2  100.64.0.1  9.870 ms  10.112 ms  9.954 ms\n 3  198.51.100.1  11.402 ms  11.380 ms  11.611 ms\n 4  * * *\n 5  * * *\n 6  * * *\n",
+          "expected": "hop 1: 192.168.1.1 avg 0.987 ms\nhop 2: 100.64.0.1 avg 9.979 ms\nhop 3: 198.51.100.1 avg 11.464 ms\nhop 4: no reply\nhop 5: no reply\nhop 6: no reply\nsilent hops: none\nlargest jump: hop 2 (+8.992 ms)\nresult: not reached, last reply from 198.51.100.1 at hop 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Lost single probes, and a long link whose delay stays",
+          "stdin": "traceroute to 203.0.113.50 (203.0.113.50), 30 hops max, 60 byte packets\n 1  10.0.0.1  0.511 ms  *  0.493 ms\n 2  192.0.2.254  12.100 ms  11.900 ms  *\n 3  198.51.100.66  95.300 ms  96.100 ms  95.800 ms\n 4  198.51.100.70  94.900 ms  95.200 ms  95.400 ms\n 5  203.0.113.50  96.200 ms  95.900 ms  96.000 ms\n",
+          "expected": "hop 1: 10.0.0.1 avg 0.502 ms\nhop 2: 192.0.2.254 avg 12.000 ms\nhop 3: 198.51.100.66 avg 95.733 ms\nhop 4: 198.51.100.70 avg 95.167 ms\nhop 5: 203.0.113.50 avg 96.033 ms\nsilent hops: none\nlargest jump: hop 3 (+83.733 ms)\nresult: reached 203.0.113.50 at hop 5\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No reply from any hop",
+          "stdin": "traceroute to 192.0.2.7 (192.0.2.7), 30 hops max, 60 byte packets\n 1  * * *\n 2  * * *\n 3  * * *\n",
+          "expected": "hop 1: no reply\nhop 2: no reply\nhop 3: no reply\nsilent hops: none\nlargest jump: none\nresult: not reached, no replies\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Averages that only go down: no jump",
+          "stdin": "traceroute to 203.0.113.80 (203.0.113.80), 30 hops max, 60 byte packets\n 1  192.168.1.1  5.000 ms  5.000 ms  5.000 ms\n 2  10.0.0.1  4.000 ms  4.500 ms  4.250 ms\n 3  203.0.113.80  3.900 ms  4.000 ms  4.100 ms\n",
+          "expected": "hop 1: 192.168.1.1 avg 5.000 ms\nhop 2: 10.0.0.1 avg 4.250 ms\nhop 3: 203.0.113.80 avg 4.000 ms\nsilent hops: none\nlargest jump: none\nresult: reached 203.0.113.80 at hop 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two equal jumps, one across a silent hop: the first one is kept",
+          "stdin": "traceroute to 192.0.2.99 (192.0.2.99), 30 hops max, 60 byte packets\n 1  192.168.1.1  0.750 ms  1.000 ms  1.250 ms\n 2  10.0.0.1  10.500 ms  11.000 ms  11.500 ms\n 3  * * *\n 4  198.51.100.9  20.500 ms  21.000 ms  21.500 ms\n 5  192.0.2.99  21.250 ms  21.500 ms  21.750 ms\n",
+          "expected": "hop 1: 192.168.1.1 avg 1.000 ms\nhop 2: 10.0.0.1 avg 11.000 ms\nhop 3: no reply\nhop 4: 198.51.100.9 avg 21.000 ms\nhop 5: 192.0.2.99 avg 21.500 ms\nsilent hops: 3\nlargest jump: hop 2 (+10.000 ms)\nresult: reached 192.0.2.99 at hop 5\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-troubleshooting/handshake-outcome",
+      "track": "networking",
+      "lesson": "network-troubleshooting",
+      "id": "handshake-outcome",
+      "lang": "rust",
+      "tests": [
+        {
+          "name": "The worked example plus the client's final ACK",
+          "stdin": "12:00:00.000000 IP 192.0.2.10.51514 > 203.0.113.80.443: Flags [S], seq 1000, win 64240, options [mss 1460], length 0\n12:00:00.023412 IP 203.0.113.80.443 > 192.0.2.10.51514: Flags [S.], seq 5000, ack 1001, win 65160, options [mss 1460], length 0\n12:00:00.023500 IP 192.0.2.10.51514 > 203.0.113.80.443: Flags [.], ack 5001, win 502, length 0\n12:00:00.030000 IP 192.0.2.10.51520 > 203.0.113.80.22: Flags [S], seq 77, win 64240, length 0\n12:00:00.030950 IP 203.0.113.80.22 > 192.0.2.10.51520: Flags [R.], seq 0, ack 78, win 0, length 0\n",
+          "expected": "192.0.2.10.51514 -> 203.0.113.80.443: established (SYN-ACK after 23.412 ms)\n192.0.2.10.51520 -> 203.0.113.80.22: refused (RST)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Retransmitted SYNs: one attempt times out, one succeeds on the retry",
+          "stdin": "08:15:59.900000 IP 192.0.2.10.40001 > 198.51.100.9.5432: Flags [S], seq 1, win 64240, length 0\n08:16:00.920000 IP 192.0.2.10.40001 > 198.51.100.9.5432: Flags [S], seq 1, win 64240, length 0\n08:16:02.960000 IP 192.0.2.10.40001 > 198.51.100.9.5432: Flags [S], seq 1, win 64240, length 0\n08:16:03.000000 IP 192.0.2.10.40002 > 198.51.100.9.443: Flags [S], seq 9, win 64240, length 0\n08:16:04.010000 IP 192.0.2.10.40002 > 198.51.100.9.443: Flags [S], seq 9, win 64240, length 0\n08:16:04.052001 IP 198.51.100.9.443 > 192.0.2.10.40002: Flags [S.], seq 3, ack 10, win 65160, length 0\n",
+          "expected": "192.0.2.10.40001 -> 198.51.100.9.5432: no answer (3 SYNs)\n192.0.2.10.40002 -> 198.51.100.9.443: established (SYN-ACK after 1052.001 ms)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "ECN flags, a reset after the handshake, and a single unanswered SYN",
+          "stdin": "10:00:00.000000 IP 192.0.2.10.50000 > 203.0.113.5.80: Flags [SEW], seq 10, win 64240, length 0\n10:00:00.000400 IP 203.0.113.5.80 > 192.0.2.10.50000: Flags [S.E], seq 20, ack 11, win 65160, length 0\n10:00:00.001000 IP 192.0.2.10.50001 > 203.0.113.6.80: Flags [S], seq 30, win 64240, length 0\n10:00:00.002000 IP 203.0.113.6.80 > 192.0.2.10.50001: Flags [R.], seq 0, ack 31, win 0, length 0\n10:00:00.003000 IP 203.0.113.5.80 > 192.0.2.10.50000: Flags [R], seq 21, win 0, length 0\n10:00:00.500000 IP 192.0.2.10.50002 > 203.0.113.7.443: Flags [S], seq 40, win 64240, length 0\n",
+          "expected": "192.0.2.10.50000 -> 203.0.113.5.80: established (SYN-ACK after 0.400 ms)\n192.0.2.10.50001 -> 203.0.113.6.80: refused (RST)\n192.0.2.10.50002 -> 203.0.113.7.443: no answer (1 SYN)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No TCP at all: ARP and DNS lines print nothing",
+          "stdin": "09:00:00.000000 ARP, Request who-has 192.0.2.1 tell 192.0.2.10, length 28\n09:00:00.100000 IP 192.0.2.10.53530 > 192.0.2.53.53: 4721+ A? www.example.com. (33)\n09:00:00.110000 IP 192.0.2.53.53 > 192.0.2.10.53530: 4721 1/0/0 A 192.0.2.80 (49)\n",
+          "expected": "",
+          "mode": "trim"
+        },
+        {
+          "name": "Microseconds are kept exactly",
+          "stdin": "23:59:59.990000 IP 192.0.2.10.50010 > 203.0.113.9.443: Flags [S], seq 1, win 64240, length 0\n23:59:59.999999 IP 203.0.113.9.443 > 192.0.2.10.50010: Flags [S.], seq 2, ack 2, win 65160, length 0\n",
+          "expected": "192.0.2.10.50010 -> 203.0.113.9.443: established (SYN-ACK after 9.999 ms)\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/wireless-vpn-firewalls/wg-cryptokey",
+      "track": "networking",
+      "lesson": "wireless-vpn-firewalls",
+      "id": "wg-cryptokey",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example, plus a gateway that claims an office address",
+          "stdin": "peer laptop 10.0.0.2/32\npeer office 10.0.0.3/32,192.168.50.0/24\npeer gateway 0.0.0.0/0\nsend 192.168.50.17\nsend 10.0.0.2\nsend 198.51.100.7\nrecv office 192.168.50.9\nrecv laptop 10.0.0.3\nrecv gateway 198.51.100.7\nrecv gateway 192.168.50.9\n",
+          "expected": "send 192.168.50.17: encrypt for office\nsend 10.0.0.2: encrypt for laptop\nsend 198.51.100.7: encrypt for gateway\nrecv office 192.168.50.9: accept\nrecv laptop 10.0.0.3: drop (source belongs to office)\nrecv gateway 198.51.100.7: accept\nrecv gateway 192.168.50.9: drop (source belongs to office)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A more specific range inside another peer's range; unknown peers and unknown sources",
+          "stdin": "peer phone 10.0.0.4/32\npeer nas 10.0.0.5/32,10.10.0.0/16\npeer lab 10.10.20.0/24\nsend 10.10.20.30\nsend 10.10.21.30\nsend 10.0.0.4\nsend 10.0.0.6\nsend 192.0.2.1\nrecv lab 10.10.20.30\nrecv nas 10.10.20.30\nrecv phone 10.0.0.9\nrecv printer 10.0.0.4\n",
+          "expected": "send 10.10.20.30: encrypt for lab\nsend 10.10.21.30: encrypt for nas\nsend 10.0.0.4: encrypt for phone\nsend 10.0.0.6: drop (no peer)\nsend 192.0.2.1: drop (no peer)\nrecv lab 10.10.20.30: accept\nrecv nas 10.10.20.30: drop (source belongs to lab)\nrecv phone 10.0.0.9: drop (source not allowed)\nrecv printer 10.0.0.4: drop (unknown peer)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Three nested ranges and their exact edges",
+          "stdin": "peer a 10.1.0.0/16\npeer b 10.1.2.0/24\npeer c 10.1.2.128/25\nsend 10.1.2.200\nsend 10.1.2.100\nsend 10.1.3.1\nsend 10.1.2.127\nsend 10.1.2.128\n",
+          "expected": "send 10.1.2.200: encrypt for c\nsend 10.1.2.100: encrypt for b\nsend 10.1.3.1: encrypt for a\nsend 10.1.2.127: encrypt for b\nsend 10.1.2.128: encrypt for c\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A peer without allowed IPs can send nothing and claim nothing",
+          "stdin": "peer spare\npeer laptop 10.0.0.2/32\nsend 10.0.0.2\nrecv spare 10.0.0.2\nrecv spare 10.9.9.9\n",
+          "expected": "send 10.0.0.2: encrypt for laptop\nrecv spare 10.0.0.2: drop (source belongs to laptop)\nrecv spare 10.9.9.9: drop (source not allowed)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No peers at all",
+          "stdin": "send 10.0.0.1\nrecv laptop 10.0.0.2\n",
+          "expected": "send 10.0.0.1: drop (no peer)\nrecv laptop 10.0.0.2: drop (unknown peer)\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/wireless-vpn-firewalls/acl-first-match",
+      "track": "networking",
+      "lesson": "wireless-vpn-firewalls",
+      "id": "acl-first-match",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example, plus a deny rule that comes too late",
+          "stdin": "allow tcp any 203.0.113.10/32 80-443\nallow tcp 198.51.100.0/24 203.0.113.10/32 22\ndeny any 192.0.2.66/32 any any\nallow icmp any 203.0.113.0/24 any\n---\ntcp 192.0.2.7 203.0.113.10 443\ntcp 192.0.2.7 203.0.113.10 22\ntcp 198.51.100.40 203.0.113.10 22\ntcp 192.0.2.66 203.0.113.10 80\nudp 192.0.2.66 203.0.113.10 53\nicmp 192.0.2.7 203.0.113.99 -\n",
+          "expected": "tcp 192.0.2.7 203.0.113.10 443: ALLOW (rule 1)\ntcp 192.0.2.7 203.0.113.10 22: DENY (default)\ntcp 198.51.100.40 203.0.113.10 22: ALLOW (rule 2)\ntcp 192.0.2.66 203.0.113.10 80: ALLOW (rule 1)\nudp 192.0.2.66 203.0.113.10 53: DENY (rule 3)\nicmp 192.0.2.7 203.0.113.99 -: ALLOW (rule 4)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "First match wins: a specific deny before a broad allow",
+          "stdin": "deny tcp 10.0.0.0/8 any 23\nallow tcp 10.0.0.0/8 any any\nallow tcp 10.1.0.0/16 any 23\n---\ntcp 10.1.2.3 192.0.2.1 23\ntcp 10.1.2.3 192.0.2.1 24\ntcp 11.0.0.1 192.0.2.1 80\n",
+          "expected": "tcp 10.1.2.3 192.0.2.1 23: DENY (rule 1)\ntcp 10.1.2.3 192.0.2.1 24: ALLOW (rule 2)\ntcp 11.0.0.1 192.0.2.1 80: DENY (default)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Protocols differ, ranges include both ends, ICMP needs port any",
+          "stdin": "allow udp any 192.0.2.53/32 53\nallow tcp any any 1024-65535\n---\nudp 203.0.113.5 192.0.2.53 53\ntcp 203.0.113.5 192.0.2.53 53\ntcp 203.0.113.5 192.0.2.80 1023\ntcp 203.0.113.5 192.0.2.80 1024\ntcp 203.0.113.5 192.0.2.80 65535\nicmp 203.0.113.5 192.0.2.80 -\n",
+          "expected": "udp 203.0.113.5 192.0.2.53 53: ALLOW (rule 1)\ntcp 203.0.113.5 192.0.2.53 53: DENY (default)\ntcp 203.0.113.5 192.0.2.80 1023: DENY (default)\ntcp 203.0.113.5 192.0.2.80 1024: ALLOW (rule 2)\ntcp 203.0.113.5 192.0.2.80 65535: ALLOW (rule 2)\nicmp 203.0.113.5 192.0.2.80 -: DENY (default)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The edge of a /25 source block",
+          "stdin": "allow any 192.168.1.0/25 any any\n---\nudp 192.168.1.127 198.51.100.53 53\nudp 192.168.1.128 192.0.2.1 53\nicmp 192.168.1.1 192.0.2.1 -\n",
+          "expected": "udp 192.168.1.127 198.51.100.53 53: ALLOW (rule 1)\nudp 192.168.1.128 192.0.2.1 53: DENY (default)\nicmp 192.168.1.1 192.0.2.1 -: ALLOW (rule 1)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No rules: everything is denied by default",
+          "stdin": "---\ntcp 192.0.2.1 192.0.2.2 80\nicmp 192.0.2.1 192.0.2.2 -\n",
+          "expected": "tcp 192.0.2.1 192.0.2.2 80: DENY (default)\nicmp 192.0.2.1 192.0.2.2 -: DENY (default)\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/wireless-vpn-firewalls/napt",
+      "track": "networking",
+      "lesson": "wireless-vpn-firewalls",
+      "id": "napt",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example, then the reply for the second host",
+          "stdin": "public 198.51.100.1 ports 40000\nout tcp 192.168.1.10:51514 203.0.113.80:443\nin tcp 203.0.113.80:443 198.51.100.1:40000\nout tcp 192.168.1.11:51514 203.0.113.80:443\nin tcp 203.0.113.80:443 198.51.100.1:40001\nin tcp 203.0.113.80:443 198.51.100.1:40002\n",
+          "expected": "out tcp 192.168.1.10:51514 203.0.113.80:443: as 198.51.100.1:40000\nin tcp 203.0.113.80:443 198.51.100.1:40000: to 192.168.1.10:51514\nout tcp 192.168.1.11:51514 203.0.113.80:443: as 198.51.100.1:40001\nin tcp 203.0.113.80:443 198.51.100.1:40001: to 192.168.1.11:51514\nin tcp 203.0.113.80:443 198.51.100.1:40002: drop (no mapping)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "One mapping for two remotes; a stranger is filtered",
+          "stdin": "public 198.51.100.1 ports 50000\nout udp 192.168.1.20:5060 203.0.113.5:3478\nout udp 192.168.1.20:5060 203.0.113.9:5060\nin udp 203.0.113.9:5060 198.51.100.1:50000\nin udp 203.0.113.66:5060 198.51.100.1:50000\nin udp 203.0.113.5:3478 198.51.100.1:50000\nin tcp 203.0.113.5:3478 198.51.100.1:50000\n",
+          "expected": "out udp 192.168.1.20:5060 203.0.113.5:3478: as 198.51.100.1:50000\nout udp 192.168.1.20:5060 203.0.113.9:5060: as 198.51.100.1:50000\nin udp 203.0.113.9:5060 198.51.100.1:50000: to 192.168.1.20:5060\nin udp 203.0.113.66:5060 198.51.100.1:50000: drop (not contacted)\nin udp 203.0.113.5:3478 198.51.100.1:50000: to 192.168.1.20:5060\nin tcp 203.0.113.5:3478 198.51.100.1:50000: drop (no mapping)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "TCP and UDP from the same inside port get separate mappings",
+          "stdin": "public 198.51.100.1 ports 40000\nout tcp 192.168.1.10:40000 203.0.113.80:443\nout udp 192.168.1.10:40000 203.0.113.53:53\nin udp 203.0.113.53:53 198.51.100.1:40001\nin udp 203.0.113.53:53 198.51.100.1:40000\nin tcp 203.0.113.80:443 198.51.100.1:40000\n",
+          "expected": "out tcp 192.168.1.10:40000 203.0.113.80:443: as 198.51.100.1:40000\nout udp 192.168.1.10:40000 203.0.113.53:53: as 198.51.100.1:40001\nin udp 203.0.113.53:53 198.51.100.1:40001: to 192.168.1.10:40000\nin udp 203.0.113.53:53 198.51.100.1:40000: drop (no mapping)\nin tcp 203.0.113.80:443 198.51.100.1:40000: to 192.168.1.10:40000\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A port forward is open to everyone; other ports and addresses are not",
+          "stdin": "public 198.51.100.1 ports 40000\nforward tcp 8443 192.168.1.50:443\nin tcp 203.0.113.7:51000 198.51.100.1:8443\nin tcp 192.0.2.99:60000 198.51.100.1:8443\nin tcp 203.0.113.7:51000 198.51.100.1:22\nin tcp 203.0.113.7:51000 198.51.100.2:8443\n",
+          "expected": "forward tcp 8443 192.168.1.50:443: ok\nin tcp 203.0.113.7:51000 198.51.100.1:8443: to 192.168.1.50:443\nin tcp 192.0.2.99:60000 198.51.100.1:8443: to 192.168.1.50:443\nin tcp 203.0.113.7:51000 198.51.100.1:22: drop (no mapping)\nin tcp 203.0.113.7:51000 198.51.100.2:8443: drop (no mapping)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No events: nothing is printed",
+          "stdin": "public 198.51.100.1 ports 40000\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-security-basics/arp-watch",
+      "track": "networking",
+      "lesson": "network-security-basics",
+      "id": "arp-watch",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "The worked example: a host takes over the gateway's address",
+          "stdin": "gateway 192.168.1.1\n100 192.168.1.1 is-at 02:00:00:00:00:01\n101 192.168.1.20 is-at 02:00:00:00:00:20\n102 192.168.1.66 is-at 02:00:00:00:00:66\n130 192.168.1.1 is-at 02:00:00:00:00:01\n131 192.168.1.20 is-at 02:00:00:00:00:20\n200 192.168.1.1 is-at 02:00:00:00:00:66\n",
+          "expected": "100 new station 192.168.1.1 02:00:00:00:00:01\n101 new station 192.168.1.20 02:00:00:00:00:20\n102 new station 192.168.1.66 02:00:00:00:00:66\n200 changed 192.168.1.1 02:00:00:00:00:01 -> 02:00:00:00:00:66\n200 ALERT gateway 192.168.1.1 moved to 02:00:00:00:00:66 (also used by 192.168.1.66)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A host address that flip-flops between two machines",
+          "stdin": "gateway 10.0.0.1\n1 10.0.0.30 is-at 02:00:00:00:00:30\n2 10.0.0.30 is-at 02:00:00:00:00:99\n3 10.0.0.30 is-at 02:00:00:00:00:30\n4 10.0.0.30 is-at 02:00:00:00:00:99\n5 10.0.0.30 is-at 02:00:00:00:00:77\n",
+          "expected": "1 new station 10.0.0.30 02:00:00:00:00:30\n2 changed 10.0.0.30 02:00:00:00:00:30 -> 02:00:00:00:00:99\n3 flip flop 10.0.0.30 02:00:00:00:00:99 -> 02:00:00:00:00:30\n4 flip flop 10.0.0.30 02:00:00:00:00:30 -> 02:00:00:00:00:99\n5 changed 10.0.0.30 02:00:00:00:00:99 -> 02:00:00:00:00:77\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The gateway itself flip-flops: an alert every time",
+          "stdin": "gateway 10.0.0.1\n10 10.0.0.1 is-at 02:00:00:00:aa:01\n20 10.0.0.1 is-at 02:00:00:00:bb:02\n30 10.0.0.1 is-at 02:00:00:00:aa:01\n40 10.0.0.5 is-at 02:00:00:00:aa:01\n50 10.0.0.1 is-at 02:00:00:00:bb:02\n",
+          "expected": "10 new station 10.0.0.1 02:00:00:00:aa:01\n20 changed 10.0.0.1 02:00:00:00:aa:01 -> 02:00:00:00:bb:02\n20 ALERT gateway 10.0.0.1 moved to 02:00:00:00:bb:02\n30 flip flop 10.0.0.1 02:00:00:00:bb:02 -> 02:00:00:00:aa:01\n30 ALERT gateway 10.0.0.1 moved to 02:00:00:00:aa:01\n40 new station 10.0.0.5 02:00:00:00:aa:01\n50 flip flop 10.0.0.1 02:00:00:00:aa:01 -> 02:00:00:00:bb:02\n50 ALERT gateway 10.0.0.1 moved to 02:00:00:00:bb:02\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Capital letters do not count as a change; several IPs share one MAC",
+          "stdin": "gateway 172.16.0.1\n1 172.16.0.1 is-at 02:00:00:00:00:AB\n2 172.16.0.1 is-at 02:00:00:00:00:ab\n3 172.16.0.9 is-at 02:00:00:00:00:CD\n4 172.16.0.10 is-at 02:00:00:00:00:cd\n5 172.16.0.11 is-at 02:00:00:00:00:cd\n6 172.16.0.1 is-at 02:00:00:00:00:Cd\n",
+          "expected": "1 new station 172.16.0.1 02:00:00:00:00:ab\n3 new station 172.16.0.9 02:00:00:00:00:cd\n4 new station 172.16.0.10 02:00:00:00:00:cd\n5 new station 172.16.0.11 02:00:00:00:00:cd\n6 changed 172.16.0.1 02:00:00:00:00:ab -> 02:00:00:00:00:cd\n6 ALERT gateway 172.16.0.1 moved to 02:00:00:00:00:cd (also used by 172.16.0.9,172.16.0.10,172.16.0.11)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No replies observed: nothing is printed",
+          "stdin": "gateway 192.168.1.1\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-security-basics/token-bucket",
+      "track": "networking",
+      "lesson": "network-security-basics",
+      "id": "token-bucket",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "The worked example, then too little time for another token",
+          "stdin": "rate 2 burst 3\n0 192.0.2.7\n0 192.0.2.7\n0 192.0.2.7\n0 192.0.2.7\n0 192.0.2.7\n500 192.0.2.7\n600 192.0.2.7\n",
+          "expected": "0 192.0.2.7 ACCEPT\n0 192.0.2.7 ACCEPT\n0 192.0.2.7 ACCEPT\n0 192.0.2.7 DROP\n0 192.0.2.7 DROP\n500 192.0.2.7 ACCEPT\n600 192.0.2.7 DROP\n192.0.2.7: 4 accepted, 3 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A flooding bot does not slow down a normal client",
+          "stdin": "rate 10 burst 2\n0 bot\n10 bot\n20 bot\n30 bot\n40 alice\n50 bot\n100 bot\n140 alice\n150 bot\n200 bot\n",
+          "expected": "0 bot ACCEPT\n10 bot ACCEPT\n20 bot DROP\n30 bot DROP\n40 alice ACCEPT\n50 bot DROP\n100 bot ACCEPT\n140 alice ACCEPT\n150 bot DROP\n200 bot ACCEPT\nalice: 2 accepted, 0 dropped\nbot: 4 accepted, 4 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A long pause refills only up to the burst size",
+          "stdin": "rate 1 burst 2\n0 a\n0 a\n0 a\n60000 a\n60000 a\n60000 a\n",
+          "expected": "0 a ACCEPT\n0 a ACCEPT\n0 a DROP\n60000 a ACCEPT\n60000 a ACCEPT\n60000 a DROP\na: 4 accepted, 2 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Partial tokens add up exactly (3 per second, burst 1)",
+          "stdin": "rate 3 burst 1\n0 s\n300 s\n600 s\n900 s\n1000 s\n1333 s\n1334 s\n",
+          "expected": "0 s ACCEPT\n300 s DROP\n600 s ACCEPT\n900 s DROP\n1000 s ACCEPT\n1333 s DROP\n1334 s ACCEPT\ns: 4 accepted, 3 dropped\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No requests: nothing is printed",
+          "stdin": "rate 5 burst 5\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "networking/network-security-basics/scan-detector",
+      "track": "networking",
+      "lesson": "network-security-basics",
+      "id": "scan-detector",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "The worked example: a vertical scan next to normal HTTPS traffic",
+          "stdin": "window 10 threshold 5\n0 192.0.2.50 203.0.113.10 443\n1 198.51.100.7 203.0.113.10 21\n1 198.51.100.7 203.0.113.10 22\n2 198.51.100.7 203.0.113.10 23\n2 192.0.2.50 203.0.113.10 443\n3 198.51.100.7 203.0.113.10 25\n3 198.51.100.7 203.0.113.10 80\n4 198.51.100.7 203.0.113.10 110\n5 192.0.2.50 203.0.113.10 443\n",
+          "expected": "ALERT t=3 src=198.51.100.7 targets=5 hosts=1 type=vertical\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A horizontal sweep of port 22",
+          "stdin": "window 60 threshold 4\n10 198.51.100.9 203.0.113.1 22\n12 198.51.100.9 203.0.113.2 22\n15 198.51.100.9 203.0.113.3 22\n40 198.51.100.9 203.0.113.4 22\n41 198.51.100.9 203.0.113.5 22\n",
+          "expected": "ALERT t=40 src=198.51.100.9 targets=4 hosts=4 type=horizontal\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A slow scan stays under the window: a known blind spot",
+          "stdin": "window 10 threshold 4\n0 198.51.100.7 203.0.113.10 22\n15 198.51.100.7 203.0.113.10 23\n30 198.51.100.7 203.0.113.10 25\n45 198.51.100.7 203.0.113.10 80\n60 198.51.100.7 203.0.113.10 443\n",
+          "expected": "no scans detected\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Repeated connections count once; a mixed scan is still caught",
+          "stdin": "window 30 threshold 4\n0 192.0.2.80 203.0.113.10 443\n1 192.0.2.80 203.0.113.10 443\n2 192.0.2.80 203.0.113.11 443\n3 192.0.2.80 203.0.113.10 443\n4 192.0.2.80 203.0.113.11 443\n10 198.51.100.3 203.0.113.10 22\n11 198.51.100.3 203.0.113.11 80\n12 198.51.100.3 203.0.113.10 22\n13 198.51.100.3 203.0.113.12 3389\n14 198.51.100.3 203.0.113.10 445\n",
+          "expected": "ALERT t=14 src=198.51.100.3 targets=4 hosts=3 type=mixed\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The window edge: 4 seconds old counts, 5 seconds old does not",
+          "stdin": "window 5 threshold 3\n0 198.51.100.7 203.0.113.10 22\n4 198.51.100.7 203.0.113.10 23\n5 198.51.100.7 203.0.113.10 25\n6 198.51.100.7 203.0.113.10 80\n",
+          "expected": "ALERT t=6 src=198.51.100.7 targets=3 hosts=1 type=vertical\n",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty log: no scans detected",
+          "stdin": "window 10 threshold 3\n",
+          "expected": "no scans detected\n",
           "mode": "trim"
         }
       ]
