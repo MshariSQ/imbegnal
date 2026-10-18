@@ -151,7 +151,7 @@ cheapest:       A -> B -> C   (2 edges, cost 2)
 
 **Dijkstra's algorithm** (Edsger Dijkstra, 1959) works when **no weight is negative**. Repeatedly take the vertex with the **smallest tentative distance** that is not final yet, declare its distance **final**, and relax its outgoing edges. A min-heap hands you that vertex. Why may it be declared final? Any other route to it must leave the finished vertices at some unfinished vertex whose tentative distance is already at least as large, and edges that cannot be negative never make a route shorter.
 
-Library heaps cannot lower a priority in place, so use **lazy deletion**: push \`(new distance, v)\` every time \`dist[v]\` improves, and when you pop an entry whose distance is larger than \`dist[v]\`, it is outdated: skip it.
+Library heaps cannot lower a priority in place, so use **lazy deletion**: push \`(new distance, v)\` every time \`dist[v]\` improves, and when you pop an entry whose distance is larger than \`dist[v]\`, it is outdated: skip it. With weights that are never negative, each vertex passes this check exactly once, at its final distance.
 
 \`\`\`python
 import heapq
@@ -204,7 +204,7 @@ cheapest:       A -> B -> C   (2 edges, cost 2)
 
 **خوارزمية Dijkstra** (التي وضعها Edsger Dijkstra عام 1959) تعمل حين **لا يكون أي وزن سالباً**. خذ مراراً الرأس صاحب **أصغر مسافة مؤقتة** مما لم يصبح نهائياً بعد، وأعلن مسافته **نهائية**، وأرخِ حوافه الخارجة. والكومة الصغرى تسلّمك ذلك الرأس. لماذا يجوز إعلانه نهائياً؟ لأن أي مسار آخر إليه يجب أن يغادر الرؤوس المنتهية عند رأس غير منتهٍ مسافته المؤقتة لا تقل عن مسافته، والحواف التي لا يمكن أن تكون سالبة لا تجعل أي مسار أقصر أبداً.
 
-الكومات الجاهزة في المكتبات لا تستطيع خفض الأولوية في مكانها، فاستخدم **الحذف الكسول (lazy deletion)**: أضف \`(المسافة الجديدة، v)\` كلما تحسّنت \`dist[v]\`، وحين تسحب مدخلاً مسافته أكبر من \`dist[v]\` فهو قديم: تجاهله.
+الكومات الجاهزة في المكتبات لا تستطيع خفض الأولوية في مكانها، فاستخدم **الحذف الكسول (lazy deletion)**: أضف \`(المسافة الجديدة، v)\` كلما تحسّنت \`dist[v]\`، وحين تسحب مدخلاً مسافته أكبر من \`dist[v]\` فهو قديم: تجاهله. وما دامت الأوزان غير سالبة فإن كل رأس يجتاز هذا الشرط مرة واحدة بالضبط، عند مسافته النهائية.
 
 \`\`\`python
 import heapq
@@ -242,23 +242,25 @@ pop C (4)   final.  Distances: S 0, B 1, A 3, C 4.  Route to C: S -> B -> A -> C
     lang: "python",
     code: `import heapq
 
-def dijkstra(graph, source):
+def dijkstra(graph, source, limit=1000):
     dist = {v: float("inf") for v in graph}
     dist[source] = 0
     parent = {source: None}
-    done = set()
+    expanded = []                          # every (vertex, distance) whose edges we relax
     heap = [(0, source)]
     while heap:
         d, u = heapq.heappop(heap)
-        if u in done:
-            continue                       # an outdated entry: u is already final
-        done.add(u)                        # the smallest tentative distance is final
+        if d > dist[u]:
+            continue                       # an outdated entry: u was reached more cheaply
+        expanded.append((u, d))
+        if len(expanded) > limit:
+            raise RuntimeError(f"still running after {limit} expansions")
         for v, w in graph[u]:
-            if v not in done and d + w < dist[v]:
+            if d + w < dist[v]:
                 dist[v] = d + w            # relax the edge u -> v
                 parent[v] = u
                 heapq.heappush(heap, (dist[v], v))
-    return dist, parent
+    return dist, parent, expanded
 
 def path_to(parent, target):
     path = []
@@ -268,7 +270,7 @@ def path_to(parent, target):
     return path[::-1]
 
 roads = {"S": [("A", 4), ("B", 1)], "A": [("C", 1)], "B": [("A", 2), ("C", 5)], "C": []}
-dist, parent = dijkstra(roads, "S")
+dist, parent, _ = dijkstra(roads, "S")
 print("distances from S:", dist)
 print("route to C:", " -> ".join(path_to(parent, "C")), "| cost", dist["C"])
 
@@ -284,14 +286,20 @@ def bellman_ford(graph, source):
     return dist, cycle
 
 refund = {"A": [("B", 2), ("C", 3)], "B": [("D", 1)], "C": [("B", -2)], "D": []}
-print("Dijkstra, negative edge:", dijkstra(refund, "A")[0])
+dist, _, expanded = dijkstra(refund, "A")
+print("Dijkstra, negative edge:", dist)
+print("  expanded in this order:", ", ".join(f"{u} at {d}" for u, d in expanded))
 print("Bellman-Ford:           ", bellman_ford(refund, "A")[0])
 loop = {"A": [("B", 1)], "B": [("C", -2)], "C": [("B", 1)]}
 print("negative cycle B -> C -> B detected:", bellman_ford(loop, "A")[1])
+try:
+    dijkstra(loop, "A")
+except RuntimeError as err:
+    print("Dijkstra on the same graph:", err)
 `,
     explanation: {
-      en: "On the road map Dijkstra finds the cost-4 route S, B, A, C, the one with more edges. On the 'refund' graph it declares B final at 2 and D at 3 before it ever looks at the edge C -> B of weight -2, so both answers are wrong; Bellman-Ford finds B = 1 and D = 2. The last line shows Bellman-Ford noticing a cycle whose total weight is negative.",
-      ar: "على خريطة الطرق تجد Dijkstra المسار S ثم B ثم A ثم C بتكلفة 4، وهو المسار ذو الحواف الأكثر. أما على graph 'الاسترداد' فتعلن B نهائية عند 2 وD عند 3 قبل أن تنظر أصلاً إلى الحافة C -> B ذات الوزن -2، فيكون الجوابان خاطئين؛ وتجد Bellman-Ford أن B = 1 وD = 2. والسطر الأخير يُظهر Bellman-Ford وهي تلاحظ دورة وزنها الإجمالي سالب.",
+      en: "On the road map Dijkstra finds the cost-4 route S, B, A, C, the one with more edges. On the 'refund' graph it expands B at 2, the distance it should be able to call final, and only then the edge C -> B of weight -2 lowers B to 1, so B is expanded a second time and D drops to 2 before it is ever expanded. The distances match Bellman-Ford (B = 1, D = 2) only because this code never trusts 'final'; a version that marks popped vertices as done and skips them would keep B = 2 and D = 3. On the negative cycle Bellman-Ford reports the cycle, while Dijkstra keeps lowering B and C and would never stop: the limit makes it give up.",
+      ar: "على خريطة الطرق تجد Dijkstra المسار S ثم B ثم A ثم C بتكلفة 4، وهو المسار ذو الحواف الأكثر. أما على graph 'الاسترداد' فتوسّع B عند 2، وهي المسافة التي يُفترض أن تعلنها نهائية، ثم تخفض الحافة C -> B ذات الوزن -2 قيمة B إلى 1، فتُوسَّع B مرة ثانية وتنخفض D إلى 2 قبل أن تُوسَّع أصلاً. وتطابق المسافات ما تجده Bellman-Ford (B = 1 وD = 2) فقط لأن هذه الشيفرة لا تثق أبداً بأن المسافة 'نهائية'؛ أما النسخة التي تعلّم الرؤوس المسحوبة بأنها منتهية وتتخطاها فستُبقي B = 2 وD = 3. وعلى الدورة السالبة تبلّغ Bellman-Ford عن الدورة، بينما تظل Dijkstra تخفض B وC ولن تتوقف أبداً: والحد هو ما يجعلها تستسلم.",
     },
   },
   {
@@ -403,7 +411,7 @@ print(" ".join(str(x) if x != INF else "-1" for x in dist))
     body: {
       en: `## Negative edges and Bellman-Ford
 
-Dijkstra's promise "the smallest tentative distance is final" relies on edges never being negative. Break that rule and it fails:
+Dijkstra's promise "the smallest tentative distance is final" relies on edges never being negative. Break that rule and the promise fails:
 
 \`\`\`
         2           1
@@ -412,9 +420,13 @@ Dijkstra's promise "the smallest tentative distance is final" relies on edges ne
    3 \\       | -2
       \\----> C
 
-Dijkstra finalises B at 2 and D at 3 before it looks at C.
-The real shortest paths: A -> C -> B costs 3 - 2 = 1, and A -> C -> B -> D costs 2.
+pop A (0)   relax: B = 2, C = 3
+pop B (2)   B "final" at 2;  relax: D = 3
+pop C (3)   relax C -> B: 3 - 2 = 1 < 2
+real:       B = 1 (A -> C -> B),  D = 2 (A -> C -> B -> D)
 \`\`\`
+
+The argument breaks the moment a popped vertex is treated as final: B was popped at 2, but a later edge of weight -2 makes it 1. A version that marks popped vertices as done and never touches them again keeps B = 2 and D = 3, both wrong. The lazy code above has no such mark: when C -> B lowers B, it pushes B again, expands it a second time and fixes D. It returns correct distances as long as no negative cycle is reachable, but it is no longer the algorithm whose cost you know: a vertex can be expanded many times, exponentially many in the worst case, and if a negative cycle is reachable the loop never ends. Negative weights need an algorithm built for them.
 
 Negative weights are not exotic: a step that earns a refund or a bonus, or currency exchange, where taking \`-log(rate)\` as the weight turns "multiply the rates" into "add the weights", so a profitable loop of trades (arbitrage) becomes a cycle of negative total weight.
 
@@ -436,7 +448,7 @@ for _ in range(V - 1):
 **Which tool when?** All steps cost the same: BFS. Weights 0 or more: Dijkstra. Negative weights, or you must detect negative cycles: Bellman-Ford. (For all pairs on a small graph, Floyd-Warshall runs in O(V³).)`,
       ar: `## الحواف السالبة وBellman-Ford
 
-وعد Dijkstra بأن "أصغر مسافة مؤقتة نهائية" يعتمد على ألا تكون الحواف سالبة أبداً. اكسر هذه القاعدة فتفشل:
+وعد Dijkstra بأن "أصغر مسافة مؤقتة نهائية" يعتمد على ألا تكون الحواف سالبة أبداً. اكسر هذه القاعدة فيسقط الوعد:
 
 \`\`\`
         2           1
@@ -445,9 +457,13 @@ for _ in range(V - 1):
    3 \\       | -2
       \\----> C
 
-Dijkstra finalises B at 2 and D at 3 before it looks at C.
-The real shortest paths: A -> C -> B costs 3 - 2 = 1, and A -> C -> B -> D costs 2.
+pop A (0)   relax: B = 2, C = 3
+pop B (2)   B "final" at 2;  relax: D = 3
+pop C (3)   relax C -> B: 3 - 2 = 1 < 2
+real:       B = 1 (A -> C -> B),  D = 2 (A -> C -> B -> D)
 \`\`\`
+
+تنهار الحجة لحظةَ معاملة الرأس المسحوب على أنه نهائي: فقد سُحبت B عند 2، لكن حافة لاحقة وزنها -2 تجعلها 1. والنسخة التي تعلّم الرؤوس المسحوبة بأنها منتهية ولا تعود إليها أبداً تُبقي B = 2 وD = 3، وكلاهما خطأ. أما الشيفرة الكسولة أعلاه فليس فيها هذا التعليم: حين تخفض C -> B قيمة B تضيف B من جديد وتوسّعها مرة ثانية فتصلح D. وهي تعيد مسافات صحيحة ما دامت لا توجد دورة سالبة يمكن بلوغها، لكنها لم تعد الخوارزمية التي تعرف تكلفتها: فقد يُوسَّع الرأس مرات كثيرة، أُسّية العدد في أسوأ الحالات، وإن أمكن بلوغ دورة سالبة فلن تنتهي الحلقة أبداً. فالأوزان السالبة تحتاج خوارزمية صُمّمت لها.
 
 والأوزان السالبة ليست غريبة: خطوة تمنحك استرداداً أو مكافأة، أو صرف العملات، حيث يحوّل أخذ \`-log(rate)\` وزناً عمليةَ "ضرب أسعار الصرف" إلى "جمع الأوزان"، فتصبح سلسلة صفقات مربحة تعود إلى نقطة البداية (المراجحة arbitrage) دورةً وزنها الإجمالي سالب.
 
@@ -488,7 +504,7 @@ for _ in range(V - 1):
 2 1 -2
 1 3 1
 \`\`\`
-prints \`0 1 3 2\`, the graph Dijkstra gets wrong in the lesson.
+prints \`0 1 3 2\`: the 'refund' graph from the lesson, where Dijkstra's "final" B = 2 turned out wrong.
 
 Relax every edge \`n - 1\` times (stop early if a round changes nothing), then do one more pass: if any edge still improves a distance, print \`NEGATIVE CYCLE\`. Never relax from a vertex whose distance is still infinite.`,
       ar: `**Bellman-Ford مع حواف سالبة.** في graph موجّه \`n\` رأساً و\`m\` حافة قد تكون أوزانها **سالبة**. اطبع أقصر مسافة من \`s\` إلى كل رأس، إلا إن أمكن بلوغ دورة سالبة من \`s\`.
@@ -505,7 +521,7 @@ Relax every edge \`n - 1\` times (stop early if a round changes nothing), then d
 2 1 -2
 1 3 1
 \`\`\`
-يطبع \`0 1 3 2\`، وهو الـ graph الذي تخطئ فيه Dijkstra في الدرس.
+يطبع \`0 1 3 2\`: وهو graph 'الاسترداد' من الدرس، حيث تبيّن أن B = 2 "النهائية" عند Dijkstra خطأ.
 
 أرخِ كل حافة \`n - 1\` مرة (وتوقف مبكراً إن لم تغيّر جولةٌ شيئاً)، ثم نفّذ مروراً إضافياً واحداً: إن حسّنت أي حافة مسافة ما فاطبع \`NEGATIVE CYCLE\`. ولا ترخِ أبداً من رأس ما زالت مسافته لا نهائية.`,
     },
@@ -609,7 +625,7 @@ public class Main {
       { name: { en: "The example", ar: "المثال" }, stdin: "4 4 0\n0 1 2\n0 2 3\n2 1 -2\n1 3 1\n", expected: "0 1 3 2" },
       { name: { en: "A reachable negative cycle", ar: "دورة سالبة يمكن بلوغها" }, stdin: "3 3 0\n0 1 1\n1 2 -2\n2 1 1\n", expected: "NEGATIVE CYCLE" },
       { name: { en: "A negative cycle the source cannot reach", ar: "دورة سالبة لا يبلغها المصدر" }, stdin: "4 3 0\n0 1 5\n2 3 -2\n3 2 1\n", expected: "0 5 INF INF" },
-      { name: { en: "Only negative weights, no cycle", ar: "أوزان سالبة فقط، بلا دورة" }, stdin: "3 2 0\n0 1 -5\n1 2 -5\n", expected: "0 -5 -10" },
+      { name: { en: "Only negative weights, edges listed backwards", ar: "أوزان سالبة فقط، والحواف مسرودة بالعكس" }, stdin: "3 2 0\n1 2 -5\n0 1 -5\n", expected: "0 -5 -10" },
       { name: { en: "A single vertex", ar: "رأس واحد" }, stdin: "1 0 0\n", expected: "0" },
       { name: { en: "300 vertices, 2,000 edges, weights -50 to 50", ar: "300 رأس و2,000 حافة، والأوزان من -50 إلى 50" }, stdin: bfInput, expected: bfExpected },
     ],
@@ -664,7 +680,7 @@ union(2, 4): roots 1 and 3       1
                                    4              find(4) then re-points 4 straight at 1
 \`\`\`
 
-With both tricks, a sequence of operations costs **O(α(n)) amortised** per operation, where α is the inverse Ackermann function (Robert Tarjan proved the bound in 1975). α(n) is at most 4 for any n you could ever store, so in practice it is constant time.`,
+With both tricks, a sequence of operations costs **O(α(n)) amortised** per operation, where α is the inverse Ackermann function (Robert Tarjan proved the bound for full path compression in 1975, and Tarjan and Jan van Leeuwen showed in 1984 that path halving achieves it too). α(n) is at most 4 for any n you could ever store, so in practice it is constant time.`,
       ar: `## Union-Find: من متصل بمن؟
 
 تظهر الروابط باستمرار (صداقات، وكابلات، وحسابات مدمجة) وعليك أن تجيب في أي لحظة: **"هل x وy في المجموعة نفسها؟"**. تشغيل BFS لكل سؤال يكلّف O(V + E). أما **Union-Find** (بنية المجموعات المنفصلة disjoint set) فتجيب في زمن ثابت تقريباً.
@@ -711,7 +727,7 @@ union(2, 4): roots 1 and 3       1
                                    4              find(4) then re-points 4 straight at 1
 \`\`\`
 
-ومع الحيلتين معاً تكلّف سلسلة العمليات **O(α(n)) مُهلَكة** لكل عملية، حيث α دالة Ackermann العكسية (وقد أثبت Robert Tarjan هذا الحد عام 1975). وα(n) لا تتجاوز 4 لأي n يمكن أن تخزّنه يوماً، فهي عملياً زمن ثابت.`,
+ومع الحيلتين معاً تكلّف سلسلة العمليات **O(α(n)) مُهلَكة** لكل عملية، حيث α دالة Ackermann العكسية (وقد أثبت Robert Tarjan هذا الحد لضغط المسار الكامل عام 1975، وبيّن Tarjan وJan van Leeuwen عام 1984 أن تنصيف المسار يبلغه أيضاً). وα(n) لا تتجاوز 4 لأي n يمكن أن تخزّنه يوماً، فهي عملياً زمن ثابت.`,
     },
   },
   {
@@ -1066,20 +1082,20 @@ func main() {
 
 - In a **weighted** graph the shortest route minimises the **sum of weights**, not the number of edges. Every algorithm improves \`dist[v]\` by **relaxing** edges; they differ in the order.
 - **Dijkstra** (weights 0 or more) settles the closest unfinished vertex with a min-heap, skips outdated entries, and runs in **O((V + E) log V)**. Keep \`parent\` to rebuild the route.
-- **Negative edges** break Dijkstra. **Bellman-Ford** relaxes every edge V - 1 times in **O(V x E)**, and an improvement in one extra pass reveals a reachable **negative cycle**.
+- **Negative edges** break Dijkstra's promise that a popped vertex is final. **Bellman-Ford** relaxes every edge V - 1 times in **O(V x E)**, and an improvement in one extra pass reveals a reachable **negative cycle**.
 - **Union-Find** answers "same group?" and merges groups in **O(α(n))** amortised with union by size and path compression.
 - **Kruskal** sorts the edges and takes every edge that joins two different groups; the result is a **minimum spanning tree** with V - 1 edges, or proof that the graph is disconnected.
 
-**Practice next:** compute how long a signal takes to reach every node of a network (Dijkstra), find the cheapest flight with at most k stops (a Bellman-Ford variant), count groups of friends and find the one redundant cable with Union-Find, and implement Prim's algorithm with a heap. Next on the roadmap is **Greedy & Backtracking**: Kruskal was your first greedy algorithm with a proof.`,
+**Practice next:** compute how long a signal takes to reach every node of a network (Dijkstra), find the cheapest flight with at most k stops (a Bellman-Ford variant), count groups of friends and find the one redundant cable with Union-Find, and implement Prim's algorithm with a heap. Next on the roadmap is **Greedy & Backtracking**: Dijkstra and Kruskal were greedy algorithms whose choices you proved safe.`,
       ar: `## الخلاصة
 
 - في الـ graph **ذي الأوزان** يقلّل أقصر مسار **مجموع الأوزان** لا عدد الحواف. وكل خوارزمية تحسّن \`dist[v]\` **بإرخاء** الحواف؛ والفرق بينها في الترتيب.
 - **Dijkstra** (الأوزان 0 أو أكثر) تُثبّت أقرب رأس غير منتهٍ بكومة صغرى، وتتجاهل المدخلات القديمة، وتعمل في **O((V + E) log V)**. واحتفظ بـ \`parent\` لتعيد بناء المسار.
-- **الحواف السالبة** تكسر Dijkstra. و**Bellman-Ford** ترخي كل حافة V - 1 مرة في **O(V × E)**، والتحسّن في مرور إضافي واحد يكشف **دورة سالبة** يمكن بلوغها.
+- **الحواف السالبة** تكسر وعد Dijkstra بأن الرأس المسحوب نهائي. و**Bellman-Ford** ترخي كل حافة V - 1 مرة في **O(V × E)**، والتحسّن في مرور إضافي واحد يكشف **دورة سالبة** يمكن بلوغها.
 - **Union-Find** تجيب عن "هل هما في المجموعة نفسها؟" وتدمج المجموعات في **O(α(n))** مُهلَكة بالدمج حسب الحجم وضغط المسار.
 - **Kruskal** تفرز الحواف وتأخذ كل حافة تصل بين مجموعتين مختلفتين؛ والنتيجة **شجرة ممتدة صغرى** من V - 1 حافة، أو دليل على أن الـ graph غير متصل.
 
-**تدرّب بعد ذلك:** احسب كم تستغرق إشارة لتبلغ كل عقدة في شبكة (Dijkstra)، وأوجد أرخص رحلة جوية بـ k توقف على الأكثر (صيغة من Bellman-Ford)، وعُدّ مجموعات الأصدقاء وأوجد الكابل الزائد الوحيد باستخدام Union-Find، ونفّذ خوارزمية Prim بكومة. والتالي في خريطة المسار هو **الخوارزميات الجشعة والتراجع (Greedy & Backtracking)**: وكانت Kruskal أول خوارزمية جشعة تلتقي بها مع برهان.`,
+**تدرّب بعد ذلك:** احسب كم تستغرق إشارة لتبلغ كل عقدة في شبكة (Dijkstra)، وأوجد أرخص رحلة جوية بـ k توقف على الأكثر (صيغة من Bellman-Ford)، وعُدّ مجموعات الأصدقاء وأوجد الكابل الزائد الوحيد باستخدام Union-Find، ونفّذ خوارزمية Prim بكومة. والتالي في خريطة المسار هو **الخوارزميات الجشعة والتراجع (Greedy & Backtracking)**: فـ Dijkstra وKruskal خوارزميتان جشعتان أثبتّ أن اختياراتهما آمنة.`,
     },
   },
 ];
