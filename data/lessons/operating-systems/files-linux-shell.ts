@@ -679,7 +679,7 @@ Order matters: \`2>&1\` copies whatever fd 1 points to **at that moment**. \`cmd
 A **pipe** \`|\` connects the stdout of one command to the stdin of the next. The shell calls \`pipe()\` to get a kernel buffer with a write end and a read end, \`fork\`s once per command and wires the ends to fd 1 and fd 0. All the commands of a pipeline run **at the same time**: a writer that fills the buffer (64 KiB by default on Linux, see \`pipe(7)\`) blocks until the reader catches up, and a reader blocks until data arrives.
 
 \`\`\`
-ps -e | wc -l        # how many processes? two programs, one pipe
+ps -e --no-headers | wc -l   # how many processes (ps and wc included)? two programs, one pipe
 \`\`\`
 
 The **exit status** of a pipeline is the status of its last command, so a failure on the left can go unnoticed. In Bash, \`set -o pipefail\` makes the pipeline fail if any of its commands fails.`,
@@ -701,7 +701,7 @@ find / -name '*.conf' 2>/dev/null  # throw the "Permission denied" noise away
 **الأنبوب (pipe)** \`|\` يصل stdout لأمر بـ stdin للأمر التالي. تستدعي الصدفة \`pipe()\` فتحصل على مخزن مؤقت في النواة له طرف كتابة وطرف قراءة، ثم تنفّذ \`fork\` مرة لكل أمر وتوصل الطرفين بالواصفين 1 و0. وتعمل كل أوامر خط الأنابيب **في الوقت نفسه**: الكاتب الذي يملأ المخزن (سعته الافتراضية في لينكس 64 KiB، راجع \`pipe(7)\`) يُحجب حتى يلحق به القارئ، والقارئ يُحجب حتى تصل البيانات.
 
 \`\`\`
-ps -e | wc -l        # how many processes? two programs, one pipe
+ps -e --no-headers | wc -l   # how many processes (ps and wc included)? two programs, one pipe
 \`\`\`
 
 **حالة الخروج (exit status)** لخط الأنابيب هي حالة آخر أوامره، فقد يمرّ فشل في الطرف الأيسر دون أن يُلاحظ. وفي Bash يجعل الأمر \`set -o pipefail\` خط الأنابيب يفشل إذا فشل أي أمر من أوامره.`,
