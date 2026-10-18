@@ -7,4 +7,5 @@ export const dataStructuresAlgorithmsLessons: Record<string, () => Promise<{ les
   "data-structures-algorithms/stacks-queues": () => import("./stacks-queues"),
   "data-structures-algorithms/sorting-searching": () => import("./sorting-searching"),
   "data-structures-algorithms/trees-graphs": () => import("./trees-graphs"),
+  "data-structures-algorithms/recursion-dp": () => import("./recursion-dp"),
 };
