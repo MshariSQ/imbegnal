@@ -7,4 +7,5 @@ export const databasesLessons: Record<string, () => Promise<{ lesson: Lesson }>>
   "databases/joins-aggregation": () => import("./joins-aggregation"),
   "databases/indexes-performance": () => import("./indexes-performance"),
   "databases/transactions-acid": () => import("./transactions-acid"),
+  "databases/nosql-models": () => import("./nosql-models"),
 };

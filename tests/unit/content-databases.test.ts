@@ -22,10 +22,10 @@ const LESSON_IDS = [
   "joins-aggregation",
   "indexes-performance",
   "transactions-acid",
+  "nosql-models",
 ];
 const NODE_IDS = [
   ...LESSON_IDS,
-  "nosql-models",
   "backup-replication",
   "db-security",
   "data-warehousing",

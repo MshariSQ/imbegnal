@@ -254,14 +254,16 @@ export const catalog: Catalog = {
         "data-modeling-normalization",
         "joins-aggregation",
         "indexes-performance",
-        "transactions-acid"
+        "transactions-acid",
+        "nosql-models"
       ],
       "maxBonus": {
         "relational-sql-basics": 10,
         "data-modeling-normalization": 10,
         "joins-aggregation": 10,
         "indexes-performance": 10,
-        "transactions-acid": 10
+        "transactions-acid": 10,
+        "nosql-models": 10
       }
     },
     {
@@ -2574,6 +2576,129 @@ export const catalog: Catalog = {
           "name": "Numbers compare as numbers (T10 after T2)",
           "stdin": "T10 waits T2\nT2 waits T10\n",
           "expected": "deadlock: T2 -> T10 -> T2\nabort T10",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/nosql-models/document-query",
+      "track": "databases",
+      "lesson": "nosql-models",
+      "id": "document-query",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Top-level equality",
+          "stdin": "{\"category\": \"laptop\"}\n",
+          "expected": "1 Laptop Air\n2 Laptop Pro\n5 Gaming Laptop\ncount: 3",
+          "mode": "trim"
+        },
+        {
+          "name": "Dotted path into an embedded document",
+          "stdin": "{\"specs.ram_gb\": 32}\n",
+          "expected": "2 Laptop Pro\n5 Gaming Laptop\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "An array field matches by element",
+          "stdin": "{\"tags\": \"work\"}\n",
+          "expected": "1 Laptop Air\n2 Laptop Pro\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Equality AND an operator",
+          "stdin": "{\"category\": \"laptop\", \"price\": {\"$lt\": 2000}}\n",
+          "expected": "1 Laptop Air\n5 Gaming Laptop\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "$in and $gte together",
+          "stdin": "{\"category\": {\"$in\": [\"home\", \"clothing\"]}, \"price\": {\"$gte\": 35}}\n",
+          "expected": "3 Desk Lamp\n6 Hoodie\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Missing paths never match; $in on an array field",
+          "stdin": "{\"specs.ram_gb\": {\"$gt\": 8}, \"tags\": {\"$in\": [\"gaming\", \"creator\"]}}\n",
+          "expected": "2 Laptop Pro\n5 Gaming Laptop\ncount: 2",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/nosql-models/order-document",
+      "track": "databases",
+      "lesson": "nosql-models",
+      "id": "order-document",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "An order with two lines",
+          "stdin": "1001\n",
+          "expected": "{\"_id\": 1001, \"customer\": {\"id\": 7, \"name\": \"Amal\"}, \"lines\": [{\"price_cents\": 450, \"product\": \"Notebook\", \"qty\": 2}, {\"price_cents\": 125, \"product\": \"Pen\", \"qty\": 5}], \"placed_on\": \"2025-03-02\", \"total_cents\": 1525}",
+          "mode": "trim"
+        },
+        {
+          "name": "Another customer's order",
+          "stdin": "1002\n",
+          "expected": "{\"_id\": 1002, \"customer\": {\"id\": 8, \"name\": \"Bilal\"}, \"lines\": [{\"price_cents\": 3000, \"product\": \"Backpack\", \"qty\": 1}], \"placed_on\": \"2025-03-05\", \"total_cents\": 3000}",
+          "mode": "trim"
+        },
+        {
+          "name": "Lines keep the order they were added in",
+          "stdin": "1004\n",
+          "expected": "{\"_id\": 1004, \"customer\": {\"id\": 8, \"name\": \"Bilal\"}, \"lines\": [{\"price_cents\": 1200, \"product\": \"Stapler\", \"qty\": 1}, {\"price_cents\": 90, \"product\": \"Eraser\", \"qty\": 3}, {\"price_cents\": 220, \"product\": \"Marker\", \"qty\": 2}], \"placed_on\": \"2025-03-11\", \"total_cents\": 1910}",
+          "mode": "trim"
+        },
+        {
+          "name": "An order without lines: empty list, total 0",
+          "stdin": "1003\n",
+          "expected": "{\"_id\": 1003, \"customer\": {\"id\": 7, \"name\": \"Amal\"}, \"lines\": [], \"placed_on\": \"2025-03-09\", \"total_cents\": 0}",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown order",
+          "stdin": "999\n",
+          "expected": "order 999 not found",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/nosql-models/friends-of-friends",
+      "track": "databases",
+      "lesson": "nosql-models",
+      "id": "friends-of-friends",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Two suggestions ranked by mutual friends",
+          "stdin": "Amal Bilal\nAmal Carla\nBilal Dina\nCarla Dina\nCarla Emad\nDina Farid\n? Amal\n",
+          "expected": "Dina (2 mutual)\nEmad (1 mutual)",
+          "mode": "trim"
+        },
+        {
+          "name": "Existing friends are never suggested",
+          "stdin": "Amal Bilal\nAmal Carla\nBilal Carla\nBilal Dina\n? Amal\n",
+          "expected": "Dina (1 mutual)",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties are broken by name",
+          "stdin": "Hana Idris\nHana Jalal\nIdris Kamal\nJalal Kamal\nIdris Lina\nJalal Lina\nHana Munir\nMunir Omar\n? Hana\n",
+          "expected": "Kamal (2 mutual)\nLina (2 mutual)\nOmar (1 mutual)",
+          "mode": "trim"
+        },
+        {
+          "name": "Everyone already knows each other",
+          "stdin": "Amal Bilal\nBilal Carla\nAmal Carla\n? Carla\n",
+          "expected": "no suggestions",
+          "mode": "trim"
+        },
+        {
+          "name": "A person who is not in the graph",
+          "stdin": "Amal Bilal\n? Zed\n",
+          "expected": "no suggestions",
           "mode": "trim"
         }
       ]
