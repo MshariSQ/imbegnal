@@ -224,7 +224,7 @@ Numbers are hex with a \`0x\` prefix.
 - A section belongs to a segment when its flags contain \`A\`, its size is not 0, and \`[ADDR, ADDR+SIZE)\` lies completely inside \`[VADDR, VADDR+MEMSZ)\`. A section may belong to several segments.
 - For each segment, in input order, print \`<index as two digits> <TYPE> <perms>: <its sections in input order>\`, or \`(none)\`. Perms are \`r\`, \`w\`, \`x\` or \`-\` (for \`R\`, \`W\`, \`E\`).
 - Then print \`not loaded:\` and every section of non-zero size that is in no **LOAD** segment, or \`(none)\`.
-- Last, for every segment whose flags contain both \`W\` and \`E\`, print \`warning: <index> <TYPE> is writable and executable\`.
+- Last, for every segment whose flags contain both \`W\` and \`E\`, print \`warning: <index> <TYPE> is writable and executable\`, with the index as two digits again.
 
 **Example**
 
@@ -266,7 +266,7 @@ not loaded: .comment
 - ينتمي القسم إلى segment عندما تحتوي أعلامه على \`A\`، ولا يكون حجمه 0، ويقع \`[ADDR, ADDR+SIZE)\` بكامله داخل \`[VADDR, VADDR+MEMSZ)\`. وقد ينتمي القسم إلى أكثر من segment.
 - لكل segment، بترتيب المدخل، اطبع \`<الرقم بخانتين> <TYPE> <perms>: <أقسامه بترتيب المدخل>\`، أو \`(none)\`. والصلاحيات \`r\` و\`w\` و\`x\` أو \`-\` (مقابل \`R\` و\`W\` و\`E\`).
 - ثم اطبع \`not loaded:\` وبعدها كل قسم حجمه غير صفري ولا يقع في أي segment من نوع **LOAD**، أو \`(none)\`.
-- وأخيراً، لكل segment تحتوي أعلامه على \`W\` و\`E\` معاً اطبع \`warning: <index> <TYPE> is writable and executable\`.
+- وأخيراً، لكل segment تحتوي أعلامه على \`W\` و\`E\` معاً اطبع \`warning: <index> <TYPE> is writable and executable\`، والرقم بخانتين كما سبق.
 
 **مثال**
 
@@ -451,6 +451,16 @@ sections 9
 .symtab 0x0 0xd8 -
 .strtab 0x0 0x27 -
 `, expected: `not loaded: .text .rela.text .data .bss .rodata .comment .symtab .strtab
+` },
+        { name: { en: "Only LOAD segments are loaded: a section covered by nothing but a NOTE segment", ar: "الـsegments من نوع LOAD وحدها تُحمَّل: قسم لا يغطيه إلا segment من نوع NOTE" }, stdin: `segments 2
+LOAD 0x1000 0x100 RE
+NOTE 0x2000 0x20 R
+sections 2
+.text 0x1000 0x80 AX
+.note.example 0x2000 0x20 A
+`, expected: `00 LOAD r-x: .text
+01 NOTE r--: .note.example
+not loaded: .note.example
 ` },
       ],
       sampleInput: `segments 3
@@ -706,7 +716,7 @@ On Linux you can read PE files with \`objdump -x program.exe\` (binutils underst
 
 Write the first step of every PE parser: follow \`e_lfanew\` to the PE header and print the key facts. PE files are always little-endian.
 
-**Input:** the first bytes of a file as whitespace-separated hex (any number per line).
+**Input:** one or more files, each given as its first bytes in whitespace-separated hex (any number per line). A line \`===\` separates two files. The starter code already reads the files one by one, calls \`report()\` for each, and prints \`===\` between two reports: you write \`report()\`.
 
 **Layout**
 
@@ -715,7 +725,7 @@ Write the first step of every PE parser: follow \`e_lfanew\` to the PE header an
 - right after it, the 20-byte **COFF header**: \`Machine\` (2 bytes, offset 0), \`NumberOfSections\` (2, offset 2), \`Characteristics\` (2, offset 18)
 - right after that, the **optional header**: \`Magic\` (2 bytes, offset 0), \`AddressOfEntryPoint\` (4, offset 16), and \`ImageBase\`: 4 bytes at offset 28 for PE32 (\`0x10b\`) or 8 bytes at offset 24 for PE32+ (\`0x20b\`)
 
-**Output:** seven lines:
+**Output:** for each file, seven lines:
 
 \`\`\`
 format: PE32 | PE32+
@@ -759,7 +769,7 @@ entry VA: 0x140001400
 
 اكتب الخطوة الأولى في كل محلّل PE: اتبع \`e_lfanew\` إلى ترويسة PE واطبع الحقائق الأساسية. ملفات PE دائماً little-endian.
 
-**المدخل:** أولى بايتات ملف بصيغة hex تفصل بينها مسافات (بأي عدد في السطر).
+**المدخل:** ملف واحد أو أكثر، كل منها أولى بايتاته بصيغة hex تفصل بينها مسافات (بأي عدد في السطر). ويفصل سطر \`===\` بين كل ملفين. والكود الابتدائي يقرأ الملفات واحداً تلو الآخر أصلاً، ويستدعي \`report()\` لكل منها، ويطبع \`===\` بين كل تقريرين: وعليك أنت كتابة \`report()\`.
 
 **التخطيط**
 
@@ -768,7 +778,7 @@ entry VA: 0x140001400
 - بعده مباشرة **ترويسة COFF** ذات الـ20 بايت: ‏\`Machine\` (بايتان، الإزاحة 0)، و\`NumberOfSections\` (‏2، الإزاحة 2)، و\`Characteristics\` (‏2، الإزاحة 18)
 - وبعدها مباشرة **الترويسة الاختيارية**: ‏\`Magic\` (بايتان، الإزاحة 0)، و\`AddressOfEntryPoint\` (‏4، الإزاحة 16)، و\`ImageBase\`: ‏4 بايت عند الإزاحة 28 في PE32 ‏(\`0x10b\`) أو 8 بايت عند الإزاحة 24 في PE32+ ‏(\`0x20b\`)
 
-**المخرج:** سبعة أسطر:
+**المخرج:** لكل ملف سبعة أسطر:
 
 \`\`\`
 format: PE32 | PE32+
@@ -811,6 +821,7 @@ entry VA: 0x140001400
       },
       starterCode: `#include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #define MAX 4096
 
@@ -822,10 +833,8 @@ static uint32_t u16(size_t off) { return data[off] | (data[off + 1] << 8); }
 static uint32_t u32(size_t off) { return u16(off) | ((uint32_t)u16(off + 2) << 16); }
 static uint64_t u64(size_t off) { return u32(off) | ((uint64_t)u32(off + 4) << 32); }
 
-int main(void) {
-    unsigned int byte;
-    while (len < MAX && scanf("%x", &byte) == 1) data[len++] = (unsigned char)byte;
-
+/* Prints the report of one file: its bytes are data[0] .. data[len - 1]. */
+static void report(void) {
     /* TODO 1: check "MZ" (else "not an MZ file") and that len >= 0x40. */
     /* TODO 2: pe = u32(0x3c); check the "PE\\0\\0" signature (else "MZ file without a PE header"). */
     /* TODO 3: coff = pe + 4, opt = coff + 20; make sure opt + 32 <= len and Magic is 0x10b or 0x20b. */
@@ -833,11 +842,26 @@ int main(void) {
                then print the seven lines (use %llx with a cast for the 64-bit values). */
     (void)u64;
     printf("not an MZ file\\n");
+}
+
+int main(void) {
+    char sep[8];
+    for (;;) {
+        unsigned int byte;
+        memset(data, 0, sizeof data);
+        len = 0;
+        while (scanf("%x", &byte) == 1)
+            if (len < MAX) data[len++] = (unsigned char)byte;
+        report();
+        if (scanf("%7s", sep) != 1) break;   /* the "===" line between two files, or the end */
+        printf("===\\n");
+    }
     return 0;
 }
 `,
       solution: `#include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #define MAX 4096
 
@@ -858,37 +882,34 @@ static const char *machine_name(uint32_t m) {
     }
 }
 
-int main(void) {
-    unsigned int byte;
-    while (len < MAX && scanf("%x", &byte) == 1) data[len++] = (unsigned char)byte;
-
+static void report(void) {
     if (len < 2 || data[0] != 'M' || data[1] != 'Z') {
         printf("not an MZ file\\n");
-        return 0;
+        return;
     }
     if (len < 0x40) {
         printf("truncated or corrupt PE header\\n");
-        return 0;
+        return;
     }
     size_t pe = u32(0x3c);                 /* e_lfanew: where the PE signature starts */
     if (pe + 4 > len) {
         printf("truncated or corrupt PE header\\n");
-        return 0;
+        return;
     }
     if (data[pe] != 'P' || data[pe + 1] != 'E' || data[pe + 2] != 0 || data[pe + 3] != 0) {
         printf("MZ file without a PE header\\n");
-        return 0;
+        return;
     }
     size_t coff = pe + 4;                  /* COFF file header, 20 bytes */
     size_t opt = coff + 20;                /* optional header */
     if (opt + 32 > len) {
         printf("truncated or corrupt PE header\\n");
-        return 0;
+        return;
     }
     uint32_t magic = u16(opt);
     if (magic != 0x10b && magic != 0x20b) {
         printf("truncated or corrupt PE header\\n");
-        return 0;
+        return;
     }
     uint32_t machine = u16(coff);
     uint32_t sections = u16(coff + 2);
@@ -905,6 +926,20 @@ int main(void) {
     printf("entry RVA: 0x%x\\n", entry);
     printf("image base: 0x%llx\\n", (unsigned long long)base);
     printf("entry VA: 0x%llx\\n", (unsigned long long)(base + entry));
+}
+
+int main(void) {
+    char sep[8];
+    for (;;) {
+        unsigned int byte;
+        memset(data, 0, sizeof data);
+        len = 0;
+        while (scanf("%x", &byte) == 1)
+            if (len < MAX) data[len++] = (unsigned char)byte;
+        report();
+        if (scanf("%7s", sep) != 1) break;   /* the "===" line between two files, or the end */
+        printf("===\\n");
+    }
     return 0;
 }
 `,
@@ -966,24 +1001,52 @@ entry RVA: 0x2000
 image base: 0x140000000
 entry VA: 0x140002000
 ` },
-        { name: { en: "An old 16-bit NE file: MZ, but no PE signature", ar: "ملف NE قديم بـ 16 بت: فيه MZ لكن بلا توقيع PE" }, stdin: `4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        { name: { en: "Not PE files: an old 16-bit NE file (MZ, but no PE signature), then an ELF file", ar: "ملفان ليسا PE: ملف NE قديم بـ 16 بت (فيه MZ لكن بلا توقيع PE)، ثم ملف ELF" }, stdin: `4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00
 4e 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00
+===
+7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
 `, expected: `MZ file without a PE header
+===
+not an MZ file
 ` },
-        { name: { en: "An ELF file is not an MZ file", ar: "ملف ELF ليس ملف MZ" }, stdin: `7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
-`, expected: `not an MZ file
+        { name: { en: "Another machine (0x1c4, ARM Thumb-2) whose linker did not set the executable bit", ar: "جهاز آخر (0x1c4، أي ARM Thumb-2) لم يضع الرابط بت التنفيذ في ملفه" }, stdin: `4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00
+50 45 00 00 c4 01 02 00 00 00 00 00 00 00 00 00
+00 00 00 00 e0 00 00 01 0b 01 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 10 00 00 00 00 00 00
+00 00 00 00 00 00 40 00
+`, expected: `format: PE32
+machine: other (0x1c4)
+sections: 2
+kind: not executable
+entry RVA: 0x1000
+image base: 0x400000
+entry VA: 0x401000
 ` },
-        { name: { en: "Cut off inside the optional header", ar: "مقطوع داخل الترويسة الاختيارية" }, stdin: `4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        { name: { en: "Damaged headers: cut off inside the optional header, then an unknown Magic (0x107)", ar: "ترويسات تالفة: ملف مقطوع داخل الترويسة الاختيارية، ثم قيمة Magic غير معروفة (0x107)" }, stdin: `4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00
 50 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00
 00 00 00 00 f0 00 22 00 0b 02 00 00 00 00 00 00
 00 00 00 00
+===
+4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00
+50 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00
+00 00 00 00 f0 00 22 00 07 01 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 14 00 00 00 00 00 00
+00 00 00 40 01 00 00 00
 `, expected: `truncated or corrupt PE header
+===
+truncated or corrupt PE header
 ` },
       ],
     },
@@ -1311,7 +1374,7 @@ queries 4
 - **How is it built?** \`readelf -h -l -S\` for ELF; \`objdump -x\` for ELF and PE. \`readelf\` parses ELF directly, while \`objdump\` goes through the BFD library, which understands many formats.
 - **What does it need and offer?** \`readelf -d\` (look for \`NEEDED\`), \`nm -D\`, \`readelf --dyn-syms\`; for PE the import and export directories (\`objdump -x\`, pefile, \`rabin2 -i\` / \`-E\`).
 - **What does the loader patch?** \`readelf -r\`, and for PE the base relocation directory.
-- **What does the code do?** \`objdump -d -M intel\` for a quick look, then a disassembler and decompiler: **Ghidra** (free, released as open source by the NSA in 2019), radare2 with its Cutter interface, IDA or Binary Ninja.
+- **What does the code do?** \`objdump -d -M intel\` for a quick look, then a disassembler and decompiler: **Ghidra** (free, released as open source by the NSA in 2019), radare2, Cutter (the graphical interface of Rizin, a fork of radare2), IDA or Binary Ninja.
 
 A first session in Ghidra: create a project, import the file (it recognizes ELF or PE and the CPU), accept the auto-analysis, then use the **Symbol Tree** (Imports, Exports, Functions), the **Defined Strings** window, the **Memory Map** (it shows the segments and sections from this lesson, with their permissions) and the cross-references from the static-analysis lesson. Rename things as you understand them.
 
@@ -1335,7 +1398,7 @@ None of these commands executes the file. The exception to remember from the fir
 - **كيف بُني؟** ‏\`readelf -h -l -S\` لملفات ELF؛ و\`objdump -x\` لملفات ELF وPE. يحلّل \`readelf\` صيغة ELF مباشرة، بينما يمرّ \`objdump\` عبر مكتبة BFD التي تفهم صيغاً كثيرة.
 - **ماذا يحتاج وماذا يقدّم؟** ‏\`readelf -d\` (ابحث عن \`NEEDED\`)، و\`nm -D\`، و\`readelf --dyn-syms\`؛ وفي PE جدولا الاستيرادات والتصديرات (‏\`objdump -x\` أو pefile أو \`rabin2 -i\` / \`-E\`).
 - **ماذا يصحّح المُحمِّل؟** ‏\`readelf -r\`، وفي PE جدول إعادة التموضع الأساسية (base relocations).
-- **ماذا يفعل الكود؟** ‏\`objdump -d -M intel\` لنظرة سريعة، ثم مفكِّك وdecompiler: ‏**Ghidra** (مجاني، نشرته NSA مفتوح المصدر عام 2019)، أو radare2 مع واجهته Cutter، أو IDA، أو Binary Ninja.
+- **ماذا يفعل الكود؟** ‏\`objdump -d -M intel\` لنظرة سريعة، ثم مفكِّك وdecompiler: ‏**Ghidra** (مجاني، نشرته NSA مفتوح المصدر عام 2019)، أو radare2، أو Cutter (الواجهة الرسومية لـ Rizin، وهو تفرّع من radare2)، أو IDA، أو Binary Ninja.
 
 جلسة أولى في Ghidra: أنشئ مشروعاً، واستورد الملف (يتعرّف على ELF أو PE وعلى المعالج)، واقبل التحليل التلقائي، ثم استخدم **Symbol Tree** (‏Imports وExports وFunctions)، ونافذة **Defined Strings**، و**Memory Map** (تعرض segments والأقسام التي تعلمتها في هذا الدرس مع صلاحياتها)، والمراجع المتقاطعة من درس التحليل الساكن. وأعد تسمية الأشياء كلما فهمتها.
 
