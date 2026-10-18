@@ -250,11 +250,25 @@ lesson keys, `track/lesson`, in the study store; nothing is stored per path).
 |---|---|
 | `data/career-paths.ts` `careerPaths` | The 11 roles: `id` (URL segment), bilingual `title`, `description` (one paragraph), `ifYouLike` (3), `skills` (5-8), `jobs`, `category` (`security`, `software`, `data-ai`, `cloud-devops`, `design`: the filter chips), `icon` (emoji, like the tracks) and `accent`; `courses[]`: `{ course, level, why }` in study order, where `course` is a track id or a planned course id, `level` is the course's level **in this path** and `why` is one bilingual line. |
 | `data/career-paths.ts` `plannedCourses` | Courses that do not exist yet (`incident-response`, `web-app-pentesting`, `advanced-react`, `bi-dashboards`, `mlops`): bilingual title and description, icon, accent. Shown as **coming soon** and never linked. |
-| `lib/career-paths.ts` | Pure resolver, used by the server pages, the browser and the tests: `resolvePath(path, figures)` marks each course available (a track with lessons in `lib/catalog`) or coming soon and sums lessons and minutes of the available ones; `pathProgress` (states `not-started`, `in-progress`, `available-complete`, `complete`), `nextCourse`, `pathsWithCourse`, `hoursFromMinutes` (the rounding the course cards use). |
+| `data/career-path-keys.ts` | The text-free part: `CAREER_PATH_IDS` (a unit test keeps it equal to the data's ids), `PATH_LEVELS`, `PATH_CATEGORIES`, and `isCourseMapPath(pathname)`, which the navbar uses to file `/roadmaps/<track-id>/` under **Courses**. Re-exported by `data/career-paths.ts`. |
+| `lib/career-paths.ts` | Pure resolver, used by the server pages, the browser and the tests: `resolvePath(path, figures)` marks each course available (a track with lessons in `lib/catalog`) or coming soon and sums lessons and minutes of the available ones; `pathsWithCourse`, and `coursePathLinks(track)`, the same as small props for the course page and the course map. |
+| `lib/path-progress.ts` | What the pages render (`PathSummary`) and the learner's progress, with no data imports: `pathProgress` (states `not-started`, `in-progress`, `available-complete`, `complete`), `nextCourse` (the first unfinished available course; none once every available course is done), `hoursFromMinutes` (the rounding the course cards use). Client components that get paths as props (home, the grid, the role page) import this, not `lib/career-paths.ts`, so the paths' text (~50 KB) loads only on `/courses/` and the dashboard, which compute from it; a unit test rejects value imports of the path data in those components. |
 | `lib/career-paths-server.ts` | Build time only: `courseFigures()` reads each course's lesson ids from `lib/catalog` (the same list `worker/src/generated/catalog.ts` is generated from) and sums the lessons' `estMinutes`. |
 
 No hour, lesson count, salary or statistic is stored in the path data (a unit test rejects them): a lesson added
 to a course shows up in the lesson count and hours of every path that includes it at the next build.
+
+Hours: a path's total is its minutes rounded once (`hoursFromMinutes`), and each course card rounds its own
+minutes, so the cards can add up to an hour or two more or less than the total (Software Engineer: ~12h, cards
+3+2+5+3). Summing the rounded cards instead would add each card's rounding error (and the 1-hour floor) to the
+total, so the total stays the more accurate figure; both are shown as approximate (`~`, "حوالي"). The hours on
+`/courses/`, the role pages and the `/learn/` cards come from the lessons' `estMinutes`; the course page
+`/learn/<track>/` shows the curriculum's `estimatedHours` (`data/curricula.ts`, "total study hours including
+labs", flagged `estimateOnly` for networking, operating-systems, data-structures-algorithms, databases and
+reverse-engineering, whose lessons are still being written), so the two differ for those five courses (for
+example networking ~2h against 6h) until their lessons or curricula catch up.
+Counts go through `lib/plural.ts` with the CLDR plural form of the language (Arabic: "درسان", "3 دروس",
+"15 درساً", "حوالي 11 ساعة").
 `data/curricula.ts` and `data/roadmaps.ts` were not changed.
 
 Rules (`tests/unit/career-paths.test.ts`): the 11 approved paths with their courses in order; path ids are unique
@@ -268,12 +282,12 @@ along a path and start at Beginner; every string is bilingual; every course of t
 | Route | Page |
 |---|---|
 | `/roadmaps/` | Career paths grid (`components/paths/CareerPathsGrid.tsx`): one card per role with the description, "If you like", the first three courses then "+N more", the level range and the total hours; category and level filters (the level filter keeps paths that include a course at that level). |
-| `/roadmaps/<path-id>/` | Role page (`components/paths/CareerPathPage.tsx`): hero with the description, "If you like", facts and a Start/Continue button to the first unfinished course; the courses grouped by level as "Course k of N" cards (lessons, hours, the learner's progress, links to the course and its course map; coming-soon cards are not links); path progress; a completion section that lists the course certificates; skills and job titles. JSON-LD `EducationalOccupationalProgram` with the available courses. |
-| `/roadmaps/<track-id>/` | **Course map**: the topic-node map these URLs always showed (13 tracks), retitled "Course map", with a link back to `/learn/<track>/` and to the career paths that include the course. Kept at the same URL on purpose: the sitemap, lessons and external sites link it, and the node progress (`user_roadmap_progress`, `GET/POST/DELETE /api/progress`) is keyed by the track id, so no redirect (impossible in a static export) and no data migration were needed. |
+| `/roadmaps/<path-id>/` | Role page (`components/paths/CareerPathPage.tsx`): hero with the description, facts, "If you like", skills, typical job titles, path progress and a Start/Continue button to the first unfinished course (no button once every available course is done); the courses grouped by level as "Course k of N" cards (lessons, hours, the learner's progress, links to the course and its course map; coming-soon cards are not links); a completion section that lists the course certificates. JSON-LD `EducationalOccupationalProgram` with the available courses. |
+| `/roadmaps/<track-id>/` | **Course map**: the topic-node map these URLs always showed (13 tracks), retitled "Course map", with a link back to `/learn/<track>/` and to the career paths that include the course; the navbar highlights **Courses** there. Kept at the same URL on purpose: the sitemap, lessons and external sites link it, and the node progress (`user_roadmap_progress`, `GET/POST/DELETE /api/progress`) is keyed by the track id, so no redirect (impossible in a static export) and no data migration were needed. |
 | `/courses/` | Catalog of IMBEGNAL's own courses (`components/courses/CourseDirectory.tsx`): lessons, hours, level, progress and "Part of these career paths" per course; level and career path filters. The navbar's **Courses** link points here. |
 | `/resources/` | **External resources**: the directory of other providers' courses (`data/courses.ts`) that used to be `/courses/`, with the same search, price and field filters. Course bookmarks on the profile link here. |
 | `/learn/` | Unchanged: the course list with the lesson search ("Search every lesson" on `/courses/` links it). |
-| `/learn/<track>/` | Unchanged apart from a "Part of these career paths" card in the sidebar (`components/paths/PathsForCourse.tsx`). |
+| `/learn/<track>/` | A "Part of these career paths" card in the sidebar (`components/paths/PathsForCourse.tsx`, links from `coursePathLinks` passed by the page), and two relabelled links: the curriculum's career list is now "Typical roles" (it is not the career paths) and "View roadmap & resources" is now "Course map & resources". Otherwise unchanged. |
 
 Every one of these pages has its own title, description, canonical URL and `og:url` (`pageOpenGraph`), and the
 sitemap lists `/courses/`, `/roadmaps/`, every path page, every course map and `/resources/`. `robots.txt` did not
