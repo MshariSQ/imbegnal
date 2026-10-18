@@ -2913,9 +2913,9 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "The lesson's real trace, loader lines included",
-          "stdin": "execve(\"./notes\", [\"./notes\"], 0x7ffd3c1a2b40 /* 24 vars */) = 0\naccess(\"/etc/ld.so.preload\", R_OK)      = -1 ENOENT (No such file or directory)\nopenat(AT_FDCWD, \"/lib/x86_64-linux-gnu/libc.so.6\", O_RDONLY|O_CLOEXEC) = 3\nread(3, \"\\177ELF\\2\\1\\1\\3\\0\\0\\0\\0\\0\\0\\0\\0\\3\\0>\\0\\1\\0\\0\\0\\220\\243\\2\\0\\0\\0\\0\\0\"..., 832) = 832\nclose(3)                                = 0\nopenat(AT_FDCWD, \"notes.txt\", O_RDONLY) = 3\nread(3, \"buy milk\\n\", 64)               = 9\nwrite(1, \"buy milk\\n\", 9)               = 9\nclose(3)                                = 0\nopenat(AT_FDCWD, \"log.txt\", O_WRONLY|O_CREAT|O_APPEND, 0644) = 3\nwrite(3, \"read notes\\n\", 11)            = 11\nclose(3)                                = 0\nexit_group(0)                           = ?\n+++ exited with 0 +++\n",
-          "expected": "/lib/x86_64-linux-gnu/libc.so.6: read 832, wrote 0\nnotes.txt: read 9, wrote 0\nstdout: read 0, wrote 9\nlog.txt: read 0, wrote 11\nfailed: access /etc/ld.so.preload ENOENT\nexit: 0\n",
+          "name": "The lesson's real trace (shortened), loader lines included",
+          "stdin": "execve(\"./notes\", [\"./notes\"], 0x7ffd362de8c0 /* 157 vars */) = 0\naccess(\"/etc/ld.so.preload\", R_OK)      = -1 ENOENT (No such file or directory)\nopenat(AT_FDCWD, \"/etc/ld.so.cache\", O_RDONLY|O_CLOEXEC) = 3\nfstat(3, {st_mode=S_IFREG|0644, st_size=43123, ...}) = 0\nmmap(NULL, 43123, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f5c98495000\nclose(3)                                = 0\nopenat(AT_FDCWD, \"/lib/x86_64-linux-gnu/libc.so.6\", O_RDONLY|O_CLOEXEC) = 3\nread(3, \"\\177ELF\\2\\1\\1\\3\\0\\0\\0\\0\\0\\0\\0\\0\\3\\0>\\0\\1\\0\\0\\0\\220\\243\\2\\0\\0\\0\\0\\0\"..., 832) = 832\nclose(3)                                = 0\nopenat(AT_FDCWD, \"notes.txt\", O_RDONLY) = 3\nread(3, \"buy milk\\n\", 64)               = 9\nwrite(1, \"buy milk\\n\", 9)               = 9\nclose(3)                                = 0\nopenat(AT_FDCWD, \"log.txt\", O_WRONLY|O_CREAT|O_APPEND, 0644) = 3\nwrite(3, \"read notes\\n\", 11)            = 11\nclose(3)                                = 0\nexit_group(0)                           = ?\n+++ exited with 0 +++\n",
+          "expected": "/etc/ld.so.cache: read 0, wrote 0\n/lib/x86_64-linux-gnu/libc.so.6: read 832, wrote 0\nnotes.txt: read 9, wrote 0\nstdout: read 0, wrote 9\nlog.txt: read 0, wrote 11\nfailed: access /etc/ld.so.preload ENOENT\nexit: 0\n",
           "mode": "trim"
         },
         {
@@ -2964,9 +2964,9 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "Watch an XOR decode a value; one breakpoint is never hit and the program runs off its end",
-          "stdin": "break 6 0x09 0x40\n01 02 5a 01 03 2a 04 02 03 07 02\n",
-          "expected": "break 0x06: r0=0 r1=0 r2=90 r3=42\nbreak 0x09: r0=0 r1=0 r2=112 r3=42\n112\nhalted after 4 steps\n",
+          "name": "Watch an XOR decode a value and a SUB go negative; one breakpoint is never hit and the program runs off its end",
+          "stdin": "break 6 0x09 0x40\n01 02 5a 01 03 2a 04 02 03 07 02 03 03 02 07 03\n",
+          "expected": "break 0x06: r0=0 r1=0 r2=90 r3=42\nbreak 0x09: r0=0 r1=0 r2=112 r3=42\n112\n-70\nhalted after 6 steps\n",
           "mode": "trim"
         },
         {
@@ -3048,9 +3048,9 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "Scope change pushes the score to the maximum",
-          "stdin": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H\n",
-          "expected": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H -> 10.0 Critical\n",
+          "name": "Scope change pushes the score to the maximum and uses the Scope-Changed PR weights",
+          "stdin": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H\nCVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H\nCVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H\n",
+          "expected": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H -> 10.0 Critical\nCVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H -> 9.9 Critical\nCVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H -> 9.1 Critical\n",
           "mode": "trim"
         },
         {
@@ -3093,8 +3093,8 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "A bare email and an http URL are not valid contacts, and the file has expired",
-          "stdin": "today 2026-10-17T00:00:00Z\ncontact: security@example.org\nCONTACT: http://example.org/report\nExpires: 2026-01-01T00:00:00Z\nHiring: https://example.org/jobs\n",
+          "name": "A bare email and an http URL are not valid contacts, and a file that expires at the moment of the check has expired",
+          "stdin": "today 2026-10-17T00:00:00Z\ncontact: security@example.org\nCONTACT: http://example.org/report\nExpires: 2026-10-17T00:00:00Z\nHiring: https://example.org/jobs\n",
           "expected": "error: invalid Contact security@example.org\nerror: invalid Contact http://example.org/report\nerror: no valid Contact\nerror: the file has expired\nstatus: invalid\n",
           "mode": "trim"
         },
@@ -3160,6 +3160,12 @@ export const catalog: Catalog = {
           "stdin": "segments 0\nsections 9\n.text 0x0 0x51 AX\n.rela.text 0x0 0x78 I\n.data 0x0 0x4 WA\n.bss 0x0 0x4 WA\n.rodata 0x0 0x6 A\n.comment 0x0 0x2e MS\n.note.GNU-stack 0x0 0x0 -\n.symtab 0x0 0xd8 -\n.strtab 0x0 0x27 -\n",
           "expected": "not loaded: .text .rela.text .data .bss .rodata .comment .symtab .strtab\n",
           "mode": "trim"
+        },
+        {
+          "name": "Only LOAD segments are loaded: a section covered by nothing but a NOTE segment",
+          "stdin": "segments 2\nLOAD 0x1000 0x100 RE\nNOTE 0x2000 0x20 R\nsections 2\n.text 0x1000 0x80 AX\n.note.example 0x2000 0x20 A\n",
+          "expected": "00 LOAD r-x: .text\n01 NOTE r--: .note.example\nnot loaded: .note.example\n",
+          "mode": "trim"
         }
       ]
     },
@@ -3189,21 +3195,21 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "An old 16-bit NE file: MZ, but no PE signature",
-          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n4e 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n",
-          "expected": "MZ file without a PE header\n",
+          "name": "Not PE files: an old 16-bit NE file (MZ, but no PE signature), then an ELF file",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n4e 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n===\n7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00\n",
+          "expected": "MZ file without a PE header\n===\nnot an MZ file\n",
           "mode": "trim"
         },
         {
-          "name": "An ELF file is not an MZ file",
-          "stdin": "7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00\n",
-          "expected": "not an MZ file\n",
+          "name": "Another machine (0x1c4, ARM Thumb-2) whose linker did not set the executable bit",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n50 45 00 00 c4 01 02 00 00 00 00 00 00 00 00 00\n00 00 00 00 e0 00 00 01 0b 01 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 10 00 00 00 00 00 00\n00 00 00 00 00 00 40 00\n",
+          "expected": "format: PE32\nmachine: other (0x1c4)\nsections: 2\nkind: not executable\nentry RVA: 0x1000\nimage base: 0x400000\nentry VA: 0x401000\n",
           "mode": "trim"
         },
         {
-          "name": "Cut off inside the optional header",
-          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n50 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n00 00 00 00 f0 00 22 00 0b 02 00 00 00 00 00 00\n00 00 00 00\n",
-          "expected": "truncated or corrupt PE header\n",
+          "name": "Damaged headers: cut off inside the optional header, then an unknown Magic (0x107)",
+          "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n50 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n00 00 00 00 f0 00 22 00 0b 02 00 00 00 00 00 00\n00 00 00 00\n===\n4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n50 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n00 00 00 00 f0 00 22 00 07 01 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 14 00 00 00 00 00 00\n00 00 00 40 01 00 00 00\n",
+          "expected": "truncated or corrupt PE header\n===\ntruncated or corrupt PE header\n",
           "mode": "trim"
         }
       ]
