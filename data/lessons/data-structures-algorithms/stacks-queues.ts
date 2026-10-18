@@ -266,8 +266,8 @@ A **stack** offers three operations, all **O(1)**: \`push\` (put on top), \`pop\
 **Where stacks appear:**
 
 - **Undo and redo**: two stacks. Undo pops from "done" and pushes onto "undone"; redo does the reverse; any new action clears "undone".
-- **The call stack**: every function call pushes a frame with its local variables, every \`return\` pops it. That is why the most recent call finishes first, and why runaway recursion ends in a *stack overflow* (next lesson).
-- **Depth-first search** keeps the vertices still to explore on a stack (you met it in Trees & Graphs).
+- **The call stack**: every function call pushes a frame with its local variables, every \`return\` pops it. That is why the most recent call finishes first, and why runaway recursion ends in a *stack overflow* (the Recursion & Dynamic Programming lesson, later in this course).
+- **Depth-first search** keeps the vertices still to explore on a stack (the Trees & Graphs lesson, later in this course, puts it to work).
 - **Bracket matching** and **expression evaluation**, below.
 
 **Bracket matching.** Push every opening bracket. For every closing bracket, the top of the stack must be its partner: pop it. Watch the stack for \`{[()]}\`:
@@ -302,8 +302,8 @@ push 2        [7, 2]
 **أين تظهر المكدّسات:**
 
 - **التراجع والإعادة (undo/redo)**: مكدّسان. التراجع يسحب من "المنجَز" ويدفع إلى "الملغى"؛ والإعادة تفعل العكس؛ وأي إجراء جديد يُفرغ "الملغى".
-- **مكدّس الاستدعاءات (call stack)**: كل استدعاء دالة يدفع إطاراً (frame) فيه متغيراتها المحلية، وكل \`return\` يسحبه. ولهذا ينتهي أحدث استدعاء أولاً، ولهذا ينتهي التكرار الذاتي الجامح بـ*فيضان المكدّس (stack overflow)* (الدرس التالي).
-- **البحث بالعمق (DFS)** يحفظ الرؤوس التي بقي استكشافها في مكدّس (التقيت به في درس الأشجار والـ Graphs).
+- **مكدّس الاستدعاءات (call stack)**: كل استدعاء دالة يدفع إطاراً (frame) فيه متغيراتها المحلية، وكل \`return\` يسحبه. ولهذا ينتهي أحدث استدعاء أولاً، ولهذا ينتهي التكرار الذاتي الجامح بـ*فيضان المكدّس (stack overflow)* (درس التكرار الذاتي والبرمجة الديناميكية، لاحقاً في هذه الدورة).
+- **البحث بالعمق (DFS)** يحفظ الرؤوس التي بقي استكشافها في مكدّس (وسيستخدمه درس الأشجار والـ Graphs لاحقاً في هذه الدورة).
 - **مطابقة الأقواس** و**حساب التعابير**، كما يلي.
 
 **مطابقة الأقواس.** ادفع كل قوس فتح. ولكل قوس إغلاق يجب أن يكون أعلى المكدّس شريكه: فاسحبه. راقب المكدّس مع \`{[()]}\`:
@@ -319,7 +319,7 @@ read }   top is {    pop  -> stack: (empty)   => balanced
 
 هناك ثلاث طرق للفشل بالضبط: قوس إغلاق **لا يطابق** أعلى المكدّس، وقوس إغلاق والمكدّس **فارغ**، وأقواس فتح **متبقية** في النهاية. وعدّ الأقواس لا يكفي: فـ \`([)]\` فيها اثنان من كل نوع لكنها خاطئة.
 
-**حساب التعابير.** في الصيغة **اللاحقة (postfix)**، وتُسمّى أيضاً الترميز البولندي العكسي (RPN)، يأتي المعامل بعد معاملَيه: \`3 4 + 2 *\` تعني (3 + 4) × 2. والمكدّس يحسبها في مرور واحد: العدد يُدفع؛ والمعامل يسحب **قيمتين** (أول ما يُسحب هو المعامَل **الأيمن**)، ويطبّق نفسه ويدفع النتيجة. لا حاجة إلى أقواس ولا إلى قواعد أسبقية. وآلة Java الافتراضية (JVM) تنفّذ الـ bytecode بالطريقة نفسها على *مكدّس المعاملات (operand stack)* (مواصفة JVM، القسم 2.6.2: التعليمة \`iadd\` تسحب عددين صحيحين وتدفع مجموعهما)، وخوارزمية *ساحة التحويل (shunting-yard)* التي وضعها Dijkstra تستخدم مكدّساً للمعاملات لتحويل التعابير المعتادة (infix) إلى الصيغة اللاحقة.
+**حساب التعابير.** في الصيغة **اللاحقة (postfix)**، وتُسمّى أيضاً الترميز البولندي العكسي (RPN)، يأتي العامل (operator) بعد معامَليه (operands): \`3 4 + 2 *\` تعني (3 + 4) × 2. والمكدّس يحسبها في مرور واحد: العدد يُدفع؛ والعامل يسحب **قيمتين** (أول ما يُسحب هو المعامَل **الأيمن**)، ويطبّق نفسه ويدفع النتيجة. لا حاجة إلى أقواس ولا إلى قواعد أسبقية. وآلة Java الافتراضية (JVM) تنفّذ الـ bytecode بالطريقة نفسها على *مكدّس المعاملات (operand stack)* (مواصفة JVM، القسم 2.6.2: التعليمة \`iadd\` تسحب عددين صحيحين وتدفع مجموعهما)، وخوارزمية *ساحة التحويل (shunting-yard)* التي وضعها Dijkstra تستخدم مكدّساً للعوامل لتحويل التعابير المعتادة (infix) إلى الصيغة اللاحقة.
 
 \`\`\`
 3 4 + 2 *
@@ -679,8 +679,8 @@ int main(void) {
     ],
     tests: [
       { name: { en: "The example", ar: "المثال" }, stdin: "abc\n6\nL\nL\nB\nI x\nR\nI y\n", expected: "xbyc" },
-      { name: { en: "Edits at both ends", ar: "تعديلات عند الطرفين" }, stdin: "mid\n10\nL\nL\nL\nB\nI a\nR\nR\nR\nR\nI z\n", expected: "amidz" },
-      { name: { en: "Backspace in the middle", ar: "حذف في المنتصف" }, stdin: "abcd\n5\nL\nL\nB\nB\nI z\n", expected: "zcd" },
+      { name: { en: "Edits at both ends, moving past them", ar: "تعديلات عند الطرفين مع التحرك إلى ما بعدهما" }, stdin: "mid\n12\nL\nL\nL\nL\nI a\nL\nB\nR\nR\nR\nR\nI z\n", expected: "amidz" },
+      { name: { en: "Backspace, then insert and move in the middle", ar: "حذف، ثم إدراج وتحريك في المنتصف" }, stdin: "abcd\n8\nL\nL\nB\nB\nI z\nR\nL\nI y\n", expected: "zycd" },
       { name: { en: "Delete everything", ar: "حذف كل شيء" }, stdin: "abc\n4\nB\nB\nB\nB\n", expected: "" },
       { name: { en: "Moving alone changes nothing", ar: "التحريك وحده لا يغيّر شيئاً" }, stdin: "hello\n5\nL\nR\nL\nL\nR\n", expected: "hello" },
       { name: { en: "6,400 commands", ar: "6,400 أمر" }, stdin: editorInput, expected: editorExpected },
@@ -895,7 +895,7 @@ func main() {
         answer: 3,
         explain: {
           en: "Push 5, 1, 2. + pops 2 and 1 and pushes 3. Push 4. * pops 4 and 3 and pushes 12. + pops 12 and 5 and pushes 17. Push 3. - pops 3 (the right operand) and 17 and pushes 17 - 3 = 14. The other numbers are intermediate results.",
-          ar: "ادفع 5 و1 و2. المعامل + يسحب 2 و1 ويدفع 3. ادفع 4. المعامل * يسحب 4 و3 ويدفع 12. المعامل + يسحب 12 و5 ويدفع 17. ادفع 3. المعامل - يسحب 3 (المعامَل الأيمن) ثم 17 ويدفع 17 - 3 = 14. والأعداد الأخرى نتائج وسيطة.",
+          ar: "ادفع 5 و1 و2. العامل + يسحب 2 و1 ويدفع 3. ادفع 4. العامل * يسحب 4 و3 ويدفع 12. العامل + يسحب 12 و5 ويدفع 17. ادفع 3. العامل - يسحب 3 (المعامَل الأيمن) ثم 17 ويدفع 17 - 3 = 14. والأعداد الأخرى نتائج وسيطة.",
         },
       },
       {
