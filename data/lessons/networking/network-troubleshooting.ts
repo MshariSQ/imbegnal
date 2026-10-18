@@ -571,6 +571,11 @@ else console.log("result: not reached, no replies");
           stdin: "traceroute to 203.0.113.80 (203.0.113.80), 30 hops max, 60 byte packets\n 1  192.168.1.1  5.000 ms  5.000 ms  5.000 ms\n 2  10.0.0.1  4.000 ms  4.500 ms  4.250 ms\n 3  203.0.113.80  3.900 ms  4.000 ms  4.100 ms\n",
           expected: "hop 1: 192.168.1.1 avg 5.000 ms\nhop 2: 10.0.0.1 avg 4.250 ms\nhop 3: 203.0.113.80 avg 4.000 ms\nsilent hops: none\nlargest jump: none\nresult: reached 203.0.113.80 at hop 3\n",
         },
+        {
+          name: { en: "Two equal jumps, one across a silent hop: the first one is kept", ar: "قفزتان متساويتان، إحداهما عبر قفزة صامتة: تبقى الأولى" },
+          stdin: "traceroute to 192.0.2.99 (192.0.2.99), 30 hops max, 60 byte packets\n 1  192.168.1.1  0.750 ms  1.000 ms  1.250 ms\n 2  10.0.0.1  10.500 ms  11.000 ms  11.500 ms\n 3  * * *\n 4  198.51.100.9  20.500 ms  21.000 ms  21.500 ms\n 5  192.0.2.99  21.250 ms  21.500 ms  21.750 ms\n",
+          expected: "hop 1: 192.168.1.1 avg 1.000 ms\nhop 2: 10.0.0.1 avg 11.000 ms\nhop 3: no reply\nhop 4: 198.51.100.9 avg 21.000 ms\nhop 5: 192.0.2.99 avg 21.500 ms\nsilent hops: 3\nlargest jump: hop 2 (+10.000 ms)\nresult: reached 192.0.2.99 at hop 5\n",
+        },
       ],
       sampleInput: "traceroute to 198.51.100.20 (198.51.100.20), 30 hops max, 60 byte packets\n 1  192.168.1.1  0.812 ms  0.701 ms  0.655 ms\n 2  10.10.0.1  8.102 ms  7.950 ms  8.311 ms\n 3  * * *\n 4  203.0.113.9  15.214 ms  14.902 ms  15.050 ms\n 5  198.51.100.20  16.127 ms  16.301 ms  15.840 ms\n",
     },

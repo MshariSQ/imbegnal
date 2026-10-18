@@ -530,7 +530,7 @@ Cache-Control: max-age=3600
 - **4xx client error**: \`400 Bad Request\`, \`401 Unauthorized\` (you are not logged in), \`403 Forbidden\` (you are logged in but not allowed), \`404 Not Found\`, \`429 Too Many Requests\`.
 - **5xx server error**: \`500 Internal Server Error\`, \`502 Bad Gateway\` and \`504 Gateway Timeout\` (a proxy could not get a good answer from the server behind it), \`503 Service Unavailable\`.
 
-**Headers** are \`Name: value\` lines, and their names are **case-insensitive**: \`content-length\` and \`Content-Length\` are the same field. The reason phrase after the code is informational only; programs must decide by the number. How long is the body? \`Content-Length\` gives its size in **bytes** (not characters: an Arabic letter is two bytes in UTF-8); \`Transfer-Encoding: chunked\` sends it in pieces; with neither, the body ends when the server closes the connection. Responses to \`HEAD\`, and \`1xx\`, \`204\` and \`304\` responses never have a body. Getting this framing wrong is dangerous: when a proxy and a server disagree about where a message ends, an attacker can hide a second request inside the first (**request smuggling**), which is why a message with two different \`Content-Length\` values must be rejected.
+**Headers** are \`Name: value\` lines, and their names are **case-insensitive**: \`content-length\` and \`Content-Length\` are the same field. The reason phrase after the code is informational only; programs must decide by the number. How long is the body? \`Content-Length\` gives its size in **bytes** (not characters: an Arabic letter is two bytes in UTF-8); \`Transfer-Encoding: chunked\` sends it in pieces; with neither, the body ends when the server closes the connection. Responses to \`HEAD\`, and \`1xx\`, \`204\` and \`304\` responses never have a body. Getting this framing wrong is dangerous: when a proxy and a server disagree about where a message ends, an attacker can hide a second request inside the first (**request smuggling**), which is why a message with two different \`Content-Length\` values must be rejected (RFC 9112, section 6.3).
 
 HTTP itself is **stateless**: each request stands alone. Logins and shopping carts work because the server sets a **cookie** (\`Set-Cookie\`) and the browser sends it back (\`Cookie\`) with every later request.`,
         ar: `## HTTP: حوار بنص عادي
@@ -562,7 +562,7 @@ Cache-Control: max-age=3600
 - **4xx خطأ من العميل**: \`400 Bad Request\` و\`401 Unauthorized\` (لم تسجّل الدخول) و\`403 Forbidden\` (سجّلت الدخول لكنك غير مسموح لك) و\`404 Not Found\` و\`429 Too Many Requests\`.
 - **5xx خطأ من الخادم**: \`500 Internal Server Error\`، و\`502 Bad Gateway\` و\`504 Gateway Timeout\` (لم يحصل وسيط على جواب سليم من الخادم الذي خلفه)، و\`503 Service Unavailable\`.
 
-**الترويسات** أسطر \`Name: value\`، وأسماؤها **لا تميّز حالة الأحرف**: \`content-length\` و\`Content-Length\` حقل واحد. والعبارة التي تلي الرمز للعلم فقط؛ وعلى البرامج أن تقرّر بحسب الرقم. وما طول جسم الرسالة؟ \`Content-Length\` يعطي حجمه **بالبايتات** (لا بالمحارف: الحرف العربي بايتان في UTF-8)؛ و\`Transfer-Encoding: chunked\` يرسله على قطع؛ ومن دونهما ينتهي الجسم حين يغلق الخادم الاتصال. واستجابات \`HEAD\`، والاستجابات \`1xx\` و\`204\` و\`304\` لا جسم لها أبداً. والخطأ في هذا التأطير خطير: فحين يختلف وسيط وخادم على موضع نهاية الرسالة يستطيع المهاجم أن يخفي طلباً ثانياً داخل الأول (**تهريب الطلبات / request smuggling**)، ولهذا يجب رفض الرسالة التي تحمل قيمتين مختلفتين لـ \`Content-Length\`.
+**الترويسات** أسطر \`Name: value\`، وأسماؤها **لا تميّز حالة الأحرف**: \`content-length\` و\`Content-Length\` حقل واحد. والعبارة التي تلي الرمز للعلم فقط؛ وعلى البرامج أن تقرّر بحسب الرقم. وما طول جسم الرسالة؟ \`Content-Length\` يعطي حجمه **بالبايتات** (لا بالمحارف: الحرف العربي بايتان في UTF-8)؛ و\`Transfer-Encoding: chunked\` يرسله على قطع؛ ومن دونهما ينتهي الجسم حين يغلق الخادم الاتصال. واستجابات \`HEAD\`، والاستجابات \`1xx\` و\`204\` و\`304\` لا جسم لها أبداً. والخطأ في هذا التأطير خطير: فحين يختلف وسيط وخادم على موضع نهاية الرسالة يستطيع المهاجم أن يخفي طلباً ثانياً داخل الأول (**تهريب الطلبات / request smuggling**)، ولهذا يجب رفض الرسالة التي تحمل قيمتين مختلفتين لـ \`Content-Length\` (RFC 9112، القسم 6.3).
 
 وHTTP بحد ذاته **عديم الحالة (stateless)**: كل طلب قائم بذاته. وتعمل عمليات تسجيل الدخول وسلال التسوق لأن الخادم يضع **ملف تعريف ارتباط (cookie)** عبر \`Set-Cookie\`، فيعيده المتصفح (\`Cookie\`) مع كل طلب لاحق.`,
       },
@@ -611,7 +611,7 @@ The header block ends at the first empty line; everything after that line is the
 
 - The status line must look like \`HTTP/<digit>.<digit> <3-digit code>\`, optionally followed by a space and a reason phrase. The first digit of the code must be 1 to 5. Otherwise print only \`error: bad status line\`.
 - Class names: 1 \`informational\`, 2 \`success\`, 3 \`redirection\`, 4 \`client error\`, 5 \`server error\`. Ignore the reason phrase.
-- Header names are case-insensitive; values are trimmed. If a header repeats, the first one counts.
+- Header names are case-insensitive; values are trimmed. If a header repeats, the first one counts, with one exception: two \`Content-Length\` headers with **different** values leave the end of the body ambiguous (the opening for request smuggling), so print only \`error: conflicting content-length\` (RFC 9112, section 6.3, makes this an unrecoverable error). The same value repeated is fine. Check the status line first.
 - The body: \`none\` for 1xx, 204 and 304 responses. Otherwise, with a \`Content-Length\` of L: if at least L **bytes** (UTF-8) arrived, \`<L> bytes\`; if fewer, \`incomplete (<got>/<L> bytes)\`. Without Content-Length: \`<got> bytes (until close)\`.
 
 **Output**
@@ -648,7 +648,7 @@ body=12 bytes
 
 - يجب أن يكون سطر الحالة على شكل \`HTTP/<رقم>.<رقم> <رمز من 3 أرقام>\`، وقد تتبعه مسافة وعبارة. ويجب أن يكون الرقم الأول من الرمز بين 1 و5. وإلا فاطبع \`error: bad status line\` وحده.
 - أسماء الفئات: 1 \`informational\`، و2 \`success\`، و3 \`redirection\`، و4 \`client error\`، و5 \`server error\`. وتجاهل العبارة.
-- أسماء الترويسات لا تميّز حالة الأحرف؛ وتُقص المسافات من القيم. وإذا تكررت ترويسة فالأولى هي المعتمدة.
+- أسماء الترويسات لا تميّز حالة الأحرف؛ وتُقص المسافات من القيم. وإذا تكررت ترويسة فالأولى هي المعتمدة، مع استثناء واحد: ترويستا \`Content-Length\` بقيمتين **مختلفتين** تجعلان نهاية الجسم ملتبسة (وهذه هي الثغرة التي يستغلها تهريب الطلبات)، فاطبع \`error: conflicting content-length\` وحده (ويجعل RFC 9112 في القسم 6.3 هذا خطأً لا يمكن التعافي منه). أما تكرار القيمة نفسها فلا بأس به. وافحص سطر الحالة أولاً.
 - جسم الرسالة: \`none\` للاستجابات 1xx و204 و304. وإلا، فمع \`Content-Length\` قيمته L: إذا وصل L **بايتاً** على الأقل (بترميز UTF-8) فاطبع \`<L> bytes\`؛ وإن وصل أقل فاطبع \`incomplete (<got>/<L> bytes)\`. ومن دون Content-Length اطبع: \`<got> bytes (until close)\`.
 
 **الإخراج**
@@ -702,10 +702,13 @@ while (pos < raw.length) {
 function main() {
   // TODO: check the status line with a regular expression; print "error: bad status line" and stop if it is wrong.
   const code = Number((head[0] || "").split(" ")[1]);
-  console.log("status=" + code + " class=" + CLASSES[String(code)[0]]);
 
-  // TODO: collect the headers into an object keyed by the lower-cased name (first occurrence wins),
-  // then print headers=, content-type= and (only if present) location=.
+  // TODO: collect the headers into an object keyed by the lower-cased name (first occurrence wins).
+  // A second Content-Length with a DIFFERENT value: print "error: conflicting content-length" and stop,
+  // so do this before printing anything else.
+
+  console.log("status=" + code + " class=" + CLASSES[String(code)[0]]);
+  // TODO: print headers=, content-type= and (only if present) location=.
 
   // TODO: describe the body. Content-Length counts BYTES: use Buffer.byteLength(body, "utf8").
   console.log("body=" + body.length + " bytes");
@@ -741,16 +744,23 @@ function main() {
     return;
   }
   const code = Number(m[1]);
-  console.log("status=" + code + " class=" + CLASSES[m[1][0]]);
 
-  // Field names are case-insensitive: store them in lower case. The first occurrence wins here.
+  // Field names are case-insensitive: store them in lower case. The first occurrence wins here,
+  // except that two different Content-Length values make the end of the body ambiguous.
   const fields = {};
   for (const line of head.slice(1)) {
     const colon = line.indexOf(":");
     if (colon <= 0) continue;
     const name = line.slice(0, colon).toLowerCase();
-    if (!(name in fields)) fields[name] = line.slice(colon + 1).trim();
+    const value = line.slice(colon + 1).trim();
+    if (!(name in fields)) {
+      fields[name] = value;
+    } else if (name === "content-length" && fields[name] !== value) {
+      console.log("error: conflicting content-length");
+      return;
+    }
   }
+  console.log("status=" + code + " class=" + CLASSES[m[1][0]]);
   console.log("headers=" + (head.length - 1));
   console.log("content-type=" + (fields["content-type"] || "none"));
   if ("location" in fields) console.log("location=" + fields["location"]);
@@ -770,19 +780,14 @@ main();
 `,
       hints: [
         { en: "`/^HTTP\\/\\d\\.\\d (\\d{3})(?: .*)?$/` matches a valid status line and captures the code. Check `CLASSES[code[0]]` too, so `600` is rejected.", ar: "التعبير `/^HTTP\\/\\d\\.\\d (\\d{3})(?: .*)?$/` يطابق سطر حالة صالحاً ويلتقط الرمز. وافحص `CLASSES[code[0]]` أيضاً حتى يُرفض `600`." },
-        { en: "For each header line, split at the first `:` with `indexOf`. Lower-case the name, trim the value, and only store it if the name is not there yet.", ar: "قسّم كل سطر ترويسة عند أول `:` باستخدام `indexOf`. حوّل الاسم إلى أحرف صغيرة، وقُص المسافات من القيمة، ولا تخزّنها إلا إذا لم يكن الاسم موجوداً بعد." },
+        { en: "For each header line, split at the first `:` with `indexOf`. Lower-case the name, trim the value, and only store it if the name is not there yet. If the name is already there, it is `content-length` and the stored value differs, print the conflict error and `return` before the status line is printed.", ar: "قسّم كل سطر ترويسة عند أول `:` باستخدام `indexOf`. حوّل الاسم إلى أحرف صغيرة، وقُص المسافات من القيمة، ولا تخزّنها إلا إذا لم يكن الاسم موجوداً بعد. وإذا كان الاسم موجوداً، وكان `content-length`، واختلفت القيمة المخزّنة، فاطبع خطأ التعارض ونفّذ `return` قبل طباعة سطر الحالة." },
         { en: "Order the body rules: first `code < 200 || code === 204 || code === 304` gives `none`; then Content-Length (compare it with `Buffer.byteLength(body, \"utf8\")`); otherwise `(until close)`.", ar: "رتّب قواعد الجسم: أولاً `code < 200 || code === 204 || code === 304` تعطي `none`؛ ثم Content-Length (قارنه بـ `Buffer.byteLength(body, \"utf8\")`)؛ وإلا `(until close)`." },
       ],
       tests: [
         {
-          name: { en: "The worked example", ar: "المثال المحلول" },
-          stdin: "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\n<p>Hello</p>\n",
-          expected: "status=200 class=success\nheaders=2\ncontent-type=text/html\nbody=12 bytes\n",
-        },
-        {
-          name: { en: "A redirect with CRLF line endings, odd capitals and extra spaces", ar: "إعادة توجيه بنهايات أسطر CRLF وأحرف كبيرة غريبة ومسافات زائدة" },
-          stdin: "HTTP/1.1 301 Moved Permanently\r\nLOCATION:   /new-home  \r\ncontent-LENGTH: 0\r\nServer: demo\r\n\r\n",
-          expected: "status=301 class=redirection\nheaders=3\ncontent-type=none\nlocation=/new-home\nbody=0 bytes\n",
+          name: { en: "A redirect with CRLF line endings, odd capitals, extra spaces and repeated headers (the first one counts)", ar: "إعادة توجيه بنهايات أسطر CRLF وأحرف كبيرة غريبة ومسافات زائدة وترويسات مكررة (الأولى هي المعتمدة)" },
+          stdin: "HTTP/1.1 301 Moved Permanently\r\nLOCATION:   /new-home  \r\ncontent-LENGTH: 5\r\nServer: demo\r\nLocation: /old-home\r\nContent-Length: 5\r\n\r\nmoved\r\n",
+          expected: "status=301 class=redirection\nheaders=5\ncontent-type=none\nlocation=/new-home\nbody=5 bytes\n",
         },
         {
           name: { en: "304 Not Modified never has a body, whatever Content-Length says", ar: "الاستجابة 304 Not Modified لا جسم لها أبداً مهما قال Content-Length" },
@@ -798,6 +803,11 @@ main();
           name: { en: "No Content-Length: the body runs until the connection closes", ar: "بلا Content-Length: يمتد الجسم حتى يُغلق الاتصال" },
           stdin: "HTTP/1.0 500 Internal Server Error\nContent-Type: text/plain\n\nsomething broke\n",
           expected: "status=500 class=server error\nheaders=1\ncontent-type=text/plain\nbody=16 bytes (until close)\n",
+        },
+        {
+          name: { en: "Two different Content-Length values are an error (request smuggling)", ar: "قيمتان مختلفتان لـ Content-Length خطأ (تهريب الطلبات)" },
+          stdin: "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 5\ncontent-length: 12\n\nhello world!",
+          expected: "error: conflicting content-length\n",
         },
         {
           name: { en: "An invalid status line is an error", ar: "سطر الحالة غير الصالح خطأ" },

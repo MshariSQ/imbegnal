@@ -1181,15 +1181,9 @@ export const catalog: Catalog = {
       "lang": "javascript",
       "tests": [
         {
-          "name": "The worked example",
-          "stdin": "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 12\n\n<p>Hello</p>\n",
-          "expected": "status=200 class=success\nheaders=2\ncontent-type=text/html\nbody=12 bytes\n",
-          "mode": "trim"
-        },
-        {
-          "name": "A redirect with CRLF line endings, odd capitals and extra spaces",
-          "stdin": "HTTP/1.1 301 Moved Permanently\r\nLOCATION:   /new-home  \r\ncontent-LENGTH: 0\r\nServer: demo\r\n\r\n",
-          "expected": "status=301 class=redirection\nheaders=3\ncontent-type=none\nlocation=/new-home\nbody=0 bytes\n",
+          "name": "A redirect with CRLF line endings, odd capitals, extra spaces and repeated headers (the first one counts)",
+          "stdin": "HTTP/1.1 301 Moved Permanently\r\nLOCATION:   /new-home  \r\ncontent-LENGTH: 5\r\nServer: demo\r\nLocation: /old-home\r\nContent-Length: 5\r\n\r\nmoved\r\n",
+          "expected": "status=301 class=redirection\nheaders=5\ncontent-type=none\nlocation=/new-home\nbody=5 bytes\n",
           "mode": "trim"
         },
         {
@@ -1208,6 +1202,12 @@ export const catalog: Catalog = {
           "name": "No Content-Length: the body runs until the connection closes",
           "stdin": "HTTP/1.0 500 Internal Server Error\nContent-Type: text/plain\n\nsomething broke\n",
           "expected": "status=500 class=server error\nheaders=1\ncontent-type=text/plain\nbody=16 bytes (until close)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two different Content-Length values are an error (request smuggling)",
+          "stdin": "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 5\ncontent-length: 12\n\nhello world!",
+          "expected": "error: conflicting content-length\n",
           "mode": "trim"
         },
         {
@@ -1290,8 +1290,8 @@ export const catalog: Catalog = {
         },
         {
           "name": "Ageing: 299 seconds is still valid, 300 seconds is forgotten",
-          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n10 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n309 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n310 3 02:00:00:00:00:0c 02:00:00:00:00:0a\n311 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n",
-          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n10 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n309 02:00:00:00:00:0c -> 02:00:00:00:00:0b: forward 2\n310 02:00:00:00:00:0c -> 02:00:00:00:00:0a: flood 1,2,4\n311 02:00:00:00:00:0c -> 02:00:00:00:00:0b: flood 1,2,4\n",
+          "stdin": "ports 4\n0 1 02:00:00:00:00:0a 02:00:00:00:00:0b\n10 2 02:00:00:00:00:0b 02:00:00:00:00:0a\n300 3 02:00:00:00:00:0c 02:00:00:00:00:0a\n309 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n310 3 02:00:00:00:00:0c 02:00:00:00:00:0b\n",
+          "expected": "0 02:00:00:00:00:0a -> 02:00:00:00:00:0b: flood 2,3,4\n10 02:00:00:00:00:0b -> 02:00:00:00:00:0a: forward 1\n300 02:00:00:00:00:0c -> 02:00:00:00:00:0a: flood 1,2,4\n309 02:00:00:00:00:0c -> 02:00:00:00:00:0b: forward 2\n310 02:00:00:00:00:0c -> 02:00:00:00:00:0b: flood 1,2,4\n",
           "mode": "trim"
         },
         {
@@ -1472,6 +1472,12 @@ export const catalog: Catalog = {
           "name": "Averages that only go down: no jump",
           "stdin": "traceroute to 203.0.113.80 (203.0.113.80), 30 hops max, 60 byte packets\n 1  192.168.1.1  5.000 ms  5.000 ms  5.000 ms\n 2  10.0.0.1  4.000 ms  4.500 ms  4.250 ms\n 3  203.0.113.80  3.900 ms  4.000 ms  4.100 ms\n",
           "expected": "hop 1: 192.168.1.1 avg 5.000 ms\nhop 2: 10.0.0.1 avg 4.250 ms\nhop 3: 203.0.113.80 avg 4.000 ms\nsilent hops: none\nlargest jump: none\nresult: reached 203.0.113.80 at hop 3\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two equal jumps, one across a silent hop: the first one is kept",
+          "stdin": "traceroute to 192.0.2.99 (192.0.2.99), 30 hops max, 60 byte packets\n 1  192.168.1.1  0.750 ms  1.000 ms  1.250 ms\n 2  10.0.0.1  10.500 ms  11.000 ms  11.500 ms\n 3  * * *\n 4  198.51.100.9  20.500 ms  21.000 ms  21.500 ms\n 5  192.0.2.99  21.250 ms  21.500 ms  21.750 ms\n",
+          "expected": "hop 1: 192.168.1.1 avg 1.000 ms\nhop 2: 10.0.0.1 avg 11.000 ms\nhop 3: no reply\nhop 4: 198.51.100.9 avg 21.000 ms\nhop 5: 192.0.2.99 avg 21.500 ms\nsilent hops: 3\nlargest jump: hop 2 (+10.000 ms)\nresult: reached 192.0.2.99 at hop 5\n",
           "mode": "trim"
         }
       ]
