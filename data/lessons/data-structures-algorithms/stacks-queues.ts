@@ -713,7 +713,7 @@ t = 12  drop 2          -> allow   queue [11, 12]
 Each timestamp is enqueued once and dequeued at most once, so n requests cost **O(n)** in total even though step 2 is a loop. The queue never holds more than \`L\` items. (Production systems often use cheaper approximations such as fixed windows or token buckets; the sliding log is the exact version.)`,
       ar: `## طابور في العمل: محدِّد المعدّل
 
-تحمي واجهات API العامة نفسها **بحدود للمعدّل (rate limits)**: "100 طلب في الدقيقة على الأكثر لكل مستخدم". والخادم الذي يرفض طلباً لهذا السبب يجيب برمز حالة HTTP **‏429 Too Many Requests**، المعرَّف في RFC 6585.
+تحمي واجهات API العامة نفسها **بحدود للمعدّل (rate limits)**: "100 طلب في الدقيقة على الأكثر لكل مستخدم". والخادم الذي يرفض طلباً لهذا السبب يجيب برمز حالة HTTP **429 Too Many Requests**، المعرَّف في RFC 6585.
 
 ومن الطرق الدقيقة لفرض "\`L\` طلباً على الأكثر في أي نافذة مدتها \`W\` ثانية" طريقة **السجل المنزلق (sliding log)**: تذكّر الطوابع الزمنية للطلبات التي سمحت بها، الأقدم أولاً. وهذا طابور، لأن الطوابع الزمنية تصل بالترتيب وتغادر بالترتيب نفسه:
 
