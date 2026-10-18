@@ -256,6 +256,7 @@ export const catalog: Catalog = {
         "indexes-performance",
         "transactions-acid",
         "nosql-models",
+        "backup-replication",
         "db-security"
       ],
       "maxBonus": {
@@ -265,6 +266,7 @@ export const catalog: Catalog = {
         "indexes-performance": 10,
         "transactions-acid": 10,
         "nosql-models": 10,
+        "backup-replication": 10,
         "db-security": 10
       }
     },
@@ -2701,6 +2703,123 @@ export const catalog: Catalog = {
           "name": "A person who is not in the graph",
           "stdin": "Amal Bilal\n? Zed\n",
           "expected": "no suggestions",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/backup-replication/verify-restore",
+      "track": "databases",
+      "lesson": "backup-replication",
+      "id": "verify-restore",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A complete dump restores and matches",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nINSERT INTO \"orders\" VALUES(1,1,2500);\nINSERT INTO \"orders\" VALUES(2,1,900);\nINSERT INTO \"orders\" VALUES(3,2,4100);\nINSERT INTO \"orders\" VALUES(4,3,1500);\nCOMMIT;\n",
+          "expected": "restore OK: customers=3 orders=4",
+          "mode": "trim"
+        },
+        {
+          "name": "A dump cut off before the end loses a row",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nINSERT INTO \"orders\" VALUES(1,1,2500);\nINSERT INTO \"orders\" VALUES(2,1,900);\nINSERT INTO \"orders\" VALUES(3,2,4100);\n",
+          "expected": "restore FAILED: orders has 3 rows, manifest says 4",
+          "mode": "trim"
+        },
+        {
+          "name": "A corrupted dump does not run",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bil\n",
+          "expected": "restore FAILED: the dump does not run",
+          "mode": "trim"
+        },
+        {
+          "name": "A table the backup job forgot",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCOMMIT;\n",
+          "expected": "restore FAILED: table orders is missing",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty table is fine when the manifest says 0",
+          "stdin": "-- manifest: customers=2 orders=0\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nCOMMIT;\n",
+          "expected": "restore OK: customers=2 orders=0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/backup-replication/pitr-replay",
+      "track": "databases",
+      "lesson": "backup-replication",
+      "id": "pitr-replay",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Stop one second before the accidental DELETE",
+          "stdin": "target 14:05:59\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1 T2\nBackpack: 5\nLamp: 7\nNotebook: 8\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "A commit exactly at the target is included",
+          "stdin": "target 09:00:01\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1\nBackpack: 5\nNotebook: 8\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "Transactions not committed by the target leave no trace",
+          "stdin": "target 10:15:02\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1\nBackpack: 5\nNotebook: 8\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "Before the first commit: the base backup as it was",
+          "stdin": "target 08:59:59\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: (none)\nBackpack: 5\nNotebook: 10\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "Replaying everything repeats the accident, in commit order",
+          "stdin": "target 23:59:59\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1 T2 T5 T4\nPen: 70",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/backup-replication/failover-plan",
+      "track": "databases",
+      "lesson": "backup-replication",
+      "id": "failover-plan",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Skip the down replica, promote the freshest healthy one",
+          "stdin": "rpo 5\nprimary 12:00:30\nr1 12:00:27 healthy\nr2 12:00:30 down\nr3 12:00:20 healthy\n",
+          "expected": "r1: lag 3s, healthy\nr2: lag 0s, down\nr3: lag 10s, healthy\npromote: r1\ndata loss: 3s (RPO 5s met)",
+          "mode": "trim"
+        },
+        {
+          "name": "A tie goes to the smaller name; zero loss",
+          "stdin": "rpo 0\nprimary 08:15:00\ndb-b 08:15:00 healthy\ndb-a 08:15:00 healthy\ndb-c 08:14:58 healthy\n",
+          "expected": "db-b: lag 0s, healthy\ndb-a: lag 0s, healthy\ndb-c: lag 2s, healthy\npromote: db-a\ndata loss: 0s (RPO 0s met)",
+          "mode": "trim"
+        },
+        {
+          "name": "The best replica is still too far behind: RPO violated",
+          "stdin": "rpo 5\nprimary 23:59:50\nr1 23:59:42 healthy\nr2 23:59:31 healthy\n",
+          "expected": "r1: lag 8s, healthy\nr2: lag 19s, healthy\npromote: r1\ndata loss: 8s (RPO 5s violated)",
+          "mode": "trim"
+        },
+        {
+          "name": "No healthy replica: fall back to the backup",
+          "stdin": "rpo 60\nprimary 03:00:00\nr1 02:59:59 down\nr2 02:58:00 down\n",
+          "expected": "r1: lag 1s, down\nr2: lag 120s, down\npromote: none, restore from the latest backup",
+          "mode": "trim"
+        },
+        {
+          "name": "Exactly at the RPO counts as met",
+          "stdin": "rpo 30\nprimary 10:00:00\nreplica-east 09:59:31 down\nreplica-west 09:59:30 healthy\n",
+          "expected": "replica-east: lag 29s, down\nreplica-west: lag 30s, healthy\npromote: replica-west\ndata loss: 30s (RPO 30s met)",
           "mode": "trim"
         }
       ]

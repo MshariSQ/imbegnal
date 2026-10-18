@@ -23,6 +23,7 @@ const LESSON_IDS = [
   "indexes-performance",
   "transactions-acid",
   "nosql-models",
+  "backup-replication",
   "db-security",
 ];
 const NODE_IDS = [
