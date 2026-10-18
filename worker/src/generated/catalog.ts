@@ -232,12 +232,22 @@ export const catalog: Catalog = {
       "lessons": [
         "processes-threads",
         "cpu-scheduling",
-        "memory-management"
+        "memory-management",
+        "files-linux-shell",
+        "concurrency-sync",
+        "file-systems",
+        "virtualization-containers",
+        "os-security"
       ],
       "maxBonus": {
         "processes-threads": 10,
         "cpu-scheduling": 10,
-        "memory-management": 10
+        "memory-management": 10,
+        "files-linux-shell": 10,
+        "concurrency-sync": 10,
+        "file-systems": 10,
+        "virtualization-containers": 10,
+        "os-security": 10
       }
     },
     {
@@ -2144,6 +2154,603 @@ export const catalog: Catalog = {
           "name": "No requests",
           "stdin": "first 2\n64 32\n",
           "expected": "free=96 largest=64",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/files-linux-shell/path-resolver",
+      "track": "operating-systems",
+      "lesson": "files-linux-shell",
+      "id": "path-resolver",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "/home/ana/projects\n/home/ana\nnotes.txt\n../photos/./cat.png\n/etc//ssh/\n~/.bashrc\n../../../../..\n",
+          "expected": "notes.txt -> /home/ana/projects/notes.txt\n../photos/./cat.png -> /home/ana/photos/cat.png\n/etc//ssh/ -> /etc/ssh\n~/.bashrc -> /home/ana/.bashrc\n../../../../.. -> /",
+          "mode": "trim"
+        },
+        {
+          "name": "Tilde is special only at the start",
+          "stdin": "/srv/app\n/home/omar\n~\n~/a/../b\n~x/y\ndocs/~\n",
+          "expected": "~ -> /home/omar\n~/a/../b -> /home/omar/b\n~x/y -> /srv/app/~x/y\ndocs/~ -> /srv/app/docs/~",
+          "mode": "trim"
+        },
+        {
+          "name": "Working from the root, with blank lines",
+          "stdin": "/\n/root\n.\n\n..\netc/./passwd\n\n./\n",
+          "expected": ". -> /\n.. -> /\netc/./passwd -> /etc/passwd\n./ -> /",
+          "mode": "trim"
+        },
+        {
+          "name": "Absolute paths ignore the current directory",
+          "stdin": "/var/log\n/home/ana\n/usr/bin/../lib/\n/../../tmp\n//\n/a/b/../../../c\n",
+          "expected": "/usr/bin/../lib/ -> /usr/lib\n/../../tmp -> /tmp\n// -> /\n/a/b/../../../c -> /c",
+          "mode": "trim"
+        },
+        {
+          "name": "No paths: nothing to print",
+          "stdin": "/home/ana\n/home/ana\n",
+          "expected": "",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/files-linux-shell/permission-check",
+      "track": "operating-systems",
+      "lesson": "files-linux-shell",
+      "id": "permission-check",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "640 ana staff\nana ana r\nbob bob,staff w\ncarol carol r\nroot root x\n",
+          "expected": "-rw-r-----\nana r: allowed (owner)\nbob w: denied (group)\ncarol r: denied (other)\nroot x: denied (root)",
+          "mode": "trim"
+        },
+        {
+          "name": "The owner class applies even when it denies",
+          "stdin": "075 ana dev\nana ana,dev r\nbob bob,dev x\neve eve r\n",
+          "expected": "----rwxr-x\nana r: denied (owner)\nbob x: allowed (group)\neve r: allowed (other)",
+          "mode": "trim"
+        },
+        {
+          "name": "Supplementary groups count",
+          "stdin": "750 deploy www\nomar omar,docker,www x\nlina lina,docker x\ndeploy deploy w\n",
+          "expected": "-rwxr-x---\nomar x: allowed (group)\nlina x: denied (other)\ndeploy w: allowed (owner)",
+          "mode": "trim"
+        },
+        {
+          "name": "Root and the execute bits",
+          "stdin": "001 ana ana\nroot root r\nroot root w\nroot root x\nana ana x\n",
+          "expected": "---------x\nroot r: allowed (root)\nroot w: allowed (root)\nroot x: allowed (root)\nana x: denied (owner)",
+          "mode": "trim"
+        },
+        {
+          "name": "Mode only, no requests",
+          "stdin": "777 nobody nogroup\n",
+          "expected": "-rwxrwxrwx",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/files-linux-shell/passwd-report",
+      "track": "operating-systems",
+      "lesson": "files-linux-shell",
+      "id": "passwd-report",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nana:x:1000:1000:Ana Silva,,,:/home/ana:/bin/bash\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\n",
+          "expected": "2 /bin/bash\n2 /usr/sbin/nologin\nhumans: ana",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties, an empty shell field and nobody",
+          "stdin": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nsshd:x:110:65534::/run/sshd:/usr/sbin/nologin\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\nana:x:1000:1000:Ana Silva,,,:/home/ana:/bin/bash\nomar:x:1001:1001:Omar:/home/omar:/bin/zsh\nsync:x:4:65534:sync:/bin:/bin/sync\nlegacy:x:1002:1002::/home/legacy:\n",
+          "expected": "3 /usr/sbin/nologin\n2 /bin/bash\n1 /bin/sh\n1 /bin/sync\n1 /bin/zsh\nhumans: ana omar legacy",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "humans: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Only system accounts",
+          "stdin": "root:x:0:0:root:/root:/bin/bash\nsync:x:4:65534:sync:/bin:/bin/sync\n",
+          "expected": "1 /bin/bash\n1 /bin/sync\nhumans: none",
+          "mode": "trim"
+        },
+        {
+          "name": "UIDs compare as numbers: 999 is a system account",
+          "stdin": "svc:x:999:999::/var/lib/svc:/usr/sbin/nologin\nlina:x:1000:1000:Lina:/home/lina:/bin/zsh\nzed:x:60001:60001:Zed:/home/zed:/bin/zsh\n",
+          "expected": "2 /bin/zsh\n1 /usr/sbin/nologin\nhumans: lina zed",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/concurrency-sync/bounded-buffer",
+      "track": "operating-systems",
+      "lesson": "concurrency-sync",
+      "id": "bounded-buffer",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "4 6\n5 3 8 1 9 2\n",
+          "expected": "order: 5 3 8 1 9 2\ntotal: 28",
+          "mode": "trim"
+        },
+        {
+          "name": "Capacity 1: strict hand-over",
+          "stdin": "1 5\n10 20 30 40 50\n",
+          "expected": "order: 10 20 30 40 50\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "A buffer bigger than the input, negative items",
+          "stdin": "64 3\n7 -2 7\n",
+          "expected": "order: 7 -2 7\ntotal: 12",
+          "mode": "trim"
+        },
+        {
+          "name": "No items at all",
+          "stdin": "3 0\n",
+          "expected": "order:\ntotal: 0",
+          "mode": "trim"
+        },
+        {
+          "name": "100 items through 2 slots",
+          "stdin": "2 100\n100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1\n",
+          "expected": "order: 100 99 98 97 96 95 94 93 92 91 90 89 88 87 86 85 84 83 82 81 80 79 78 77 76 75 74 73 72 71 70 69 68 67 66 65 64 63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1\ntotal: 5050",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/concurrency-sync/semaphore-trace",
+      "track": "operating-systems",
+      "lesson": "concurrency-sync",
+      "id": "semaphore-trace",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example: a semaphore used as a lock",
+          "stdin": "mutex=1\nA wait mutex\nB wait mutex\nA signal mutex\nB signal mutex\n",
+          "expected": "A wait mutex -> ok (mutex=0)\nB wait mutex -> blocked\nA signal mutex -> wakes B\nB signal mutex -> mutex=1\nvalues: mutex=1\nblocked: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Producer and consumer with slots and items",
+          "stdin": "slots=2 items=0\nC wait items\nP wait slots\nP signal items\nP wait slots\nP signal items\nP wait slots\nC signal slots\nC wait items\nX wait items\n",
+          "expected": "C wait items -> blocked\nP wait slots -> ok (slots=1)\nP signal items -> wakes C\nP wait slots -> ok (slots=0)\nP signal items -> items=1\nP wait slots -> blocked\nC signal slots -> wakes P\nC wait items -> ok (items=0)\nX wait items -> blocked\nvalues: slots=0 items=0\nblocked: X(items)",
+          "mode": "trim"
+        },
+        {
+          "name": "Two threads waiting for each other: a deadlock",
+          "stdin": "a=0 b=0\nT1 wait a\nT2 wait b\nT1 signal b\nT2 signal a\n",
+          "expected": "T1 wait a -> blocked\nT2 wait b -> blocked\nT1 is blocked on a, ignored\nT2 is blocked on b, ignored\nvalues: a=0 b=0\nblocked: T1(a) T2(b)",
+          "mode": "trim"
+        },
+        {
+          "name": "A pool of three, and a semaphore has no owner",
+          "stdin": "pool=3\nA wait pool\nB wait pool\nC wait pool\nD wait pool\nE wait pool\nB signal pool\nA signal pool\nA signal pool\n",
+          "expected": "A wait pool -> ok (pool=2)\nB wait pool -> ok (pool=1)\nC wait pool -> ok (pool=0)\nD wait pool -> blocked\nE wait pool -> blocked\nB signal pool -> wakes D\nA signal pool -> wakes E\nA signal pool -> pool=1\nvalues: pool=1\nblocked: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Declarations only",
+          "stdin": "x=0 y=5\n",
+          "expected": "values: x=0 y=5\nblocked: none",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/concurrency-sync/lock-order",
+      "track": "operating-systems",
+      "lesson": "concurrency-sync",
+      "id": "lock-order",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Example: two locks taken in opposite orders",
+          "stdin": "T1: accounts audit\nT2: audit accounts\nT3: log\n",
+          "expected": "potential deadlock: accounts audit\nthreads: T1 T2",
+          "mode": "trim"
+        },
+        {
+          "name": "A consistent order with an independent lock",
+          "stdin": "T1: A B\nT2: B C\nT3: A C\nT4: log\n",
+          "expected": "consistent order: A B C log",
+          "mode": "trim"
+        },
+        {
+          "name": "A three-way cycle and a separate pair",
+          "stdin": "w1: a b\nw2: b c\nw3: c a\nw4: a d\nw5: x y\nw6: y x\n",
+          "expected": "potential deadlock: a b c x y\nthreads: w1 w2 w3 w5 w6",
+          "mode": "trim"
+        },
+        {
+          "name": "The order follows the edges, not the alphabet",
+          "stdin": "T1:\n\nT2: zeta alpha mid\n",
+          "expected": "consistent order: zeta alpha mid",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "consistent order: none",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/file-systems/inode-block-map",
+      "track": "operating-systems",
+      "lesson": "file-systems",
+      "id": "inode-block-map",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "4096 4 12\n0 49152 4243456\n",
+          "expected": "max file size: 4402345721856 bytes\n0 -> block 0 via direct[0], reads=1\n49152 -> block 12 via single[0], reads=2\n4243456 -> block 1036 via double[0][0], reads=3",
+          "mode": "trim"
+        },
+        {
+          "name": "Last byte of each region",
+          "stdin": "4096 4 12\n49151\n4243455\n4299210751\n4402345721855\n",
+          "expected": "max file size: 4402345721856 bytes\n49151 -> block 11 via direct[11], reads=1\n4243455 -> block 1035 via single[1023], reads=2\n4299210751 -> block 1049611 via double[1023][1023], reads=3\n4402345721855 -> block 1074791435 via triple[1023][1023][1023], reads=4",
+          "mode": "trim"
+        },
+        {
+          "name": "Triple indirect and beyond the limit",
+          "stdin": "4096 4 12\n4299210752\n4402345721856\n",
+          "expected": "max file size: 4402345721856 bytes\n4299210752 -> block 1049612 via triple[0][0][0], reads=4\n4402345721856 -> TOO LARGE",
+          "mode": "trim"
+        },
+        {
+          "name": "1 KiB blocks",
+          "stdin": "1024 4 12\n13000\n281600\n",
+          "expected": "max file size: 17247252480 bytes\n13000 -> block 12 via single[0], reads=2\n281600 -> block 275 via double[0][7], reads=3",
+          "mode": "trim"
+        },
+        {
+          "name": "8-byte pointers and only 4 direct blocks",
+          "stdin": "512 8 4\n2047 2048 34816 2000000000\n",
+          "expected": "max file size: 136349696 bytes\n2047 -> block 3 via direct[3], reads=1\n2048 -> block 4 via single[0], reads=2\n34816 -> block 68 via double[0][0], reads=3\n2000000000 -> TOO LARGE",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/file-systems/link-table",
+      "track": "operating-systems",
+      "lesson": "file-systems",
+      "id": "link-table",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example: a hard link survives rm, a symlink dangles",
+          "stdin": "create report.txt draft v1\nlink report.txt final.txt\nsymlink report.txt latest\nrm report.txt\ncat final.txt\ncat latest\n",
+          "expected": "draft v1\ncat latest: No such file or directory\n1 1 final.txt\n2 1 latest -> report.txt\ninodes in use: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "A chain of 40 symlinks works; 41, or a loop, is too many",
+          "stdin": "create f data\nsymlink f s1\nsymlink s1 s2\nsymlink s2 s3\nsymlink s3 s4\nsymlink s4 s5\nsymlink s5 s6\nsymlink s6 s7\nsymlink s7 s8\nsymlink s8 s9\nsymlink s9 s10\nsymlink s10 s11\nsymlink s11 s12\nsymlink s12 s13\nsymlink s13 s14\nsymlink s14 s15\nsymlink s15 s16\nsymlink s16 s17\nsymlink s17 s18\nsymlink s18 s19\nsymlink s19 s20\nsymlink s20 s21\nsymlink s21 s22\nsymlink s22 s23\nsymlink s23 s24\nsymlink s24 s25\nsymlink s25 s26\nsymlink s26 s27\nsymlink s27 s28\nsymlink s28 s29\nsymlink s29 s30\nsymlink s30 s31\nsymlink s31 s32\nsymlink s32 s33\nsymlink s33 s34\nsymlink s34 s35\nsymlink s35 s36\nsymlink s36 s37\nsymlink s37 s38\nsymlink s38 s39\nsymlink s39 s40\nsymlink s40 s41\ncat s40\ncat s41\nsymlink b a\nsymlink a b\ncat a\n",
+          "expected": "data\ncat s41: Too many levels of symbolic links\ncat a: Too many levels of symbolic links\n43 1 a -> b\n44 1 b -> a\n1 1 f\n2 1 s1 -> f\n11 1 s10 -> s9\n12 1 s11 -> s10\n13 1 s12 -> s11\n14 1 s13 -> s12\n15 1 s14 -> s13\n16 1 s15 -> s14\n17 1 s16 -> s15\n18 1 s17 -> s16\n19 1 s18 -> s17\n20 1 s19 -> s18\n3 1 s2 -> s1\n21 1 s20 -> s19\n22 1 s21 -> s20\n23 1 s22 -> s21\n24 1 s23 -> s22\n25 1 s24 -> s23\n26 1 s25 -> s24\n27 1 s26 -> s25\n28 1 s27 -> s26\n29 1 s28 -> s27\n30 1 s29 -> s28\n4 1 s3 -> s2\n31 1 s30 -> s29\n32 1 s31 -> s30\n33 1 s32 -> s31\n34 1 s33 -> s32\n35 1 s34 -> s33\n36 1 s35 -> s34\n37 1 s36 -> s35\n38 1 s37 -> s36\n39 1 s38 -> s37\n40 1 s39 -> s38\n5 1 s4 -> s3\n41 1 s40 -> s39\n42 1 s41 -> s40\n6 1 s5 -> s4\n7 1 s6 -> s5\n8 1 s7 -> s6\n9 1 s8 -> s7\n10 1 s9 -> s8\ninodes in use: 44",
+          "mode": "trim"
+        },
+        {
+          "name": "Errors change nothing",
+          "stdin": "create a x\ncreate a y\nlink a a\nlink nope b\nrm nope\ncat nope\nsymlink a a\ncat a\n",
+          "expected": "create a: File exists\nlink a: File exists\nlink nope: No such file or directory\nrm nope: No such file or directory\ncat nope: No such file or directory\nsymlink a: File exists\nx\n1 1 a\ninodes in use: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Link counts and inode numbers that are never reused",
+          "stdin": "create f data\nlink f g\nlink g h\nrm f\nrm g\ncat h\ncreate i new file\nrm h\n",
+          "expected": "data\n2 1 i\ninodes in use: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "A hard link to a symlink shares its inode; rm removes the link, not its target",
+          "stdin": "create t text\nsymlink t s\nlink s s2\nrm t\ncat s2\ncreate t back again\ncat s2\nrm s\ncat t\n",
+          "expected": "cat s2: No such file or directory\nback again\nback again\n2 1 s2 -> t\n3 1 t\ninodes in use: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Empty input",
+          "stdin": "",
+          "expected": "inodes in use: 0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/file-systems/journal-replay",
+      "track": "operating-systems",
+      "lesson": "file-systems",
+      "id": "journal-replay",
+      "lang": "java",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "a b c d\nbegin T1\nwrite T1 0 A\nwrite T1 2 C\ncommit T1\nbegin T2\nwrite T2 1 B\n",
+          "expected": "replayed: T1\ndiscarded: T2\ndisk: A b C d",
+          "mode": "trim"
+        },
+        {
+          "name": "Interleaved transactions: commit order decides",
+          "stdin": "free free free\nbegin t9\nbegin t3\nwrite t9 0 x\nwrite t3 0 y\ncommit t3\nwrite t9 1 z\ncommit t9\nbegin t4\nwrite t4 2 lost\n",
+          "expected": "replayed: t3 t9\ndiscarded: t4\ndisk: x z free",
+          "mode": "trim"
+        },
+        {
+          "name": "Crash before any commit",
+          "stdin": "old old\nbegin A\nwrite A 0 new\nbegin B\nwrite B 1 new\n",
+          "expected": "replayed: none\ndiscarded: A B\ndisk: old old",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty journal",
+          "stdin": "only\n",
+          "expected": "replayed: none\ndiscarded: none\ndisk: only",
+          "mode": "trim"
+        },
+        {
+          "name": "The same block twice in one transaction, and blank lines",
+          "stdin": "s0 s1 s2 s3 s4\nbegin m1\nwrite m1 4 first\n\nwrite m1 4 second\nwrite m1 0 head\ncommit m1\n\nbegin m2\ncommit m2\n",
+          "expected": "replayed: m1 m2\ndiscarded: none\ndisk: head s1 s2 s3 second",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/virtualization-containers/pid-namespaces",
+      "track": "operating-systems",
+      "lesson": "virtualization-containers",
+      "id": "pid-namespaces",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "spawn sshd init\nspawn box init newns\nspawn nginx box\nps init\nps nginx\npids nginx\nexit box\nps init\n",
+          "expected": "ps init: 1=init 2=sshd 3=box 4=nginx\nps nginx: 1=box 2=nginx\npids nginx: 2 4\nexit box: also killed nginx\nps init: 1=init 2=sshd",
+          "mode": "trim"
+        },
+        {
+          "name": "Namespaces inside namespaces",
+          "stdin": "spawn sshd init\nspawn box init newns\nspawn nginx box\nspawn worker nginx\nps init\nps nginx\npids worker\nspawn inner worker newns\nspawn job inner\npids job\nps box\nps job\nexit box\nps init\n",
+          "expected": "ps init: 1=init 2=sshd 3=box 4=nginx 5=worker\nps nginx: 1=box 2=nginx 3=worker\npids worker: 3 5\npids job: 2 5 7\nps box: 1=box 2=nginx 3=worker 4=inner 5=job\nps job: 1=inner 2=job\nexit box: also killed nginx worker inner job\nps init: 1=init 2=sshd",
+          "mode": "trim"
+        },
+        {
+          "name": "A normal exit kills nobody else and PIDs are not reused",
+          "stdin": "spawn a init\nspawn b init\nexit a\nspawn c init\nps init\npids c\nexit b\nps c\n",
+          "expected": "exit a\nps init: 1=init 3=b 4=c\npids c: 4\nexit b\nps c: 1=init 4=c",
+          "mode": "trim"
+        },
+        {
+          "name": "A nested init takes down only its own namespace",
+          "stdin": "spawn box init newns\nspawn web box\n\nspawn inner web newns\nspawn job inner\npids job\nexit inner\nps box\nps init\n",
+          "expected": "pids job: 2 4 5\nexit inner: also killed job\nps box: 1=box 2=web\nps init: 1=init 2=box 3=web",
+          "mode": "trim"
+        },
+        {
+          "name": "Only init",
+          "stdin": "ps init\npids init\n",
+          "expected": "ps init: 1=init\npids init: 1",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/virtualization-containers/image-layers",
+      "track": "operating-systems",
+      "lesson": "virtualization-containers",
+      "id": "image-layers",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "Example: an upper file wins, a whiteout deletes",
+          "stdin": "layer\n/etc/os-release debian 12\n/etc/motd welcome\n/bin/sh dash\nlayer\n/etc/.wh.motd\n/app/server.py v1\nlayer\n/app/server.py v2\n",
+          "expected": "/app/server.py v2\n/bin/sh dash\n/etc/os-release debian 12\nfiles: 3",
+          "mode": "trim"
+        },
+        {
+          "name": "An opaque directory and a directory whiteout",
+          "stdin": "layer\n/var/cache/apt/a.deb 1\n/var/cache/apt/b.deb 2\n/var/cache/x 3\n/var/log/syslog 4\n/var/lib/dpkg/status ok\nlayer\n/var/cache/.wh..wh..opq\n/var/cache/new fresh\nlayer\n/var/.wh.log\n",
+          "expected": "/var/cache/new fresh\n/var/lib/dpkg/status ok\nfiles: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "A whiteout hides /a and /a/b but not /ab",
+          "stdin": "layer\n/a/b 1\n/a 2\n/ab 3\nlayer\n/.wh.a\n",
+          "expected": "/ab 3\nfiles: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "A whiteout never hides a file of its own layer",
+          "stdin": "layer\n/x old\n/y keep\nlayer\n/x new\n/.wh.x\nlayer\n/.wh..wh..opq\n/z only\n",
+          "expected": "/z only\nfiles: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "No layers at all",
+          "stdin": "",
+          "expected": "files: 0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/virtualization-containers/cgroup-memory",
+      "track": "operating-systems",
+      "lesson": "virtualization-containers",
+      "id": "cgroup-memory",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "Example: the cgroup's own limit",
+          "stdin": "mkdir /web 512\nmkdir /web/api 300\ncharge /web/api 200\ncharge /web/api 120\nshow\n",
+          "expected": "charge /web/api 200: ok\ncharge /web/api 120: OOM in /web/api\n/ current=200 max=max\n/web current=200 max=512\n/web/api current=200 max=300",
+          "mode": "trim"
+        },
+        {
+          "name": "A parent's limit stops a child without one",
+          "stdin": "mkdir /web 512\nmkdir /web/api 300\nmkdir /web/static max\ncharge /web/api 200\ncharge /web/static 250\ncharge /web/api 120\ncharge /web/static 100\nuncharge /web/api 200\ncharge /web/static 100\nshow\n",
+          "expected": "charge /web/api 200: ok\ncharge /web/static 250: ok\ncharge /web/api 120: OOM in /web/api\ncharge /web/static 100: OOM in /web\ncharge /web/static 100: ok\n/ current=350 max=max\n/web current=350 max=512\n/web/api current=0 max=300\n/web/static current=350 max=max",
+          "mode": "trim"
+        },
+        {
+          "name": "mkdir errors and reaching the limit exactly",
+          "stdin": "mkdir /a/b 10\nmkdir /a 10\nmkdir /a 5\n\ncharge / 1000000\ncharge /a 10\ncharge /a 1\nshow\n",
+          "expected": "mkdir /a/b: No such file or directory\nmkdir /a: File exists\ncharge / 1000000: ok\ncharge /a 10: ok\ncharge /a 1: OOM in /a\n/ current=1000010 max=max\n/a current=10 max=10",
+          "mode": "trim"
+        },
+        {
+          "name": "Three levels: the closest full cgroup is reported",
+          "stdin": "mkdir /k8s 1024\nmkdir /k8s/pod 256\nmkdir /k8s/pod/app max\nmkdir /k8s/other max\ncharge /k8s/other 900\ncharge /k8s/pod/app 200\ncharge /k8s/pod/app 50\nuncharge /k8s/other 900\ncharge /k8s/pod/app 100\ncharge /k8s/pod/app 107\nshow\n",
+          "expected": "charge /k8s/other 900: ok\ncharge /k8s/pod/app 200: OOM in /k8s\ncharge /k8s/pod/app 50: ok\ncharge /k8s/pod/app 100: ok\ncharge /k8s/pod/app 107: OOM in /k8s/pod\n/ current=150 max=max\n/k8s current=150 max=1024\n/k8s/pod current=150 max=256\n/k8s/pod/app current=150 max=max\n/k8s/other current=0 max=max",
+          "mode": "trim"
+        },
+        {
+          "name": "Only the root",
+          "stdin": "show\n",
+          "expected": "/ current=0 max=max",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/os-security/capeff-decoder",
+      "track": "operating-systems",
+      "lesson": "os-security",
+      "id": "capeff-decoder",
+      "lang": "c",
+      "tests": [
+        {
+          "name": "Example: a container with Docker's default set",
+          "stdin": "CapEff:\t00000000a80425fb\n",
+          "expected": "CapEff (14): cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap\nCapEff dangerous: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Full root on a recent kernel",
+          "stdin": "CapBnd:\t000001ffffffffff\n",
+          "expected": "CapBnd (41): cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore\nCapBnd dangerous: cap_dac_read_search,cap_sys_module,cap_sys_rawio,cap_sys_ptrace,cap_sys_admin",
+          "mode": "trim"
+        },
+        {
+          "name": "A container given ptrace and admin rights",
+          "stdin": "CapEff:\t0000000000280000\n",
+          "expected": "CapEff (2): cap_sys_ptrace,cap_sys_admin\nCapEff dangerous: cap_sys_ptrace,cap_sys_admin",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty set and an ambient capability",
+          "stdin": "CapInh:\t0000000000000000\nCapAmb:\t0000000000000400\n",
+          "expected": "CapInh (0): none\nCapInh dangerous: none\nCapAmb (1): cap_net_bind_service\nCapAmb dangerous: none",
+          "mode": "trim"
+        },
+        {
+          "name": "Upper-case hex and the highest bit",
+          "stdin": "X 0000010000000001\nY 00000000000301C4\n",
+          "expected": "X (2): cap_chown,cap_checkpoint_restore\nX dangerous: none\nY (6): cap_dac_read_search,cap_setgid,cap_setuid,cap_setpcap,cap_sys_module,cap_sys_rawio\nY dangerous: cap_dac_read_search,cap_sys_module,cap_sys_rawio",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/os-security/seccomp-stack",
+      "track": "operating-systems",
+      "lesson": "os-security",
+      "id": "seccomp-stack",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "filter\ndefault ALLOW\nptrace ERRNO\nreboot KILL\nfilter\ndefault ERRNO\nread ALLOW\nwrite ALLOW\nptrace ALLOW\ntrace\nread write openat\nptrace\nreboot\nwrite\n",
+          "expected": "read -> ALLOW\nwrite -> ALLOW\nopenat -> ERRNO\nptrace -> ERRNO\nreboot -> KILL\nprocess killed\nsummary: ALLOW=2 LOG=0 ERRNO=2 KILL=1",
+          "mode": "trim"
+        },
+        {
+          "name": "No filter installed",
+          "stdin": "trace\nread write mount\n",
+          "expected": "read -> ALLOW\nwrite -> ALLOW\nmount -> ALLOW\nsummary: ALLOW=3 LOG=0 ERRNO=0 KILL=0",
+          "mode": "trim"
+        },
+        {
+          "name": "LOG beats ALLOW, ERRNO beats LOG",
+          "stdin": "filter\ndefault LOG\nread ALLOW\n\nfilter\ndefault ALLOW\nopenat LOG\nunshare ERRNO\ntrace\nread\nopenat\nunshare\nexecve\n",
+          "expected": "read -> ALLOW\nopenat -> LOG\nunshare -> ERRNO\nexecve -> LOG\nsummary: ALLOW=1 LOG=2 ERRNO=1 KILL=0",
+          "mode": "trim"
+        },
+        {
+          "name": "An allow-list filter kills on the first forbidden call",
+          "stdin": "filter\ndefault KILL\nread ALLOW\nwrite ALLOW\nexit_group ALLOW\ntrace\nread write\nwrite\nsocket\nexit_group\n",
+          "expected": "read -> ALLOW\nwrite -> ALLOW\nwrite -> ALLOW\nsocket -> KILL\nprocess killed\nsummary: ALLOW=3 LOG=0 ERRNO=0 KILL=1",
+          "mode": "trim"
+        },
+        {
+          "name": "A filter but an empty trace",
+          "stdin": "filter\ndefault ERRNO\ntrace\n",
+          "expected": "summary: ALLOW=0 LOG=0 ERRNO=0 KILL=0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "operating-systems/os-security/perm-audit",
+      "track": "operating-systems",
+      "lesson": "os-security",
+      "id": "perm-audit",
+      "lang": "bash",
+      "tests": [
+        {
+          "name": "Example from the prompt",
+          "stdin": "allow: /usr/bin/passwd /usr/bin/sudo\n4755 root /usr/bin/passwd\n4755 root /opt/backup/run\n0666 www /var/www/config.php\n1777 root /tmp/\n0777 root /srv/upload/\n",
+          "expected": "REVIEW setuid /opt/backup/run (owner root)\nFIX world-writable file /var/www/config.php\nFIX world-writable directory without sticky bit /srv/upload/\nfindings: 3",
+          "mode": "trim"
+        },
+        {
+          "name": "setgid files versus setgid directories",
+          "stdin": "allow: /usr/bin/passwd /usr/bin/sudo\n4755 root /usr/bin/passwd\n4755 root /usr/bin/sudo\n4755 root /opt/backup/run\n2755 root /usr/bin/ssh-agent\n0644 root /etc/hosts\n0666 www /var/www/config.php\n1777 root /tmp/\n0777 root /srv/upload/\n2775 root /srv/team/\n",
+          "expected": "REVIEW setuid /opt/backup/run (owner root)\nREVIEW setgid /usr/bin/ssh-agent (owner root)\nFIX world-writable file /var/www/config.php\nFIX world-writable directory without sticky bit /srv/upload/\nfindings: 4",
+          "mode": "trim"
+        },
+        {
+          "name": "Several findings on one line; allowed is not the same as safe",
+          "stdin": "allow: /bin/x\n6777 root /bin/x\n6777 root /bin/y\n0757 ana /home/ana/\n0002 ana /home/ana/.netrc\n",
+          "expected": "FIX world-writable file /bin/x\nREVIEW setuid /bin/y (owner root)\nREVIEW setgid /bin/y (owner root)\nFIX world-writable file /bin/y\nFIX world-writable directory without sticky bit /home/ana/\nFIX world-writable file /home/ana/.netrc\nfindings: 6",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty allow list",
+          "stdin": "allow:\n4711 root /usr/local/bin/helper\n2711 root /usr/local/bin/mailer\n",
+          "expected": "REVIEW setuid /usr/local/bin/helper (owner root)\nREVIEW setgid /usr/local/bin/mailer (owner root)\nfindings: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Allowed paths match exactly: su is not sudo",
+          "stdin": "allow: /usr/bin/sudo /opt/tools/bin/ping\n4755 root /usr/bin/su\n4755 root /usr/bin/sudo\n4755 root /bin/ping\n",
+          "expected": "REVIEW setuid /usr/bin/su (owner root)\nREVIEW setuid /bin/ping (owner root)\nfindings: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "A clean system",
+          "stdin": "allow: /usr/bin/passwd\n4755 root /usr/bin/passwd\n0755 root /usr/bin/ls\n1777 root /tmp/\n2775 root /srv/team/\n0640 root /etc/shadow\n",
+          "expected": "findings: 0",
           "mode": "trim"
         }
       ]

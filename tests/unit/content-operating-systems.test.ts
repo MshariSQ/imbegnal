@@ -3,7 +3,8 @@
  *
  * Structure: every lesson loads through the registry fragment, is bilingual, well formed and
  * honestly timed. Behaviour: every lab reference solution passes ALL its visible tests, the
- * untouched starter code fails at least one, and every runnable code-demo executes cleanly.
+ * untouched starter code and an empty program each fail at least one, and every runnable code-demo
+ * executes cleanly.
  * Programs run on the host toolchain via tests/helpers/exec-local (authoring only, not sandboxed).
  */
 import { test } from "node:test";
@@ -21,7 +22,7 @@ const ARABIC = /[؀-ۿ]/;
 const LAB_LANGS = new Set(["python", "javascript", "typescript", "java", "c", "cpp", "go", "rust", "ruby", "php", "bash"]);
 
 /** Lessons that must exist (the node-only roadmap entries have none). */
-const EXPECTED_LESSONS = ["processes-threads", "cpu-scheduling", "memory-management"];
+const EXPECTED_LESSONS = ["processes-threads", "cpu-scheduling", "memory-management", "files-linux-shell", "file-systems", "concurrency-sync", "virtualization-containers", "os-security"];
 
 async function loadAll(): Promise<{ key: string; lesson: Lesson }[]> {
   const out: { key: string; lesson: Lesson }[] = [];
@@ -252,6 +253,23 @@ test("lab reference solutions pass every visible test; starters fail", async (t)
         // The starter must be valid code: it has to at least build (exit code 0 on some input, or a clean run).
         const sample = runLocal(lab.lang, lab.starterCode, lab.tests[0].stdin ?? "");
         assert.ok(!/error|Traceback|SyntaxError/i.test(sample.stderr.replace(/Picked up JAVA_TOOL_OPTIONS[^\n]*\n?/g, "")) || sample.exitCode === 0, `${ref}: starter does not compile/run:\n${sample.stderr}`);
+      });
+    }
+  }
+});
+
+test("an empty program or one hard-coded answer fails at least one visible test", async (t) => {
+  for (const { key, lesson } of await loadAll()) {
+    for (const lab of labs(lesson)) {
+      const ref = `${key}/${lab.id} [${lab.lang}]`;
+      // Printing one test's expected output verbatim must not pass the others.
+      assert.ok(new Set(lab.tests.map((x) => x.expected.trimEnd())).size >= 2, `${ref}: every test expects the same output`);
+      await t.test(ref, { skip: !localSupports(lab.lang) }, () => {
+        const failing = lab.tests.filter((test) => {
+          const r = runLocal(lab.lang, "", test.stdin ?? "");
+          return r.exitCode !== 0 || r.timedOut || !matchOutput(r.stdout, test.expected, test.mode, test.epsilon);
+        });
+        assert.ok(failing.length >= 1, `${ref}: an empty program passes every test`);
       });
     }
   }

@@ -767,22 +767,22 @@ print("same subnet as .62?", ipaddress.ip_address("192.168.10.62") in net)
       l("Explain virtual memory, paging and why a page fault happens.", "اشرح الذاكرة الافتراضية والتصفيح ولماذا يحدث خطأ الصفحة."),
       l("Compare FCFS, SJF and Round Robin scheduling by computing average waiting time.", "قارن جدولة FCFS وSJF وRound Robin بحساب متوسط زمن الانتظار."),
       l("Explain how a file system maps names to blocks with inodes and what journaling protects.", "اشرح كيف يربط نظام الملفات الأسماء بالكتل بـ inodes وما الذي يحميه السجل اليومي."),
-      l("Spot a race condition or deadlock and fix it with a lock, semaphore or ordering rule.", "اكتشف حالة تسابق أو جموداً وأصلحه بقفل أو إشارة أو قاعدة ترتيب."),
+      l("Spot a race condition or deadlock and fix it with a lock, semaphore or ordering rule.", "اكتشف حالة سباق أو جموداً وأصلحه بقفل أو إشارة أو قاعدة ترتيب."),
       l("Write a small program that creates processes and pipes with fork, exec and pipe.", "اكتب برنامجاً صغيراً ينشئ عمليات وأنابيب بـ fork وexec وpipe."),
+      l("Explain what namespaces, cgroups and capabilities isolate, and harden a Linux service with least privilege.", "اشرح ما تعزله فضاءات الأسماء ومجموعات التحكم والقدرات (capabilities)، وقوِّ خدمة لينكس بمبدأ أقل الامتيازات."),
     ],
     audience: l(
       "Developers, future SREs and security learners who want to know what happens beneath their code.",
       "المطورون ومهندسو الموثوقية المستقبليون ودارسو الأمن الراغبون في معرفة ما يحدث تحت أكوادهم."
     ),
     prerequisites: [{ text: l("Basic programming in any language. Reading small C snippets is taught as you go.", "أساسيات البرمجة بأي لغة. تُدرَّس قراءة مقتطفات C الصغيرة أثناء المسار.") }],
-    estimatedHours: 7,
-    estimateOnly: true,
+    estimatedHours: 6,
     recommendedOrder: 2,
     recommendedAfter: [],
     modules: {
       required: { title: l("Processes, memory and files", "العمليات والذاكرة والملفات"), summary: l("The three abstractions every OS provides.", "التجريدات الثلاثة التي يوفرها كل نظام تشغيل.") },
-      important: { title: l("Concurrency and scheduling", "التزامن والجدولة"), summary: l("Sharing one CPU safely between many tasks.", "تقاسم معالج واحد بأمان بين مهام كثيرة.") },
-      optional: { title: l("Inside Linux", "داخل لينكس"), summary: l("System calls, the shell and containers as OS features.", "استدعاءات النظام والطرفية والحاويات كميزات للنظام.") },
+      important: { title: l("Concurrency, storage and isolation", "التزامن والتخزين والعزل"), summary: l("Locks and deadlocks, file systems that survive crashes, and VMs and containers sharing one machine.", "الأقفال والجمود، وأنظمة ملفات تنجو من الانهيارات، وأجهزة افتراضية وحاويات تتقاسم جهازاً واحداً.") },
+      optional: { title: l("Security and devices", "الأمن والأجهزة"), summary: l("Privileges, sandboxing and memory protections, and how the OS drives hardware.", "الامتيازات والعزل وحمايات الذاكرة، وكيف يتحكم النظام في العتاد.") },
     },
     assessment: {
       summary: l(
