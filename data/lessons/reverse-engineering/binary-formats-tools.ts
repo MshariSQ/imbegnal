@@ -966,7 +966,7 @@ entry RVA: 0x2000
 image base: 0x140000000
 entry VA: 0x140002000
 ` },
-        { name: { en: "An old DOS-era file: MZ, but no PE signature", ar: "ملف قديم من عصر DOS: فيه MZ لكن بلا توقيع PE" }, stdin: `4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+        { name: { en: "An old 16-bit NE file: MZ, but no PE signature", ar: "ملف NE قديم بـ 16 بت: فيه MZ لكن بلا توقيع PE" }, stdin: `4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00
@@ -994,7 +994,7 @@ entry VA: 0x140002000
       prompt: {
         en: `## From RVA to file offset
 
-A string reference in a disassembler says "RVA 0x3100", but you want to patch or extract the bytes from the file on disk. Convert RVAs to file offsets using the section table, exactly as tools like pefile do.
+A string reference in a disassembler says "RVA 0x3100", but you want to patch or extract the bytes from the file on disk. Convert RVAs to file offsets using the section table: the core calculation behind pefile's \`get_offset_from_rva\` (real tools also round some fields to the file alignment, which this lab leaves out).
 
 **Input**
 
@@ -1045,7 +1045,7 @@ Output:
 \`\`\``,
         ar: `## من RVA إلى إزاحة في الملف
 
-إشارة نصية في المفكِّك تقول "RVA 0x3100"، لكنك تريد استخراج البايتات من الملف على القرص أو تعديلها. حوّل قيم RVA إلى إزاحات داخل الملف باستخدام جدول الأقسام، تماماً كما تفعل أدوات مثل pefile.
+إشارة نصية في المفكِّك تقول "RVA 0x3100"، لكنك تريد استخراج البايتات من الملف على القرص أو تعديلها. حوّل قيم RVA إلى إزاحات داخل الملف باستخدام جدول الأقسام: وهو الحساب الجوهري خلف الدالة \`get_offset_from_rva\` في pefile (والأدوات الحقيقية تقرّب أيضاً بعض الحقول إلى محاذاة الملف، وهو ما يتركه هذا التمرين).
 
 **المدخل**
 
@@ -1277,7 +1277,7 @@ queries 4
 0x21ff -> DATA+0x1ff at file offset 0x9ff
 0x2200 -> not in any section
 ` },
-        { name: { en: "A 64-bit-sized image with upper-case hex in the queries", ar: "صورة بأحجام كبيرة وhex بأحرف كبيرة في الاستعلامات" }, stdin: `headers 0x1000
+        { name: { en: "A larger image, with upper-case hex in the queries", ar: "صورة أكبر، مع hex بأحرف كبيرة في الاستعلامات" }, stdin: `headers 0x1000
 sections 2
 .text 0x1000 0x1f2e40 0x1000 0x1f3000
 .rsrc 0x3a0000 0x4a2b0 0x2b4000 0x4a400

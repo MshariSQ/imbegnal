@@ -3189,7 +3189,7 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "An old DOS-era file: MZ, but no PE signature",
+          "name": "An old 16-bit NE file: MZ, but no PE signature",
           "stdin": "4d 5a 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 00\n4e 45 00 00 64 86 03 00 00 00 00 00 00 00 00 00\n",
           "expected": "MZ file without a PE header\n",
           "mode": "trim"
@@ -3240,7 +3240,7 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "A 64-bit-sized image with upper-case hex in the queries",
+          "name": "A larger image, with upper-case hex in the queries",
           "stdin": "headers 0x1000\nsections 2\n.text 0x1000 0x1f2e40 0x1000 0x1f3000\n.rsrc 0x3a0000 0x4a2b0 0x2b4000 0x4a400\nqueries 3\n0X1F2E3F\n0x3EA2AF\n0x3ea2b0\n",
           "expected": "0x1f2e3f -> .text+0x1f1e3f at file offset 0x1f2e3f\n0x3ea2af -> .rsrc+0x4a2af at file offset 0x2fe2af\n0x3ea2b0 -> not in any section\n",
           "mode": "trim"
