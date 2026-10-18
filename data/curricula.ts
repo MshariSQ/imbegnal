@@ -1004,14 +1004,13 @@ print("index lookup comparisons:", lookup)
       { track: "operating-systems" },
       { text: l("Basic C or Python: you should read a loop and a function call without help.", "أساسيات C أو بايثون: يجب أن تقرأ حلقة واستدعاء دالة دون مساعدة.") },
     ],
-    estimatedHours: 8,
-    estimateOnly: true,
+    estimatedHours: 5.5,
     recommendedOrder: 13,
     recommendedAfter: ["operating-systems", "cyber-security"],
     modules: {
-      required: { title: l("Binaries and assembly", "الملفات الثنائية والتجميع"), summary: l("How programs are built and how to read their machine code.", "كيف تُبنى البرامج وكيف تُقرأ أكوادها الآلية.") },
-      important: { title: l("Dynamic analysis", "التحليل الديناميكي"), summary: l("Debugging, decoding and observing programs safely.", "التصحيح وفك الترميز ومراقبة البرامج بأمان.") },
-      optional: { title: l("Malware analysis basics", "أساسيات تحليل البرمجيات الخبيثة"), summary: l("Lab hygiene, reporting and the legal context.", "نظافة المختبر وكتابة التقارير والسياق القانوني.") },
+      required: { title: l("Core reversing skills", "مهارات الهندسة العكسية الأساسية"), summary: l("How programs are built and run, reading assembly, static and dynamic analysis, and the legal and ethical rules.", "كيف تُبنى البرامج وتعمل، وقراءة التجميع، والتحليل الساكن والديناميكي، والقواعد القانونية والأخلاقية.") },
+      important: { title: l("Binary formats and tools", "صيغ الملفات الثنائية وأدواتها"), summary: l("ELF and PE layouts, symbols, imports, relocations and the standard toolbelt.", "بنية ELF وPE، والرموز، والاستيرادات، وإعادة التوطين، وصندوق الأدوات المعتاد.") },
+      optional: { title: l("Malware analysis basics", "أساسيات تحليل البرمجيات الخبيثة"), summary: l("Safe lab practice, triage, indicators and reporting.", "الممارسة الآمنة في المختبر، والفرز الأولي، والمؤشرات، وكتابة التقارير.") },
     },
     assessment: {
       summary: l(
@@ -1020,7 +1019,7 @@ print("index lookup comparisons:", lookup)
       ),
       passing: passing(0.7, 2, 2),
       criteria: [
-        { source: "lessons", title: l("Read machine code", "اقرأ الكود الآلي"), detail: l("Complete every Binaries and assembly lesson.", "أكمل كل دروس الملفات الثنائية والتجميع.") },
+        { source: "lessons", title: l("Read machine code", "اقرأ الكود الآلي"), detail: l("Complete every Core reversing skills lesson.", "أكمل كل دروس مهارات الهندسة العكسية الأساسية.") },
         { source: "quizzes", title: l("Explain what you see", "اشرح ما تراه"), detail: l("Average at least 70% on first-try quizzes about registers, the stack and calling conventions.", "حقق متوسط 70% على الأقل من المحاولة الأولى في اختبارات السجلات والمكدّس واصطلاحات الاستدعاء.") },
         { source: "labs", title: l("Decode with scripts", "فكّ بالسكربتات"), detail: l("Pass graded labs that decode XOR, base64 and simple custom encodings.", "اجتز مختبرات مصحَّحة تفك XOR وbase64 وترميزات مخصصة بسيطة.") },
         { source: "challenges", title: l("Crack the crackmes", "اكسر الـ crackme"), detail: l("Solve at least 2 reverse-engineering challenges and capture their flags.", "حُلّ تحدّيين على الأقل في الهندسة العكسية والتقط علميهما.") },
@@ -1028,7 +1027,7 @@ print("index lookup comparisons:", lookup)
     },
     badges: [
       { id: "first-disassembly", icon: "binary", title: l("First Disassembly", "أول تفكيك"), criteria: l("Finish your first lesson.", "أنهِ درسك الأول."), rule: { kind: "lessons", count: 1 } },
-      { id: "assembly-reader", icon: "cpu", title: l("Assembly Reader", "قارئ التجميع"), criteria: l("Complete every Binaries and assembly lesson.", "أكمل كل دروس الملفات الثنائية والتجميع."), rule: { kind: "module", module: "required" } },
+      { id: "assembly-reader", icon: "cpu", title: l("Assembly Reader", "قارئ التجميع"), criteria: l("Complete every Core reversing skills lesson.", "أكمل كل دروس مهارات الهندسة العكسية الأساسية."), rule: { kind: "module", module: "required" } },
       { id: "decoder", icon: "lock", title: l("Decoder", "فاكّ الترميز"), criteria: l("Pass 2 graded lab exercises.", "اجتز تمرينين مصحَّحين في المختبر."), rule: { kind: "labs", count: 2 } },
       { id: "careful-analyst", icon: "bug", title: l("Careful Analyst", "محلل حذر"), criteria: l("Score 80% or more on the first try in 4 lesson quizzes.", "احصل على 80% أو أكثر من المحاولة الأولى في 4 اختبارات دروس."), rule: { kind: "quizzes", min: 0.8, count: 4 } },
       { id: "reverse-engineer", icon: "graduation", title: l("Reverse Engineer", "مهندس عكسي"), criteria: l("Complete every lesson in the track.", "أكمل كل دروس المسار."), rule: { kind: "course" } },
