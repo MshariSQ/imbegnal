@@ -915,12 +915,12 @@ print("shortest path:", shortest_path(grid), "steps")
   databases: {
     objectives: [
       l("Model entities as normalized tables (1NF to 3NF) with primary and foreign keys.", "نمذج الكيانات في جداول مطبَّعة (من 1NF إلى 3NF) بمفاتيح أساسية وأجنبية."),
-      l("Write SELECT queries with joins, aggregates, subqueries and window functions.", "اكتب استعلامات SELECT بالربط والتجميع والاستعلامات الفرعية ودوال النافذة."),
+      l("Write SELECT queries with joins, aggregates, subqueries and CTEs.", "اكتب استعلامات SELECT بالربط والتجميع والاستعلامات الفرعية وتعبيرات الجداول المشتركة (CTE)."),
       l("Explain how a B-tree index speeds up a query and read an EXPLAIN plan.", "اشرح كيف يسرّع فهرس B-tree الاستعلام واقرأ خطة EXPLAIN."),
       l("Use transactions and isolation levels to prevent lost updates and dirty reads.", "استخدم المعاملات ومستويات العزل لمنع التحديثات الضائعة والقراءات القذرة."),
-      l("Plan a safe schema migration that does not lock production tables.", "خطّط لهجرة آمنة للمخطط لا تقفل جداول الإنتاج."),
+      l("Design backups, point-in-time recovery and replication that meet an RPO and RTO, and prove them with a restore.", "صمّم نسخاً احتياطية واسترداداً إلى نقطة زمنية ونسخاً متماثلاً تحقق قيمتَي RPO وRTO، وأثبتها بعملية استعادة."),
       l("Choose between relational, document, key-value and graph stores for a given workload.", "اختر بين المخازن العلائقية والوثائقية والمفتاح-قيمة والبيانية لحِمل عمل معيّن."),
-      l("Secure a database with parameterized queries, least privilege and tested backups.", "أمّن قاعدة بيانات بالاستعلامات المُعامَلة وأقل صلاحية ونسخ احتياطية مُختبَرة."),
+      l("Secure a database with parameterized queries, least-privilege roles, encryption and audit trails.", "أمّن قاعدة بيانات بالاستعلامات المُعامَلة وأدوار بأقل صلاحية والتشفير وسجلات التدقيق."),
     ],
     audience: l(
       "Developers, analysts and aspiring database administrators who want to design schemas and write fast, correct SQL.",
@@ -928,13 +928,12 @@ print("shortest path:", shortest_path(grid), "steps")
     ),
     prerequisites: [{ text: l("None. If you have used a spreadsheet you already know the idea of rows and columns.", "لا شيء. إن استخدمت جدول بيانات فأنت تعرف فكرة الصفوف والأعمدة.") }],
     estimatedHours: 6,
-    estimateOnly: true,
     recommendedOrder: 4,
     recommendedAfter: [],
     modules: {
-      required: { title: l("Modeling and SQL", "النمذجة وSQL"), summary: l("Tables, keys, normalization and everyday queries.", "الجداول والمفاتيح والتطبيع والاستعلامات اليومية.") },
-      important: { title: l("Performance and integrity", "الأداء والسلامة"), summary: l("Indexes, query plans and transactions.", "الفهارس وخطط الاستعلام والمعاملات.") },
-      optional: { title: l("Beyond relational", "ما بعد العلائقي"), summary: l("NoSQL trade-offs, migrations, security and backups.", "مفاضلات NoSQL والهجرات والأمان والنسخ الاحتياطي.") },
+      required: { title: l("Modeling and SQL", "النمذجة وSQL"), summary: l("Tables, keys, normalization, joins and aggregates, indexes and query plans, and transactions.", "الجداول والمفاتيح والتطبيع، والربط والتجميع، والفهارس وخطط الاستعلام، والمعاملات.") },
+      important: { title: l("Beyond one server", "ما بعد الخادم الواحد"), summary: l("NoSQL models, backups, replication and failover, and database security.", "نماذج NoSQL، والنسخ الاحتياطي والنسخ المتماثل والتحويل عند العطل، وأمن قواعد البيانات.") },
+      optional: { title: l("Analytics", "التحليلات"), summary: l("Warehousing, star schemas, columnar storage and analytical queries.", "المستودعات ومخططات النجمة والتخزين العمودي والاستعلامات التحليلية.") },
     },
     assessment: {
       summary: l(
@@ -945,7 +944,7 @@ print("shortest path:", shortest_path(grid), "steps")
       criteria: [
         { source: "lessons", title: l("Learn modeling and SQL", "تعلّم النمذجة وSQL"), detail: l("Complete every Modeling and SQL lesson.", "أكمل كل دروس النمذجة وSQL.") },
         { source: "quizzes", title: l("Design and reason", "صمّم واستدلّ"), detail: l("Average at least 70% on first-try quizzes about normal forms, indexes and isolation levels.", "حقق متوسط 70% على الأقل من المحاولة الأولى في اختبارات الصيغ المعيارية والفهارس ومستويات العزل.") },
-        { source: "labs", title: l("Write correct SQL", "اكتب SQL صحيحاً"), detail: l("Pass at least 3 graded SQL labs (joins, aggregates and window functions) run on SQLite.", "اجتز 3 مختبرات SQL مصحَّحة على الأقل (ربط وتجميع ودوال نافذة) تعمل على SQLite.") },
+        { source: "labs", title: l("Write correct SQL", "اكتب SQL صحيحاً"), detail: l("Pass at least 3 graded labs (joins, aggregates, indexes and transactions) run on SQLite.", "اجتز 3 مختبرات مصحَّحة على الأقل (ربط وتجميع وفهارس ومعاملات) تعمل على SQLite.") },
         { source: "challenges", title: l("Handle the edge cases", "عالج الحالات الحدّية"), detail: l("Solve one data challenge graded by hidden tests.", "حُلّ تحدّي بيانات واحداً يُصحَّح باختبارات خفيّة.") },
       ],
     },
