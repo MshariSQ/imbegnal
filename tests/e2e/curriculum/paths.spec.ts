@@ -299,6 +299,9 @@ test("every old /roadmaps/<track-id>/ URL still exists in the export and in the 
     assert.ok(sitemap.includes(`/roadmaps/${p.id}/<`), `${p.id} in sitemap`);
   }
   for (const path of ["/courses/", "/resources/", "/roadmaps/"]) assert.ok(sitemap.includes(`${path}<`), `${path} in sitemap`);
+  // The grid's meta description stays snippet-sized however many roles it has
+  const desc = /<meta name="description" content="([^"]*)"/.exec(readFileSync(join(ROOT, "out/roadmaps/index.html"), "utf8"))?.[1] ?? "";
+  assert.ok(desc.includes(`${careerPaths.length} job roles`) && desc.length <= 170, `/roadmaps/ description (${desc.length}): ${desc}`);
 });
 
 for (const lang of LANGS) {

@@ -5,8 +5,10 @@ import { SITE_URL, pageOpenGraph } from "@/lib/site";
 import CareerPathsGrid from "@/components/paths/CareerPathsGrid";
 
 const title = "Career paths";
-// Role names come from data/career-paths.ts: a new path updates this text.
-const description = `Career paths for ${careerPaths.map((p) => p.title.en).join(", ")}: free IMBEGNAL courses ordered from beginner to advanced for each job role, in English and Arabic.`;
+// From data/career-paths.ts, so a new path updates it; about 160 characters (search snippets cut longer text).
+const first = careerPaths[0].title.en;
+const last = careerPaths[careerPaths.length - 1].title.en;
+const description = `Free career paths for ${careerPaths.length} job roles, from ${first} to ${last}: IMBEGNAL courses ordered from beginner to advanced, in English and Arabic.`;
 
 export const metadata: Metadata = {
   title,
