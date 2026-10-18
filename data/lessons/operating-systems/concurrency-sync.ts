@@ -685,7 +685,7 @@ A **deadlock** is a set of threads in which each one waits for a resource that a
 
 Break any one and deadlock becomes impossible. In practice the most useful target is **circular wait**: give every lock a place in one **global order** and always acquire locks in that order. If every thread that needs both \`accounts\` and \`audit\` takes \`accounts\` first, no cycle can form. Other tools:
 
-- **Try and back off** (breaks hold and wait): \`pthread_mutex_trylock\` the second lock; if that fails, release the first and retry later. Beware of **livelock**, where threads keep retrying in lockstep and nobody progresses
+- **Try and back off** (breaks no preemption: a thread that cannot get its next lock gives up the one it holds): \`pthread_mutex_trylock\` the second lock; if that fails, release the first and retry later. (Hold and wait is broken differently: take every lock you will need at once, before you start.) Beware of **livelock**, where threads keep retrying in lockstep and nobody progresses
 - **Avoidance**: grant a request only if the system stays in a safe state (the **Banker's algorithm**). General-purpose OSes rarely do this because it needs to know every future request
 - **Detection and recovery**: build the **wait-for graph**, look for a cycle and abort one victim; databases do this with transactions
 
@@ -701,7 +701,7 @@ The Linux kernel checks its own locks this way: **lockdep** records which lock w
 
 اكسر أياً منها فيصبح الجمود مستحيلاً. وعملياً أنفع هدف هو **الانتظار الدائري**: أعطِ كل قفل موضعاً في **ترتيب عام** واحد، واطلب الأقفال دائماً بهذا الترتيب. فإن كان كل خيط يحتاج \`accounts\` و\`audit\` معاً يأخذ \`accounts\` أولاً، فلا يمكن أن تتشكل حلقة. وهناك أدوات أخرى:
 
-- **المحاولة ثم التراجع (try and back off)** (تكسر الإمساك والانتظار): جرّب القفل الثاني بـ \`pthread_mutex_trylock\`؛ فإن فشل فحرّر الأول وأعد المحاولة لاحقاً. واحذر **الجمود الحيّ (livelock)**، حيث تظل الخيوط تعيد المحاولة بخطى متطابقة دون أن يتقدّم أحد
+- **المحاولة ثم التراجع (try and back off)** (تكسر عدم الانتزاع: الخيط الذي لا يحصل على قفله التالي يتخلّى عن القفل الذي يمسكه): جرّب القفل الثاني بـ \`pthread_mutex_trylock\`؛ فإن فشل فحرّر الأول وأعد المحاولة لاحقاً. (أما الإمساك والانتظار فيُكسر بطريقة أخرى: اطلب كل الأقفال التي ستحتاجها دفعة واحدة قبل أن تبدأ.) واحذر **الجمود الحيّ (livelock)**، حيث تظل الخيوط تعيد المحاولة بخطى متطابقة دون أن يتقدّم أحد
 - **التجنّب (avoidance)**: لا تلبِّ طلباً إلا إذا بقي النظام في حالة آمنة (**خوارزمية المصرفي، Banker's algorithm**). ونادراً ما تفعل ذلك أنظمة التشغيل العامة لأنها تحتاج إلى معرفة كل طلب مستقبلي
 - **الكشف والاستعادة (detection and recovery)**: ابنِ **مخطط الانتظار (wait-for graph)**، وابحث عن حلقة، وأجهض ضحية واحدة؛ وقواعد البيانات تفعل هذا مع المعاملات
 
