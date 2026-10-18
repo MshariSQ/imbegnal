@@ -253,13 +253,15 @@ export const catalog: Catalog = {
         "relational-sql-basics",
         "data-modeling-normalization",
         "joins-aggregation",
-        "indexes-performance"
+        "indexes-performance",
+        "transactions-acid"
       ],
       "maxBonus": {
         "relational-sql-basics": 10,
         "data-modeling-normalization": 10,
         "joins-aggregation": 10,
-        "indexes-performance": 10
+        "indexes-performance": 10,
+        "transactions-acid": 10
       }
     },
     {
@@ -2461,6 +2463,117 @@ export const catalog: Catalog = {
           "name": "A year after the data: zero rows",
           "stdin": "2026\n",
           "expected": "orders in 2026: 0\naccess: index search",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/transactions-acid/atomic-transfer",
+      "track": "databases",
+      "lesson": "transactions-acid",
+      "id": "atomic-transfer",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A valid transfer commits both updates",
+          "stdin": "amal bilal 30\n",
+          "expected": "amal -> bilal 30: ok\namal=70 bilal=80 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "An overdraft is rejected by the CHECK and rolled back",
+          "stdin": "bilal carla 80\n",
+          "expected": "bilal -> carla 80: rejected\namal=100 bilal=50 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown recipient: the debit is undone",
+          "stdin": "amal zed 40\n",
+          "expected": "amal -> zed 40: rejected\namal=100 bilal=50 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown sender: no money from nowhere",
+          "stdin": "zed amal 10\n",
+          "expected": "zed -> amal 10: rejected\namal=100 bilal=50 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "A sequence: exact balance allowed, later overdrafts rejected",
+          "stdin": "amal carla 100\ncarla bilal 60\nbilal amal 200\namal bilal 1\n",
+          "expected": "amal -> carla 100: ok\ncarla -> bilal 60: ok\nbilal -> amal 200: rejected\namal -> bilal 1: rejected\namal=0 bilal=110 carla=40\ntotal: 150",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/transactions-acid/optimistic-update",
+      "track": "databases",
+      "lesson": "transactions-acid",
+      "id": "optimistic-update",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "One client after the other: both saved, version 2",
+          "stdin": "read A\nsell A 3\nread B\nsell B 2\n",
+          "expected": "A reads stock=10 version=0\nA sells 3: saved\nB reads stock=7 version=1\nB sells 2: saved\nfinal stock=5 version=2",
+          "mode": "trim"
+        },
+        {
+          "name": "Interleaved clients: the stale write is a conflict",
+          "stdin": "read A\nread B\nsell A 3\nsell B 2\n",
+          "expected": "A reads stock=10 version=0\nB reads stock=10 version=0\nA sells 3: saved\nB sells 2: conflict, read again\nfinal stock=7 version=1",
+          "mode": "trim"
+        },
+        {
+          "name": "Retry after a conflict reaches the correct stock",
+          "stdin": "read A\nread B\nsell A 3\nsell B 2\nread B\nsell B 2\n",
+          "expected": "A reads stock=10 version=0\nB reads stock=10 version=0\nA sells 3: saved\nB sells 2: conflict, read again\nB reads stock=7 version=1\nB sells 2: saved\nfinal stock=5 version=2",
+          "mode": "trim"
+        },
+        {
+          "name": "Three clients: only the first writer wins",
+          "stdin": "read A\nread B\nread C\nsell C 1\nsell A 4\nsell B 2\nread A\nsell A 4\n",
+          "expected": "A reads stock=10 version=0\nB reads stock=10 version=0\nC reads stock=10 version=0\nC sells 1: saved\nA sells 4: conflict, read again\nB sells 2: conflict, read again\nA reads stock=9 version=1\nA sells 4: saved\nfinal stock=5 version=2",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/transactions-acid/deadlock-detector",
+      "track": "databases",
+      "lesson": "transactions-acid",
+      "id": "deadlock-detector",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Two transactions waiting for each other",
+          "stdin": "T1 waits T2\nT2 waits T1\n",
+          "expected": "deadlock: T1 -> T2 -> T1\nabort T2",
+          "mode": "trim"
+        },
+        {
+          "name": "A waiting chain without a cycle is not a deadlock",
+          "stdin": "T1 waits T2\nT2 waits T3\nT4 waits T3\n",
+          "expected": "no deadlock",
+          "mode": "trim"
+        },
+        {
+          "name": "A three-way cycle with a waiting tail",
+          "stdin": "T7 waits T4\nT4 waits T9\nT9 waits T6\nT6 waits T4\n",
+          "expected": "deadlock: T4 -> T9 -> T6 -> T4\nabort T9",
+          "mode": "trim"
+        },
+        {
+          "name": "Two separate deadlocks, sorted",
+          "stdin": "T3 waits T8\nT8 waits T3\nT5 waits T1\nT1 waits T2\nT2 waits T5\nT11 waits T12\n",
+          "expected": "deadlock: T1 -> T2 -> T5 -> T1\nabort T5\ndeadlock: T3 -> T8 -> T3\nabort T8",
+          "mode": "trim"
+        },
+        {
+          "name": "Numbers compare as numbers (T10 after T2)",
+          "stdin": "T10 waits T2\nT2 waits T10\n",
+          "expected": "deadlock: T2 -> T10 -> T2\nabort T10",
           "mode": "trim"
         }
       ]
