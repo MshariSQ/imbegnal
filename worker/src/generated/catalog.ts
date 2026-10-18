@@ -2099,6 +2099,12 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
+          "name": "Allowed paths match exactly: su is not sudo",
+          "stdin": "allow: /usr/bin/sudo /opt/tools/bin/ping\n4755 root /usr/bin/su\n4755 root /usr/bin/sudo\n4755 root /bin/ping\n",
+          "expected": "REVIEW setuid /usr/bin/su (owner root)\nREVIEW setuid /bin/ping (owner root)\nfindings: 2",
+          "mode": "trim"
+        },
+        {
           "name": "A clean system",
           "stdin": "allow: /usr/bin/passwd\n4755 root /usr/bin/passwd\n0755 root /usr/bin/ls\n1777 root /tmp/\n2775 root /srv/team/\n0640 root /etc/shadow\n",
           "expected": "findings: 0",
