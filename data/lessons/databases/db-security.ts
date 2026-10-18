@@ -62,7 +62,8 @@ for line in sys.stdin.read().splitlines():
             else:
                 role_privileges.discard((privilege, words[at + 1]))
     elif words[0] == "GRANT":
-        member_of.setdefault(words[3], set()).add(words[1])
+        at = words.index("TO")
+        member_of.setdefault(words[at + 1], set()).update(words[1:at])
     elif words[0] == "CHECK":
         role, privilege, table = words[1:4]
         verdict = "allowed" if has_privilege(role, privilege, table) else "denied"
@@ -99,7 +100,8 @@ db.executescript(audit_sql)
 #   as <user>              the following actions are made by <user>
 #   set <id> <balance>     UPDATE an account's balance
 #   delete <id>            DELETE an account
-#   tamper                 someone tries to erase the audit log
+#   rewrite                someone tries to rewrite the audit log (UPDATE)
+#   tamper                 someone tries to erase the audit log (DELETE)
 for line in sys.stdin.read().splitlines():
     cmd = line.split()
     if not cmd:
@@ -110,12 +112,17 @@ for line in sys.stdin.read().splitlines():
         db.execute("UPDATE accounts SET balance = ? WHERE id = ?", (int(cmd[2]), int(cmd[1])))
     elif cmd[0] == "delete":
         db.execute("DELETE FROM accounts WHERE id = ?", (int(cmd[1]),))
-    elif cmd[0] == "tamper":
+    elif cmd[0] in ("rewrite", "tamper"):
+        if cmd[0] == "rewrite":
+            sql, done = "UPDATE audit_log SET changed_by = 'nobody'", "audit log rewritten"
+        else:
+            sql, done = "DELETE FROM audit_log", "audit log erased"
         try:
-            db.execute("DELETE FROM audit_log")
-            print("tamper: audit log erased")
+            changed = db.execute(sql).rowcount
+            # a row trigger fires once per row, so an empty log proves nothing either way
+            print(f"{cmd[0]}: {done if changed else 'audit log is empty'}")
         except sqlite3.DatabaseError:
-            print("tamper: blocked")
+            print(f"{cmd[0]}: blocked")
 
 rows = db.execute("SELECT id, action, account_id, old_balance, new_balance, changed_by FROM audit_log ORDER BY id")
 count = 0
@@ -171,7 +178,7 @@ JDBC:       WHERE customer = ?         named:   WHERE customer = :name
 
 Rules from the OWASP SQL Injection Prevention Cheat Sheet, in its order of preference: use **prepared statements with parameters**; stored procedures are safe only if they do not build SQL from strings themselves; use **allow-list validation** where parameters cannot be used; escaping user input yourself is strongly discouraged.
 
-**Placeholders work for values only.** Table names, column names and sort directions are **identifiers**, and they cannot be bound. When the user picks a sort column, map their choice through a **fixed allow-list** to a column name you wrote yourself, and reject everything else. ORMs use parameters for you, but their "raw SQL" escape hatches are injectable in exactly the same way.`,
+**Placeholders work for values only.** Table and column names are **identifiers** and sort directions (\`ASC\`, \`DESC\`) are keywords: none of them can be bound. When the user picks a sort column, map their choice through a **fixed allow-list** to a column name you wrote yourself, and reject everything else. ORMs use parameters for you, but their "raw SQL" escape hatches are injectable in exactly the same way.`,
         ar: `## الفندق ذو المفتاح الرئيسي الواحد 🏨
 
 في الفندق حسن الإدارة تفتح بطاقة النزيل غرفة واحدة والنادي الرياضي. وتفتح بطاقة عامل التنظيف غرف طابق واحد. أما المفتاح الرئيسي فيبقى في خزنة المدير. فإن سُرقت بطاقة نزيل نال السارق غرفة واحدة، لا المبنى كله.
@@ -209,7 +216,7 @@ JDBC:       WHERE customer = ?         named:   WHERE customer = :name
 
 قواعد من ورقة OWASP المرجعية لمنع حقن SQL، بترتيب أفضليتها: استخدم **العبارات المُحضَّرة مع المعاملات**؛ والإجراءات المخزّنة (stored procedures) آمنة فقط إن لم تبنِ هي نفسها SQL من النصوص؛ واستخدم **التحقق بقائمة السماح (allow-list)** حيث لا يمكن استخدام المعاملات؛ أما تهريب (escaping) إدخال المستخدم بنفسك فغير مستحسن بشدة.
 
-**العناصر النائبة للقيم فقط.** أسماء الجداول والأعمدة واتجاهات الترتيب **معرّفات (identifiers)**، ولا يمكن ربطها كمعاملات. فحين يختار المستخدم عمود الترتيب، حوّل اختياره عبر **قائمة سماح ثابتة** إلى اسم عمود كتبته أنت، وارفض كل ما عداه. وأطر ORM تستخدم المعاملات بالنيابة عنك، لكن منافذ «SQL الخام» فيها قابلة للحقن بالطريقة نفسها تماماً.`,
+**العناصر النائبة للقيم فقط.** أسماء الجداول والأعمدة **معرّفات (identifiers)**، واتجاها الترتيب (\`ASC\` و\`DESC\`) كلمتان مفتاحيتان، ولا يمكن ربط أي منها كمعامل. فحين يختار المستخدم عمود الترتيب، حوّل اختياره عبر **قائمة سماح ثابتة** إلى اسم عمود كتبته أنت، وارفض كل ما عداه. وأطر ORM تستخدم المعاملات بالنيابة عنك، لكن منافذ «SQL الخام» فيها قابلة للحقن بالطريقة نفسها تماماً.`,
       },
     },
     {
@@ -375,7 +382,7 @@ REVOKE ALL ON DATABASE shop FROM PUBLIC;             -- PUBLIC means "every role
 
 قواعد عملية:
 
-- **حسابات منفصلة لكل مهمة:** التطبيق (تغيير البيانات فقط)، والهجرات (تغيير المخطط، تُستخدم في النشر فقط)، والتقارير للقراءة فقط، وحسابات شخصية للبشر. ولا تشغّل التطبيق أبداً بحساب مستخدم خارق (superuser) مثل \`postgres\`.
+- **حسابات منفصلة لكل مهمة:** التطبيق (تغيير البيانات فقط)، والترحيلات (تغيير المخطط، تُستخدم في النشر فقط)، والتقارير للقراءة فقط، وحسابات شخصية للبشر. ولا تشغّل التطبيق أبداً بحساب مستخدم خارق (superuser) مثل \`postgres\`.
 - اعرض جزءاً من الأعمدة عبر **عرض (view)**، وقيّد الصفوف في PostgreSQL بـ **أمن مستوى الصف (row-level security)** (\`ALTER TABLE ... ENABLE ROW LEVEL SECURITY\` و\`CREATE POLICY\`).
 - تحقّق مما يستطيع الدور فعله حقاً: الدالة \`has_table_privilege('shop_api', 'app.orders', 'DELETE')\` في PostgreSQL تجيب عن السؤال نفسه الذي يجيب عنه المختبر التالي.`,
       },
@@ -461,7 +468,7 @@ ${ROLES_TAIL}`,
 
 **Credentials are the keys to the building.** Keep them out of source code and out of the repository: load them from the environment or, better, from a **secrets manager**, with a different account and password for every environment (development, staging, production). Rotate them when people leave or a leak is suspected, and never print a connection string in logs. Use the strongest authentication the server offers: PostgreSQL uses \`scram-sha-256\` password hashing by default since version 14, and a database should not accept connections from the whole internet at all, only from the application's network.
 
-**Encryption in transit** (TLS) stops anyone on the network path from reading queries, results and passwords. Turning it on is not enough; the client must also **verify** the server, or an attacker in the middle can present their own certificate. PostgreSQL's client library calls this \`sslmode\`: the default \`prefer\` silently falls back to plain text, \`require\` encrypts without checking who answers, and **\`verify-full\`** checks the certificate and the host name. On the server side, \`hostssl\` lines in \`pg_hba.conf\` (PostgreSQL) or \`require_secure_transport\` (MySQL) refuse unencrypted clients.
+**Encryption in transit** (TLS) stops anyone on the network path from reading queries, results and passwords. Turning it on is not enough; the client must also **verify** the server, or an attacker in the middle can present their own certificate. PostgreSQL's client library calls this \`sslmode\`: the default \`prefer\` silently falls back to plain text, \`require\` encrypts without checking who answers (unless a root certificate file is present, in which case it verifies like \`verify-ca\`), and **\`verify-full\`** checks the certificate and the host name. On the server side, make encryption mandatory: \`hostssl\` lines in PostgreSQL's \`pg_hba.conf\` match only encrypted connections, so let remote clients in through \`hostssl\` lines only; MySQL has \`require_secure_transport\`.
 
 **Encryption at rest** protects data files, disks and **backups** if they are stolen or mislaid: volume or disk encryption, and features such as Transparent Data Encryption in SQL Server and Oracle, or InnoDB's data-at-rest encryption in MySQL. Know its limit: the running database decrypts data for anyone who can log in, so at-rest encryption does **nothing** against a compromised application account. That is the job of least privilege. For a few especially sensitive fields you can add **application-level encryption**, with keys kept outside the database.
 
@@ -470,7 +477,7 @@ ${ROLES_TAIL}`,
 
 **بيانات الاعتماد هي مفاتيح المبنى.** أبقِها خارج الكود المصدري وخارج المستودع: حمّلها من متغيرات البيئة، والأفضل من **مدير أسرار (secrets manager)**، مع حساب وكلمة مرور مختلفين لكل بيئة (التطوير والتجهيز والإنتاج). غيّرها حين يغادر أشخاص أو يُشتبه في تسريب، ولا تطبع سلسلة اتصال في السجلات أبداً. واستخدم أقوى مصادقة يقدّمها الخادم: تستخدم PostgreSQL تجزئة كلمات المرور \`scram-sha-256\` افتراضياً منذ الإصدار 14، وينبغي ألا تقبل قاعدة البيانات اتصالات من الإنترنت كله أصلاً، بل من شبكة التطبيق فقط.
 
-**التشفير أثناء النقل** (TLS) يمنع أي أحد على مسار الشبكة من قراءة الاستعلامات والنتائج وكلمات المرور. وتفعيله لا يكفي؛ يجب أن **يتحقق** العميل من الخادم أيضاً، وإلا استطاع مهاجم في المنتصف تقديم شهادته الخاصة. وتسمي مكتبة عميل PostgreSQL هذا \`sslmode\`: القيمة الافتراضية \`prefer\` تعود بصمت إلى النص الصريح، و\`require\` تشفّر دون التحقق ممن يجيب، و**\`verify-full\`** تتحقق من الشهادة ومن اسم المضيف. وعلى جانب الخادم ترفض أسطر \`hostssl\` في \`pg_hba.conf\` (في PostgreSQL) أو \`require_secure_transport\` (في MySQL) العملاء غير المشفّرين.
+**التشفير أثناء النقل** (TLS) يمنع أي أحد على مسار الشبكة من قراءة الاستعلامات والنتائج وكلمات المرور. وتفعيله لا يكفي؛ يجب أن **يتحقق** العميل من الخادم أيضاً، وإلا استطاع مهاجم في المنتصف تقديم شهادته الخاصة. وتسمي مكتبة عميل PostgreSQL هذا \`sslmode\`: القيمة الافتراضية \`prefer\` تعود بصمت إلى النص الصريح، و\`require\` تشفّر دون التحقق ممن يجيب (إلا إذا وُجد ملف شهادة جذر، فتتحقق حينئذ كما في \`verify-ca\`)، و**\`verify-full\`** تتحقق من الشهادة ومن اسم المضيف. وعلى جانب الخادم اجعل التشفير إلزامياً: أسطر \`hostssl\` في ملف \`pg_hba.conf\` في PostgreSQL لا تطابق إلا الاتصالات المشفّرة، فلا تُدخل العملاء البعيدين إلا عبر أسطر \`hostssl\`؛ وفي MySQL يوجد \`require_secure_transport\`.
 
 **التشفير أثناء التخزين** يحمي ملفات البيانات والأقراص و**النسخ الاحتياطية** إن سُرقت أو ضاعت: تشفير وحدات التخزين أو الأقراص، وميزات مثل Transparent Data Encryption في SQL Server وOracle، أو تشفير البيانات المخزّنة في InnoDB في MySQL. واعرف حدّه: القاعدة العاملة تفك تشفير البيانات لكل من يستطيع تسجيل الدخول، فالتشفير أثناء التخزين **لا يفعل شيئاً** ضد حساب تطبيق مخترَق. تلك مهمة أقل صلاحية. ولحقول قليلة شديدة الحساسية يمكنك إضافة **تشفير على مستوى التطبيق**، مع حفظ المفاتيح خارج قاعدة البيانات.
 
@@ -547,28 +554,28 @@ UPDATE accounts SET balance = 70 WHERE id = 1
       id: "audit-trigger",
       lang: "python",
       prompt: {
-        en: `An \`accounts\` table, an \`audit_log\` table and a one-row \`current_actor\` table (who is acting) exist. Your SQL in \`audit_sql\` runs once, then the program replays actions: balance updates, account deletions and a **tamper** attempt (\`DELETE FROM audit_log\`).
+        en: `An \`accounts\` table, an \`audit_log\` table and a one-row \`current_actor\` table (who is acting) exist. Your SQL in \`audit_sql\` runs once, then the program replays actions: balance updates, account deletions and two tampering attempts: **rewrite** (\`UPDATE audit_log ...\`) and **tamper** (\`DELETE FROM audit_log\`).
 
 The trigger that logs balance **updates** is written for you. Add, in \`audit_sql\`:
 
 1. a trigger \`AFTER DELETE ON accounts\` that inserts \`'DELETE'\`, the account id, the **old** balance, \`NULL\` as new balance and the current actor (in a DELETE trigger only \`OLD\` exists)
 2. two triggers, \`BEFORE UPDATE\` and \`BEFORE DELETE ON audit_log\`, that abort the statement with \`SELECT RAISE(ABORT, 'audit_log is append-only');\`
 
-**Input:** lines \`as <user>\`, \`set <id> <balance>\`, \`delete <id>\` or \`tamper\`.
+**Input:** lines \`as <user>\`, \`set <id> <balance>\`, \`delete <id>\`, \`rewrite\` or \`tamper\`.
 
-**Output:** \`tamper: blocked\` (or \`erased\`), then every audit entry and \`entries: N\`.
+**Output:** \`rewrite: blocked\` or \`tamper: blocked\` (or what was changed), then every audit entry and \`entries: N\`.
 
 Example: \`as admin\` then \`delete 2\` prints \`#1 DELETE account 2: 50 -> (deleted) by admin\` and \`entries: 1\`.`,
-        ar: `توجد الجداول \`accounts\` و\`audit_log\` وجدول \`current_actor\` ذو الصف الواحد (من الفاعل الآن). يُنفَّذ SQL الذي تكتبه في \`audit_sql\` مرة واحدة، ثم يعيد البرنامج تشغيل الإجراءات: تحديثات أرصدة، وحذف حسابات، ومحاولة **عبث** (\`DELETE FROM audit_log\`).
+        ar: `توجد الجداول \`accounts\` و\`audit_log\` وجدول \`current_actor\` ذو الصف الواحد (من الفاعل الآن). يُنفَّذ SQL الذي تكتبه في \`audit_sql\` مرة واحدة، ثم يعيد البرنامج تشغيل الإجراءات: تحديثات أرصدة، وحذف حسابات، ومحاولتا عبث: **rewrite** (\`UPDATE audit_log ...\`) و**tamper** (\`DELETE FROM audit_log\`).
 
 المُطلِق الذي يسجّل **تحديثات** الرصيد مكتوب لك. أضف في \`audit_sql\`:
 
 1. مُطلِقاً \`AFTER DELETE ON accounts\` يُدرج \`'DELETE'\` ومعرّف الحساب والرصيد **القديم** و\`NULL\` رصيداً جديداً والفاعل الحالي (في مُطلِق DELETE لا يوجد إلا \`OLD\`)
 2. مُطلِقين، \`BEFORE UPDATE\` و\`BEFORE DELETE ON audit_log\`، يُجهضان العبارة بـ \`SELECT RAISE(ABORT, 'audit_log is append-only');\`
 
-**الدخل:** أسطر \`as <user>\` أو \`set <id> <balance>\` أو \`delete <id>\` أو \`tamper\`.
+**الدخل:** أسطر \`as <user>\` أو \`set <id> <balance>\` أو \`delete <id>\` أو \`rewrite\` أو \`tamper\`.
 
-**الخرج:** \`tamper: blocked\` (أو \`erased\`)، ثم كل مدخلات التدقيق و\`entries: N\`.
+**الخرج:** \`rewrite: blocked\` أو \`tamper: blocked\` (أو ما تغيّر)، ثم كل مدخلات التدقيق و\`entries: N\`.
 
 مثال: \`as admin\` ثم \`delete 2\` يطبعان \`#1 DELETE account 2: 50 -> (deleted) by admin\` و\`entries: 1\`.`,
       },
@@ -623,9 +630,10 @@ ${AUDIT_TAIL}`,
         { name: { en: "A deleted account is logged with its old balance", ar: "الحساب المحذوف يُسجَّل برصيده القديم" }, stdin: "as admin\ndelete 2\n", expected: "#1 DELETE account 2: 50 -> (deleted) by admin\nentries: 1" },
         { name: { en: "Erasing the audit log is blocked", ar: "محو سجل التدقيق محجوب" }, stdin: "as amal\nset 1 70\nas bilal\nset 2 80\ntamper\n", expected: "tamper: blocked\n#1 UPDATE account 1: 100 -> 70 by amal\n#2 UPDATE account 2: 50 -> 80 by bilal\nentries: 2" },
         { name: { en: "Covering tracks fails: the whole story stays", ar: "إخفاء الآثار يفشل: تبقى القصة كاملة" }, stdin: "as mallory\nset 3 500\ndelete 3\ntamper\n", expected: "tamper: blocked\n#1 UPDATE account 3: 0 -> 500 by mallory\n#2 DELETE account 3: 500 -> (deleted) by mallory\nentries: 2" },
+        { name: { en: "Rewriting the audit log is blocked", ar: "إعادة كتابة سجل التدقيق محجوبة" }, stdin: "as mallory\nset 3 500\nrewrite\n", expected: "rewrite: blocked\n#1 UPDATE account 3: 0 -> 500 by mallory\nentries: 1" },
         { name: { en: "Deleting a missing account logs nothing", ar: "حذف حساب غير موجود لا يسجّل شيئاً" }, stdin: "as admin\ndelete 9\n", expected: "entries: 0" },
       ],
-      sampleInput: "as amal\nset 1 70\nas mallory\ndelete 1\ntamper\n",
+      sampleInput: "as amal\nset 1 70\nas mallory\ndelete 1\nrewrite\ntamper\n",
     },
     {
       type: "quiz",

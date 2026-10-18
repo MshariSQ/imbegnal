@@ -2952,6 +2952,12 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
+          "name": "Rewriting the audit log is blocked",
+          "stdin": "as mallory\nset 3 500\nrewrite\n",
+          "expected": "rewrite: blocked\n#1 UPDATE account 3: 0 -> 500 by mallory\nentries: 1",
+          "mode": "trim"
+        },
+        {
           "name": "Deleting a missing account logs nothing",
           "stdin": "as admin\ndelete 9\n",
           "expected": "entries: 0",
