@@ -1830,15 +1830,15 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "Edits at both ends",
-          "stdin": "mid\n10\nL\nL\nL\nB\nI a\nR\nR\nR\nR\nI z\n",
+          "name": "Edits at both ends, moving past them",
+          "stdin": "mid\n12\nL\nL\nL\nL\nI a\nL\nB\nR\nR\nR\nR\nI z\n",
           "expected": "amidz",
           "mode": "trim"
         },
         {
-          "name": "Backspace in the middle",
-          "stdin": "abcd\n5\nL\nL\nB\nB\nI z\n",
-          "expected": "zcd",
+          "name": "Backspace, then insert and move in the middle",
+          "stdin": "abcd\n8\nL\nL\nB\nB\nI z\nR\nL\nI y\n",
+          "expected": "zycd",
           "mode": "trim"
         },
         {
@@ -2298,9 +2298,9 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "Values beyond 32 bits",
-          "stdin": "3 3\n1 1000000000\n1 1000000000\n1 1000000000\n",
-          "expected": "3000000000",
+          "name": "A total beyond 32 bits",
+          "stdin": "5 5\n1 1000000000\n1 1000000000\n1 1000000000\n1 1000000000\n1 1000000000\n",
+          "expected": "5000000000",
           "mode": "trim"
         },
         {
@@ -2517,8 +2517,8 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "Only negative weights, no cycle",
-          "stdin": "3 2 0\n0 1 -5\n1 2 -5\n",
+          "name": "Only negative weights, edges listed backwards",
+          "stdin": "3 2 0\n1 2 -5\n0 1 -5\n",
           "expected": "0 -5 -10",
           "mode": "trim"
         },
