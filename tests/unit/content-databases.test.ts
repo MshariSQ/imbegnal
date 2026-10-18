@@ -21,9 +21,16 @@ const LESSON_IDS = [
   "data-modeling-normalization",
   "joins-aggregation",
   "indexes-performance",
+  "transactions-acid",
+  "nosql-models",
+  "backup-replication",
+  "db-security",
 ];
 const NODE_IDS = [
-  ...LESSON_IDS,
+  "relational-sql-basics",
+  "data-modeling-normalization",
+  "joins-aggregation",
+  "indexes-performance",
   "transactions-acid",
   "nosql-models",
   "backup-replication",
@@ -101,7 +108,7 @@ test("roadmap nodes: ids, order, status and descriptions", () => {
     }
   }
   const required = databasesNodes.filter((n) => n.status === "required").map((n) => n.id);
-  assert.deepEqual(required, [...LESSON_IDS, "transactions-acid"]);
+  assert.deepEqual(required, ["relational-sql-basics", "data-modeling-normalization", "joins-aggregation", "indexes-performance", "transactions-acid"]);
 });
 
 test("registry fragment: keys are databases/<node-id> and match the planned lessons", () => {
@@ -195,6 +202,32 @@ test("labs: every reference solution passes every test; every starter fails at l
         assert.ok(failedStarter >= 1, "the untouched starter must fail at least one test");
       });
     }
+  }
+});
+
+// Plausible wrong attempts (the reference solution with one rule broken) that a review
+// found passing. Each must now fail at least one of its lab's tests.
+const WRONG_ATTEMPTS: Array<{ lesson: string; lab: string; rule: string; from: string; to: string }> = [
+  { lesson: "nosql-models", lab: "friends-of-friends", rule: "sorted by name only, not by mutual count", from: "key=lambda item: (-item[1], item[0])", to: "key=lambda item: item[0]" },
+  { lesson: "transactions-acid", lab: "deadlock-detector", rule: "returns the whole walk, tail included", from: "cycle = path[on_path[node]:]", to: "cycle = path[:]" },
+  { lesson: "transactions-acid", lab: "deadlock-detector", rule: "does not rotate the cycle to its smallest number", from: "cycles.append(cycle[low:] + cycle[:low])", to: "cycles.append(cycle)" },
+  { lesson: "db-security", lab: "audit-trigger", rule: "no BEFORE UPDATE trigger on audit_log", from: "BEFORE UPDATE ON audit_log", to: "BEFORE INSERT ON accounts" },
+];
+
+test("labs: known wrong attempts fail at least one test", async (t) => {
+  const lessons = await loadAll();
+  for (const w of WRONG_ATTEMPTS) {
+    const lab = labs(lessons.get(`databases/${w.lesson}`)!).find((l) => l.id === w.lab);
+    assert.ok(lab, `${w.lesson}/${w.lab} exists`);
+    await t.test(`${w.lab}: ${w.rule}`, { skip: !localSupports(lab.lang) }, () => {
+      assert.ok(lab.solution.includes(w.from), "the mutation still applies to the reference solution");
+      const wrong = lab.solution.replace(w.from, w.to);
+      const failed = lab.tests.filter((x) => {
+        const r = runLocal(lab.lang, wrong, x.stdin ?? "");
+        return r.exitCode !== 0 || !matchOutput(r.stdout, x.expected, x.mode ?? "trim", x.epsilon);
+      });
+      assert.ok(failed.length >= 1, "a wrong attempt passed every test");
+    });
   }
 });
 

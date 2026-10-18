@@ -273,13 +273,21 @@ export const catalog: Catalog = {
         "relational-sql-basics",
         "data-modeling-normalization",
         "joins-aggregation",
-        "indexes-performance"
+        "indexes-performance",
+        "transactions-acid",
+        "nosql-models",
+        "backup-replication",
+        "db-security"
       ],
       "maxBonus": {
         "relational-sql-basics": 10,
         "data-modeling-normalization": 10,
         "joins-aggregation": 10,
-        "indexes-performance": 10
+        "indexes-performance": 10,
+        "transactions-acid": 10,
+        "nosql-models": 10,
+        "backup-replication": 10,
+        "db-security": 10
       }
     },
     {
@@ -3719,6 +3727,498 @@ export const catalog: Catalog = {
           "name": "A year after the data: zero rows",
           "stdin": "2026\n",
           "expected": "orders in 2026: 0\naccess: index search",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/transactions-acid/atomic-transfer",
+      "track": "databases",
+      "lesson": "transactions-acid",
+      "id": "atomic-transfer",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A valid transfer commits both updates",
+          "stdin": "amal bilal 30\n",
+          "expected": "amal -> bilal 30: ok\namal=70 bilal=80 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "An overdraft is rejected by the CHECK and rolled back",
+          "stdin": "bilal carla 80\n",
+          "expected": "bilal -> carla 80: rejected\namal=100 bilal=50 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown recipient: the debit is undone",
+          "stdin": "amal zed 40\n",
+          "expected": "amal -> zed 40: rejected\namal=100 bilal=50 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown sender: no money from nowhere",
+          "stdin": "zed amal 10\n",
+          "expected": "zed -> amal 10: rejected\namal=100 bilal=50 carla=0\ntotal: 150",
+          "mode": "trim"
+        },
+        {
+          "name": "A sequence: exact balance allowed, later overdrafts rejected",
+          "stdin": "amal carla 100\ncarla bilal 60\nbilal amal 200\namal bilal 1\n",
+          "expected": "amal -> carla 100: ok\ncarla -> bilal 60: ok\nbilal -> amal 200: rejected\namal -> bilal 1: rejected\namal=0 bilal=110 carla=40\ntotal: 150",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/transactions-acid/optimistic-update",
+      "track": "databases",
+      "lesson": "transactions-acid",
+      "id": "optimistic-update",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "One client after the other: both saved, version 2",
+          "stdin": "read A\nsell A 3\nread B\nsell B 2\n",
+          "expected": "A reads stock=10 version=0\nA sells 3: saved\nB reads stock=7 version=1\nB sells 2: saved\nfinal stock=5 version=2",
+          "mode": "trim"
+        },
+        {
+          "name": "Interleaved clients: the stale write is a conflict",
+          "stdin": "read A\nread B\nsell A 3\nsell B 2\n",
+          "expected": "A reads stock=10 version=0\nB reads stock=10 version=0\nA sells 3: saved\nB sells 2: conflict, read again\nfinal stock=7 version=1",
+          "mode": "trim"
+        },
+        {
+          "name": "Retry after a conflict reaches the correct stock",
+          "stdin": "read A\nread B\nsell A 3\nsell B 2\nread B\nsell B 2\n",
+          "expected": "A reads stock=10 version=0\nB reads stock=10 version=0\nA sells 3: saved\nB sells 2: conflict, read again\nB reads stock=7 version=1\nB sells 2: saved\nfinal stock=5 version=2",
+          "mode": "trim"
+        },
+        {
+          "name": "Three clients: only the first writer wins",
+          "stdin": "read A\nread B\nread C\nsell C 1\nsell A 4\nsell B 2\nread A\nsell A 4\n",
+          "expected": "A reads stock=10 version=0\nB reads stock=10 version=0\nC reads stock=10 version=0\nC sells 1: saved\nA sells 4: conflict, read again\nB sells 2: conflict, read again\nA reads stock=9 version=1\nA sells 4: saved\nfinal stock=5 version=2",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/transactions-acid/deadlock-detector",
+      "track": "databases",
+      "lesson": "transactions-acid",
+      "id": "deadlock-detector",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Two transactions waiting for each other",
+          "stdin": "T1 waits T2\nT2 waits T1\n",
+          "expected": "deadlock: T1 -> T2 -> T1\nabort T2",
+          "mode": "trim"
+        },
+        {
+          "name": "A waiting chain without a cycle is not a deadlock",
+          "stdin": "T1 waits T2\nT2 waits T3\nT4 waits T3\n",
+          "expected": "no deadlock",
+          "mode": "trim"
+        },
+        {
+          "name": "A three-way cycle with a waiting tail",
+          "stdin": "T7 waits T4\nT4 waits T9\nT9 waits T6\nT6 waits T4\n",
+          "expected": "deadlock: T4 -> T9 -> T6 -> T4\nabort T9",
+          "mode": "trim"
+        },
+        {
+          "name": "Two separate deadlocks, sorted",
+          "stdin": "T3 waits T8\nT8 waits T3\nT5 waits T1\nT1 waits T2\nT2 waits T5\nT11 waits T12\n",
+          "expected": "deadlock: T1 -> T2 -> T5 -> T1\nabort T5\ndeadlock: T3 -> T8 -> T3\nabort T8",
+          "mode": "trim"
+        },
+        {
+          "name": "A tail with a smaller number stays out; the cycle starts at its own smallest",
+          "stdin": "T1 waits T5\nT5 waits T9\nT9 waits T3\nT3 waits T5\n",
+          "expected": "deadlock: T3 -> T5 -> T9 -> T3\nabort T9",
+          "mode": "trim"
+        },
+        {
+          "name": "Numbers compare as numbers (T10 after T2)",
+          "stdin": "T10 waits T2\nT2 waits T10\n",
+          "expected": "deadlock: T2 -> T10 -> T2\nabort T10",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/nosql-models/document-query",
+      "track": "databases",
+      "lesson": "nosql-models",
+      "id": "document-query",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Top-level equality",
+          "stdin": "{\"category\": \"laptop\"}\n",
+          "expected": "1 Laptop Air\n2 Laptop Pro\n5 Gaming Laptop\ncount: 3",
+          "mode": "trim"
+        },
+        {
+          "name": "Dotted path into an embedded document",
+          "stdin": "{\"specs.ram_gb\": 32}\n",
+          "expected": "2 Laptop Pro\n5 Gaming Laptop\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "An array field matches by element",
+          "stdin": "{\"tags\": \"work\"}\n",
+          "expected": "1 Laptop Air\n2 Laptop Pro\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Equality AND an operator",
+          "stdin": "{\"category\": \"laptop\", \"price\": {\"$lt\": 2000}}\n",
+          "expected": "1 Laptop Air\n5 Gaming Laptop\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "$in and $gte together",
+          "stdin": "{\"category\": {\"$in\": [\"home\", \"clothing\"]}, \"price\": {\"$gte\": 35}}\n",
+          "expected": "3 Desk Lamp\n6 Hoodie\ncount: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Missing paths never match; $in on an array field",
+          "stdin": "{\"specs.ram_gb\": {\"$gt\": 8}, \"tags\": {\"$in\": [\"gaming\", \"creator\"]}}\n",
+          "expected": "2 Laptop Pro\n5 Gaming Laptop\ncount: 2",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/nosql-models/order-document",
+      "track": "databases",
+      "lesson": "nosql-models",
+      "id": "order-document",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "An order with two lines",
+          "stdin": "1001\n",
+          "expected": "{\"_id\": 1001, \"customer\": {\"id\": 7, \"name\": \"Amal\"}, \"lines\": [{\"price_cents\": 450, \"product\": \"Notebook\", \"qty\": 2}, {\"price_cents\": 125, \"product\": \"Pen\", \"qty\": 5}], \"placed_on\": \"2025-03-02\", \"total_cents\": 1525}",
+          "mode": "trim"
+        },
+        {
+          "name": "Another customer's order",
+          "stdin": "1002\n",
+          "expected": "{\"_id\": 1002, \"customer\": {\"id\": 8, \"name\": \"Bilal\"}, \"lines\": [{\"price_cents\": 3000, \"product\": \"Backpack\", \"qty\": 1}], \"placed_on\": \"2025-03-05\", \"total_cents\": 3000}",
+          "mode": "trim"
+        },
+        {
+          "name": "Lines keep the order they were added in",
+          "stdin": "1004\n",
+          "expected": "{\"_id\": 1004, \"customer\": {\"id\": 8, \"name\": \"Bilal\"}, \"lines\": [{\"price_cents\": 1200, \"product\": \"Stapler\", \"qty\": 1}, {\"price_cents\": 90, \"product\": \"Eraser\", \"qty\": 3}, {\"price_cents\": 220, \"product\": \"Marker\", \"qty\": 2}], \"placed_on\": \"2025-03-11\", \"total_cents\": 1910}",
+          "mode": "trim"
+        },
+        {
+          "name": "An order without lines: empty list, total 0",
+          "stdin": "1003\n",
+          "expected": "{\"_id\": 1003, \"customer\": {\"id\": 7, \"name\": \"Amal\"}, \"lines\": [], \"placed_on\": \"2025-03-09\", \"total_cents\": 0}",
+          "mode": "trim"
+        },
+        {
+          "name": "Unknown order",
+          "stdin": "999\n",
+          "expected": "order 999 not found",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/nosql-models/friends-of-friends",
+      "track": "databases",
+      "lesson": "nosql-models",
+      "id": "friends-of-friends",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Two suggestions ranked by mutual friends",
+          "stdin": "Amal Bilal\nAmal Carla\nBilal Dina\nCarla Dina\nCarla Emad\nDina Farid\n? Amal\n",
+          "expected": "Dina (2 mutual)\nEmad (1 mutual)",
+          "mode": "trim"
+        },
+        {
+          "name": "Existing friends are never suggested",
+          "stdin": "Amal Bilal\nAmal Carla\nBilal Carla\nBilal Dina\n? Amal\n",
+          "expected": "Dina (1 mutual)",
+          "mode": "trim"
+        },
+        {
+          "name": "More mutual friends rank first, before the alphabet",
+          "stdin": "Amal Bilal\nAmal Carla\nBilal Zed\nCarla Zed\nBilal Dina\n? Amal\n",
+          "expected": "Zed (2 mutual)\nDina (1 mutual)",
+          "mode": "trim"
+        },
+        {
+          "name": "Ties are broken by name",
+          "stdin": "Hana Idris\nHana Jalal\nIdris Kamal\nJalal Kamal\nIdris Lina\nJalal Lina\nHana Munir\nMunir Omar\n? Hana\n",
+          "expected": "Kamal (2 mutual)\nLina (2 mutual)\nOmar (1 mutual)",
+          "mode": "trim"
+        },
+        {
+          "name": "Everyone already knows each other",
+          "stdin": "Amal Bilal\nBilal Carla\nAmal Carla\n? Carla\n",
+          "expected": "no suggestions",
+          "mode": "trim"
+        },
+        {
+          "name": "A person who is not in the graph",
+          "stdin": "Amal Bilal\n? Zed\n",
+          "expected": "no suggestions",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/backup-replication/verify-restore",
+      "track": "databases",
+      "lesson": "backup-replication",
+      "id": "verify-restore",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A complete dump restores and matches",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nINSERT INTO \"orders\" VALUES(1,1,2500);\nINSERT INTO \"orders\" VALUES(2,1,900);\nINSERT INTO \"orders\" VALUES(3,2,4100);\nINSERT INTO \"orders\" VALUES(4,3,1500);\nCOMMIT;\n",
+          "expected": "restore OK: customers=3 orders=4",
+          "mode": "trim"
+        },
+        {
+          "name": "A dump that missed a row does not match",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nINSERT INTO \"orders\" VALUES(1,1,2500);\nINSERT INTO \"orders\" VALUES(2,1,900);\nINSERT INTO \"orders\" VALUES(3,2,4100);\nCOMMIT;\n",
+          "expected": "restore FAILED: orders has 3 rows, manifest says 4",
+          "mode": "trim"
+        },
+        {
+          "name": "A corrupted dump does not run",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bil\n",
+          "expected": "restore FAILED: the dump does not run",
+          "mode": "trim"
+        },
+        {
+          "name": "A table the backup job forgot",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCOMMIT;\n",
+          "expected": "restore FAILED: table orders is missing",
+          "mode": "trim"
+        },
+        {
+          "name": "An empty table is fine when the manifest says 0",
+          "stdin": "-- manifest: customers=2 orders=0\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nCOMMIT;\n",
+          "expected": "restore OK: customers=2 orders=0",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/backup-replication/pitr-replay",
+      "track": "databases",
+      "lesson": "backup-replication",
+      "id": "pitr-replay",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Stop one second before the accidental DELETE",
+          "stdin": "target 14:05:59\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1 T2\nBackpack: 5\nLamp: 7\nNotebook: 8\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "A commit exactly at the target is included",
+          "stdin": "target 09:00:01\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1\nBackpack: 5\nNotebook: 8\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "Transactions not committed by the target leave no trace",
+          "stdin": "target 10:15:02\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1\nBackpack: 5\nNotebook: 8\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "Before the first commit: the base backup as it was",
+          "stdin": "target 08:59:59\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: (none)\nBackpack: 5\nNotebook: 10\nPen: 50",
+          "mode": "trim"
+        },
+        {
+          "name": "Replaying everything repeats the accident, in commit order",
+          "stdin": "target 23:59:59\n09:00:00 T1 UPDATE products SET stock = stock - 2 WHERE name = 'Notebook'\n09:00:01 T1 COMMIT\n10:15:00 T2 INSERT INTO products VALUES ('Lamp', 7)\n10:15:02 T3 UPDATE products SET stock = stock - 10 WHERE name = 'Pen'\n10:15:03 T2 COMMIT\n11:30:00 T3 ROLLBACK\n14:05:00 T4 UPDATE products SET stock = stock + 20 WHERE name = 'Pen'\n14:06:00 T5 DELETE FROM products WHERE stock < 10\n14:06:01 T5 COMMIT\n14:07:00 T4 COMMIT\n",
+          "expected": "replayed: T1 T2 T5 T4\nPen: 70",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/backup-replication/failover-plan",
+      "track": "databases",
+      "lesson": "backup-replication",
+      "id": "failover-plan",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Skip the down replica, promote the freshest healthy one",
+          "stdin": "rpo 5\nprimary 12:00:30\nr1 12:00:27 healthy\nr2 12:00:30 down\nr3 12:00:20 healthy\n",
+          "expected": "r1: lag 3s, healthy\nr2: lag 0s, down\nr3: lag 10s, healthy\npromote: r1\ndata loss: 3s (RPO 5s met)",
+          "mode": "trim"
+        },
+        {
+          "name": "A tie goes to the smaller name; zero loss",
+          "stdin": "rpo 0\nprimary 08:15:00\ndb-b 08:15:00 healthy\ndb-a 08:15:00 healthy\ndb-c 08:14:58 healthy\n",
+          "expected": "db-b: lag 0s, healthy\ndb-a: lag 0s, healthy\ndb-c: lag 2s, healthy\npromote: db-a\ndata loss: 0s (RPO 0s met)",
+          "mode": "trim"
+        },
+        {
+          "name": "The best replica is still too far behind: RPO violated",
+          "stdin": "rpo 5\nprimary 23:59:50\nr1 23:59:42 healthy\nr2 23:59:31 healthy\n",
+          "expected": "r1: lag 8s, healthy\nr2: lag 19s, healthy\npromote: r1\ndata loss: 8s (RPO 5s violated)",
+          "mode": "trim"
+        },
+        {
+          "name": "No healthy replica: fall back to the backup",
+          "stdin": "rpo 60\nprimary 03:00:00\nr1 02:59:59 down\nr2 02:58:00 down\n",
+          "expected": "r1: lag 1s, down\nr2: lag 120s, down\npromote: none, restore from the latest backup",
+          "mode": "trim"
+        },
+        {
+          "name": "Exactly at the RPO counts as met",
+          "stdin": "rpo 30\nprimary 10:00:00\nreplica-east 09:59:31 down\nreplica-west 09:59:30 healthy\n",
+          "expected": "replica-east: lag 29s, down\nreplica-west: lag 30s, healthy\npromote: replica-west\ndata loss: 30s (RPO 30s met)",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/db-security/fix-injection",
+      "track": "databases",
+      "lesson": "db-security",
+      "id": "fix-injection",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A normal search sorted by item",
+          "stdin": "amal\nitem\n",
+          "expected": "rows: 3\n2 Backpack 30.00\n6 Marker 4.40\n1 Notebook 9.00",
+          "mode": "trim"
+        },
+        {
+          "name": "Injection input is treated as a plain name",
+          "stdin": "x' OR '1'='1\nid\n",
+          "expected": "rows: 0",
+          "mode": "trim"
+        },
+        {
+          "name": "A real name with an apostrophe works",
+          "stdin": "d'arcy\nid\n",
+          "expected": "rows: 1\n4 Lamp 35.00",
+          "mode": "trim"
+        },
+        {
+          "name": "The sort option is mapped through the allow-list",
+          "stdin": "amal\ntotal\n",
+          "expected": "rows: 3\n6 Marker 4.40\n1 Notebook 9.00\n2 Backpack 30.00",
+          "mode": "trim"
+        },
+        {
+          "name": "A sort option outside the allow-list is refused",
+          "stdin": "amal\ntotal_cents; DROP TABLE orders\n",
+          "expected": "error: unsupported sort",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/db-security/role-privileges",
+      "track": "databases",
+      "lesson": "db-security",
+      "id": "role-privileges",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Direct grants: allowed only what was granted",
+          "stdin": "GRANT SELECT, INSERT ON orders TO shop_api\nCHECK shop_api INSERT orders\nCHECK shop_api DELETE orders\nCHECK shop_api SELECT customers\n",
+          "expected": "shop_api INSERT orders: allowed\nshop_api DELETE orders: denied\nshop_api SELECT customers: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "A privilege inherited from a group role",
+          "stdin": "GRANT SELECT ON products TO reader\nGRANT reader TO shop_api\nCHECK shop_api SELECT products\nCHECK reader SELECT products\nCHECK shop_api UPDATE products\n",
+          "expected": "shop_api SELECT products: allowed\nreader SELECT products: allowed\nshop_api UPDATE products: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "Inheritance through a chain of roles",
+          "stdin": "GRANT SELECT ON reports TO analyst\nGRANT analyst TO staff\nGRANT staff TO alice\nCHECK alice SELECT reports\nCHECK bob SELECT reports\n",
+          "expected": "alice SELECT reports: allowed\nbob SELECT reports: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "REVOKE removes only the direct grant",
+          "stdin": "GRANT SELECT ON orders TO shop_api\nGRANT SELECT ON orders TO reader\nGRANT reader TO shop_api\nREVOKE SELECT ON orders FROM shop_api\nCHECK shop_api SELECT orders\nREVOKE SELECT ON orders FROM reader\nCHECK shop_api SELECT orders\n",
+          "expected": "shop_api SELECT orders: allowed\nshop_api SELECT orders: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "Grants to PUBLIC apply to every role",
+          "stdin": "GRANT SELECT ON menu TO PUBLIC\nCHECK guest SELECT menu\nCHECK guest INSERT menu\n",
+          "expected": "guest SELECT menu: allowed\nguest INSERT menu: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "A group never inherits from its members",
+          "stdin": "GRANT reader TO shop_api\nGRANT INSERT ON orders TO shop_api\nCHECK reader INSERT orders\nCHECK shop_api INSERT orders\n",
+          "expected": "reader INSERT orders: denied\nshop_api INSERT orders: allowed",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/db-security/audit-trigger",
+      "track": "databases",
+      "lesson": "db-security",
+      "id": "audit-trigger",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A balance update is logged with its author",
+          "stdin": "as amal\nset 1 70\n",
+          "expected": "#1 UPDATE account 1: 100 -> 70 by amal\nentries: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "A deleted account is logged with its old balance",
+          "stdin": "as admin\ndelete 2\n",
+          "expected": "#1 DELETE account 2: 50 -> (deleted) by admin\nentries: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Erasing the audit log is blocked",
+          "stdin": "as amal\nset 1 70\nas bilal\nset 2 80\ntamper\n",
+          "expected": "tamper: blocked\n#1 UPDATE account 1: 100 -> 70 by amal\n#2 UPDATE account 2: 50 -> 80 by bilal\nentries: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Covering tracks fails: the whole story stays",
+          "stdin": "as mallory\nset 3 500\ndelete 3\ntamper\n",
+          "expected": "tamper: blocked\n#1 UPDATE account 3: 0 -> 500 by mallory\n#2 DELETE account 3: 500 -> (deleted) by mallory\nentries: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Rewriting the audit log is blocked",
+          "stdin": "as mallory\nset 3 500\nrewrite\n",
+          "expected": "rewrite: blocked\n#1 UPDATE account 3: 0 -> 500 by mallory\nentries: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Deleting a missing account logs nothing",
+          "stdin": "as admin\ndelete 9\n",
+          "expected": "entries: 0",
           "mode": "trim"
         }
       ]
