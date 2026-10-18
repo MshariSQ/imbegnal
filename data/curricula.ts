@@ -753,7 +753,7 @@ print("same subnet as .62?", ipaddress.ip_address("192.168.10.62") in net)
       output: "network    192.168.10.0\nbroadcast  192.168.10.63\nnetmask    255.255.255.192\nusable     62 hosts: 192.168.10.1 to 192.168.10.62\nsame subnet as .62? True\n",
     },
     lessonLinks: {
-      // The capture-dissection challenge practises reading 802.1Q tags and TCP flags.
+      // The capture-dissection challenge walks Ethernet, 802.1Q, IPv4 and TCP headers byte by byte (header lengths, ports, data offset).
       "routing-switching": { challenges: ["net-frame-dissect"] },
       "network-troubleshooting": { challenges: ["net-frame-dissect"] },
     },
