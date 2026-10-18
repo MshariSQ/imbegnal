@@ -189,8 +189,9 @@ DNS normally uses **UDP port 53**: one small question, one small answer. It fall
     {
       type: "code-demo",
       lang: "python",
-      code: String.raw`# A toy DNS tree. Names and addresses come from ranges reserved for documentation
-# (RFC 2606, RFC 5737), so nothing here points at a real machine.
+      code: String.raw`# A toy DNS tree held in a dictionary: nothing is sent over the network. The root and
+# .com server names are the real ones; the zone data and the addresses are made up, from the
+# names and ranges reserved for documentation (RFC 2606, RFC 5737).
 SERVERS = {
     "a.root-servers.net": {"com.": ("referral", "a.gtld-servers.net")},
     "a.gtld-servers.net": {"example.com.": ("referral", "ns1.example.com")},
@@ -846,7 +847,7 @@ ClientHello                                -------->
 { } encrypted with handshake keys     [ ] encrypted with application keys
 \`\`\`
 
-1. Both sides send a fresh **ephemeral Diffie-Hellman** public key (\`key_share\`, typically X25519). From the two, each side computes the same secret without it ever crossing the wire. Because the keys are thrown away afterwards, recording the traffic and stealing the server's private key later still does not decrypt it: this is **forward secrecy**.
+1. Both sides send a fresh **ephemeral Diffie-Hellman** public key (\`key_share\`), classically X25519; current browsers such as Chrome and Firefox send the **post-quantum hybrid** X25519MLKEM768 by default, which pairs X25519 with ML-KEM-768 (FIPS 203) so that traffic recorded today stays safe from a future quantum computer. From the two key shares, each side computes the same secret without it ever crossing the wire. Because the keys are thrown away afterwards, recording the traffic and stealing the server's private key later still does not decrypt it: this is **forward secrecy**.
 2. The server sends its **certificate** and a **CertificateVerify**: a signature over the handshake made with the private key that belongs to the certificate. Only the real owner of that key can produce it.
 3. Both send **Finished**, a MAC over the whole handshake, so any tampering with the earlier messages is detected.
 4. Application data is protected with an **AEAD** cipher (AES-GCM or ChaCha20-Poly1305), which encrypts and authenticates every record.
@@ -900,7 +901,7 @@ ClientHello                                -------->
 { } مشفّر بمفاتيح المصافحة     [ ] مشفّر بمفاتيح التطبيق
 \`\`\`
 
-1. يرسل كل طرف مفتاحاً عاماً جديداً من نوع **Diffie-Hellman مؤقت (ephemeral)** (\`key_share\`، وعادةً X25519). ومن المفتاحين يحسب كل طرف السر نفسه دون أن يعبر الشبكة أبداً. ولأن المفاتيح تُرمى بعد ذلك، فإن تسجيل الحركة ثم سرقة المفتاح الخاص للخادم لاحقاً لا يكفي لفك تشفيرها: وهذه هي **السرية الأمامية (forward secrecy)**.
+1. يرسل كل طرف مفتاحاً عاماً جديداً من نوع **Diffie-Hellman مؤقت (ephemeral)** (\`key_share\`)، وهو تقليدياً X25519؛ أما المتصفحات الحالية مثل Chrome وFirefox فترسل افتراضياً **المزيج ما بعد الكمّي (post-quantum hybrid)** X25519MLKEM768، الذي يقرن X25519 بـ ML-KEM-768 (FIPS 203) حتى تبقى الحركة المسجَّلة اليوم في مأمن من حاسوب كمّي في المستقبل. ومن المفتاحين يحسب كل طرف السر نفسه دون أن يعبر الشبكة أبداً. ولأن المفاتيح تُرمى بعد ذلك، فإن تسجيل الحركة ثم سرقة المفتاح الخاص للخادم لاحقاً لا يكفي لفك تشفيرها: وهذه هي **السرية الأمامية (forward secrecy)**.
 2. يرسل الخادم **شهادته** ورسالة **CertificateVerify**: توقيعاً على المصافحة يُنشأ بالمفتاح الخاص المرتبط بالشهادة. ولا يستطيع إنتاجه إلا المالك الحقيقي لذلك المفتاح.
 3. يرسل الطرفان **Finished**، وهي MAC على المصافحة كلها، فيُكتشف أي عبث بالرسائل السابقة.
 4. تُحمى بيانات التطبيق بتشفير من نوع **AEAD** (مثل AES-GCM أو ChaCha20-Poly1305)، يشفّر كل سجل ويوثّقه.
