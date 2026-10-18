@@ -106,7 +106,7 @@ export default function ProfilePage() {
   const { stats, progress } = profile;
 
   const statCards = [
-    { icon: <TrendingUp size={16} />, label: "Roadmaps Started", value: stats.roadmaps_started },
+    { icon: <TrendingUp size={16} />, label: "Course Maps Started", value: stats.roadmaps_started },
     { icon: <CheckCircle size={16} />, label: "Nodes Completed", value: stats.nodes_completed },
     { icon: <Award size={16} />, label: "Certs Bookmarked", value: stats.certs_bookmarked },
     { icon: <BookOpen size={16} />, label: "Courses Saved", value: stats.courses_bookmarked },
@@ -175,18 +175,18 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {/* Roadmap progress */}
+        {/* Course map progress (roadmap node progress, stored per track id) */}
         <div className="bg-surface border border-line rounded-2xl p-6 mb-6">
           <h2 className="font-semibold text-fg mb-5 flex items-center gap-2">
-            <TrendingUp size={18} className="text-emerald-400" /> Roadmap Progress
+            <TrendingUp size={18} className="text-emerald-400" /> Course Map Progress
           </h2>
           {inProgress.length === 0 ? (
             <div className="text-center py-10">
               <MapPin size={28} className="text-fg-faint mx-auto mb-3" />
-              <p className="text-fg-subtle text-sm">No roadmaps started yet.</p>
+              <p className="text-fg-subtle text-sm">No course maps started yet.</p>
               <a href={`${BASE}/roadmaps/`}
                 className="inline-block mt-4 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm hover:bg-emerald-500/20 transition-all">
-                Explore Roadmaps →
+                Explore career paths →
               </a>
             </div>
           ) : (
@@ -242,7 +242,8 @@ export default function ProfilePage() {
               {stats.courses_bookmarked > 0 && (
                 <p className="text-sm text-fg-muted">
                   <span className="text-emerald-400 font-semibold">{stats.courses_bookmarked}</span> course{stats.courses_bookmarked !== 1 ? "s" : ""} bookmarked.{" "}
-                  <a href={`${BASE}/courses/`} className="text-emerald-400 hover:underline">View all →</a>
+                  {/* course bookmarks are entries of the external directory (data/courses.ts), now at /resources/ */}
+                  <a href={`${BASE}/resources/`} className="text-emerald-400 hover:underline">View all →</a>
                 </p>
               )}
             </div>

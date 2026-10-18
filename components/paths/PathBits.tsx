@@ -1,0 +1,54 @@
+"use client";
+
+import type { PathLevel } from "@/data/career-path-keys";
+import type { Tx } from "@/lib/i18n";
+import { fmt } from "@/components/learn/PracticeLink";
+
+/**
+ * Level colors (light theme remaps the -400 text shades for contrast). Advanced is purple, as the
+ * advanced group of the course maps: the remapped orange and amber shades fall below 4.5:1 on a tint.
+ */
+export const LEVEL_CLASS: Record<PathLevel, string> = {
+  beginner: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25",
+  intermediate: "text-blue-400 bg-blue-500/10 border-blue-500/25",
+  advanced: "text-purple-400 bg-purple-500/10 border-purple-500/25",
+};
+
+export function LevelBadge({ level, tx }: { level: PathLevel; tx: Tx }) {
+  return (
+    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full border ${LEVEL_CLASS[level]}`}>
+      {tx.paths.levels[level]}
+    </span>
+  );
+}
+
+/** "Beginner to Advanced", or one level when the path stays at one level. */
+export function levelRange(tx: Tx, levels: readonly PathLevel[]): string {
+  if (levels.length === 0) return "";
+  const from = tx.paths.levels[levels[0]];
+  const to = tx.paths.levels[levels[levels.length - 1]];
+  return from === to ? from : fmt(tx.paths.levelRange, { from, to });
+}
+
+/** "Coming soon" pill: neutral text on a dashed outline (the amber shades fail contrast on a tint in the light theme). */
+export const COMING_SOON_CLASS = "border border-dashed border-line-strong bg-fg/5 text-fg-soft";
+
+export function coursesCount(tx: Tx, n: number): string {
+  return n === 1 ? tx.paths.coursesCountOne : fmt(tx.paths.coursesCount, { n });
+}
+
+/** Chip used by every filter row: a real toggle button with a 40px tap target. */
+export function FilterChip({ pressed, onClick, children }: { pressed: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className={`min-h-10 px-3.5 text-sm rounded-lg border transition-colors ${
+        pressed ? "bg-brand border-brand text-brand-fg font-semibold" : "border-line text-fg-muted hover:text-fg hover:border-line-strong"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}

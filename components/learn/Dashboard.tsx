@@ -15,6 +15,7 @@ import { useTotalXp } from "@/lib/xp";
 import ProgressRing from "@/components/ui/ProgressRing";
 import ProgressBar from "@/components/ui/ProgressBar";
 import CourseCard from "./CourseCard";
+import DashboardPaths from "@/components/paths/DashboardPaths";
 
 export interface DashboardCourse {
   id: string;
@@ -145,7 +146,7 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
                 <div className="text-xl font-bold text-fg">{d.continueEmpty}</div>
                 <div className="text-sm text-fg-muted mt-1">{tx.learn.subtitle}</div>
               </div>
-              <Link href="/learn/" className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-bold shrink-0">
+              <Link href="/courses/" className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-bold shrink-0">
                 {d.browseCourses} <ArrowRight size={16} className="rtl-flip" />
               </Link>
             </>
@@ -173,7 +174,7 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
           <section>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-fg">{d.myCourses}</h2>
-              <Link href="/learn/" className="text-sm text-emerald-400 hover:underline">{d.viewAll}</Link>
+              <Link href="/courses/" className="text-sm text-emerald-400 hover:underline">{d.viewAll}</Link>
             </div>
             {inProgress.length === 0 ? (
               <p className="card p-6 text-sm text-fg-muted">{d.myCoursesEmpty}</p>
@@ -200,6 +201,8 @@ export default function Dashboard({ courses }: { courses: DashboardCourse[] }) {
         </div>
 
         <aside className="space-y-6">
+          <DashboardPaths courses={courses} />
+
           {/* Daily goal + week */}
           <section className="card p-5">
             <div className="flex items-center gap-2 text-sm font-bold text-fg mb-1"><Target size={15} className="text-emerald-400" /> {d.goalTitle}</div>

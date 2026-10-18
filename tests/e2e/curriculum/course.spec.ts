@@ -1,6 +1,6 @@
 /**
  * Browser specs for the course page, lab blocks, practice links, certificate
- * card and /courses against the exported site (out/). Run: see README.md.
+ * card and the external resources directory (/resources/) against the exported site (out/). Run: see README.md.
  */
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
@@ -306,11 +306,12 @@ test("certificate card: locked, signed-out, download and error states", async ()
   }
 });
 
-test("/courses filter chips render canonical roadmap titles (EN and AR)", async () => {
+// The external directory moved from /courses/ to /resources/ when /courses/ became the catalog of our courses.
+test("/resources filter chips render canonical roadmap titles (EN and AR)", async () => {
   for (const lang of LANGS) {
     const { page, context, problems } = await newPage(browser, site.url, { lang });
     try {
-      await page.goto(`${site.url}/courses/`);
+      await page.goto(`${site.url}/resources/`);
       await page.waitForSelector("button[aria-pressed]");
       // Same as the course pages: wait for the stored language to apply after hydration.
       await page.getByRole("button", { name: titleOf("devops", lang), exact: true }).waitFor({ timeout: 10_000 }).catch(() => {});
