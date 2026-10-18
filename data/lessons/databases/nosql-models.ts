@@ -112,7 +112,7 @@ for name, count in suggestions:
 
 export const lesson: Lesson = {
   nodeId: "nosql-models",
-  title: { en: "NoSQL: Document, Key-Value, Graph", ar: "NoSQL: المخازن الوثائقية والمفتاح-قيمة والبيانية" },
+  title: { en: "NoSQL: Document, Key-Value, Graph", ar: "NoSQL: مخازن المستندات والمفتاح-قيمة والبيانية" },
   estMinutes: 45,
   sections: [
     {
@@ -156,17 +156,17 @@ graph        (Amal:Person) -[:ORDERED {qty: 2}]-> (Notebook:Product)
 
 ## ماذا ستتعلم
 
-- العائلات الأربع الرئيسية: مخازن **المفتاح-قيمة (key-value)** و**الوثائقية (document)** و**العمود العريض (wide-column)** و**البيانية (graph)**، وفيمَ تتفوق كل منها
-- كيف تُستعلَم قاعدة بيانات وثائقية (الحقول المتداخلة والمصفوفات والمعاملات)
+- العائلات الأربع الرئيسية: مخازن **المفتاح-قيمة (key-value)** و**المستندات (document)** و**العمود العريض (wide-column)** و**البيانية (graph)**، وفيمَ تتفوق كل منها
+- كيف تُستعلَم قاعدة بيانات المستندات (الحقول المتداخلة والمصفوفات وعوامل المقارنة)
 - **التضمين مقابل الإحالة (embedding vs referencing)**، ولماذا تقود **أنماط الوصول (access patterns)** تصميم مخطط NoSQL
 - المفاضلات مقابل SQL: الاتساق والمعاملات والربط والمخطط
 
-المختبرات ببايثون: تكتب مطابِق استعلامات على طريقة MongoDB، وتشكّل صفوفاً علائقية في وثيقة طلب، وتنفّذ استعلام «أصدقاء الأصدقاء» على مخطط بياني.
+المختبرات ببايثون: تكتب مطابِق استعلامات على طريقة MongoDB، وتشكّل صفوفاً علائقية في مستند طلب، وتنفّذ استعلام «أصدقاء الأصدقاء» على مخطط بياني.
 
 ## العائلات الأربع
 
 - مخازن **المفتاح-قيمة** قاموس عملاق: **مفتاح** يشير إلى **قيمة** لا تنظر القاعدة داخلها. تنفّذ \`GET\` و\`SET\` و\`DELETE\` بالمفتاح، وغالباً مع مدة صلاحية (TTL). أمثلة: Redis وMemcached وAmazon DynamoDB. مناسبة للجلسات والسلال والذاكرة المؤقتة والعدّادات ومفاتيح تفعيل الميزات. وضعيفة في أي سؤال غير «أعطني القيمة لهذا المفتاح».
-- المخازن **الوثائقية** تحفظ **وثائق** مكتفية بذاتها (شبيهة بـ JSON؛ وتخزّن MongoDB صيغة ثنائية اسمها BSON) فيها كائنات ومصفوفات متداخلة. ولا يلزم أن تتشارك وثائق **المجموعة (collection)** الواحدة الحقول نفسها. ويمكنك الاستعلام عن أي حقل وفهرسته. أمثلة: MongoDB وCouchbase وFirestore. مناسبة للتجميعات التي تُقرأ وتُكتب معاً، مثل طلب مع بنوده.
+- مخازن **المستندات** تحفظ **مستندات** مكتفية بذاتها (شبيهة بـ JSON؛ وتخزّن MongoDB صيغة ثنائية اسمها BSON) فيها كائنات ومصفوفات متداخلة. ولا يلزم أن تتشارك مستندات **المجموعة (collection)** الواحدة الحقول نفسها. ويمكنك الاستعلام عن أي حقل وفهرسته. أمثلة: MongoDB وCouchbase وFirestore. مناسبة للتجميعات التي تُقرأ وتُكتب معاً، مثل طلب مع بنوده.
 - مخازن **العمود العريض** تجمع الصفوف في **أقسام (partitions)** بحسب مفتاح التقسيم (partition key)، وتُبقي صفوف كل قسم مرتبة، وتوزّع الأقسام على آلات كثيرة. أمثلة: Apache Cassandra وScyllaDB وApache HBase وGoogle Bigtable. مناسبة لأحجام الكتابة الهائلة: سجلات الأحداث وقراءات الحساسات ورسائل الدردشة.
 - قواعد البيانات **البيانية** تخزّن **عُقداً (nodes)** و**علاقات (relationships)** أي حوافاً، لكلٍّ منها خصائص، والاستعلامات **تمشي** على العلاقات. أمثلة: Neo4j (لغة استعلامها Cypher) وAmazon Neptune؛ وقد وحّدت ISO لغة استعلام بيانية اسمها GQL في المعيار ISO/IEC 39075:2024. مناسبة للشبكات الاجتماعية والتوصيات وحلقات الاحتيال ومخططات الاعتماديات.
 
@@ -198,13 +198,13 @@ db.products.createIndex({ category: 1, price: 1 })   // secondary indexes, as in
 Three rules make this work:
 
 - A query document is an implicit **AND**: a document matches only if every listed field matches.
-- A **dotted path** such as \`"specs.ram_gb"\` follows embedded objects. A document without that path simply does not match.
+- A **dotted path** such as \`"specs.ram_gb"\` follows embedded objects. A document without that path does not match a value or a comparison (one exception: \`{ field: null }\` also matches documents that lack the field).
 - A plain value matches an **array** field when **any element** equals it. Operators such as \`$gt\`, \`$gte\`, \`$lt\`, \`$lte\` and \`$in\` take an object instead of a value.
 
 **"Schemaless" really means schema-on-read.** The database will accept a product with \`prise\` instead of \`price\`, but your code will not find it. The structure still exists, it just lives in your application, so serious projects add validation (MongoDB supports \`$jsonSchema\` validators) and handle documents written in older shapes.`,
-        ar: `## الاستعلام في مخزن وثائقي
+        ar: `## الاستعلام في مخزن المستندات
 
-في MongoDB تستعلم مجموعةً بـ **وثيقة استعلام (query document)**: تصف الوثائق التي تريدها حقلاً حقلاً.
+في MongoDB تستعلم مجموعةً بـ **مستند استعلام (query document)**: يصف المستندات التي تريدها حقلاً حقلاً.
 
 \`\`\`js
 db.products.find({ category: "laptop", price: { $lt: 2000 } })  // every field must match (AND)
@@ -216,11 +216,11 @@ db.products.createIndex({ category: 1, price: 1 })   // secondary indexes, as in
 
 ثلاث قواعد تجعل ذلك يعمل:
 
-- وثيقة الاستعلام **AND** ضمني: لا تطابق الوثيقة إلا إذا طابق كل حقل مذكور.
-- **المسار المنقّط (dotted path)** مثل \`"specs.ram_gb"\` يتبع الكائنات المضمّنة. والوثيقة التي ليس فيها هذا المسار لا تطابق ببساطة.
-- القيمة المجردة تطابق حقل **مصفوفة** حين يساويها **أي عنصر** فيها. والمعاملات مثل \`$gt\` و\`$gte\` و\`$lt\` و\`$lte\` و\`$in\` تأخذ كائناً بدل القيمة.
+- مستند الاستعلام **AND** ضمني: لا يطابق المستند إلا إذا طابق كل حقل مذكور.
+- **المسار المنقّط (dotted path)** مثل \`"specs.ram_gb"\` يتبع الكائنات المضمّنة. والمستند الذي ليس فيه هذا المسار لا يطابق قيمةً ولا مقارنة (باستثناء واحد: \`{ field: null }\` يطابق أيضاً المستندات التي ليس فيها الحقل).
+- القيمة المجردة تطابق حقل **مصفوفة** حين يساويها **أي عنصر** فيها. والعوامل مثل \`$gt\` و\`$gte\` و\`$lt\` و\`$lte\` و\`$in\` تأخذ كائناً بدل القيمة.
 
-**«بلا مخطط (schemaless)» تعني في الحقيقة المخطط عند القراءة (schema-on-read).** ستقبل القاعدة منتجاً فيه \`prise\` بدل \`price\`، لكن كودك لن يجده. فالبنية لا تزال موجودة، لكنها تعيش في تطبيقك، لذلك تضيف المشاريع الجادة تحققاً (تدعم MongoDB مدقّقات \`$jsonSchema\`) وتتعامل مع الوثائق المكتوبة بأشكال أقدم.`,
+**«بلا مخطط (schemaless)» تعني في الحقيقة المخطط عند القراءة (schema-on-read).** ستقبل القاعدة منتجاً فيه \`prise\` بدل \`price\`، لكن كودك لن يجده. فالبنية لا تزال موجودة، لكنها تعيش في تطبيقك، لذلك تضيف المشاريع الجادة تحققاً (تدعم MongoDB مدقّقات \`$jsonSchema\`) وتتعامل مع المستندات المكتوبة بأشكال أقدم.`,
       },
     },
     {
@@ -232,7 +232,7 @@ db.products.createIndex({ category: 1, price: 1 })   // secondary indexes, as in
 
 Complete \`matches(doc, query)\` so it follows MongoDB's rules for these cases:
 
-- every field of the query must match (implicit AND), and a \`MISSING\` path never matches
+- every field of the query must match (implicit AND), and a \`MISSING\` path never matches (this lab never queries for \`null\`)
 - a **dotted path** reaches into embedded documents
 - a plain value matches an **array** field when **any element** matches
 - an **operator object** such as \`{"$gte": 35, "$lt": 2000}\` supports \`$gt\`, \`$gte\`, \`$lt\`, \`$lte\` and \`$in\` (the value is one of a list); all its operators must hold
@@ -242,18 +242,18 @@ Complete \`matches(doc, query)\` so it follows MongoDB's rules for these cases:
 **Output:** \`ID NAME\` for each match in collection order, then \`count: N\`.
 
 Example: \`{"tags": "work"}\` prints \`1 Laptop Air\`, \`2 Laptop Pro\` and \`count: 2\`.`,
-        ar: `توجد مجموعة \`products\` من ست وثائق؛ وليست لكل الوثائق الحقول نفسها. الدالة المساعدة \`get_path(doc, "specs.ram_gb")\` تُرجع قيمة متداخلة، أو \`MISSING\` حين لا يوجد المسار.
+        ar: `توجد مجموعة \`products\` من ستة مستندات؛ وليست لكل المستندات الحقول نفسها. الدالة المساعدة \`get_path(doc, "specs.ram_gb")\` تُرجع قيمة متداخلة، أو \`MISSING\` حين لا يوجد المسار.
 
 أكمل \`matches(doc, query)\` لتتبع قواعد MongoDB في هذه الحالات:
 
-- يجب أن يطابق كل حقل في الاستعلام (AND ضمني)، والمسار \`MISSING\` لا يطابق أبداً
-- **المسار المنقّط** يصل إلى داخل الوثائق المضمّنة
+- يجب أن يطابق كل حقل في الاستعلام (AND ضمني)، والمسار \`MISSING\` لا يطابق أبداً (لا يستعلم هذا المختبر عن \`null\`)
+- **المسار المنقّط** يصل إلى داخل المستندات المضمّنة
 - القيمة المجردة تطابق حقل **مصفوفة** حين يطابق **أي عنصر** فيها
-- **كائن المعاملات** مثل \`{"$gte": 35, "$lt": 2000}\` يدعم \`$gt\` و\`$gte\` و\`$lt\` و\`$lte\` و\`$in\` (القيمة واحدة من قائمة)؛ ويجب أن تتحقق كل معاملاته
+- **كائن العوامل** مثل \`{"$gte": 35, "$lt": 2000}\` يدعم \`$gt\` و\`$gte\` و\`$lt\` و\`$lte\` و\`$in\` (القيمة واحدة من قائمة)؛ ويجب أن تتحقق كل عوامله
 
-**الدخل:** وثيقة استعلام واحدة بصيغة JSON.
+**الدخل:** مستند استعلام واحد بصيغة JSON.
 
-**الخرج:** \`ID NAME\` لكل وثيقة مطابقة بترتيب المجموعة، ثم \`count: N\`.
+**الخرج:** \`ID NAME\` لكل مستند مطابق بترتيب المجموعة، ثم \`count: N\`.
 
 مثال: \`{"tags": "work"}\` يطبع \`1 Laptop Air\` و\`2 Laptop Pro\` و\`count: 2\`.`,
       },
@@ -277,8 +277,9 @@ def match_value(value, condition):
     if value is MISSING:
         return False                                   # an absent field never matches
     if isinstance(value, list):                        # an array matches if ANY element does
-        return any(match_value(item, condition) for item in value)
-    if isinstance(condition, dict):                    # operators: {"$gte": 35, "$lt": 2000}
+        return value == condition or any(match_value(item, condition) for item in value)
+    if isinstance(condition, dict) and all(key.startswith("$") for key in condition):
+        # operators: {"$gte": 35, "$lt": 2000} (any other object is compared as a whole)
         for op, arg in condition.items():
             if op == "$in":
                 ok = value in arg
@@ -305,13 +306,13 @@ ${CATALOG_TAIL}`,
       hints: [
         { en: "Split the work: a helper match_value(value, condition) for ONE field, and matches() returns all(match_value(get_path(doc, path), cond) for path, cond in query.items()).", ar: "قسّم العمل: دالة مساعدة match_value(value, condition) لحقل واحد، وتُرجع matches() القيمة all(match_value(get_path(doc, path), cond) for path, cond in query.items())." },
         { en: "In match_value: return False for MISSING; if value is a list, return any(match_value(item, condition) for item in value); otherwise compare.", ar: "في match_value: أعد False عند MISSING؛ وإن كانت القيمة قائمة فأعد any(match_value(item, condition) for item in value)؛ وإلا فقارن." },
-        { en: "If condition is a dict, loop over its items: \"$in\" means value in arg, \"$gt\" means value > arg, and so on. Return False as soon as one operator fails.", ar: "إن كان الشرط قاموساً فمرّ على عناصره: \"$in\" تعني value in arg، و\"$gt\" تعني value > arg، وهكذا. أعد False فور فشل أي معامل." },
+        { en: "If condition is a dict, loop over its items: \"$in\" means value in arg, \"$gt\" means value > arg, and so on. Return False as soon as one operator fails.", ar: "إن كان الشرط قاموساً فمرّ على عناصره: \"$in\" تعني value in arg، و\"$gt\" تعني value > arg، وهكذا. أعد False فور فشل أي عامل." },
       ],
       tests: [
         { name: { en: "Top-level equality", ar: "مساواة في المستوى الأعلى" }, stdin: "{\"category\": \"laptop\"}\n", expected: "1 Laptop Air\n2 Laptop Pro\n5 Gaming Laptop\ncount: 3" },
-        { name: { en: "Dotted path into an embedded document", ar: "مسار منقّط إلى داخل وثيقة مضمّنة" }, stdin: "{\"specs.ram_gb\": 32}\n", expected: "2 Laptop Pro\n5 Gaming Laptop\ncount: 2" },
+        { name: { en: "Dotted path into an embedded document", ar: "مسار منقّط إلى داخل مستند مضمّن" }, stdin: "{\"specs.ram_gb\": 32}\n", expected: "2 Laptop Pro\n5 Gaming Laptop\ncount: 2" },
         { name: { en: "An array field matches by element", ar: "حقل المصفوفة يطابق بعنصر منه" }, stdin: "{\"tags\": \"work\"}\n", expected: "1 Laptop Air\n2 Laptop Pro\ncount: 2" },
-        { name: { en: "Equality AND an operator", ar: "مساواة ومعامل معاً (AND)" }, stdin: "{\"category\": \"laptop\", \"price\": {\"$lt\": 2000}}\n", expected: "1 Laptop Air\n5 Gaming Laptop\ncount: 2" },
+        { name: { en: "Equality AND an operator", ar: "مساواة وعامل معاً (AND)" }, stdin: "{\"category\": \"laptop\", \"price\": {\"$lt\": 2000}}\n", expected: "1 Laptop Air\n5 Gaming Laptop\ncount: 2" },
         { name: { en: "$in and $gte together", ar: "$in و$gte معاً" }, stdin: "{\"category\": {\"$in\": [\"home\", \"clothing\"]}, \"price\": {\"$gte\": 35}}\n", expected: "3 Desk Lamp\n6 Hoodie\ncount: 2" },
         { name: { en: "Missing paths never match; $in on an array field", ar: "المسارات المفقودة لا تطابق؛ و$in على حقل مصفوفة" }, stdin: "{\"specs.ram_gb\": {\"$gt\": 8}, \"tags\": {\"$in\": [\"gaming\", \"creator\"]}}\n", expected: "2 Laptop Pro\n5 Gaming Laptop\ncount: 2" },
       ],
@@ -348,10 +349,10 @@ In a relational database you normalize first and can then ask almost any questio
 2. **Shape the data** so each frequent query reads **one document** or **one partition**.
 3. Accept **duplication** where it buys those fast reads, and keep it in sync on purpose.
 
-That is why a Cassandra or DynamoDB design often has one table **per query**, and why a design that is perfect for one access pattern can be painful for a question nobody planned.`,
+That is why a Cassandra design often has one table **per query**. DynamoDB reaches the same goal another way: AWS recommends as few tables as possible, in most cases a single table whose keys are designed so that each access pattern reads one partition. Either way, a design that is perfect for one access pattern can be painful for a question nobody planned.`,
         ar: `## تضمين أم إحالة؟
 
-أكبر قرار تصميمي في قاعدة البيانات الوثائقية هو أن تعيش البيانات المرتبطة **داخل** الوثيقة (**التضمين embedding**) أو في **وثيقة أخرى** تشير إليها بمعرّفها (**الإحالة referencing**).
+أكبر قرار تصميمي في قاعدة بيانات المستندات هو أن تعيش البيانات المرتبطة **داخل** المستند (**التضمين embedding**) أو في **مستند آخر** تشير إليه بمعرّفه (**الإحالة referencing**).
 
 \`\`\`text
 Embedded: one read shows the page            Referenced: one read per document
@@ -365,7 +366,7 @@ orders: {                                     orders:    { _id: 1001, customer_i
 
 **ضمّن** حين تُقرأ البيانات معاً، وتكون العلاقة واحداً-إلى-قليل، ولا تكون للابن حياة مستقلة (بند طلب بلا طلبه)، ويبقى حجمها محدوداً.
 
-**أحِل** حين تكون العلاقة متعدداً-إلى-متعدد، أو يمكن أن تنمو القائمة بلا حد (تعليقات منشور منتشر: تحدّ MongoDB حجم الوثيقة بـ 16 MiB)، أو تكون البيانات مشتركة وتُحدَّث وحدها (بريد العميل الإلكتروني).
+**أحِل** حين تكون العلاقة متعدداً-إلى-متعدد، أو يمكن أن تنمو القائمة بلا حد (تعليقات منشور منتشر: تحدّ MongoDB حجم المستند بـ 16 MiB)، أو تكون البيانات مشتركة وتُحدَّث وحدها (بريد العميل الإلكتروني).
 
 وثمة طريق وسط مفيد هو **الإحالة الموسّعة (extended reference)**: خزّن المعرّف **مع** الحقول القليلة التي تعرضها الصفحة، مثل \`{ id: 7, name: "Amal" }\`. لكن كل نسخة تكرار، فيعود شذوذ التحديث من درس التطبيع: إن غيّرت أمل اسمها فيجب العثور على كل نسخة وإصلاحها. انسخ فقط ما يندر أن يتغير، أو ما *ينبغي* أن يُجمَّد، مثل السعر الذي دُفع به الطلب.
 
@@ -374,10 +375,10 @@ orders: {                                     orders:    { _id: 1001, customer_i
 في القاعدة العلائقية تطبّع أولاً ثم تستطيع طرح أي سؤال تقريباً بالربط. أما في معظم مخازن NoSQL فالربط محدود أو غائب، فتعمل بالاتجاه المعاكس:
 
 1. **اسرد الاستعلامات** التي ينفّذها التطبيق أكثر: «اعرض صفحة طلب»، «اعرض آخر 10 طلبات لعميل».
-2. **شكّل البيانات** بحيث يقرأ كل استعلام متكرر **وثيقة واحدة** أو **قسماً واحداً**.
+2. **شكّل البيانات** بحيث يقرأ كل استعلام متكرر **مستنداً واحداً** أو **قسماً واحداً**.
 3. اقبل **التكرار** حيث يشتري هذه القراءات السريعة، وأبقِه متزامناً عن قصد.
 
-لهذا كثيراً ما يكون في تصميم Cassandra أو DynamoDB جدول **لكل استعلام**، ولهذا قد يكون التصميم المثالي لنمط وصول واحد مؤلماً لسؤال لم يخطط له أحد.`,
+لهذا كثيراً ما يكون في تصميم Cassandra جدول **لكل استعلام**. وتبلغ DynamoDB الهدف نفسه بطريقة أخرى: توصي AWS بأقل عدد ممكن من الجداول، وفي أغلب الحالات جدول واحد تُصمَّم مفاتيحه بحيث يقرأ كل نمط وصول قسماً واحداً. وفي الحالتين قد يكون التصميم المثالي لنمط وصول واحد مؤلماً لسؤال لم يخطط له أحد.`,
       },
     },
     {
@@ -438,7 +439,7 @@ Write \`build_order_doc(order_id)\` so it returns \`None\` for an unknown order,
 **Input:** an order id. **Output:** the document as JSON with sorted keys, or \`order N not found\`.
 
 Example: order \`1002\` prints \`{"_id": 1002, "customer": {"id": 8, "name": "Bilal"}, "lines": [{"price_cents": 3000, "product": "Backpack", "qty": 1}], "placed_on": "2025-03-05", "total_cents": 3000}\`.`,
-        ar: `توجد جداول المتجر المطبّعة \`customers\` و\`orders\` و\`order_lines\` في SQLite. صفحة الطلب هي الاستعلام الأكثر تكراراً، لذلك ستخدمها من **وثيقة واحدة لكل طلب**.
+        ar: `توجد جداول المتجر المطبّعة \`customers\` و\`orders\` و\`order_lines\` في SQLite. صفحة الطلب هي الاستعلام الأكثر تكراراً، لذلك ستخدمها من **مستند واحد لكل طلب**.
 
 اكتب \`build_order_doc(order_id)\` لتُرجع \`None\` لطلب غير موجود، وإلا فقاموساً بهذه المفاتيح بالضبط:
 
@@ -447,7 +448,7 @@ Example: order \`1002\` prints \`{"_id": 1002, "customer": {"id": 8, "name": "Bi
 - \`lines\`: بنود الطلب **مضمّنة**، كل منها \`{"product", "qty", "price_cents"}\`، بترتيب إضافتها (بحسب \`id\` البند)؛ والطلب الذي بلا بنود قيمته \`[]\`
 - \`total_cents\`: مجموع \`qty * price_cents\`
 
-**الدخل:** معرّف طلب. **الخرج:** الوثيقة بصيغة JSON بمفاتيح مرتبة، أو \`order N not found\`.
+**الدخل:** معرّف طلب. **الخرج:** المستند بصيغة JSON بمفاتيح مرتبة، أو \`order N not found\`.
 
 مثال: الطلب \`1002\` يطبع \`{"_id": 1002, "customer": {"id": 8, "name": "Bilal"}, "lines": [{"price_cents": 3000, "product": "Backpack", "qty": 1}], "placed_on": "2025-03-05", "total_cents": 3000}\`.`,
       },
@@ -590,11 +591,11 @@ ORDER BY mutual DESC, suggestion
 
 - **التوسع الأفقي (scaling out).** بُني كثير من أنظمة NoSQL لتوزيع البيانات على آلات كثيرة (**التجزئة sharding**) منذ اليوم الأول. والقواعد العلائقية تتوسع رأسياً جيداً ويمكن تجزئتها أيضاً، بجهد أكبر.
 - **الاتساق.** كثيراً ما تنسخ المخازن الموزّعة البيانات بشكل غير متزامن، فقد تُرجع القراءة بيانات قديمة لوقت قصير (**الاتساق النهائي eventual consistency**)؛ وتسمح Cassandra لكل استعلام باختيار مستوى اتساق مثل \`ONE\` أو \`QUORUM\` أو \`ALL\`. وتنص **مبرهنة CAP** (حدسية Brewer التي برهنها Gilbert وLynch عام 2002) على أن المخزن الموزّع أثناء انقسام الشبكة يجب أن يختار بين البقاء متسقاً والبقاء متاحاً.
-- **المعاملات.** الدعم متفاوت: في MongoDB معاملات ACID متعددة الوثائق (منذ 4.0 لمجموعات النسخ المتماثلة و4.2 للعناقيد المجزّأة)، وفي Redis الأمران \`MULTI\`/\`EXEC\`، والمعاملات الخفيفة في Cassandra مقارنة-وتعيين (compare-and-set) على قسم واحد. اسأل بالضبط عن ضمانات ACID التي تحصل عليها.
-- **الربط والأسئلة الجديدة.** محدود أو مكلف؛ وقد يحتاج سؤال لم يخطط له أحد شكلاً جديداً للوثيقة أو جدولاً جديداً.
-- **المخطط.** مرن عند الكتابة، لكن المخطط ينتقل إلى كودك، وتبقى الوثائق ذات الأشكال القديمة حتى تهجّرها.
+- **المعاملات.** الدعم متفاوت: في MongoDB معاملات ACID متعددة المستندات (منذ 4.0 لمجموعات النسخ المتماثلة و4.2 للعناقيد المجزّأة)، وفي Redis الأمران \`MULTI\`/\`EXEC\`، والمعاملات الخفيفة في Cassandra مقارنة-وتعيين (compare-and-set) على قسم واحد. اسأل بالضبط عن ضمانات ACID التي تحصل عليها.
+- **الربط والأسئلة الجديدة.** محدود أو مكلف؛ وقد يحتاج سؤال لم يخطط له أحد شكلاً جديداً للمستند أو جدولاً جديداً.
+- **المخطط.** مرن عند الكتابة، لكن المخطط ينتقل إلى كودك، وتبقى المستندات ذات الأشكال القديمة حتى ترحّلها (migration).
 
-والحد غير واضح: نوع \`jsonb\` في PostgreSQL (مع فهارس GIN) ودوال JSON في SQLite تمنح القواعد العلائقية ميزات وثائقية. والخيار الافتراضي المعقول قاعدة علائقية، مع إضافة مخزن متخصص حين يحتاجه نمط وصول محدد. ويسمى استخدام عدة مخازن جنباً إلى جنب **الاستمرارية متعددة اللغات (polyglot persistence)**، وثمنه تشغيل عدة أنظمة وتأمينها.`,
+والحد غير واضح: نوع \`jsonb\` في PostgreSQL (مع فهارس GIN) ودوال JSON في SQLite تمنح القواعد العلائقية ميزات من مخازن المستندات. والخيار الافتراضي المعقول قاعدة علائقية، مع إضافة مخزن متخصص حين يحتاجه نمط وصول محدد. ويسمى استخدام عدة مخازن جنباً إلى جنب **الاستمرارية متعددة اللغات (polyglot persistence)**، وثمنه تشغيل عدة أنظمة وتأمينها.`,
       },
     },
     {
@@ -699,6 +700,7 @@ ${GRAPH_TAIL}`,
       tests: [
         { name: { en: "Two suggestions ranked by mutual friends", ar: "اقتراحان مرتبان بعدد الأصدقاء المشتركين" }, stdin: "Amal Bilal\nAmal Carla\nBilal Dina\nCarla Dina\nCarla Emad\nDina Farid\n? Amal\n", expected: "Dina (2 mutual)\nEmad (1 mutual)" },
         { name: { en: "Existing friends are never suggested", ar: "الأصدقاء الحاليون لا يُقترحون أبداً" }, stdin: "Amal Bilal\nAmal Carla\nBilal Carla\nBilal Dina\n? Amal\n", expected: "Dina (1 mutual)" },
+        { name: { en: "More mutual friends rank first, before the alphabet", ar: "الأكثر أصدقاء مشتركين أولاً، قبل الترتيب الأبجدي" }, stdin: "Amal Bilal\nAmal Carla\nBilal Zed\nCarla Zed\nBilal Dina\n? Amal\n", expected: "Zed (2 mutual)\nDina (1 mutual)" },
         { name: { en: "Ties are broken by name", ar: "التعادل يُحسم بالاسم" }, stdin: "Hana Idris\nHana Jalal\nIdris Kamal\nJalal Kamal\nIdris Lina\nJalal Lina\nHana Munir\nMunir Omar\n? Hana\n", expected: "Kamal (2 mutual)\nLina (2 mutual)\nOmar (1 mutual)" },
         { name: { en: "Everyone already knows each other", ar: "الجميع يعرف بعضهم أصلاً" }, stdin: "Amal Bilal\nBilal Carla\nAmal Carla\n? Carla\n", expected: "no suggestions" },
         { name: { en: "A person who is not in the graph", ar: "شخص غير موجود في المخطط" }, stdin: "Amal Bilal\n? Zed\n", expected: "no suggestions" },
@@ -723,20 +725,20 @@ ${GRAPH_TAIL}`,
           },
         },
         {
-          q: { en: "A post can collect hundreds of thousands of comments. How should the comments be stored in a document database?", ar: "قد يجمع منشور مئات الآلاف من التعليقات. كيف ينبغي تخزين التعليقات في قاعدة بيانات وثائقية؟" },
+          q: { en: "A post can collect hundreds of thousands of comments. How should the comments be stored in a document database?", ar: "قد يجمع منشور مئات الآلاف من التعليقات. كيف ينبغي تخزين التعليقات في قاعدة بيانات مستندات؟" },
           choices: [
-            { en: "Embedded in an array inside the post document", ar: "مضمّنة في مصفوفة داخل وثيقة المنشور" },
-            { en: "As separate comment documents that reference the post by id", ar: "وثائق تعليقات منفصلة تحيل إلى المنشور بمعرّفه" },
+            { en: "Embedded in an array inside the post document", ar: "مضمّنة في مصفوفة داخل مستند المنشور" },
+            { en: "As separate comment documents that reference the post by id", ar: "مستندات تعليقات منفصلة تحيل إلى المنشور بمعرّفه" },
             { en: "As one long string field on the post", ar: "حقلاً نصياً طويلاً واحداً في المنشور" },
           ],
           answer: 1,
           explain: {
             en: "The list grows without limit, so embedding would make the post document huge (MongoDB caps documents at 16 MiB) and slow every read of the post. Comments that reference the post can be paged and indexed by post id. Embedding suits bounded, one-to-few data.",
-            ar: "القائمة تنمو بلا حد، فالتضمين سيجعل وثيقة المنشور ضخمة (تحدّ MongoDB الوثيقة بـ 16 MiB) ويبطّئ كل قراءة للمنشور. أما التعليقات التي تحيل إلى المنشور فيمكن تقسيمها إلى صفحات وفهرستها بمعرّف المنشور. والتضمين يناسب البيانات المحدودة من نوع واحد-إلى-قليل.",
+            ar: "القائمة تنمو بلا حد، فالتضمين سيجعل مستند المنشور ضخماً (تحدّ MongoDB المستند بـ 16 MiB) ويبطّئ كل قراءة للمنشور. أما التعليقات التي تحيل إلى المنشور فيمكن تقسيمها إلى صفحات وفهرستها بمعرّف المنشور. والتضمين يناسب البيانات المحدودة من نوع واحد-إلى-قليل.",
           },
         },
         {
-          q: { en: "A product document has tags: [\"red\", \"sale\"]. Does the MongoDB query { tags: \"sale\" } match it?", ar: "في وثيقة منتج الحقل tags: [\"red\", \"sale\"]. هل يطابقها استعلام MongoDB التالي { tags: \"sale\" }؟" },
+          q: { en: "A product document has tags: [\"red\", \"sale\"]. Does the MongoDB query { tags: \"sale\" } match it?", ar: "في مستند منتج الحقل tags: [\"red\", \"sale\"]. هل يطابقه استعلام MongoDB التالي { tags: \"sale\" }؟" },
           choices: [
             { en: "Yes: a plain value matches an array field when any element equals it", ar: "نعم: القيمة المجردة تطابق حقل المصفوفة حين يساويها أي عنصر" },
             { en: "No: the whole array would have to equal \"sale\"", ar: "لا: يجب أن تساوي المصفوفة كلها \"sale\"" },
@@ -746,7 +748,7 @@ ${GRAPH_TAIL}`,
           answer: 0,
           explain: {
             en: "Equality on an array field matches if any element is equal, which makes tag and category queries natural. Indexes change only the speed, never which documents match, and $in is for testing one value against a list of candidates.",
-            ar: "المساواة على حقل مصفوفة تطابق إذا ساوى أي عنصر، وهذا يجعل استعلامات الوسوم والفئات طبيعية. والفهارس تغيّر السرعة فقط ولا تغيّر أبداً الوثائق المطابقة، و$in لاختبار قيمة واحدة مقابل قائمة مرشحين.",
+            ar: "المساواة على حقل مصفوفة تطابق إذا ساوى أي عنصر، وهذا يجعل استعلامات الوسوم والفئات طبيعية. والفهارس تغيّر السرعة فقط ولا تغيّر أبداً المستندات المطابقة، و$in لاختبار قيمة واحدة مقابل قائمة مرشحين.",
           },
         },
         {
@@ -793,13 +795,13 @@ ${GRAPH_TAIL}`,
 **Practice next:** extend the query lab with \`$ne\` and \`$exists\`. In the order lab, add a second access pattern, "a customer's orders", and decide whether it needs its own document shape. Then turn to protecting data: whatever the model, the next lessons cover keeping it safe from attackers and from accidents.`,
         ar: `## الخلاصة وما تتدرب عليه بعد ذلك
 
-- مخازن **المفتاح-قيمة** تجيب عن «القيمة لهذا المفتاح» بسرعة كبيرة، مع مدد صلاحية وعدّادات ذرّية. والمخازن **الوثائقية** تحفظ وثائق متداخلة ومرنة يمكنك استعلامها وفهرستها بأي حقل. ومخازن **العمود العريض** توزّع الصفوف على الآلات لأحجام الكتابة الهائلة. والقواعد **البيانية** تتبع العلاقات مباشرة.
-- استعلامات الوثائق AND ضمني؛ والمسارات المنقّطة تصل إلى الوثائق المضمّنة، والقيمة المجردة تطابق المصفوفة حين يطابق أي عنصر.
+- مخازن **المفتاح-قيمة** تجيب عن «القيمة لهذا المفتاح» بسرعة كبيرة، مع مدد صلاحية وعدّادات ذرّية. ومخازن **المستندات** تحفظ مستندات متداخلة ومرنة يمكنك استعلامها وفهرستها بأي حقل. ومخازن **العمود العريض** توزّع الصفوف على الآلات لأحجام الكتابة الهائلة. والقواعد **البيانية** تتبع العلاقات مباشرة.
+- استعلامات المستندات AND ضمني؛ والمسارات المنقّطة تصل إلى المستندات المضمّنة، والقيمة المجردة تطابق المصفوفة حين يطابق أي عنصر.
 - **ضمّن** البيانات التي تُقرأ معاً وتكون واحداً-إلى-قليل ومحدودة؛ و**أحِل** البيانات المشتركة أو المتعددة-إلى-متعدد أو غير المحدودة؛ و**الإحالة الموسّعة** تنسخ فقط ما تعرضه الصفحة.
-- يبدأ تصميم NoSQL من **أنماط الوصول**: شكّل البيانات بحيث يقرأ كل استعلام متكرر وثيقة واحدة أو قسماً واحداً، وتحمّل مسؤولية التكرار الذي تُنشئه.
+- يبدأ تصميم NoSQL من **أنماط الوصول**: شكّل البيانات بحيث يقرأ كل استعلام متكرر مستنداً واحداً أو قسماً واحداً، وتحمّل مسؤولية التكرار الذي تُنشئه.
 - مقارنةً بـ SQL كثيراً ما تكسب التوسع الأفقي والمرونة، وتدفع الثمن معاملاتٍ أضعف أو أضيق، وربطاً محدوداً، ومخططاً يعيش في كودك.
 
-**تدرّب بعد ذلك:** وسّع مختبر الاستعلام بـ \`$ne\` و\`$exists\`. وفي مختبر الطلب أضف نمط وصول ثانياً، «طلبات عميل»، وقرّر هل يحتاج شكل وثيقة خاصاً به. ثم انتقل إلى حماية البيانات: مهما كان النموذج، تتناول الدروس التالية حفظها آمنة من المهاجمين ومن الحوادث.`,
+**تدرّب بعد ذلك:** وسّع مختبر الاستعلام بـ \`$ne\` و\`$exists\`. وفي مختبر الطلب أضف نمط وصول ثانياً، «طلبات عميل»، وقرّر هل يحتاج شكل مستند خاصاً به. ثم انتقل إلى حماية البيانات: مهما كان النموذج، تتناول الدروس التالية حفظها آمنة من المهاجمين ومن الحوادث.`,
       },
     },
   ],

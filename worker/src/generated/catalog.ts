@@ -2694,6 +2694,12 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
+          "name": "More mutual friends rank first, before the alphabet",
+          "stdin": "Amal Bilal\nAmal Carla\nBilal Zed\nCarla Zed\nBilal Dina\n? Amal\n",
+          "expected": "Zed (2 mutual)\nDina (1 mutual)",
+          "mode": "trim"
+        },
+        {
           "name": "Ties are broken by name",
           "stdin": "Hana Idris\nHana Jalal\nIdris Kamal\nJalal Kamal\nIdris Lina\nJalal Lina\nHana Munir\nMunir Omar\n? Hana\n",
           "expected": "Kamal (2 mutual)\nLina (2 mutual)\nOmar (1 mutual)",
