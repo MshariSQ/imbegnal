@@ -171,14 +171,14 @@ DNS normally uses **UDP port 53**: one small question, one small answer. It fall
 
 ### كيف يسير البحث
 
-يشغّل حاسوبك **محلّلاً بسيطاً (stub resolver)** يطلب من **محلّل تكراري (recursive resolver)** واحد (من مزوّد الخدمة أو من شركتك أو محلّل عام) أن يقوم بالعمل. وإذا لم يكن الجواب في ذاكرته المؤقتة، يمشي المحلّل التكراري في الشجرة باستعلامات **متتابعة (iterative)**:
+يشغّل حاسوبك **محلّلاً بسيطاً (stub resolver)** يطلب من **محلّل عودي (recursive resolver)** واحد (من مزوّد الخدمة أو من شركتك أو محلّل عام) أن يقوم بالعمل. وإذا لم يكن الجواب في ذاكرته المؤقتة، يمشي المحلّل العودي في الشجرة باستعلامات **متتابعة (iterative)**:
 
 \`\`\`text
-أنت -> المحلّل التكراري: "www.example.com، النوع A؟"
+أنت -> المحلّل العودي: "www.example.com، النوع A؟"
   المحلّل -> خادم الجذر:          "اسأل خوادم com"                 (إحالة)
   المحلّل -> خادم com:            "اسأل ns1.example.com"           (إحالة)
   المحلّل -> ns1.example.com:     "www.example.com A 192.0.2.10"  (جواب، TTL 300)
-أنت <- المحلّل التكراري: 192.0.2.10
+أنت <- المحلّل العودي: 192.0.2.10
 \`\`\`
 
 كل جواب يحمل **TTL** (مدة البقاء) بالثواني: أي المدة التي يجوز تخزينه فيها مؤقتاً. لهذا كان DNS سريعاً (فأغلب عمليات البحث لا تغادر المحلّل)، ولهذا أيضاً يستغرق تغيير سجلٍّ وقتاً حتى يصل إلى الجميع. وحتى جواب "هذا الاسم غير موجود" يُخزَّن مؤقتاً، لمدة تؤخذ من سجل SOA الخاص بالمنطقة (RFC 2308).
@@ -1233,7 +1233,7 @@ The \`curl -v https://www.example.com/\` command shows all four stages in one go
           answer: 2,
           explain: {
             en: "Every DNS answer carries a TTL, and recursive resolvers keep it that long. Until the old TTL expires they answer from cache. Lowering the TTL a day before a planned move makes the switch fast. The root servers only know the TLD servers, never your A record.",
-            ar: "كل جواب DNS يحمل مدة TTL، وتحتفظ به المحلّلات التكرارية طوال تلك المدة. وحتى تنتهي مدة TTL القديمة تجيب من ذاكرتها المؤقتة. وتخفيض TTL قبل يوم من نقل مخطط له يجعل التحويل سريعاً. أما خوادم الجذر فلا تعرف إلا خوادم النطاقات العليا، ولا تعرف سجل A الخاص بك أبداً.",
+            ar: "كل جواب DNS يحمل مدة TTL، وتحتفظ به المحلّلات العودية طوال تلك المدة. وحتى تنتهي مدة TTL القديمة تجيب من ذاكرتها المؤقتة. وتخفيض TTL قبل يوم من نقل مخطط له يجعل التحويل سريعاً. أما خوادم الجذر فلا تعرف إلا خوادم النطاقات العليا، ولا تعرف سجل A الخاص بك أبداً.",
           },
         },
         {
@@ -1293,7 +1293,7 @@ The \`curl -v https://www.example.com/\` command shows all four stages in one go
 **Practice next:** run \`dig +trace\` on a domain you use every day, then \`curl -v\` on its home page and find the TLS version, the certificate issuer and the response headers. Next lesson: how routers and switches move all of this traffic.`,
         ar: `## الخلاصة
 
-- **DNS** شجرة موزّعة: الجذر، والنطاق الأعلى، والخوادم المخوَّلة. يمشي فيها المحلّل التكراري ويخزّن كل جواب طوال مدة **TTL**. اعرف **A وAAAA وCNAME وMX وNS وTXT وPTR وSOA وCAA**، والحالات **NOERROR وNODATA وNXDOMAIN وSERVFAIL وREFUSED**.
+- **DNS** شجرة موزّعة: الجذر، والنطاق الأعلى، والخوادم المخوَّلة. يمشي فيها المحلّل العودي ويخزّن كل جواب طوال مدة **TTL**. اعرف **A وAAAA وCNAME وMX وNS وTXT وPTR وSOA وCAA**، والحالات **NOERROR وNODATA وNXDOMAIN وSERVFAIL وREFUSED**.
 - **HTTP** طلب واستجابة: الطريقة والهدف والترويسات وسطر فارغ والجسم. ورموز الحالة تُجمَّع بحسب رقمها الأول؛ وأسماء الترويسات لا تميّز حالة الأحرف؛ و\`Content-Length\` يَعُدّ البايتات؛ والاستجابات 1xx و204 و304 لا جسم لها.
 - **TLS 1.3** يحتاج ذهاباً وإياباً واحداً، ويستخدم Diffie-Hellman المؤقت من أجل **السرية الأمامية**، ويوثّق الخادم بـ **شهادة** تُفحص سلسلتها وعلامات CA فيها وتواريخها واسم SAN وحالة إلغائها.
 - الخطأ يدلّك على الخطوة: الاسم، أو الاتصال، أو الشهادة، أو رمز حالة HTTP.
