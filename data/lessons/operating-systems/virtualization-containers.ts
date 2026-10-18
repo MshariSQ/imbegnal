@@ -55,7 +55,7 @@ A **virtual machine** pretends to be a whole computer, so each one boots its **o
 
 A **hypervisor** (virtual machine monitor) must, as Popek and Goldberg put it in 1974, give a guest an environment **equivalent** to the real machine, keep **control** of the real resources, and run most instructions **directly** on the CPU for speed. The classic technique is **trap and emulate**: the guest kernel runs without full privileges, so every privileged instruction it tries (changing page tables, talking to devices, disabling interrupts) **traps** into the hypervisor, which emulates the effect on the guest's virtual hardware.
 
-Early x86 broke that rule: some sensitive instructions (\`POPF\` is the famous one) silently behaved differently instead of trapping. VMware worked around it with **binary translation** and Xen with **paravirtualization** (a guest kernel modified to call the hypervisor directly). Since 2005-2006 CPUs have **hardware virtualization**: **Intel VT-x** and **AMD-V** add a guest mode that traps exactly what the hypervisor asks for, and **nested paging** (Intel EPT, AMD NPT) adds a second level of address translation, *guest-physical → host-physical*, on top of the page tables from the memory lesson. Disks and network cards are usually **paravirtual** (**virtio**) because emulating real hardware register by register is slow.
+Early x86 broke that rule: some sensitive instructions (\`POPF\` is the famous one) silently behaved differently instead of trapping. VMware worked around it with **binary translation** and Xen with **paravirtualization** (a guest kernel modified to call the hypervisor directly). Since 2005-2006 CPUs have **hardware virtualization**: **Intel VT-x** and **AMD-V** add a guest mode that traps exactly what the hypervisor asks for. **Nested paging** followed (AMD NPT in 2007, Intel EPT in 2008) and adds a second level of address translation, *guest-physical → host-physical*, on top of the page tables from the memory lesson. Disks and network cards are usually **paravirtual** (**virtio**) because emulating real hardware register by register is slow.
 
 - **Type 1** (bare metal) hypervisors run directly on the hardware: Xen, VMware ESXi, Microsoft Hyper-V. **KVM** turns the Linux kernel itself into one (QEMU supplies the virtual devices)
 - **Type 2** (hosted) hypervisors run as an application on a normal OS: VirtualBox, VMware Workstation`,
@@ -83,7 +83,7 @@ Early x86 broke that rule: some sensitive instructions (\`POPF\` is the famous o
 
 على **المُراقِب (hypervisor)**، أو مراقب الأجهزة الافتراضية، كما صاغ ذلك Popek وGoldberg عام 1974، أن يعطي الضيف بيئة **مكافئة** للجهاز الحقيقي، وأن يحتفظ بـ**السيطرة** على الموارد الحقيقية، وأن ينفّذ معظم التعليمات **مباشرة** على المعالج لأجل السرعة. والأسلوب الكلاسيكي هو **الاعتراض والمحاكاة (trap and emulate)**: تعمل نواة الضيف دون صلاحيات كاملة، فكل تعليمة مميَّزة تحاولها (تغيير جداول الصفحات، أو مخاطبة الأجهزة، أو تعطيل المقاطعات) **تُعترض (trap)** إلى المُراقِب الذي يحاكي أثرها على العتاد الافتراضي للضيف.
 
-كسرت معمارية x86 المبكرة هذه القاعدة: فبعض التعليمات الحساسة (\`POPF\` أشهرها) كانت تتصرف بشكل مختلف بصمت بدلاً من أن تُعترض. فالتفّت VMware على ذلك بـ**الترجمة الثنائية (binary translation)**، والتفّ Xen بـ**المحاكاة الافتراضية الموازية (paravirtualization)** (نواة ضيف معدَّلة تستدعي المُراقِب مباشرة). ومنذ 2005-2006 صارت المعالجات تدعم **المحاكاة الافتراضية بالعتاد**: يضيف **Intel VT-x** و**AMD-V** وضعاً للضيف يعترض بالضبط ما يطلبه المُراقِب، ويضيف **التصفيح المتداخل (nested paging)** (Intel EPT وAMD NPT) مستوى ثانياً من ترجمة العناوين، *من الفيزيائي عند الضيف إلى الفيزيائي عند المضيف*، فوق جداول الصفحات التي عرفتها في درس الذاكرة. أما الأقراص وبطاقات الشبكة فتكون عادةً **موازية افتراضياً** (**virtio**) لأن محاكاة العتاد الحقيقي مسجّلاً تلو مسجّل بطيئة.
+كسرت معمارية x86 المبكرة هذه القاعدة: فبعض التعليمات الحساسة (\`POPF\` أشهرها) كانت تتصرف بشكل مختلف بصمت بدلاً من أن تُعترض. فالتفّت VMware على ذلك بـ**الترجمة الثنائية (binary translation)**، والتفّ Xen بـ**المحاكاة الافتراضية الموازية (paravirtualization)** (نواة ضيف معدَّلة تستدعي المُراقِب مباشرة). ومنذ 2005-2006 صارت المعالجات تدعم **المحاكاة الافتراضية بالعتاد**: يضيف **Intel VT-x** و**AMD-V** وضعاً للضيف يعترض بالضبط ما يطلبه المُراقِب. ثم جاء **التصفيح المتداخل (nested paging)** (AMD NPT عام 2007 وIntel EPT عام 2008) فأضاف مستوى ثانياً من ترجمة العناوين، *من الفيزيائي عند الضيف إلى الفيزيائي عند المضيف*، فوق جداول الصفحات التي عرفتها في درس الذاكرة. أما الأقراص وبطاقات الشبكة فتكون عادةً **موازية افتراضياً** (**virtio**) لأن محاكاة العتاد الحقيقي مسجّلاً تلو مسجّل بطيئة.
 
 - المُراقِبات من **النوع 1** (على العتاد مباشرة، bare metal) تعمل على العتاد نفسه: Xen وVMware ESXi وMicrosoft Hyper-V. ويحوّل **KVM** نواة لينكس نفسها إلى واحد منها (ويوفّر QEMU الأجهزة الافتراضية)
 - المُراقِبات من **النوع 2** (المستضافة، hosted) تعمل كتطبيق على نظام تشغيل عادي: VirtualBox وVMware Workstation`,
@@ -121,7 +121,7 @@ Namespaces nest. A PID namespace has a parent, and a process has **a PID in its 
 - **Network**: واجهات الشبكة وعناوين IP وجداول التوجيه وقواعد الجدار الناري والمنافذ
 - **User**: معرّفات المستخدمين والمجموعات، فيمكن أن يكون UID 0 في الداخل معرّفاً غير مميَّز في الخارج
 - **Cgroup**: أي جزء من شجرة cgroups تراه العملية جذراً لها
-- **Time**: ساعتا وقت الإقلاع والساعة الرتيبة (monotonic) (منذ لينكس 5.6)
+- **Time**: ساعة وقت الإقلاع (boot-time) والساعة الرتيبة (monotonic)، منذ لينكس 5.6
 
 ترى فضاءات أسماء أي عملية على شكل روابط في \`/proc/<pid>/ns/\`، ويسردها كلها \`lsns\`. وبصلاحيات الجذر يبدأ الأمر \`unshare --pid --fork --mount-proc bash\` صدفةً في فضاء أسماء PID جديد لا يُظهر فيه \`ps\` إلا عمليتين: الصدفة هي PID 1 هناك و\`ps\` هي PID 2.
 
@@ -735,25 +735,29 @@ Limits are **hierarchical**: a cgroup can never use more than any of its ancesto
       lang: "js",
       code: `// cpu.max is "QUOTA PERIOD" in microseconds: the cgroup may use QUOTA of CPU time
 // in every PERIOD, then it is throttled until the next period starts.
-function wallTimeMs(cpuMax, cpuMs) {
+function run(cpuMax, cpuMs) {
   const [quota, period] = cpuMax.split(" ");
-  if (quota === "max") return cpuMs;                     // no limit
+  if (quota === "max") return { wall: cpuMs, pause: 0 }; // no limit
   const p = Number(period) / 1000;
   const q = Math.min(Number(quota) / 1000, p);           // one thread can use at most one CPU
   const throttledPeriods = Math.ceil(cpuMs / q) - 1;     // every period but the last ends throttled
-  return throttledPeriods * p + (cpuMs - throttledPeriods * q);
+  return {
+    wall: throttledPeriods * p + (cpuMs - throttledPeriods * q),
+    pause: throttledPeriods > 0 ? p - q : 0,             // the wait at the end of a throttled period
+  };
 }
 
 const job = 250; // a single-threaded job that needs 250 ms of CPU time
-for (const cpuMax of ["max 100000", "50000 100000", "25000 100000", "150000 100000"]) {
+for (const cpuMax of ["max 100000", "50000 100000", "25000 100000", "150000 100000", "5000 10000"]) {
   const [quota, period] = cpuMax.split(" ");
   const cpus = quota === "max" ? "unlimited" : (Number(quota) / Number(period)) + " CPU";
-  console.log(("cpu.max \\"" + cpuMax + "\\"").padEnd(24) + ("(" + cpus + ")").padEnd(14) + "-> done after " + wallTimeMs(cpuMax, job) + " ms");
+  const { wall, pause } = run(cpuMax, job);
+  console.log(("cpu.max \\"" + cpuMax + "\\"").padEnd(24) + ("(" + cpus + ")").padEnd(14) + "-> done after " + wall + " ms, longest pause " + pause + " ms");
 }
 `,
       explanation: {
-        en: "With half a CPU the job runs 50 ms, waits 50 ms, and finishes after 450 ms. A quota of 1.5 CPUs does not help a single thread, which can only use one CPU at a time. Try a 10 ms period with the same ratio to see why short periods make throttling smoother.",
-        ar: "مع نصف معالج تعمل المهمة 50 ms وتنتظر 50 ms، وتنتهي بعد 450 ms. ولا تفيد حصة 1.5 معالج خيطاً واحداً لأنه لا يستطيع استخدام أكثر من معالج واحد في كل لحظة. جرّب فترة 10 ms بالنسبة نفسها لترى لماذا تجعل الفترات القصيرة الكبحَ أنعم.",
+        en: "With half a CPU the job runs 50 ms, waits 50 ms, and finishes after 450 ms. A quota of 1.5 CPUs does not help a single thread, which can only use one CPU at a time. The last line is the same half CPU with a 10 ms period: the job finishes after 495 ms, but its longest pause shrinks from 50 ms to 5 ms. Shorter periods make throttling smoother.",
+        ar: "مع نصف معالج تعمل المهمة 50 ms وتنتظر 50 ms، وتنتهي بعد 450 ms. ولا تفيد حصة 1.5 معالج خيطاً واحداً لأنه لا يستطيع استخدام أكثر من معالج واحد في كل لحظة. والسطر الأخير هو نصف المعالج نفسه بفترة 10 ms: تنتهي المهمة بعد 495 ms، لكن أطول توقف لها ينكمش من 50 ms إلى 5 ms. فالفترات الأقصر تجعل الكبحَ أنعم.",
       },
     },
     {
