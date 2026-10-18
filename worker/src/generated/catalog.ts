@@ -2733,8 +2733,8 @@ export const catalog: Catalog = {
           "mode": "trim"
         },
         {
-          "name": "A dump cut off before the end loses a row",
-          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nINSERT INTO \"orders\" VALUES(1,1,2500);\nINSERT INTO \"orders\" VALUES(2,1,900);\nINSERT INTO \"orders\" VALUES(3,2,4100);\n",
+          "name": "A dump that missed a row does not match",
+          "stdin": "-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO \"customers\" VALUES(1,'Amal');\nINSERT INTO \"customers\" VALUES(2,'Bilal');\nINSERT INTO \"customers\" VALUES(3,'Carla');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nINSERT INTO \"orders\" VALUES(1,1,2500);\nINSERT INTO \"orders\" VALUES(2,1,900);\nINSERT INTO \"orders\" VALUES(3,2,4100);\nCOMMIT;\n",
           "expected": "restore FAILED: orders has 3 rows, manifest says 4",
           "mode": "trim"
         },

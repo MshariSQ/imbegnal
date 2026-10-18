@@ -145,7 +145,7 @@ Both are business decisions with a price. A nightly backup gives an RPO of up to
 
 تحتفظ هناء بكل صور العائلة على هاتفها، ومعها نسخة في مجلد ثانٍ على الهاتف نفسه «احتياطاً». ثم يسقط الهاتف في البحر. فتضيع النسختان: النسخة التي تشارك المصير نفسه ليست نسخة احتياطية.
 
-وقواعد البيانات تتعطل بطرق أكثر من الهواتف: تموت الأقراص، وينقطع التيار عن مركز بيانات، وتشفّر برمجيات الفدية الملفات، وينفّذ نشرٌ هجرةً فيها خلل، ويكتب أحدهم \`DELETE FROM orders\` بلا \`WHERE\`. هذا الدرس عن استعادة البيانات، وعن البقاء متصلاً بينما تكون إحدى الآلات معطلة.
+وقواعد البيانات تتعطل بطرق أكثر من الهواتف: تموت الأقراص، وينقطع التيار عن مركز بيانات، وتشفّر برمجيات الفدية الملفات، وينفّذ نشرٌ ترحيلاً (migration) فيه خلل، ويكتب أحدهم \`DELETE FROM orders\` بلا \`WHERE\`. هذا الدرس عن استعادة البيانات، وعن البقاء متصلاً بينما تكون إحدى الآلات معطلة.
 
 ## ماذا ستتعلم
 
@@ -164,7 +164,7 @@ Both are business decisions with a price. A nightly backup gives an RPO of up to
 
 كلاهما قرار عمل له ثمن. النسخة الاحتياطية الليلية تعطي RPO يصل إلى 24 ساعة؛ وأرشفة السجل المستمرة تنزل به إلى دقائق؛ والنسخة المتماثلة المتزامنة تقرّبه من الصفر عند تعطل خادم. ويحتاج RTO الأصغر إلى استعادة أسرع، أو إلى خادم احتياطي يعمل أصلاً.
 
-**النسخ المتماثل ليس نسخاً احتياطياً.** تنسخ النسخة المتماثلة كل تغيير خلال ثوانٍ، بما في ذلك \`DROP TABLE\` والهجرة المعيبة وكتابات برمجيات الفدية. النسخ المتماثلة تحميك من **الآلات المعطلة**؛ والنسخ الاحتياطية تحميك من **التغييرات السيئة**. وأنت تحتاج الاثنين.`,
+**النسخ المتماثل ليس نسخاً احتياطياً.** تنسخ النسخة المتماثلة كل تغيير خلال ثوانٍ، بما في ذلك \`DROP TABLE\` والترحيل المعيب وكتابات برمجيات الفدية. النسخ المتماثلة تحميك من **الآلات المعطلة**؛ والنسخ الاحتياطية تحميك من **التغييرات السيئة**. وأنت تحتاج الاثنين.`,
       },
     },
     {
@@ -174,7 +174,7 @@ Both are business decisions with a price. A nightly backup gives an RPO of up to
 
 **Logical backups** save the data as SQL statements or a portable archive: PostgreSQL's \`pg_dump\`, MySQL's \`mysqldump\`, SQLite's \`.dump\`. They are readable, work across versions and platforms, and can restore a single table. They are slower to restore, because every row is inserted again and every index rebuilt. \`pg_dump\` takes a **consistent snapshot** even while the database is in use (\`mysqldump --single-transaction\` does the same for InnoDB tables), and it does not include roles: \`pg_dumpall --globals-only\` saves those.
 
-**Physical backups** copy the database's files: \`pg_basebackup\`, storage snapshots, or for SQLite the online backup API (\`.backup\`, Python's \`Connection.backup()\`) and \`VACUUM INTO\`. They restore much faster, but only onto the same database major version and platform. Never just copy the files of a running database with \`cp\`: a write in the middle of the copy can leave you with a file that is inconsistent or corrupt. Use the tools made for it.
+**Physical backups** copy the database's files: \`pg_basebackup\`, storage snapshots, or for SQLite the online backup API (\`.backup\`, Python's \`Connection.backup()\`) and \`VACUUM INTO\`. They restore much faster. A PostgreSQL or MySQL physical backup restores only onto the same major version and platform; a SQLite database file, by contrast, is portable across platforms and stays readable by newer versions. Never just copy the files of a running database with \`cp\`: a write in the middle of the copy can leave you with a file that is inconsistent or corrupt. Use the tools made for it.
 
 ### Where backups live
 
@@ -190,7 +190,7 @@ Backups fail silently: the job dumped an empty database, missed a new schema, ra
 
 **النسخ الاحتياطية المنطقية** تحفظ البيانات عبارات SQL أو أرشيفاً قابلاً للنقل: \`pg_dump\` في PostgreSQL و\`mysqldump\` في MySQL و\`.dump\` في SQLite. وهي مقروءة، وتعمل عبر الإصدارات والمنصات، ويمكنها استعادة جدول واحد. لكن استعادتها أبطأ، لأن كل صف يُدرج من جديد وكل فهرس يُعاد بناؤه. ويأخذ \`pg_dump\` **لقطة متسقة (consistent snapshot)** حتى أثناء استخدام القاعدة (ويفعل \`mysqldump --single-transaction\` الشيء نفسه لجداول InnoDB)، ولا يتضمن الأدوار: يحفظها \`pg_dumpall --globals-only\`.
 
-**النسخ الاحتياطية الفيزيائية** تنسخ ملفات القاعدة: \`pg_basebackup\`، ولقطات التخزين، أو في SQLite واجهة النسخ الاحتياطي الحي (\`.backup\` و\`Connection.backup()\` في بايثون) و\`VACUUM INTO\`. وهي أسرع استعادة بكثير، لكن فقط على الإصدار الرئيسي نفسه للقاعدة والمنصة نفسها. ولا تنسخ أبداً ملفات قاعدة عاملة بمجرد \`cp\`: كتابة في منتصف النسخ قد تترك لك ملفاً غير متسق أو تالفاً. استخدم الأدوات المصنوعة لذلك.
+**النسخ الاحتياطية الفيزيائية** تنسخ ملفات القاعدة: \`pg_basebackup\`، ولقطات التخزين، أو في SQLite واجهة النسخ الاحتياطي الحي (\`.backup\` و\`Connection.backup()\` في بايثون) و\`VACUUM INTO\`. وهي أسرع استعادة بكثير. والنسخة الفيزيائية من PostgreSQL أو MySQL لا تُستعاد إلا على الإصدار الرئيسي نفسه والمنصة نفسها؛ أما ملف قاعدة SQLite فيُنقل بين المنصات وتقرؤه الإصدارات الأحدث. ولا تنسخ أبداً ملفات قاعدة عاملة بمجرد \`cp\`: كتابة في منتصف النسخ قد تترك لك ملفاً غير متسق أو تالفاً. استخدم الأدوات المصنوعة لذلك.
 
 ### أين تعيش النسخ الاحتياطية
 
@@ -220,7 +220,7 @@ Write \`restore_and_verify(dump)\` so it restores the dump into a **fresh** in-m
 
 Check tables in manifest order. Only count tables that really exist, so a strange name in the manifest never reaches your SQL.
 
-Example: a dump cut off before its last \`INSERT\` prints \`restore FAILED: orders has 3 rows, manifest says 4\`.`,
+Example: a dump in which the job skipped the last order prints \`restore FAILED: orders has 3 rows, manifest says 4\`. (A dump cut off before its final \`COMMIT\` is worse: the whole dump is one transaction, so a real restore keeps nothing at all.)`,
         ar: `تكتب مهمة ليلية نسخة منطقية من قاعدة SQLite. سطرها الأول **بيان (manifest)** فيه عدد صفوف كل جدول وقت النسخ، مثل \`-- manifest: customers=3 orders=4\`. وتُرجعه الدالة المساعدة \`read_manifest(dump)\` قاموساً.
 
 اكتب \`restore_and_verify(dump)\` لتستعيد النسخة إلى قاعدة **جديدة** في الذاكرة وتُرجع سطراً واحداً بالضبط:
@@ -232,7 +232,7 @@ Example: a dump cut off before its last \`INSERT\` prints \`restore FAILED: orde
 
 افحص الجداول بترتيب البيان. ولا تعدّ إلا الجداول الموجودة فعلاً، كي لا يصل اسم غريب في البيان إلى SQL الخاص بك أبداً.
 
-مثال: نسخة مقطوعة قبل آخر \`INSERT\` فيها تطبع \`restore FAILED: orders has 3 rows, manifest says 4\`.`,
+مثال: نسخة فاتت المهمةَ فيها آخرُ طلب تطبع \`restore FAILED: orders has 3 rows, manifest says 4\`. (والنسخة المقطوعة قبل \`COMMIT\` الأخير أسوأ: النسخة كلها معاملة واحدة، فلا تُبقي الاستعادة الحقيقية منها شيئاً.)`,
       },
       starterCode: `${RESTORE_SEED}
 
@@ -273,12 +273,12 @@ ${RESTORE_TAIL}`,
       ],
       tests: [
         { name: { en: "A complete dump restores and matches", ar: "نسخة كاملة تُستعاد وتطابق" }, stdin: `${DUMP_HEAD}${DUMP_ORDERS}INSERT INTO "orders" VALUES(4,3,1500);\nCOMMIT;\n`, expected: "restore OK: customers=3 orders=4" },
-        { name: { en: "A dump cut off before the end loses a row", ar: "نسخة مقطوعة قبل نهايتها تفقد صفاً" }, stdin: `${DUMP_HEAD}${DUMP_ORDERS}`, expected: "restore FAILED: orders has 3 rows, manifest says 4" },
+        { name: { en: "A dump that missed a row does not match", ar: "نسخة فاتها صف لا تطابق" }, stdin: `${DUMP_HEAD}${DUMP_ORDERS}COMMIT;\n`, expected: "restore FAILED: orders has 3 rows, manifest says 4" },
         { name: { en: "A corrupted dump does not run", ar: "نسخة تالفة لا تعمل" }, stdin: `-- manifest: customers=3 orders=4\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO "customers" VALUES(1,'Amal');\nINSERT INTO "customers" VALUES(2,'Bil\n`, expected: "restore FAILED: the dump does not run" },
         { name: { en: "A table the backup job forgot", ar: "جدول نسيته مهمة النسخ" }, stdin: `${DUMP_HEAD}COMMIT;\n`, expected: "restore FAILED: table orders is missing" },
         { name: { en: "An empty table is fine when the manifest says 0", ar: "الجدول الفارغ سليم حين يقول البيان 0" }, stdin: `-- manifest: customers=2 orders=0\nBEGIN TRANSACTION;\nCREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nINSERT INTO "customers" VALUES(1,'Amal');\nINSERT INTO "customers" VALUES(2,'Bilal');\nCREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customers(id), total_cents INTEGER NOT NULL);\nCOMMIT;\n`, expected: "restore OK: customers=2 orders=0" },
       ],
-      sampleInput: `${DUMP_HEAD}${DUMP_ORDERS}`,
+      sampleInput: `${DUMP_HEAD}${DUMP_ORDERS}COMMIT;\n`,
     },
     {
       type: "text",
@@ -348,7 +348,7 @@ print("but only a backup brings back a table that was dropped by mistake:")
 print("the replica replays the DROP within seconds.")`,
       explanation: {
         en: "With these example figures the nightly dump misses both targets, PITR fixes the data loss but replaying a day of log keeps the restore slow, and only the standby replica meets both. Yet the last lines matter most: the replica would have copied the mistake, so a real design combines a replica for failures with backups and PITR for bad changes. Change the targets and sizes to see how the choice moves.",
-        ar: "بهذه الأرقام المثالية تخطئ النسخة الليلية الهدفين، ويعالج PITR خسارة البيانات لكن إعادة تشغيل سجل يوم كامل تُبقي الاستعادة بطيئة، ولا يحقق الهدفين إلا النسخة المتماثلة الاحتياطية. غير أن الأسطر الأخيرة هي الأهم: كانت النسخة المتماثلة ستنسخ الخطأ، لذلك يجمع التصميم الحقيقي بين نسخة متماثلة للأعطال، ونسخ احتياطية مع PITR للتغييرات السيئة. غيّر الأهداف والأحجام لترى كيف يتغير الاختيار.",
+        ar: "بهذه الأرقام التوضيحية تخطئ النسخة الليلية الهدفين، ويعالج PITR خسارة البيانات لكن إعادة تشغيل سجل يوم كامل تُبقي الاستعادة بطيئة، ولا يحقق الهدفين إلا النسخة المتماثلة الاحتياطية. غير أن الأسطر الأخيرة هي الأهم: كانت النسخة المتماثلة ستنسخ الخطأ، لذلك يجمع التصميم الحقيقي بين نسخة متماثلة للأعطال، ونسخ احتياطية مع PITR للتغييرات السيئة. غيّر الأهداف والأحجام لترى كيف يتغير الاختيار.",
       },
     },
     {
@@ -448,7 +448,7 @@ With **replication**, one server, the **primary**, accepts writes and streams it
 **Synchronous or asynchronous?**
 
 - **Asynchronous:** the primary confirms a commit without waiting for replicas. Fast, but a replica can be behind, and if the primary dies, the commits it had not shipped yet are **lost** on failover. That gap is your RPO.
-- **Synchronous:** the commit waits until at least one replica confirms it (PostgreSQL: \`synchronous_standby_names\`; MySQL offers semi-synchronous replication). Committed data survives the loss of the primary, but every commit pays a network round trip, and if the synchronous replica is unreachable, commits wait.
+- **Synchronous:** the commit waits until at least one replica confirms it (PostgreSQL: \`synchronous_standby_names\`). Committed data survives the loss of the primary, but every commit pays a network round trip, and if the synchronous replica is unreachable, commits wait. MySQL's semi-synchronous replication is close, but when no replica acknowledges within \`rpl_semi_sync_source_timeout\` it falls back to asynchronous, and the guarantee lapses until a replica catches up.
 
 **Replication lag** is how far a replica is behind. It means a user can save a change and then not see it, because the next read went to a lagging replica. The usual cure is **read-your-writes**: send a user's reads to the primary for a short time after they write, or only to a replica that has already replayed their write's log position. Monitor lag (PostgreSQL's \`pg_stat_replication\` view shows it per replica) and alert on it.
 
@@ -471,7 +471,7 @@ The great danger is **split brain**: the old primary was only unreachable, not d
 **متزامن أم غير متزامن؟**
 
 - **غير المتزامن (asynchronous):** يؤكد الخادم الأساسي الالتزام دون انتظار النسخ المتماثلة. سريع، لكن النسخة المتماثلة قد تتأخر، وإن مات الخادم الأساسي **ضاعت** عند التحويل الالتزامات التي لم يكن قد أرسلها بعد. تلك الفجوة هي RPO لديك.
-- **المتزامن (synchronous):** ينتظر الالتزام حتى تؤكده نسخة متماثلة واحدة على الأقل (في PostgreSQL: \`synchronous_standby_names\`؛ وتقدّم MySQL نسخاً متماثلاً شبه متزامن). تبقى البيانات الملتزم بها بعد فقدان الخادم الأساسي، لكن كل التزام يدفع ثمن رحلة شبكة ذهاباً وإياباً، وإن تعذر الوصول إلى النسخة المتزامنة انتظرت الالتزامات.
+- **المتزامن (synchronous):** ينتظر الالتزام حتى تؤكده نسخة متماثلة واحدة على الأقل (في PostgreSQL: \`synchronous_standby_names\`). تبقى البيانات الملتزم بها بعد فقدان الخادم الأساسي، لكن كل التزام يدفع ثمن رحلة شبكة ذهاباً وإياباً، وإن تعذر الوصول إلى النسخة المتزامنة انتظرت الالتزامات. والنسخ المتماثل شبه المتزامن في MySQL قريب من ذلك، لكنه يعود إلى النسخ غير المتزامن إذا لم تؤكد أي نسخة متماثلة خلال \`rpl_semi_sync_source_timeout\`، فيسقط الضمان حتى تلحق نسخة متماثلة.
 
 **تأخر النسخ المتماثل (replication lag)** هو مقدار تأخر النسخة المتماثلة. ومعناه أن المستخدم قد يحفظ تغييراً ثم لا يراه، لأن القراءة التالية ذهبت إلى نسخة متأخرة. والعلاج المعتاد هو **قراءة ما كتبته (read-your-writes)**: أرسل قراءات المستخدم إلى الخادم الأساسي لمدة قصيرة بعد أن يكتب، أو فقط إلى نسخة متماثلة أعادت تشغيل موضع كتابته في السجل. وراقب التأخر (يُظهره عرض \`pg_stat_replication\` في PostgreSQL لكل نسخة) وأطلق تنبيهاً عليه.
 
