@@ -8,4 +8,5 @@ export const reverseEngineeringLessons: Record<string, () => Promise<{ lesson: L
   "reverse-engineering/debugging-dynamic-analysis": () => import("./debugging-dynamic-analysis"),
   "reverse-engineering/binary-formats-tools": () => import("./binary-formats-tools"),
   "reverse-engineering/malware-analysis-basics": () => import("./malware-analysis-basics"),
+  "reverse-engineering/legal-ethics-reporting": () => import("./legal-ethics-reporting"),
 };

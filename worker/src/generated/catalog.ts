@@ -270,6 +270,7 @@ export const catalog: Catalog = {
         "assembly-basics",
         "static-analysis-deobfuscation",
         "debugging-dynamic-analysis",
+        "legal-ethics-reporting",
         "binary-formats-tools",
         "malware-analysis-basics"
       ],
@@ -278,6 +279,7 @@ export const catalog: Catalog = {
         "assembly-basics": 10,
         "static-analysis-deobfuscation": 10,
         "debugging-dynamic-analysis": 10,
+        "legal-ethics-reporting": 10,
         "binary-formats-tools": 10,
         "malware-analysis-basics": 10
       }
@@ -2983,6 +2985,141 @@ export const catalog: Catalog = {
           "name": "An endless loop meets the watchdog",
           "stdin": "break\n01 00 01 08 03\n",
           "expected": "step limit reached\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/legal-ethics-reporting/disclosure-timeline",
+      "track": "reverse-engineering",
+      "lesson": "legal-ethics-reporting",
+      "id": "disclosure-timeline",
+      "lang": "go",
+      "tests": [
+        {
+          "name": "The worked example: coordinated, with an extension",
+          "stdin": "policy 90\n2026-01-10 report\n2026-01-12 ack\n2026-02-20 extend 14\n2026-03-30 fix\n2026-04-02 publish\n",
+          "expected": "reported: 2026-01-10\nacknowledged: after 2 days\ndeadline: 2026-04-24\nfixed: after 79 days\npublished: 2026-04-02\nverdict: coordinated disclosure (published after the fix)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No acknowledgement, no fix, published at the deadline",
+          "stdin": "policy 90\n2026-03-02 report\n2026-05-31 publish\n",
+          "expected": "reported: 2026-03-02\nacknowledged: no\ndeadline: 2026-05-31\nfixed: no\npublished: 2026-05-31\nverdict: deadline disclosure (no fix by the deadline)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Published before the fix and before the deadline",
+          "stdin": "policy 45\n2026-03-02 report\n2026-03-09 ack\n2026-03-20 publish\n2026-04-01 fix\n",
+          "expected": "reported: 2026-03-02\nacknowledged: after 7 days\ndeadline: 2026-04-16\nfixed: after 30 days\npublished: 2026-03-20\nverdict: early disclosure (before the fix and the deadline)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Two extensions, fixed late, not yet public",
+          "stdin": "policy 90\n2026-06-01 report\n2026-06-03 ack\n2026-07-15 extend 30\n2026-08-20 extend 14\n2026-09-10 fix\n",
+          "expected": "reported: 2026-06-01\nacknowledged: after 2 days\ndeadline: 2026-10-13\nfixed: after 101 days\npublished: no\nverdict: not public yet\n",
+          "mode": "trim"
+        },
+        {
+          "name": "The fix came only after the deadline, publication in between: deadline disclosure",
+          "stdin": "policy 90\n2026-01-01 report\n2026-01-06 ack\n2026-05-01 fix\n2026-04-15 publish\n",
+          "expected": "reported: 2026-01-01\nacknowledged: after 5 days\ndeadline: 2026-04-01\nfixed: after 120 days\npublished: 2026-04-15\nverdict: deadline disclosure (no fix by the deadline)\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A leap-year deadline, only the first ack kept",
+          "stdin": "policy 30\n2028-02-01 report\n2028-02-05 ack\n2028-02-20 ack\n2028-03-02 publish\n",
+          "expected": "reported: 2028-02-01\nacknowledged: after 4 days\ndeadline: 2028-03-02\nfixed: no\npublished: 2028-03-02\nverdict: deadline disclosure (no fix by the deadline)\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/legal-ethics-reporting/cvss-score",
+      "track": "reverse-engineering",
+      "lesson": "legal-ethics-reporting",
+      "id": "cvss-score",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Textbook critical: remote, no interaction, full impact",
+          "stdin": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\n",
+          "expected": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H -> 9.8 Critical\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Scope change pushes the score to the maximum",
+          "stdin": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H\n",
+          "expected": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H -> 10.0 Critical\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A reflected-XSS-style vector, and a local privilege escalation",
+          "stdin": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N\nCVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H\n",
+          "expected": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N -> 6.1 Medium\nCVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H -> 7.8 High\n",
+          "mode": "trim"
+        },
+        {
+          "name": "No impact scores zero; order of metrics does not matter",
+          "stdin": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N\nCVSS:3.1/C:H/I:H/A:H/AV:N/AC:L/PR:N/UI:N/S:U\n",
+          "expected": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N -> 0.0 None\nCVSS:3.1/C:H/I:H/A:H/AV:N/AC:L/PR:N/UI:N/S:U -> 9.8 Critical\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Physical access, availability only; and a high-complexity info leak",
+          "stdin": "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L\nCVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N\n",
+          "expected": "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L -> 2.4 Low\nCVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N -> 5.9 Medium\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Malformed vectors are rejected",
+          "stdin": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\nCVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H\nCVSS:3.1/AV:X/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\nCVSS:3.1/AV:N/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\n",
+          "expected": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H -> invalid vector\nCVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H -> invalid vector\nCVSS:3.1/AV:X/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H -> invalid vector\nCVSS:3.1/AV:N/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H -> invalid vector\n",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "reverse-engineering/legal-ethics-reporting/securitytxt-lint",
+      "track": "reverse-engineering",
+      "lesson": "legal-ethics-reporting",
+      "id": "securitytxt-lint",
+      "lang": "javascript",
+      "tests": [
+        {
+          "name": "A complete, valid file",
+          "stdin": "today 2026-10-17T00:00:00Z\n# security.txt for example.com (RFC 9116)\nContact: mailto:security@example.com\nContact: https://example.com/security/report\nExpires: 2027-06-30T23:59:59Z\nEncryption: https://example.com/pgp-key.txt\nPreferred-Languages: en,ar\nPolicy: https://example.com/security/policy\nCanonical: https://example.com/.well-known/security.txt\n",
+          "expected": "contact: mailto:security@example.com\ncontact: https://example.com/security/report\nencryption: https://example.com/pgp-key.txt\npolicy: https://example.com/security/policy\nlanguages: en, ar\nstatus: valid\n",
+          "mode": "trim"
+        },
+        {
+          "name": "A bare email and an http URL are not valid contacts, and the file has expired",
+          "stdin": "today 2026-10-17T00:00:00Z\ncontact: security@example.org\nCONTACT: http://example.org/report\nExpires: 2026-01-01T00:00:00Z\nHiring: https://example.org/jobs\n",
+          "expected": "error: invalid Contact security@example.org\nerror: invalid Contact http://example.org/report\nerror: no valid Contact\nerror: the file has expired\nstatus: invalid\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Duplicate Expires and Preferred-Languages, a tel: contact",
+          "stdin": "today 2026-10-17T00:00:00Z\nContact: tel:+1-201-555-0123\nExpires: 2026-12-01T00:00:00+03:00\nExpires: 2027-12-01T00:00:00Z\nPreferred-Languages: en\nPreferred-Languages: fr, de\n",
+          "expected": "contact: tel:+1-201-555-0123\nlanguages: en\nlanguages: fr, de\nerror: Expires appears 2 times\nerror: Preferred-Languages appears 2 times\nstatus: invalid\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Valid, but Expires is more than a year away (a warning, still valid)",
+          "stdin": "today 2026-10-17T12:00:00Z\nContact: mailto:psirt@example.net\nExpires: 2028-10-17T12:00:00Z\nThis line has no colon and is ignored\nX-Custom-Field: ignored too\n",
+          "expected": "contact: mailto:psirt@example.net\nwarning: Expires is more than a year away\nstatus: valid\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Expires is present but not a valid timestamp",
+          "stdin": "today 2026-10-17T00:00:00Z\nContact: mailto:security@example.com\nExpires: sometime next year\n",
+          "expected": "contact: mailto:security@example.com\nerror: Expires is not a valid date\nstatus: invalid\n",
+          "mode": "trim"
+        },
+        {
+          "name": "Nothing useful at all",
+          "stdin": "today 2026-10-17T00:00:00Z\n# this file forgot the important fields\nAcknowledgments: https://example.com/thanks\n",
+          "expected": "error: no valid Contact\nerror: Expires is missing\nstatus: invalid\n",
           "mode": "trim"
         }
       ]
