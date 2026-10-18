@@ -18,7 +18,7 @@ import { courses } from "../../../lib/catalog";
 import { hoursFromMinutes, resolvePaths, type CourseFigures, type PathSummary } from "../../../lib/career-paths";
 import { curriculumAr } from "../../../lib/i18n-curriculum";
 import { translations } from "../../../lib/i18n";
-import { hoursLabel } from "../../../lib/plural";
+import { countLabel, hoursLabel } from "../../../lib/plural";
 import type { Tx } from "../../../lib/i18n";
 import { ROOT, assertNoProblems, axeSeriousViolations, launch, newPage, serveOut } from "./helpers";
 
@@ -148,6 +148,9 @@ for (const lang of LANGS) {
       const hero = await page.locator("section[aria-labelledby=path-title]").innerText();
       assert.ok(hero.includes(s.description[lang]), "description");
       for (const item of s.ifYouLike) assert.ok(hero.includes(item[lang]), `if you like ${item[lang]}`);
+      // Totals with the language's plural form (Arabic: "15 درساً", "حوالي 11 ساعة", never "15 دروس")
+      assert.ok(hero.includes(countLabel(tx(lang), "lesson", s.totals.lessons)), `lessons ${countLabel(tx(lang), "lesson", s.totals.lessons)}`);
+      assert.ok(hero.includes(hoursLabel(tx(lang), hoursFromMinutes(s.totals.minutes))), "hours");
       const body = await page.locator("main").innerText();
       for (const skill of s.skills) assert.ok(body.includes(skill[lang]), `skill ${skill[lang]}`);
       for (const job of s.jobs) assert.ok(body.includes(job[lang]), `job ${job[lang]}`);

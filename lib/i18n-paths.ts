@@ -6,7 +6,8 @@
  *
  * Role names, descriptions, skills and course "why" lines are NOT here: they are data
  * (data/career-paths.ts, bilingual). Course names come from data/roadmaps.ts via lib/catalog.
- * Counts use "Label: {n}" in Arabic, which reads correctly for every number.
+ * Counts here use "Label: {n}" in Arabic, which reads correctly for every number; lesson and hour
+ * counts go through lib/plural.ts (CLDR plural forms in tx.common.counts).
  */
 import type { Widen } from "./i18n-types";
 

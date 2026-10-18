@@ -6,18 +6,25 @@
  */
 
 import type { Widen } from "./i18n-types";
+import type { PluralForms } from "./ctf/format";
+
+/** Typed as PluralForms so the Arabic dictionary can add the forms English does not have. */
+const forms = (f: PluralForms): PluralForms => f;
 
 export const platformEn = {
   common: {
     levels: { Beginner: "Beginner", Intermediate: "Intermediate", Advanced: "Advanced", "All Levels": "All levels" },
-    approxHours: "~{n}h",
-    approxHoursOne: "~{n}h",
+    /** CLDR locale of this dictionary: picks the plural form in lib/plural.ts. */
+    locale: "en",
+    /** Counts by plural form (lib/plural.ts). Arabic also has zero, two, few (3-10) and many (11-99). */
+    counts: {
+      hours: forms({ one: "~{n}h", other: "~{n}h" }),
+      lesson: forms({ one: "{n} lesson", other: "{n} lessons" }),
+      exercise: forms({ one: "{n} exercise", other: "{n} exercises" }),
+      quiz: forms({ one: "{n} quiz", other: "{n} quizzes" }),
+    },
     loading: "Loading…",
     minutes: "min",
-    lessons: "lessons",
-    lessonOne: "lesson",
-    exerciseOne: "exercise",
-    quizOne: "quiz",
     lesson: "Lesson",
     module: "Module",
     modules: "modules",
@@ -244,14 +251,17 @@ export type PlatformTx = Widen<typeof platformEn>;
 export const platformAr: PlatformTx = {
   common: {
     levels: { Beginner: "مبتدئ", Intermediate: "متوسط", Advanced: "متقدم", "All Levels": "كل المستويات" },
-    approxHours: "حوالي {n} ساعات",
-    approxHoursOne: "حوالي ساعة",
+    locale: "ar",
+    // 1 and 2 take no numeral (singular + "واحد", dual); 3-10 the plural; 11-99 the singular
+    // accusative; 100-102 the singular. "حوالي" is followed by the genitive (ساعتين).
+    counts: {
+      hours: { zero: "حوالي {n} ساعة", one: "حوالي ساعة", two: "حوالي ساعتين", few: "حوالي {n} ساعات", many: "حوالي {n} ساعة", other: "حوالي {n} ساعة" },
+      lesson: { zero: "{n} دروس", one: "درس واحد", two: "درسان", few: "{n} دروس", many: "{n} درساً", other: "{n} درس" },
+      exercise: { zero: "{n} تمارين", one: "تمرين واحد", two: "تمرينان", few: "{n} تمارين", many: "{n} تمريناً", other: "{n} تمرين" },
+      quiz: { zero: "{n} اختبارات", one: "اختبار واحد", two: "اختباران", few: "{n} اختبارات", many: "{n} اختباراً", other: "{n} اختبار" },
+    },
     loading: "جارٍ التحميل…",
     minutes: "دقيقة",
-    lessons: "دروس",
-    lessonOne: "درس",
-    exerciseOne: "تمرين",
-    quizOne: "اختبار",
     lesson: "الدرس",
     module: "الوحدة",
     modules: "وحدات",
