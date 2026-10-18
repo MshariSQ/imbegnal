@@ -8,4 +8,5 @@ export const databasesLessons: Record<string, () => Promise<{ lesson: Lesson }>>
   "databases/indexes-performance": () => import("./indexes-performance"),
   "databases/transactions-acid": () => import("./transactions-acid"),
   "databases/nosql-models": () => import("./nosql-models"),
+  "databases/db-security": () => import("./db-security"),
 };

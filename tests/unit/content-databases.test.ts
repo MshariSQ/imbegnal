@@ -23,9 +23,15 @@ const LESSON_IDS = [
   "indexes-performance",
   "transactions-acid",
   "nosql-models",
+  "db-security",
 ];
 const NODE_IDS = [
-  ...LESSON_IDS,
+  "relational-sql-basics",
+  "data-modeling-normalization",
+  "joins-aggregation",
+  "indexes-performance",
+  "transactions-acid",
+  "nosql-models",
   "backup-replication",
   "db-security",
   "data-warehousing",

@@ -255,7 +255,8 @@ export const catalog: Catalog = {
         "joins-aggregation",
         "indexes-performance",
         "transactions-acid",
-        "nosql-models"
+        "nosql-models",
+        "db-security"
       ],
       "maxBonus": {
         "relational-sql-basics": 10,
@@ -263,7 +264,8 @@ export const catalog: Catalog = {
         "joins-aggregation": 10,
         "indexes-performance": 10,
         "transactions-acid": 10,
-        "nosql-models": 10
+        "nosql-models": 10,
+        "db-security": 10
       }
     },
     {
@@ -2699,6 +2701,129 @@ export const catalog: Catalog = {
           "name": "A person who is not in the graph",
           "stdin": "Amal Bilal\n? Zed\n",
           "expected": "no suggestions",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/db-security/fix-injection",
+      "track": "databases",
+      "lesson": "db-security",
+      "id": "fix-injection",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A normal search sorted by item",
+          "stdin": "amal\nitem\n",
+          "expected": "rows: 3\n2 Backpack 30.00\n6 Marker 4.40\n1 Notebook 9.00",
+          "mode": "trim"
+        },
+        {
+          "name": "Injection input is treated as a plain name",
+          "stdin": "x' OR '1'='1\nid\n",
+          "expected": "rows: 0",
+          "mode": "trim"
+        },
+        {
+          "name": "A real name with an apostrophe works",
+          "stdin": "d'arcy\nid\n",
+          "expected": "rows: 1\n4 Lamp 35.00",
+          "mode": "trim"
+        },
+        {
+          "name": "The sort option is mapped through the allow-list",
+          "stdin": "amal\ntotal\n",
+          "expected": "rows: 3\n6 Marker 4.40\n1 Notebook 9.00\n2 Backpack 30.00",
+          "mode": "trim"
+        },
+        {
+          "name": "A sort option outside the allow-list is refused",
+          "stdin": "amal\ntotal_cents; DROP TABLE orders\n",
+          "expected": "error: unsupported sort",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/db-security/role-privileges",
+      "track": "databases",
+      "lesson": "db-security",
+      "id": "role-privileges",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "Direct grants: allowed only what was granted",
+          "stdin": "GRANT SELECT, INSERT ON orders TO shop_api\nCHECK shop_api INSERT orders\nCHECK shop_api DELETE orders\nCHECK shop_api SELECT customers\n",
+          "expected": "shop_api INSERT orders: allowed\nshop_api DELETE orders: denied\nshop_api SELECT customers: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "A privilege inherited from a group role",
+          "stdin": "GRANT SELECT ON products TO reader\nGRANT reader TO shop_api\nCHECK shop_api SELECT products\nCHECK reader SELECT products\nCHECK shop_api UPDATE products\n",
+          "expected": "shop_api SELECT products: allowed\nreader SELECT products: allowed\nshop_api UPDATE products: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "Inheritance through a chain of roles",
+          "stdin": "GRANT SELECT ON reports TO analyst\nGRANT analyst TO staff\nGRANT staff TO alice\nCHECK alice SELECT reports\nCHECK bob SELECT reports\n",
+          "expected": "alice SELECT reports: allowed\nbob SELECT reports: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "REVOKE removes only the direct grant",
+          "stdin": "GRANT SELECT ON orders TO shop_api\nGRANT SELECT ON orders TO reader\nGRANT reader TO shop_api\nREVOKE SELECT ON orders FROM shop_api\nCHECK shop_api SELECT orders\nREVOKE SELECT ON orders FROM reader\nCHECK shop_api SELECT orders\n",
+          "expected": "shop_api SELECT orders: allowed\nshop_api SELECT orders: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "Grants to PUBLIC apply to every role",
+          "stdin": "GRANT SELECT ON menu TO PUBLIC\nCHECK guest SELECT menu\nCHECK guest INSERT menu\n",
+          "expected": "guest SELECT menu: allowed\nguest INSERT menu: denied",
+          "mode": "trim"
+        },
+        {
+          "name": "A group never inherits from its members",
+          "stdin": "GRANT reader TO shop_api\nGRANT INSERT ON orders TO shop_api\nCHECK reader INSERT orders\nCHECK shop_api INSERT orders\n",
+          "expected": "reader INSERT orders: denied\nshop_api INSERT orders: allowed",
+          "mode": "trim"
+        }
+      ]
+    },
+    {
+      "ref": "databases/db-security/audit-trigger",
+      "track": "databases",
+      "lesson": "db-security",
+      "id": "audit-trigger",
+      "lang": "python",
+      "tests": [
+        {
+          "name": "A balance update is logged with its author",
+          "stdin": "as amal\nset 1 70\n",
+          "expected": "#1 UPDATE account 1: 100 -> 70 by amal\nentries: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "A deleted account is logged with its old balance",
+          "stdin": "as admin\ndelete 2\n",
+          "expected": "#1 DELETE account 2: 50 -> (deleted) by admin\nentries: 1",
+          "mode": "trim"
+        },
+        {
+          "name": "Erasing the audit log is blocked",
+          "stdin": "as amal\nset 1 70\nas bilal\nset 2 80\ntamper\n",
+          "expected": "tamper: blocked\n#1 UPDATE account 1: 100 -> 70 by amal\n#2 UPDATE account 2: 50 -> 80 by bilal\nentries: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Covering tracks fails: the whole story stays",
+          "stdin": "as mallory\nset 3 500\ndelete 3\ntamper\n",
+          "expected": "tamper: blocked\n#1 UPDATE account 3: 0 -> 500 by mallory\n#2 DELETE account 3: 500 -> (deleted) by mallory\nentries: 2",
+          "mode": "trim"
+        },
+        {
+          "name": "Deleting a missing account logs nothing",
+          "stdin": "as admin\ndelete 9\n",
+          "expected": "entries: 0",
           "mode": "trim"
         }
       ]
