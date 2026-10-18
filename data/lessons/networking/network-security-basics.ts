@@ -902,7 +902,7 @@ Add **secure defaults** (deny unless allowed, services off unless needed), **att
 - **Port scans** show up as many distinct targets per source in a short window; slow scans and legitimate scanners are the blind spots.
 - Build on **least privilege, segmentation and defence in depth**, with secure defaults and monitoring that someone acts on.
 
-**Practice next:** in a lab you own (two virtual machines are enough), scan one from the other with nmap and find the scan in the target's firewall log, then enable rate limiting and see it in action. You have finished the core of the networking track; cloud networking is the natural next step.`,
+**Practice next:** in a lab you own (two virtual machines are enough), scan one from the other with nmap and find the scan in the target's firewall log, then enable rate limiting and see it in action. You have finished the core of the networking track; cloud networking (VPCs, subnets and security groups) is the natural next step, and the Cloud Networking lesson of the Cloud Computing track on this site covers it.`,
         ar: `## الخلاصة
 
 - يحمي الأمن **السرية والسلامة والتوافر**؛ والخطر هو الاحتمال مضروباً في الأثر، ويُخفَّض ولا يصل إلى الصفر أبداً.
@@ -912,7 +912,7 @@ Add **secure defaults** (deny unless allowed, services off unless needed), **att
 - **فحص المنافذ** يظهر على شكل أهداف مختلفة كثيرة لكل مصدر في نافذة قصيرة؛ والفحص البطيء والفاحصات المشروعة هي النقاط العمياء.
 - ابنِ على **أقل صلاحية والتجزئة والدفاع في العمق**، مع إعدادات آمنة افتراضياً ومراقبة يتصرّف أحدٌ بناءً عليها.
 
-**تدرّب بعد ذلك:** في مختبر تملكه (يكفي جهازان افتراضيان)، افحص أحدهما من الآخر بـ nmap وابحث عن الفحص في سجل الجدار الناري للهدف، ثم فعّل تحديد المعدل وشاهده يعمل. لقد أنهيت جوهر مسار الشبكات؛ وشبكات السحابة هي الخطوة الطبيعية التالية.`,
+**تدرّب بعد ذلك:** في مختبر تملكه (يكفي جهازان افتراضيان)، افحص أحدهما من الآخر بـ nmap وابحث عن الفحص في سجل الجدار الناري للهدف، ثم فعّل تحديد المعدل وشاهده يعمل. لقد أنهيت جوهر مسار الشبكات؛ والشبكات السحابية (VPC والشبكات الفرعية ومجموعات الأمان) هي الخطوة الطبيعية التالية، ويغطيها درس «الشبكات السحابية» في مسار الحوسبة السحابية على هذا الموقع.`,
       },
     },
   ],
