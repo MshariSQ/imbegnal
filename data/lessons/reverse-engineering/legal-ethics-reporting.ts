@@ -873,8 +873,12 @@ for line in sys.stdin:
         { name: { en: "Textbook critical: remote, no interaction, full impact", ar: "حرج نموذجي: عن بُعد، بلا تفاعل، أثر كامل" }, stdin: `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
 `, expected: `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H -> 9.8 Critical
 ` },
-        { name: { en: "Scope change pushes the score to the maximum", ar: "تغيّر الـScope يرفع الدرجة إلى الحد الأقصى" }, stdin: `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+        { name: { en: "Scope change pushes the score to the maximum and uses the Scope-Changed PR weights", ar: "تغيّر الـScope يرفع الدرجة إلى الحد الأقصى ويستخدم أوزان PR الخاصة بتغيّر الـScope" }, stdin: `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H
+CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H
 `, expected: `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H -> 10.0 Critical
+CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H -> 9.9 Critical
+CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:H -> 9.1 Critical
 ` },
         { name: { en: "A reflected-XSS-style vector, and a local privilege escalation", ar: "متجه بنمط XSS المنعكس، وتصعيد صلاحيات محلي" }, stdin: `CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
 CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H
@@ -1095,10 +1099,10 @@ policy: https://example.com/security/policy
 languages: en, ar
 status: valid
 ` },
-        { name: { en: "A bare email and an http URL are not valid contacts, and the file has expired", ar: "بريد مجرّد وعنوان http ليسا جهتَي اتصال صالحتين، والملف منتهٍ" }, stdin: `today 2026-10-17T00:00:00Z
+        { name: { en: "A bare email and an http URL are not valid contacts, and a file that expires at the moment of the check has expired", ar: "بريد مجرّد وعنوان http ليسا جهتَي اتصال صالحتين، والملف الذي تنتهي صلاحيته في لحظة الفحص نفسها منتهٍ" }, stdin: `today 2026-10-17T00:00:00Z
 contact: security@example.org
 CONTACT: http://example.org/report
-Expires: 2026-01-01T00:00:00Z
+Expires: 2026-10-17T00:00:00Z
 Hiring: https://example.org/jobs
 `, expected: `error: invalid Contact security@example.org
 error: invalid Contact http://example.org/report
@@ -1165,7 +1169,7 @@ Policy: https://example.com/security/policy
           answer: 2,
           explain: {
             en: "A EULA is a contract, so breaching it is generally a civil matter, separate from criminal law, and its reach varies: some jurisdictions make anti-decompilation clauses unenforceable for interoperability, others uphold them. It is neither always void nor automatically a crime, and it binds individuals too.",
-            ar: "اتفاقية الترخيص عقد، فخرقها عادةً مسألة مدنية منفصلة عن القانون الجنائي، ومداها يختلف: بعض الولايات تجعل بنود منع فك التجميع غير قابلة للإنفاذ لأجل التشغيل البيني، وأخرى تُبقيها. فهي ليست باطلة دائماً ولا جريمة تلقائياً، وتُلزم الأفراد أيضاً.",
+            ar: "اتفاقية الترخيص عقد، فخرقها عادةً مسألة مدنية منفصلة عن القانون الجنائي، ومداها يختلف: بعض الولايات القضائية تجعل بنود منع فك التجميع غير قابلة للإنفاذ لأجل التشغيل البيني، وأخرى تُبقيها. فهي ليست باطلة دائماً ولا جريمة تلقائياً، وتُلزم الأفراد أيضاً.",
           },
         },
         {
@@ -1238,9 +1242,9 @@ Policy: https://example.com/security/policy
 - Rate issues with **CVSS**, write clear reports with reproduction steps and the least necessary proof, respect the timeline and **CVE** process, and reach vendors via **\`security.txt\`** (RFC 9116).
 - When in doubt, **stop and ask** for permission or legal advice. This lesson is education, not legal advice.
 
-**Practice next:** open the \`/.well-known/security.txt\` of a few services you use (reading a public file is harmless) and run your validator on them. Read one published vulnerability disclosure policy and find its scope, its rules and its safe-harbor wording. Take three published advisories, score their CVSS v3.1 vectors with your calculator and compare with the score each advisory states. Then write a full mock report, with redacted proof, for a bug you find in a deliberately vulnerable app running on your own machine, such as OWASP Juice Shop. Next, the optional node on packers, anti-debugging and obfuscators.
+**Practice next:** open the \`/.well-known/security.txt\` of a few services you use (reading a public file is harmless) and run your validator on them. Read one published vulnerability disclosure policy and find its scope, its rules and its safe-harbor wording. Take three published advisories, score their CVSS v3.1 vectors with your calculator and compare with the score each advisory states. Then write a full mock report, with redacted proof, for a bug you find in a deliberately vulnerable app running on your own machine, such as OWASP Juice Shop. Next: binary formats in depth, ELF and PE and the tools that read them.
 
-**This is the ethical backbone of the whole track.** Everything you learned, reading binaries, debugging, deobfuscation, malware analysis, becomes valuable precisely because you apply it responsibly: to defend systems, to make software safer, and to help others, never to harm. Carry these rules into every project.`,
+**This is the ethical backbone of the whole track.** Every skill in it, reading binaries, debugging, deobfuscation, and the malware analysis still to come, becomes valuable precisely because you apply it responsibly: to defend systems, to make software safer, and to help others, never to harm. Carry these rules into every project.`,
         ar: `## الخلاصة وماذا تتدرّب عليه بعد ذلك
 
 - الهندسة العكسية مهارة مشروعة؛ والمهم هو **التصريح** و**النية**. حلّل فقط ما هو ملكك، أو مفتوح، أو مصنوع للتدريب، أو مصرَّح به كتابةً.
@@ -1250,9 +1254,9 @@ Policy: https://example.com/security/policy
 - قيّم الثغرات بـ **CVSS**، واكتب تقارير واضحة بخطوات إعادة الإنتاج وأقل إثبات ضروري، واحترم الجدول الزمني وعملية **CVE**، وصِل إلى الجهات المصنِّعة عبر **\`security.txt\`** ‏(RFC 9116).
 - وعند الشك، **توقّف واسأل** عن إذن أو استشارة قانونية. هذا الدرس تثقيف وليس استشارة قانونية.
 
-**تدرّب بعد ذلك:** افتح ملف \`/.well-known/security.txt\` لبضع خدمات تستخدمها (قراءة ملف عام أمر غير ضار) وشغّل مدقّقك عليها. واقرأ سياسة إفصاح عن الثغرات منشورة واحدة وحدّد نطاقها وقواعدها وصياغة الملاذ الآمن فيها. وخذ ثلاث نشرات أمنية منشورة، واحسب درجات متجهات CVSS v3.1 فيها بحاسبتك وقارنها بالدرجة التي تذكرها كل نشرة. ثم اكتب تقريراً تجريبياً كاملاً، بإثبات منقَّح، لثغرة تجدها في تطبيق مُضعَّف عمداً يعمل على جهازك أنت، مثل OWASP Juice Shop. وبعد ذلك، العقدة الاختيارية عن المضغوطات (packers) ومقاومة التنقيح وأدوات التعتيم.
+**تدرّب بعد ذلك:** افتح ملف \`/.well-known/security.txt\` لبضع خدمات تستخدمها (قراءة ملف عام أمر غير ضار) وشغّل مدقّقك عليها. واقرأ سياسة إفصاح عن الثغرات منشورة واحدة وحدّد نطاقها وقواعدها وصياغة الملاذ الآمن فيها. وخذ ثلاث نشرات أمنية منشورة، واحسب درجات متجهات CVSS v3.1 فيها بحاسبتك وقارنها بالدرجة التي تذكرها كل نشرة. ثم اكتب تقريراً تجريبياً كاملاً، بإثبات منقَّح، لثغرة تجدها في تطبيق مُضعَّف عمداً يعمل على جهازك أنت، مثل OWASP Juice Shop. والتالي: صيغ الملفات الثنائية بالتفصيل، ‏ELF وPE والأدوات التي تقرؤها.
 
-**هذا هو العمود الأخلاقي للمسار كله.** كل ما تعلمته — قراءة الملفات الثنائية، والتنقيح، وفك التعتيم، وتحليل البرمجيات الخبيثة — يصبح قيّماً تحديداً لأنك تطبّقه بمسؤولية: لحماية الأنظمة، ولجعل البرمجيات أكثر أماناً، ولمساعدة الآخرين، لا للإضرار أبداً. احمل هذه القواعد في كل مشروع.`,
+**هذا هو العمود الأخلاقي للمسار كله.** كل مهارة فيه — قراءة الملفات الثنائية، والتنقيح، وفك التعتيم، وتحليل البرمجيات الخبيثة الذي سيأتي لاحقاً — تصبح قيّمة تحديداً لأنك تطبّقها بمسؤولية: لحماية الأنظمة، ولجعل البرمجيات أكثر أماناً، ولمساعدة الآخرين، لا للإضرار أبداً. احمل هذه القواعد في كل مشروع.`,
       },
     },
   ],
