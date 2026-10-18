@@ -25,6 +25,20 @@ function SectionTitle({ id, icon, children }: { id: string; icon: React.ReactNod
   );
 }
 
+/** One labelled row of chips in the hero: "If you like", skills, job titles. */
+function ChipGroup({ icon, title, items, lang }: { icon: React.ReactNode; title: string; items: { en: string; ar: string }[]; lang: "en" | "ar" }) {
+  return (
+    <div>
+      <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-fg-subtle mb-2.5">{icon} {title}</h2>
+      <ul className="flex flex-wrap gap-2">
+        {items.map((item) => (
+          <li key={item.en} className="text-sm px-3 py-1.5 rounded-full bg-fg/5 border border-line text-fg-soft">{item[lang]}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function CourseStep({ course, total, progress, tx, lang }: { course: PathCourse; total: number; progress: PathProgress; tx: Tx; lang: "en" | "ar" }) {
   const T = tx.paths;
   const label = fmt(T.courseOf, { k: course.position, n: total });
@@ -138,7 +152,9 @@ export default function CareerPathPage({ path }: { path: PathSummary }) {
               <ol className="flex flex-wrap items-center gap-2 text-sm text-fg-subtle">
                 <li><Link href="/roadmaps/" className="hover:text-fg underline-offset-2 hover:underline">{tx.nav.roadmaps}</Link></li>
                 <li aria-hidden>/</li>
-                <li aria-current="page" className="text-fg-muted">{T.categories[path.category]}</li>
+                <li>{T.categories[path.category]}</li>
+                <li aria-hidden>/</li>
+                <li aria-current="page" className="text-fg-muted">{path.title[lang]}</li>
               </ol>
             </nav>
             <div className="flex items-center gap-3 mt-4 mb-3">
@@ -156,23 +172,23 @@ export default function CareerPathPage({ path }: { path: PathSummary }) {
               <li className="flex items-center gap-1.5"><BarChart3 size={15} aria-hidden /> {levelRange(tx, path.levels)}</li>
             </ul>
 
-            <div className="mt-7">
-              <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-fg-subtle mb-2.5"><Heart size={13} aria-hidden /> {T.ifYouLike}</h2>
-              <ul className="flex flex-wrap gap-2">
-                {path.ifYouLike.map((item) => (
-                  <li key={item.en} className="text-sm px-3 py-1.5 rounded-full bg-fg/5 border border-line text-fg-soft">{item[lang]}</li>
-                ))}
-              </ul>
+            <div className="mt-7 space-y-5">
+              <ChipGroup icon={<Heart size={13} aria-hidden />} title={T.ifYouLike} items={path.ifYouLike} lang={lang} />
+              <ChipGroup icon={<Sparkles size={13} aria-hidden />} title={T.skills} items={path.skills} lang={lang} />
+              <ChipGroup icon={<Briefcase size={13} aria-hidden />} title={T.jobs} items={path.jobs} lang={lang} />
             </div>
 
-            {next && !done && (
+            {!done && (
               <div className="flex flex-wrap items-center gap-3 mt-8">
-                <Link
-                  href={courseHref(next.id)}
-                  className="inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-bold transition-colors"
-                >
-                  <PlayCircle size={18} aria-hidden /> {started ? `${T.continue}: ${next.title[lang]}` : T.start}
-                </Link>
+                {/* No "Continue" once every available course is done (next is undefined then) */}
+                {next && (
+                  <Link
+                    href={courseHref(next.id)}
+                    className="inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-brand hover:bg-brand-strong text-brand-fg font-bold transition-colors"
+                  >
+                    <PlayCircle size={18} aria-hidden /> {started ? `${T.continue}: ${next.title[lang]}` : T.start}
+                  </Link>
+                )}
                 <a href="#path-courses" className="inline-flex items-center gap-2 h-12 px-5 rounded-xl border border-line-strong text-fg-soft hover:text-fg hover:bg-fg/5 transition-colors">
                   {T.coursesTitle}
                 </a>
@@ -200,8 +216,8 @@ export default function CareerPathPage({ path }: { path: PathSummary }) {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid lg:grid-cols-[1fr_340px] gap-x-10 gap-y-12">
-        <div className="min-w-0 space-y-14">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+        <div className="min-w-0 max-w-4xl space-y-14">
           {/* Courses by level */}
           <section aria-labelledby="path-courses">
             <SectionTitle id="path-courses" icon={<BookOpen size={20} />}>{T.coursesTitle}</SectionTitle>
@@ -265,29 +281,11 @@ export default function CareerPathPage({ path }: { path: PathSummary }) {
             </ul>
             <p className="text-xs text-fg-subtle mt-4 leading-relaxed">{T.completion.noPathCertificate}</p>
           </section>
-        </div>
 
-        <aside className="space-y-6 min-w-0">
-          <div className="card p-6">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-fg mb-4"><Sparkles size={15} aria-hidden /> {T.skills}</h2>
-            <ul className="flex flex-wrap gap-2">
-              {path.skills.map((s) => (
-                <li key={s.en} className="text-xs px-2.5 py-1 rounded-full bg-fg/5 border border-line text-fg-soft">{s[lang]}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="card p-6">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-fg mb-4"><Briefcase size={15} aria-hidden /> {T.jobs}</h2>
-            <ul className="flex flex-wrap gap-2">
-              {path.jobs.map((j) => (
-                <li key={j.en} className="text-xs px-2.5 py-1 rounded-full bg-fg/5 border border-line text-fg-soft">{j[lang]}</li>
-              ))}
-            </ul>
-          </div>
           <Link href="/roadmaps/" className="inline-flex items-center gap-1.5 min-h-10 text-sm font-semibold text-emerald-400 hover:underline">
             {T.allPaths} <ArrowRight size={14} className="rtl-flip" aria-hidden />
           </Link>
-        </aside>
+        </div>
       </div>
     </main>
   );

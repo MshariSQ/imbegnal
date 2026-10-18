@@ -273,6 +273,9 @@ test("path progress: course progress counts in every path; states and the next c
   const fe = pathProgress(by("frontend-developer"), ux);
   assert.equal(fe.state, "available-complete");
   assert.equal(fe.perCourse["advanced-react"], undefined, "a planned course has no progress");
+  // Nothing left to continue: never a finished course, never the coming-soon one
+  assert.equal(nextCourse(by("frontend-developer"), fe), undefined);
+  assert.equal(nextCourse(by("ux-designer"), uxp), undefined);
 
   // `done: true` (legacy) counts; `done: 0` does not
   const legacy = pathProgress(by("ux-designer"), { [`ui-ux/${figures["ui-ux"].lessonIds[0]}`]: { done: true }, [`ui-ux/${figures["ui-ux"].lessonIds[1]}`]: { done: 0 } });

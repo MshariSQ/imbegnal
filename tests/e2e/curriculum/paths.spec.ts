@@ -151,9 +151,13 @@ for (const lang of LANGS) {
       // Totals with the language's plural form (Arabic: "15 درساً", "حوالي 11 ساعة", never "15 دروس")
       assert.ok(hero.includes(countLabel(tx(lang), "lesson", s.totals.lessons)), `lessons ${countLabel(tx(lang), "lesson", s.totals.lessons)}`);
       assert.ok(hero.includes(hoursLabel(tx(lang), hoursFromMinutes(s.totals.minutes))), "hours");
-      const body = await page.locator("main").innerText();
-      for (const skill of s.skills) assert.ok(body.includes(skill[lang]), `skill ${skill[lang]}`);
-      for (const job of s.jobs) assert.ok(body.includes(job[lang]), `job ${job[lang]}`);
+      // Skills and job titles are in the hero too (before the courses on a phone)
+      for (const skill of s.skills) assert.ok(hero.includes(skill[lang]), `skill ${skill[lang]}`);
+      for (const job of s.jobs) assert.ok(hero.includes(job[lang]), `job ${job[lang]}`);
+      // Breadcrumb: the role is the current page, the category is not
+      const current = page.locator("section[aria-labelledby=path-title] nav [aria-current]");
+      assert.equal(await current.count(), 1);
+      assert.equal((await current.innerText()).trim(), s.title[lang]);
 
       // Level groups in order, each course "Course k of N"
       assert.deepEqual(await page.locator("[data-level]").evaluateAll((els) => els.map((e) => e.getAttribute("data-level"))), s.levels);
@@ -231,6 +235,11 @@ test("role page progress: a finished course counts in every path that contains i
       await page.goto(`${site.url}/roadmaps/frontend-developer/`);
       await page.locator('[data-path-state="available-complete"]').waitFor({ timeout: 10_000 });
       await page.getByText(T.completion.availableComplete).waitFor();
+      // Nothing to continue: the hero offers no "Continue" and no link to a finished course
+      const hero = page.locator("section[aria-labelledby=path-title]");
+      assert.equal(await hero.getByRole("link", { name: T.continue }).count(), 0, "no Continue in the hero");
+      const heroHrefs = await hero.locator("a[href]").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+      assert.ok(!heroHrefs.some((h) => h?.startsWith("/learn/")), `hero links: ${heroHrefs.join(", ")}`);
       assertNoProblems(problems);
     } finally {
       await context.close();

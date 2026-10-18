@@ -219,8 +219,11 @@ export function pathProgress(summary: Pick<PathSummary, "courses">, lessons: Les
   return { done, total, ratio: total ? done / total : 0, perCourse, coursesComplete, state };
 }
 
-/** The first available course that is not complete (where "Continue" goes), else the first available one. */
+/**
+ * The first available course that is not complete (where "Start" / "Continue" goes). Undefined when
+ * every available course is complete: there is nothing left to continue until a coming-soon course
+ * is published.
+ */
 export function nextCourse(summary: Pick<PathSummary, "courses">, progress: PathProgress): PathCourse | undefined {
-  const available = summary.courses.filter((c) => c.available);
-  return available.find((c) => !progress.perCourse[c.id]?.complete) ?? available[0];
+  return summary.courses.find((c) => c.available && !progress.perCourse[c.id]?.complete);
 }
