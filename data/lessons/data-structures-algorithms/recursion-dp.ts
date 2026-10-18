@@ -86,7 +86,7 @@ const sections: LessonSection[] = [
 - You will write: a minimum-coins solver, an LCS table and a knapsack packer`,
       ar: `## ماذا ستتعلم
 
-- كيف يحلّ **التكرار الذاتي (recursion)** مسألةً بنسخ أصغر منها: **الحالة الأساسية (base case)** و**الحالة التكرارية** و**مكدّس الاستدعاءات** الذي يعمل تحتهما
+- كيف يحلّ **التكرار الذاتي (recursion)** مسألةً بنسخ أصغر منها: **الحالة الأساسية (base case)** و**حالة الاستدعاء الذاتي** و**مكدّس الاستدعاءات** الذي يعمل تحتهما
 - لماذا قد ينفجر التكرار الذاتي الساذج **أسّياً**، وكيف تكتشف ذلك في شجرة الاستدعاءات
 - **الحفظ المؤقت (memoization)** من الأعلى إلى الأسفل و**الجدولة (tabulation)** من الأسفل إلى الأعلى: طريقتان لحلّ كل مسألة فرعية مرة واحدة فقط
 - وصفة من خمس خطوات **للبرمجة الديناميكية (dynamic programming)**: الحالة، والانتقال، والحالة الأساسية، والترتيب، والجواب
@@ -167,10 +167,10 @@ def power(x, n):
 This is **divide and conquer**, the same idea as merge sort: split, solve the parts, combine.`,
       ar: `## التكرار الذاتي ومكدّس الاستدعاءات
 
-**الدالة التكرارية (recursive function)** تستدعي نفسها على مدخل أصغر. ولها دائماً جزءان:
+**الدالة ذاتية الاستدعاء (recursive function)** تستدعي نفسها على مدخل أصغر. ولها دائماً جزءان:
 
 - **الحالة الأساسية (base case):** مدخل صغير بما يكفي لنجيب عنه مباشرة، دون استدعاء آخر.
-- **الحالة التكرارية (recursive case):** صغّر المسألة، واستدعِ نفسك، واجمع النتيجة.
+- **حالة الاستدعاء الذاتي (recursive case):** صغّر المسألة، واستدعِ نفسك، واجمع النتيجة.
 
 كل استدعاء يحصل على **إطار (frame)** في مكدّس الاستدعاءات (معاملاته ومتغيراته المحلية). تتراكم الإطارات حتى نبلغ حالة أساسية، ثم تُزال بالترتيب المعكوس كلما عاد استدعاء:
 
@@ -254,7 +254,7 @@ Either way, **time = number of states x work per state**. For Fibonacci that is 
 
 يأتي الهدر من **المسائل الفرعية المتداخلة (overlapping subproblems)**: السؤال الأصغر نفسه يُطرح مرة بعد مرة. وتنطبق البرمجة الديناميكية حين يكون في المسألة تداخل في المسائل الفرعية **وبنية جزئية مثلى (optimal substructure)** (أي أن أفضل جواب مبنيّ من أفضل أجوبة المسائل الفرعية). أما merge sort فلا تداخل فيه (كل نصف مختلف)، فلن يفيده الدفتر.
 
-**الحفظ المؤقت (Memoization) من الأعلى إلى الأسفل.** أبقِ الشيفرة التكرارية وأضف ذاكرة مخبئية مفتاحها المعاملات: ابحث قبل أن تحسب، وخزّن بعد أن تحسب. وفي Python يفعل ذلك عنك \`@functools.cache\` (أو \`@functools.lru_cache(maxsize=None)\`)؛ ويجب أن تكون المعاملات hashable.
+**الحفظ المؤقت (Memoization) من الأعلى إلى الأسفل.** أبقِ الشيفرة ذاتية الاستدعاء وأضف ذاكرة مخبئية مفتاحها المعاملات: ابحث قبل أن تحسب، وخزّن بعد أن تحسب. وفي Python يفعل ذلك عنك \`@functools.cache\` (أو \`@functools.lru_cache(maxsize=None)\`)؛ ويجب أن تكون المعاملات hashable.
 
 **الجدولة (Tabulation) من الأسفل إلى الأعلى.** املأ مصفوفة بدءاً من الحالات الأساسية صعوداً، بترتيب يكون فيه كل ما يحتاجه المدخل قد مُلئ قبله. لا تكرار ذاتي، فلا حدّ للعمق، وكثيراً ما تكتفي بالاحتفاظ بآخر صف أو بآخر قيمتين.
 
@@ -703,7 +703,7 @@ for w, v in items:
 
 **Input:** the first line has \`n W\` (\`n\` up to 300, \`W\` up to 20,000). Then \`n\` lines, each \`w v\`: a weight of at least 1 and a value up to 10⁹.
 
-**Output:** the maximum total value. Values can add up beyond 2³¹, so use \`u64\`.
+**Output:** the maximum total value. Values can add up beyond 2³², so use \`u64\`.
 
 **Example:** input
 \`\`\`
@@ -719,7 +719,7 @@ Use the one-row DP from the lesson: \`let mut dp = vec![0u64; cap + 1];\` and, f
 
 **المدخل:** السطر الأول فيه \`n W\` (و\`n\` حتى 300، و\`W\` حتى 20,000). ثم \`n\` سطراً، في كل منها \`w v\`: وزن لا يقل عن 1 وقيمة حتى 10⁹.
 
-**المخرج:** أكبر قيمة إجمالية. قد يتجاوز مجموع القيم 2³¹، فاستخدم \`u64\`.
+**المخرج:** أكبر قيمة إجمالية. قد يتجاوز مجموع القيم 2³²، فاستخدم \`u64\`.
 
 **مثال:** المدخل
 \`\`\`
@@ -797,7 +797,7 @@ fn main() {
       { name: { en: "Nothing fits", ar: "لا شيء يتسع" }, stdin: "2 3\n4 100\n5 200\n", expected: "0" },
       { name: { en: "Each item at most once", ar: "كل غرض مرة واحدة على الأكثر" }, stdin: "1 10\n3 5\n", expected: "5" },
       { name: { en: "No items", ar: "لا أغراض" }, stdin: "0 10\n", expected: "0" },
-      { name: { en: "Values beyond 32 bits", ar: "قيم تتجاوز 32 بت" }, stdin: "3 3\n1 1000000000\n1 1000000000\n1 1000000000\n", expected: "3000000000" },
+      { name: { en: "A total beyond 32 bits", ar: "مجموع يتجاوز 32 بت" }, stdin: "5 5\n1 1000000000\n1 1000000000\n1 1000000000\n1 1000000000\n1 1000000000\n", expected: "5000000000" },
       { name: { en: "240 items, capacity 1,001", ar: "240 غرضاً، والسعة 1,001" }, stdin: knapInput, expected: knapExpected },
     ],
     sampleInput: "3 5\n1 6\n2 10\n3 12\n",
@@ -808,7 +808,7 @@ fn main() {
       {
         q: {
           en: "What happens when a recursive function has no base case that can be reached?",
-          ar: "ماذا يحدث حين لا تملك دالة تكرارية حالة أساسية يمكن بلوغها؟",
+          ar: "ماذا يحدث حين لا تملك دالة ذاتية الاستدعاء حالة أساسية يمكن بلوغها؟",
         },
         choices: [
           { en: "It returns 0 after a while", ar: "تعيد 0 بعد قليل" },
@@ -825,7 +825,7 @@ fn main() {
       {
         q: {
           en: "Why is the naive recursive fib(n) so slow?",
-          ar: "لماذا تكون fib(n) التكرارية الساذجة بطيئة إلى هذا الحد؟",
+          ar: "لماذا تكون fib(n) ذاتية الاستدعاء الساذجة بطيئة إلى هذا الحد؟",
         },
         choices: [
           { en: "It solves the same subproblems again and again, so the number of calls grows exponentially", ar: "تحلّ المسائل الفرعية نفسها مرة بعد مرة، فينمو عدد الاستدعاءات أسّياً" },
@@ -869,7 +869,7 @@ fn main() {
         ],
         answer: 3,
         explain: {
-          en: "Updating from high to low capacities reads entries that this item has not touched yet, which is the previous row of the 2D table. Going upwards reads entries that may already contain the item, so it can be taken repeatedly: the unbounded knapsack. Both directions start at c = w, so neither creates negative indexes, and the answer is dp[W].",
+          en: "Updating from high to low capacities reads entries that this item has not touched yet, which is the previous row of the 2D table. Going upwards reads entries that may already contain the item, so it can be taken repeatedly: the unbounded knapsack. Both directions stay at c >= w (the downward loop ends at w, the upward one starts there), so neither creates negative indexes, and the answer is dp[W].",
           ar: "التحديث من السعات العليا إلى الدنيا يقرأ مدخلات لم يلمسها هذا الغرض بعد، وهي الصف السابق في الجدول ثنائي الأبعاد. أما السير صعوداً فيقرأ مدخلات قد تحتوي الغرض مسبقاً، فيمكن أخذه مراراً: حقيبة الظهر غير المحدودة. وكلا الاتجاهين يتوقف عند c = w فلا ينشأ فهرس سالب، والجواب هو dp[W].",
         },
       },
@@ -907,7 +907,7 @@ fn main() {
 **Practice next:** compute the edit distance between two words (insert, delete, replace), find the longest increasing subsequence, and count the paths through a grid with obstacles. Then continue with **Heaps & Priority Queues**.`,
       ar: `## الخلاصة
 
-- **التكرار الذاتي** = حالة أساسية + حالة تكرارية على مدخل أصغر. كل استدعاء إطار في **مكدّس الاستدعاءات**؛ وبدون حالة أساسية يمكن بلوغها يفيض المكدّس. وتنصيف المسألة (القوة السريعة، وmerge sort) يعطي عمقاً لوغاريتمياً.
+- **التكرار الذاتي** = حالة أساسية + حالة استدعاء ذاتي على مدخل أصغر. كل استدعاء إطار في **مكدّس الاستدعاءات**؛ وبدون حالة أساسية يمكن بلوغها يفيض المكدّس. وتنصيف المسألة (القوة السريعة، وmerge sort) يعطي عمقاً لوغاريتمياً.
 - ينفجر التكرار الذاتي الساذج حين يعيد حلّ **المسائل الفرعية المتداخلة** (تُجري \`fib(30)\` عدد 2,692,537 استدعاءً). **الحفظ المؤقت** يخزّن الأجوبة من الأعلى إلى الأسفل؛ و**الجدولة** تملأ جدولاً من الأسفل إلى الأعلى. الزمن = عدد الحالات × العمل لكل حالة.
 - وصفة البرمجة الديناميكية: **الحالة، والانتقال، والحالات الأساسية، والترتيب، والجواب**. قل ماذا تعني \`dp[...]\` في جملة واحدة قبل أن تكتب أي حلقة.
 - **صرف النقود:** \`dp[a] = 1 + min(dp[a - c])\`؛ وقد يخطئ الجشع. وحلقة القطع في الخارج تعدّ التركيبات.
@@ -921,7 +921,7 @@ fn main() {
 
 export const lesson: Lesson = {
   nodeId: "recursion-dp",
-  title: { en: "Recursion & Dynamic Programming: Solve It Once, Remember It", ar: "التكرار الذاتي والبرمجة الديناميكية: احلّها مرة وتذكّرها" },
+  title: { en: "Recursion & Dynamic Programming: Solve It Once, Remember It", ar: "التكرار الذاتي والبرمجة الديناميكية: حُلَّها مرة وتذكّرها" },
   estMinutes: estimateMinutes(sections),
   sections,
 };
