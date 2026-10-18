@@ -271,7 +271,7 @@ print("next task:", heapq.heappop(tasks)[2], "| then:", heapq.heappop(tasks)[2])
 **الكومة في لغتك:**
 
 - **\`heapq\` في Python**: دوال تعمل على قائمة عادية، وهي كومة **صغرى** دائماً: \`heappush\` و\`heappop\` و\`heapify\` و\`heapreplace\` و\`heappushpop\` و\`nsmallest\` و\`nlargest\` و\`merge\`. وللكومة العظمى أضف \`-x\` (أضافت Python 3.14 الدالة \`heappush_max\` ودوال مشابهة، لكن عكس الإشارة يعمل في كل الإصدارات). ولتخزين عناصر لا تقبل المقارنة، أو لحسم التعادل بترتيب الإضافة، أضف صفوفاً \`(priority, counter, item)\` كما توصي وثائق \`heapq\`.
-- **\`PriorityQueue\` في Java**: كومة صغرى بالترتيب الطبيعي أو بمقارِن \`Comparator\`. وتَعِد وثائقها بـ O(log n) لـ \`offer\` و\`poll\` وبزمن ثابت لـ \`peek\`، لكن بزمن **خطي** لـ \`remove(Object)\` و\`contains\`. والمرور عليها لا يعطي ترتيباً مرتّباً.
+- **\`PriorityQueue\` في Java**: كومة صغرى بالترتيب الطبيعي أو بمقارِن \`Comparator\`. وتَعِد وثائقها بـ O(log n) لـ \`offer\` و\`poll\` وبزمن ثابت لـ \`peek\`، لكن بزمن **خطي** لـ \`remove(Object)\` و\`contains\`. والمرور عليها لا يعطي العناصر مرتّبة.
 - **\`std::priority_queue\` في C++**: كومة **عظمى** افتراضياً. وللكومة الصغرى اكتب \`std::priority_queue<T, std::vector<T>, std::greater<T>>\`.
 - **\`BinaryHeap\` في Rust**: كومة عظمى أيضاً؛ غلّف العناصر بـ \`std::cmp::Reverse\` لتحصل على كومة صغرى. وتقدّم **Go** الحزمة \`container/heap\` التي تعمل على نوعك الخاص متى نفّذ خمس دوال (\`Len\` و\`Less\` و\`Swap\` و\`Push\` و\`Pop\`).
 
