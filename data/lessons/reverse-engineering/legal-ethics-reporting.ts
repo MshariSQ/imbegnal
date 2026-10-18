@@ -6,7 +6,7 @@ export const lesson: Lesson = {
     en: "Law, Ethics & Responsible Disclosure — Doing the Right Thing with What You Find",
     ar: "القانون والأخلاقيات والإفصاح المسؤول — التصرّف الصحيح بما تكتشفه",
   },
-  estMinutes: 45,
+  estMinutes: 46,
   sections: [
     {
       type: "text",
@@ -1229,7 +1229,7 @@ Policy: https://example.com/security/policy
     {
       type: "text",
       body: {
-        en: `## Summary
+        en: `## Summary and what to practice next
 
 - Reverse engineering is a legitimate skill; what matters is **authorization** and **intent**. Analyze only what is yours, open, made for practice, or permitted in writing.
 - **Licenses** (contracts) and **laws** are different limits. Laws commonly cited include anti-circumvention rules (**DMCA** 1201 and its security-research exemptions), the **EU Software Directive** on interoperability, unauthorized-access laws (**CFAA**, narrowed by **Van Buren**), the **Budapest Convention** baseline, and data-protection law (**GDPR**). They **differ by country** and change over time.
@@ -1238,8 +1238,10 @@ Policy: https://example.com/security/policy
 - Rate issues with **CVSS**, write clear reports with reproduction steps and the least necessary proof, respect the timeline and **CVE** process, and reach vendors via **\`security.txt\`** (RFC 9116).
 - When in doubt, **stop and ask** for permission or legal advice. This lesson is education, not legal advice.
 
+**Practice next:** open the \`/.well-known/security.txt\` of a few services you use (reading a public file is harmless) and run your validator on them. Read one published vulnerability disclosure policy and find its scope, its rules and its safe-harbor wording. Take three published advisories, score their CVSS v3.1 vectors with your calculator and compare with the score each advisory states. Then write a full mock report, with redacted proof, for a bug you find in a deliberately vulnerable app running on your own machine, such as OWASP Juice Shop. Next, the optional node on packers, anti-debugging and obfuscators.
+
 **This is the ethical backbone of the whole track.** Everything you learned, reading binaries, debugging, deobfuscation, malware analysis, becomes valuable precisely because you apply it responsibly: to defend systems, to make software safer, and to help others, never to harm. Carry these rules into every project.`,
-        ar: `## الخلاصة
+        ar: `## الخلاصة وماذا تتدرّب عليه بعد ذلك
 
 - الهندسة العكسية مهارة مشروعة؛ والمهم هو **التصريح** و**النية**. حلّل فقط ما هو ملكك، أو مفتوح، أو مصنوع للتدريب، أو مصرَّح به كتابةً.
 - **التراخيص** (العقود) و**القوانين** قيدان مختلفان. ومن أكثر القوانين ذكراً: قواعد منع التجاوز (المادة 1201 من **DMCA** واستثناءات البحث الأمني فيها)، و**EU Software Directive** للتشغيل البيني، وقوانين الدخول غير المصرَّح به (**CFAA** الذي ضيّقته قضية **Van Buren**)، وأساس **اتفاقية بودابست**، وقانون حماية البيانات (**GDPR**). وهي **تختلف باختلاف البلد** وتتغير مع الزمن.
@@ -1247,6 +1249,8 @@ Policy: https://example.com/security/policy
 - فضّل **الإفصاح المنسّق**؛ ولا تلجأ إلى **الإفصاح الكامل** إلا كملاذ أخير؛ وابقَ داخل **نطاق مكافأة الثغرات** وابحث عن بنود **الملاذ الآمن**.
 - قيّم الثغرات بـ **CVSS**، واكتب تقارير واضحة بخطوات إعادة الإنتاج وأقل إثبات ضروري، واحترم الجدول الزمني وعملية **CVE**، وصِل إلى الجهات المصنِّعة عبر **\`security.txt\`** ‏(RFC 9116).
 - وعند الشك، **توقّف واسأل** عن إذن أو استشارة قانونية. هذا الدرس تثقيف وليس استشارة قانونية.
+
+**تدرّب بعد ذلك:** افتح ملف \`/.well-known/security.txt\` لبضع خدمات تستخدمها (قراءة ملف عام أمر غير ضار) وشغّل مدقّقك عليها. واقرأ سياسة إفصاح عن الثغرات منشورة واحدة وحدّد نطاقها وقواعدها وصياغة الملاذ الآمن فيها. وخذ ثلاث نشرات أمنية منشورة، واحسب درجات متجهات CVSS v3.1 فيها بحاسبتك وقارنها بالدرجة التي تذكرها كل نشرة. ثم اكتب تقريراً تجريبياً كاملاً، بإثبات منقَّح، لثغرة تجدها في تطبيق مُضعَّف عمداً يعمل على جهازك أنت، مثل OWASP Juice Shop. وبعد ذلك، العقدة الاختيارية عن المضغوطات (packers) ومقاومة التنقيح وأدوات التعتيم.
 
 **هذا هو العمود الأخلاقي للمسار كله.** كل ما تعلمته — قراءة الملفات الثنائية، والتنقيح، وفك التعتيم، وتحليل البرمجيات الخبيثة — يصبح قيّماً تحديداً لأنك تطبّقه بمسؤولية: لحماية الأنظمة، ولجعل البرمجيات أكثر أماناً، ولمساعدة الآخرين، لا للإضرار أبداً. احمل هذه القواعد في كل مشروع.`,
       },
