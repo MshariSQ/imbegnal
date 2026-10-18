@@ -9,4 +9,5 @@ export const dataStructuresAlgorithmsLessons: Record<string, () => Promise<{ les
   "data-structures-algorithms/trees-graphs": () => import("./trees-graphs"),
   "data-structures-algorithms/recursion-dp": () => import("./recursion-dp"),
   "data-structures-algorithms/heaps-priority-queues": () => import("./heaps-priority-queues"),
+  "data-structures-algorithms/graphs-shortest-paths": () => import("./graphs-shortest-paths"),
 };
