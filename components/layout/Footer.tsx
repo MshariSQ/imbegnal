@@ -11,21 +11,22 @@ export default function Footer() {
 
   const footerLinks = {
     [tx.footer.sections.Platform]: [
-      { label: tx.nav.learn, href: `${BASE}/learn/` },
+      { label: tx.nav.learn, href: `${BASE}/courses/` },
       { label: tx.nav.dashboard, href: `${BASE}/dashboard/` },
       { label: fl.roadmaps, href: `${BASE}/roadmaps/` },
       { label: fl.certifications, href: `${BASE}/certifications/` },
-      { label: tx.nav.resources, href: `${BASE}/courses/` },
+      { label: tx.nav.resources, href: `${BASE}/resources/` },
       { label: tx.nav.pricing, href: `${BASE}/pricing/` },
       { label: fl.about, href: `${BASE}/about/` },
     ],
+    // Course pages (the course maps at /roadmaps/<track>/ stay reachable from each course)
     [tx.footer.sections.Fields]: [
-      { label: fl.cyberSecurity, href: `${BASE}/roadmaps/cyber-security/` },
-      { label: fl.ai, href: `${BASE}/roadmaps/artificial-intelligence/` },
-      { label: fl.dataScience, href: `${BASE}/roadmaps/data-science/` },
-      { label: fl.cloudComputing, href: `${BASE}/roadmaps/cloud-computing/` },
-      { label: fl.devops, href: `${BASE}/roadmaps/devops/` },
-      { label: fl.frontend, href: `${BASE}/roadmaps/frontend/` },
+      { label: fl.cyberSecurity, href: `${BASE}/learn/cyber-security/` },
+      { label: fl.ai, href: `${BASE}/learn/artificial-intelligence/` },
+      { label: fl.dataScience, href: `${BASE}/learn/data-science/` },
+      { label: fl.cloudComputing, href: `${BASE}/learn/cloud-computing/` },
+      { label: fl.devops, href: `${BASE}/learn/devops/` },
+      { label: fl.frontend, href: `${BASE}/learn/frontend/` },
     ],
     [tx.footer.sections.Resources]: [
       { label: fl.github, href: "https://github.com/MshariSQ/imbegnal", external: true },

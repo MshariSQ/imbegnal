@@ -15,6 +15,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { reverseEngineeringLessons } from "../../data/lessons/reverse-engineering";
 import { reverseEngineeringNodes } from "../../data/roadmap-nodes/reverse-engineering";
+import { getCourse } from "../../lib/catalog";
 import type { L10n, LabExerciseSection, Lesson } from "../../data/lessons/types";
 import { LANG_IDS, type LangId } from "../../shared/languages";
 import { matchOutput } from "../../shared/match";
@@ -135,6 +136,36 @@ test("registry fragment: keys are track/node-id and match the lesson's nodeId", 
     assert.ok(nodeIds.has(lesson.nodeId), `${key}: nodeId is not in reverseEngineeringNodes`);
   }
   assert.ok(lessonKeys.includes(`${TRACK}/how-programs-run`), "the first lesson frames law and ethics");
+});
+
+/** What the closing "Next" sentence must name when it points at a lesson. */
+const NEXT_TOPIC: Record<string, RegExp> = {
+  "assembly-basics": /assembly/i,
+  "static-analysis-deobfuscation": /analyzing whole files|obfuscation/i,
+  "debugging-dynamic-analysis": /debugger/i,
+  "legal-ethics-reporting": /law, ethics/i,
+  "binary-formats-tools": /binary formats/i,
+  "malware-analysis-basics": /malicious software/i,
+};
+
+test("each lesson's closing 'Next' points at the lesson that really comes next in the course", async () => {
+  const order = (getCourse(TRACK)?.lessons ?? []).map((l) => l.lessonId);
+  assert.equal(order.length, lessonKeys.length, "every lesson is in the course");
+  for (const [i, id] of order.entries()) {
+    const lesson = await loadLesson(`${TRACK}/${id}`);
+    const last = lesson.sections[lesson.sections.length - 1];
+    assert.equal(last.type, "text", `${id}: closes with a text section`);
+    const closing = last.type === "text" ? last.body.en : "";
+    const pointer = closing.match(/(?:^|\s)(?:Next(?: up)?:|The next lesson)[^.]*\./)?.[0] ?? null;
+    const next = order[i + 1];
+    if (!next) {
+      assert.equal(pointer, null, `${id} is the last lesson but points at a next one: ${pointer}`);
+      assert.match(closing, /last lesson of the track/, `${id}: says it is the last lesson`);
+    } else {
+      assert.ok(pointer, `${id}: no closing pointer to ${next}`);
+      assert.match(pointer, NEXT_TOPIC[next], `${id}: "${pointer.trim()}" does not name ${next}`);
+    }
+  }
 });
 
 test("lesson 1 frames law, licenses and responsible disclosure before any technique", async () => {

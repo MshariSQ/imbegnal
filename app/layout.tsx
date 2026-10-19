@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     template: "%s · IMBEGNAL",
   },
   description:
-    "Free bilingual (English/Arabic) study platform: structured courses, interactive lessons, in-browser coding exercises, quizzes, notes and an AI tutor — plus roadmaps and certification guides.",
-  keywords: ["learn to code", "courses", "roadmap", "certifications", "cyber security", "AI", "Arabic", "تعلم البرمجة", "دورات"],
+    "Free bilingual (English/Arabic) study platform: structured courses, interactive lessons, in-browser coding exercises, quizzes, notes and an AI tutor — plus career paths and certification guides.",
+  keywords: ["learn to code", "courses", "career paths", "roadmap", "certifications", "cyber security", "AI", "Arabic", "تعلم البرمجة", "دورات"],
   applicationName: "IMBEGNAL",
   alternates: { canonical: "/" },
   openGraph: {

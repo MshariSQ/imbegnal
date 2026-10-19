@@ -6,18 +6,25 @@
  */
 
 import type { Widen } from "./i18n-types";
+import type { PluralForms } from "./ctf/format";
+
+/** Typed as PluralForms so the Arabic dictionary can add the forms English does not have. */
+const forms = (f: PluralForms): PluralForms => f;
 
 export const platformEn = {
   common: {
     levels: { Beginner: "Beginner", Intermediate: "Intermediate", Advanced: "Advanced", "All Levels": "All levels" },
-    approxHours: "~{n}h",
-    approxHoursOne: "~{n}h",
+    /** CLDR locale of this dictionary: picks the plural form in lib/plural.ts. */
+    locale: "en",
+    /** Counts by plural form (lib/plural.ts). Arabic also has zero, two, few (3-10) and many (11-99). */
+    counts: {
+      hours: forms({ one: "~{n}h", other: "~{n}h" }),
+      lesson: forms({ one: "{n} lesson", other: "{n} lessons" }),
+      exercise: forms({ one: "{n} exercise", other: "{n} exercises" }),
+      quiz: forms({ one: "{n} quiz", other: "{n} quizzes" }),
+    },
     loading: "Loading…",
     minutes: "min",
-    lessons: "lessons",
-    lessonOne: "lesson",
-    exerciseOne: "exercise",
-    quizOne: "quiz",
     lesson: "Lesson",
     module: "Module",
     modules: "modules",
@@ -117,10 +124,10 @@ export const platformEn = {
     courseProgress: "Course progress",
     whatYouLearn: "What you'll learn",
     curriculum: "Curriculum",
-    careers: "Career paths",
+    careers: "Typical roles",
     duration: "Duration",
     level: "Level",
-    roadmapLink: "View roadmap & resources",
+    roadmapLink: "Course map & resources",
     includes: "This course includes",
     includesItems: ["Interactive lessons in English & Arabic", "Hands-on coding exercises", "Quizzes with instant feedback", "AI tutor & personal notes"],
   },
@@ -179,7 +186,7 @@ export const platformEn = {
     title2: "the smart way.",
     subtitle: "Interactive courses with in-browser coding, instant-feedback quizzes, personal notes and an AI tutor that explains every lesson — in English and Arabic.",
     ctaPrimary: "Start learning free",
-    ctaSecondary: "Explore roadmaps",
+    ctaSecondary: "Explore career paths",
     ctaContinue: "Go to dashboard",
     trust: ["No credit card", "Progress saved on your device", "Full RTL support"],
     statCourses: "Courses",
@@ -197,7 +204,7 @@ export const platformEn = {
       { title: "Arabic & English, truly bilingual", desc: "Every lesson, quiz and button is translated, with a fully mirrored right-to-left layout." },
     ],
     coursesEyebrow: "Courses",
-    coursesTitle: "Pick a path and start today",
+    coursesTitle: "Pick a course and start today",
     viewAll: "All courses",
     howEyebrow: "How it works",
     howTitle: "From zero to confident in three steps",
@@ -207,7 +214,7 @@ export const platformEn = {
       { title: "Track your growth", desc: "Watch your dashboard fill up, then take on the recommended certification." },
     ],
     resourcesTitle: "Looking for certifications and curated resources?",
-    resourcesText: "Every roadmap links to the best free videos, books and official docs, plus certification guides with real prices.",
+    resourcesText: "Every course map links to the best free videos, books and official docs, and the external resources and certification guides list real prices.",
     ctaTitle: "Your next skill is one lesson away",
     ctaText: "Join learners building real skills — free, open source, and made for you.",
   },
@@ -244,14 +251,17 @@ export type PlatformTx = Widen<typeof platformEn>;
 export const platformAr: PlatformTx = {
   common: {
     levels: { Beginner: "مبتدئ", Intermediate: "متوسط", Advanced: "متقدم", "All Levels": "كل المستويات" },
-    approxHours: "حوالي {n} ساعات",
-    approxHoursOne: "حوالي ساعة",
+    locale: "ar",
+    // 1 and 2 take no numeral (singular + "واحد", dual); 3-10 the plural; 11-99 the singular
+    // accusative; 100-102 the singular. "حوالي" is followed by the genitive (ساعتين).
+    counts: {
+      hours: { zero: "حوالي {n} ساعة", one: "حوالي ساعة", two: "حوالي ساعتين", few: "حوالي {n} ساعات", many: "حوالي {n} ساعة", other: "حوالي {n} ساعة" },
+      lesson: { zero: "{n} دروس", one: "درس واحد", two: "درسان", few: "{n} دروس", many: "{n} درساً", other: "{n} درس" },
+      exercise: { zero: "{n} تمارين", one: "تمرين واحد", two: "تمرينان", few: "{n} تمارين", many: "{n} تمريناً", other: "{n} تمرين" },
+      quiz: { zero: "{n} اختبارات", one: "اختبار واحد", two: "اختباران", few: "{n} اختبارات", many: "{n} اختباراً", other: "{n} اختبار" },
+    },
     loading: "جارٍ التحميل…",
     minutes: "دقيقة",
-    lessons: "دروس",
-    lessonOne: "درس",
-    exerciseOne: "تمرين",
-    quizOne: "اختبار",
     lesson: "الدرس",
     module: "الوحدة",
     modules: "وحدات",
@@ -351,10 +361,10 @@ export const platformAr: PlatformTx = {
     courseProgress: "تقدم الدورة",
     whatYouLearn: "ماذا ستتعلم",
     curriculum: "المنهج",
-    careers: "المسارات المهنية",
+    careers: "أدوار وظيفية شائعة",
     duration: "المدة",
     level: "المستوى",
-    roadmapLink: "عرض خريطة التعلم والموارد",
+    roadmapLink: "خريطة الدورة والموارد",
     includes: "تتضمن هذه الدورة",
     includesItems: ["دروس تفاعلية بالعربية والإنجليزية", "تمارين برمجية عملية", "اختبارات بتصحيح فوري", "مدرّس ذكي وملاحظات شخصية"],
   },
@@ -413,7 +423,7 @@ export const platformAr: PlatformTx = {
     title2: "بالطريقة الذكية.",
     subtitle: "دورات تفاعلية مع برمجة داخل المتصفح واختبارات بتصحيح فوري وملاحظات شخصية ومدرّس ذكي يشرح كل درس — بالعربية والإنجليزية.",
     ctaPrimary: "ابدأ التعلم مجاناً",
-    ctaSecondary: "استكشف خرائط التعلم",
+    ctaSecondary: "استكشف المسارات المهنية",
     ctaContinue: "اذهب إلى لوحتي",
     trust: ["بدون بطاقة ائتمان", "يحفظ تقدمك على جهازك", "دعم كامل لليمين لليسار"],
     statCourses: "دورات",
@@ -431,7 +441,7 @@ export const platformAr: PlatformTx = {
       { title: "عربي وإنجليزي بحق", desc: "كل درس واختبار وزر مترجم، مع تخطيط كامل من اليمين لليسار." },
     ],
     coursesEyebrow: "الدورات",
-    coursesTitle: "اختر مساراً وابدأ اليوم",
+    coursesTitle: "اختر دورة وابدأ اليوم",
     viewAll: "كل الدورات",
     howEyebrow: "كيف تعمل",
     howTitle: "من الصفر إلى الثقة في ثلاث خطوات",
@@ -441,7 +451,7 @@ export const platformAr: PlatformTx = {
       { title: "تابع نموك", desc: "شاهد لوحتك تمتلئ، ثم اتجه إلى الشهادة المقترحة." },
     ],
     resourcesTitle: "تبحث عن الشهادات والموارد المنتقاة؟",
-    resourcesText: "كل خريطة تعلم ترتبط بأفضل الفيديوهات والكتب والتوثيق الرسمي المجاني، مع أدلة الشهادات وأسعارها الحقيقية.",
+    resourcesText: "كل خريطة دورة ترتبط بأفضل الفيديوهات والكتب والتوثيق الرسمي المجاني، وتعرض المصادر الخارجية وأدلة الشهادات أسعارها الحقيقية.",
     ctaTitle: "مهارتك التالية على بعد درس واحد",
     ctaText: "انضم إلى متعلمين يبنون مهارات حقيقية — مجاناً ومفتوح المصدر ومصمم لك.",
   },

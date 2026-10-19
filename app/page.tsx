@@ -1,10 +1,15 @@
 import { courses } from "@/lib/catalog";
 import { getCourseOutline } from "@/lib/catalog-server";
+import { pathSummaries } from "@/lib/career-paths-server";
 import { SITE_URL, GITHUB_REPO } from "@/lib/site";
 import Home, { type HomeCourse } from "@/components/home/Home";
 
+/** Career paths featured on the home page (one per area; all of them are at /roadmaps/). */
+const HOME_PATHS = ["soc-analyst", "full-stack-developer", "ai-engineer"];
+
 export default async function HomePage() {
   const outlines = await Promise.all(courses.map((c) => getCourseOutline(c.id)));
+  const paths = (await pathSummaries()).filter((p) => HOME_PATHS.includes(p.id));
   const data: HomeCourse[] = courses.map((c, i) => ({
     id: c.id,
     icon: c.roadmap.icon,
@@ -33,7 +38,7 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-      <Home courses={data} totals={totals} />
+      <Home courses={data} totals={totals} paths={paths} />
     </>
   );
 }

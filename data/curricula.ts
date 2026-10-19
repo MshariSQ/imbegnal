@@ -696,10 +696,11 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
       l("Explain what each OSI and TCP/IP layer does and place protocols (Ethernet, IP, TCP, HTTP) on the right layer.", "اشرح وظيفة كل طبقة في OSI وTCP/IP وضع البروتوكولات (Ethernet وIP وTCP وHTTP) في الطبقة الصحيحة."),
       l("Convert between binary and dotted-decimal and compute the network, broadcast and usable host range of any IPv4 CIDR block.", "حوّل بين الثنائي والعشري المنقّط واحسب عنوان الشبكة والبث ونطاق المضيفين المتاح لأي كتلة IPv4 بـ CIDR."),
       l("Plan a subnetting scheme (VLSM) for an office from host-count requirements without wasting addresses.", "خطّط لمخطط شبكات فرعية (VLSM) لمكتب انطلاقاً من أعداد الأجهزة دون هدر العناوين."),
-      l("Read a routing table and predict the next hop using longest-prefix match.", "اقرأ جدول توجيه وتنبّأ بالقفزة التالية بمطابقة أطول بادئة."),
+      l("Explain how switches, VLANs and ARP deliver frames inside a LAN, and predict a router's next hop with longest-prefix match.", "اشرح كيف تسلّم السويتشات والشبكات المحلية الافتراضية (VLANs) وARP الإطارات داخل الشبكة المحلية، وتنبّأ بالقفزة التالية للراوتر بمطابقة أطول بادئة."),
       l("Trace a DNS lookup from resolver to root, TLD and authoritative server and diagnose failures with dig.", "تتبّع بحث DNS من المحلّل إلى الجذر والنطاق الأعلى والخادم المخوَّل وشخّص الأعطال بـ dig."),
       l("Walk through a TCP handshake and a TLS connection and read HTTP request and response headers.", "تتبّع مصافحة TCP واتصال TLS واقرأ ترويسات طلب HTTP واستجابته."),
       l("Troubleshoot connectivity layer by layer with ping, traceroute, ss and a packet capture.", "شخّص مشكلات الاتصال طبقة بطبقة بـ ping وtraceroute وss والتقاط الحزم."),
+      l("Design a segmented network with default-deny firewall rules, NAT, a VPN and WPA3 Wi-Fi, and name the attack each control stops.", "صمّم شبكة مجزّأة بقواعد جدار ناري ترفض افتراضياً، وNAT، وشبكة افتراضية خاصة (VPN)، وWi-Fi بـ WPA3، وسمِّ الهجوم الذي يوقفه كل ضابط."),
     ],
     audience: l(
       "Future network engineers, sysadmins, developers and security analysts who need to understand how data really travels.",
@@ -707,13 +708,12 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
     ),
     prerequisites: [{ text: l("None. Comfort with binary numbers helps and is taught early.", "لا شيء. الإلمام بالأعداد الثنائية يفيد ويُدرَّس مبكراً.") }],
     estimatedHours: 6,
-    estimateOnly: true,
     recommendedOrder: 1,
     recommendedAfter: [],
     modules: {
-      required: { title: l("How data travels", "كيف تنتقل البيانات"), summary: l("Layers, addressing, subnetting and routing: the core model.", "الطبقات والعنونة والشبكات الفرعية والتوجيه: النموذج الأساسي.") },
-      important: { title: l("Services on the network", "الخدمات على الشبكة"), summary: l("DNS, HTTP, TLS and the protocols apps depend on.", "DNS وHTTP وTLS والبروتوكولات التي تعتمد عليها التطبيقات.") },
-      optional: { title: l("Troubleshooting and design", "التشخيص والتصميم"), summary: l("Find faults fast and design small networks.", "اعثر على الأعطال بسرعة وصمّم شبكات صغيرة.") },
+      required: { title: l("How data travels", "كيف تنتقل البيانات"), summary: l("Layers, addressing, transport, and the DNS, HTTP and TLS steps behind every web page: the core model.", "الطبقات والعنونة والنقل، وخطوات DNS وHTTP وTLS وراء كل صفحة ويب: النموذج الأساسي.") },
+      important: { title: l("Running a network", "تشغيل الشبكة"), summary: l("Switching and routing, troubleshooting tools, Wi-Fi, VPNs and firewalls.", "التبديل والتوجيه، وأدوات التشخيص، وWi-Fi والشبكات الافتراضية الخاصة والجدران النارية.") },
+      optional: { title: l("Securing the network", "تأمين الشبكة"), summary: l("Common attacks, the defences that stop them and the principles behind them.", "الهجمات الشائعة، والدفاعات التي توقفها، والمبادئ التي تقوم عليها.") },
     },
     assessment: {
       summary: l(
@@ -722,7 +722,7 @@ for (const [fg, bg] of [["#767676", "#ffffff"], ["#949494", "#ffffff"], ["#fffff
       ),
       passing: passing(0.7, 2, 1),
       criteria: [
-        { source: "lessons", title: l("Learn the model", "تعلّم النموذج"), detail: l("Complete every foundations lesson: layers, IP addressing, subnetting and routing.", "أكمل كل دروس الأساسيات: الطبقات وعنونة IP وتقسيم الشبكات والتوجيه.") },
+        { source: "lessons", title: l("Learn the model", "تعلّم النموذج"), detail: l("Complete every foundations lesson: layers, IP addressing and subnetting, TCP and UDP, and DNS, HTTP and TLS.", "أكمل كل دروس الأساسيات: الطبقات، وعنونة IP وتقسيم الشبكات، وTCP وUDP، وDNS وHTTP وTLS.") },
         { source: "quizzes", title: l("Explain the layers", "اشرح الطبقات"), detail: l("Average at least 70% on first-try quizzes about protocols, handshakes and name resolution.", "حقق متوسط 70% على الأقل من المحاولة الأولى في اختبارات البروتوكولات والمصافحات وحلّ الأسماء.") },
         { source: "labs", title: l("Do the arithmetic", "أجرِ الحسابات"), detail: l("Pass graded labs on CIDR calculation and longest-prefix routing with visible tests.", "اجتز مختبرات مصحَّحة عن حساب CIDR والتوجيه بأطول بادئة باختبارات ظاهرة.") },
         { source: "challenges", title: l("Read the packets", "اقرأ الحزم"), detail: l("Solve one networking challenge such as decoding a captured exchange.", "حُلّ تحدّي شبكات واحداً مثل فك رموز تبادل ملتقَط.") },
@@ -752,6 +752,11 @@ print("same subnet as .62?", ipaddress.ip_address("192.168.10.62") in net)
       caption: l("The calculation every network engineer does by hand: one /26 holds 64 addresses, 62 of them usable. Change the prefix to /27 and predict the new range first.", "الحساب الذي يجريه كل مهندس شبكات يدوياً: شبكة /26 تضم 64 عنواناً منها 62 صالحاً. غيّر البادئة إلى /27 وتوقع النطاق الجديد أولاً."),
       output: "network    192.168.10.0\nbroadcast  192.168.10.63\nnetmask    255.255.255.192\nusable     62 hosts: 192.168.10.1 to 192.168.10.62\nsame subnet as .62? True\n",
     },
+    lessonLinks: {
+      // The capture-dissection challenge walks Ethernet, 802.1Q, IPv4 and TCP headers byte by byte (header lengths, ports, data offset).
+      "routing-switching": { challenges: ["net-frame-dissect"] },
+      "network-troubleshooting": { challenges: ["net-frame-dissect"] },
+    },
   },
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -762,22 +767,22 @@ print("same subnet as .62?", ipaddress.ip_address("192.168.10.62") in net)
       l("Explain virtual memory, paging and why a page fault happens.", "اشرح الذاكرة الافتراضية والتصفيح ولماذا يحدث خطأ الصفحة."),
       l("Compare FCFS, SJF and Round Robin scheduling by computing average waiting time.", "قارن جدولة FCFS وSJF وRound Robin بحساب متوسط زمن الانتظار."),
       l("Explain how a file system maps names to blocks with inodes and what journaling protects.", "اشرح كيف يربط نظام الملفات الأسماء بالكتل بـ inodes وما الذي يحميه السجل اليومي."),
-      l("Spot a race condition or deadlock and fix it with a lock, semaphore or ordering rule.", "اكتشف حالة تسابق أو جموداً وأصلحه بقفل أو إشارة أو قاعدة ترتيب."),
+      l("Spot a race condition or deadlock and fix it with a lock, semaphore or ordering rule.", "اكتشف حالة سباق أو جموداً وأصلحه بقفل أو إشارة أو قاعدة ترتيب."),
       l("Write a small program that creates processes and pipes with fork, exec and pipe.", "اكتب برنامجاً صغيراً ينشئ عمليات وأنابيب بـ fork وexec وpipe."),
+      l("Explain what namespaces, cgroups and capabilities isolate, and harden a Linux service with least privilege.", "اشرح ما تعزله فضاءات الأسماء ومجموعات التحكم والقدرات (capabilities)، وقوِّ خدمة لينكس بمبدأ أقل الامتيازات."),
     ],
     audience: l(
       "Developers, future SREs and security learners who want to know what happens beneath their code.",
       "المطورون ومهندسو الموثوقية المستقبليون ودارسو الأمن الراغبون في معرفة ما يحدث تحت أكوادهم."
     ),
     prerequisites: [{ text: l("Basic programming in any language. Reading small C snippets is taught as you go.", "أساسيات البرمجة بأي لغة. تُدرَّس قراءة مقتطفات C الصغيرة أثناء المسار.") }],
-    estimatedHours: 7,
-    estimateOnly: true,
+    estimatedHours: 6,
     recommendedOrder: 2,
     recommendedAfter: [],
     modules: {
       required: { title: l("Processes, memory and files", "العمليات والذاكرة والملفات"), summary: l("The three abstractions every OS provides.", "التجريدات الثلاثة التي يوفرها كل نظام تشغيل.") },
-      important: { title: l("Concurrency and scheduling", "التزامن والجدولة"), summary: l("Sharing one CPU safely between many tasks.", "تقاسم معالج واحد بأمان بين مهام كثيرة.") },
-      optional: { title: l("Inside Linux", "داخل لينكس"), summary: l("System calls, the shell and containers as OS features.", "استدعاءات النظام والطرفية والحاويات كميزات للنظام.") },
+      important: { title: l("Concurrency, storage and isolation", "التزامن والتخزين والعزل"), summary: l("Locks and deadlocks, file systems that survive crashes, and VMs and containers sharing one machine.", "الأقفال والجمود، وأنظمة ملفات تنجو من الانهيارات، وأجهزة افتراضية وحاويات تتقاسم جهازاً واحداً.") },
+      optional: { title: l("Security and devices", "الأمن والأجهزة"), summary: l("Privileges, sandboxing and memory protections, and how the OS drives hardware.", "الامتيازات والعزل وحمايات الذاكرة، وكيف يتحكم النظام في العتاد.") },
     },
     assessment: {
       summary: l(
@@ -838,6 +843,7 @@ print("average wait:", round(sum(finish[p] - jobs[p] for p in jobs) / len(jobs),
       l("Choose between array, linked list, stack, queue, hash map and heap by the cost of the operations you need.", "اختر بين المصفوفة والقائمة المرتبطة والمكدّس والطابور وجدول التجزئة والكومة بحسب تكلفة العمليات المطلوبة."),
       l("Implement binary search, merge sort and quicksort and explain their cost and stability.", "نفّذ البحث الثنائي والفرز بالدمج والفرز السريع واشرح تكلفتها واستقرارها."),
       l("Traverse trees and graphs with DFS and BFS and find shortest paths in unweighted graphs.", "اجتز الأشجار والرسوم البيانية بـ DFS وBFS واعثر على أقصر المسارات في الرسوم غير الموزونة."),
+      l("Find shortest paths in weighted graphs with Dijkstra and Bellman-Ford, and build minimum spanning trees with Union-Find and Kruskal.", "اعثر على أقصر المسارات في الرسوم الموزونة بخوارزميتي Dijkstra وBellman-Ford، وابنِ الأشجار الممتدة الصغرى باستخدام Union-Find وKruskal."),
       l("Solve problems with recursion and memoization and convert them to iterative form.", "حُلّ المسائل بالاستدعاء الذاتي والحفظ المؤقت وحوّلها إلى صيغة تكرارية."),
       l("Apply dynamic programming by defining the state, the transition and the base case.", "طبّق البرمجة الديناميكية بتعريف الحالة والانتقال والحالة الأساسية."),
       l("Solve a medium interview problem in 30 minutes with tests and a stated complexity.", "حُلّ مسألة مقابلة متوسطة في 30 دقيقة مع اختبارات وتعقيد معلن."),
@@ -847,14 +853,13 @@ print("average wait:", round(sum(finish[p] - jobs[p] for p in jobs) / len(jobs),
       "الطلاب والمطورون ذاتيو التعلم الذين يستعدون للمقابلات التقنية أو يريدون كتابة برامج أسرع وأبسط."
     ),
     prerequisites: [{ text: l("Fluency in one programming language: variables, loops, functions, lists. Examples use Python.", "إتقان لغة برمجة واحدة: المتغيرات والحلقات والدوال والقوائم. الأمثلة بلغة بايثون.") }],
-    estimatedHours: 10,
-    estimateOnly: true,
+    estimatedHours: 5.5,
     recommendedOrder: 3,
     recommendedAfter: [],
     modules: {
-      required: { title: l("Core structures and complexity", "الهياكل الأساسية والتعقيد"), summary: l("Big-O, arrays, lists, stacks, queues, hash maps, sorting and searching.", "Big-O والمصفوفات والقوائم والمكدّسات والطوابير وجداول التجزئة والفرز والبحث.") },
-      important: { title: l("Trees, graphs and recursion", "الأشجار والرسوم والاستدعاء الذاتي"), summary: l("Hierarchies, networks and divide-and-conquer.", "التسلسلات الهرمية والشبكات وفرّق تسد.") },
-      optional: { title: l("Dynamic programming and interviews", "البرمجة الديناميكية والمقابلات"), summary: l("Optimization patterns and timed problem solving.", "أنماط التحسين وحل المسائل بزمن محدد.") },
+      required: { title: l("Core structures and algorithms", "الهياكل والخوارزميات الأساسية"), summary: l("Big-O, arrays and hash maps, linked lists, stacks and queues, sorting and binary search, trees and graphs, recursion and dynamic programming.", "Big-O والمصفوفات وجداول التجزئة والقوائم المترابطة والمكدّسات والطوابير والفرز والبحث الثنائي والأشجار والرسوم البيانية والاستدعاء الذاتي والبرمجة الديناميكية.") },
+      important: { title: l("Heaps, weighted graphs and greedy choices", "الكومات والرسوم الموزونة والاختيارات الجشعة"), summary: l("Priority queues, shortest paths, Union-Find and minimum spanning trees, then greedy and backtracking strategies.", "طوابير الأولوية وأقصر المسارات وUnion-Find والأشجار الممتدة الصغرى، ثم الاستراتيجيات الجشعة والتراجع.") },
+      optional: { title: l("Specialised structures", "هياكل متخصصة"), summary: l("Tries, segment trees and Fenwick trees for prefix and range queries, and topics to explore next.", "أشجار البادئات (tries) وأشجار المقاطع وأشجار Fenwick لاستعلامات البادئات والمدى، وموضوعات تستكشفها لاحقاً.") },
     },
     assessment: {
       summary: l(
@@ -915,12 +920,12 @@ print("shortest path:", shortest_path(grid), "steps")
   databases: {
     objectives: [
       l("Model entities as normalized tables (1NF to 3NF) with primary and foreign keys.", "نمذج الكيانات في جداول مطبَّعة (من 1NF إلى 3NF) بمفاتيح أساسية وأجنبية."),
-      l("Write SELECT queries with joins, aggregates, subqueries and window functions.", "اكتب استعلامات SELECT بالربط والتجميع والاستعلامات الفرعية ودوال النافذة."),
+      l("Write SELECT queries with joins, aggregates, subqueries and CTEs.", "اكتب استعلامات SELECT بالربط والتجميع والاستعلامات الفرعية وتعبيرات الجداول المشتركة (CTE)."),
       l("Explain how a B-tree index speeds up a query and read an EXPLAIN plan.", "اشرح كيف يسرّع فهرس B-tree الاستعلام واقرأ خطة EXPLAIN."),
       l("Use transactions and isolation levels to prevent lost updates and dirty reads.", "استخدم المعاملات ومستويات العزل لمنع التحديثات الضائعة والقراءات القذرة."),
-      l("Plan a safe schema migration that does not lock production tables.", "خطّط لهجرة آمنة للمخطط لا تقفل جداول الإنتاج."),
+      l("Design backups, point-in-time recovery and replication that meet an RPO and RTO, and prove them with a restore.", "صمّم نسخاً احتياطية واسترداداً إلى نقطة زمنية ونسخاً متماثلاً تحقق قيمتَي RPO وRTO، وأثبتها بعملية استعادة."),
       l("Choose between relational, document, key-value and graph stores for a given workload.", "اختر بين المخازن العلائقية والوثائقية والمفتاح-قيمة والبيانية لحِمل عمل معيّن."),
-      l("Secure a database with parameterized queries, least privilege and tested backups.", "أمّن قاعدة بيانات بالاستعلامات المُعامَلة وأقل صلاحية ونسخ احتياطية مُختبَرة."),
+      l("Secure a database with parameterized queries, least-privilege roles, encryption and audit trails.", "أمّن قاعدة بيانات بالاستعلامات المُعامَلة وأدوار بأقل صلاحية والتشفير وسجلات التدقيق."),
     ],
     audience: l(
       "Developers, analysts and aspiring database administrators who want to design schemas and write fast, correct SQL.",
@@ -928,13 +933,12 @@ print("shortest path:", shortest_path(grid), "steps")
     ),
     prerequisites: [{ text: l("None. If you have used a spreadsheet you already know the idea of rows and columns.", "لا شيء. إن استخدمت جدول بيانات فأنت تعرف فكرة الصفوف والأعمدة.") }],
     estimatedHours: 6,
-    estimateOnly: true,
     recommendedOrder: 4,
     recommendedAfter: [],
     modules: {
-      required: { title: l("Modeling and SQL", "النمذجة وSQL"), summary: l("Tables, keys, normalization and everyday queries.", "الجداول والمفاتيح والتطبيع والاستعلامات اليومية.") },
-      important: { title: l("Performance and integrity", "الأداء والسلامة"), summary: l("Indexes, query plans and transactions.", "الفهارس وخطط الاستعلام والمعاملات.") },
-      optional: { title: l("Beyond relational", "ما بعد العلائقي"), summary: l("NoSQL trade-offs, migrations, security and backups.", "مفاضلات NoSQL والهجرات والأمان والنسخ الاحتياطي.") },
+      required: { title: l("Modeling and SQL", "النمذجة وSQL"), summary: l("Tables, keys, normalization, joins and aggregates, indexes and query plans, and transactions.", "الجداول والمفاتيح والتطبيع، والربط والتجميع، والفهارس وخطط الاستعلام، والمعاملات.") },
+      important: { title: l("Beyond one server", "ما بعد الخادم الواحد"), summary: l("NoSQL models, backups, replication and failover, and database security.", "نماذج NoSQL، والنسخ الاحتياطي والنسخ المتماثل والتحويل عند العطل، وأمن قواعد البيانات.") },
+      optional: { title: l("Analytics", "التحليلات"), summary: l("Warehousing, star schemas, columnar storage and analytical queries.", "المستودعات ومخططات النجمة والتخزين العمودي والاستعلامات التحليلية.") },
     },
     assessment: {
       summary: l(
@@ -945,7 +949,7 @@ print("shortest path:", shortest_path(grid), "steps")
       criteria: [
         { source: "lessons", title: l("Learn modeling and SQL", "تعلّم النمذجة وSQL"), detail: l("Complete every Modeling and SQL lesson.", "أكمل كل دروس النمذجة وSQL.") },
         { source: "quizzes", title: l("Design and reason", "صمّم واستدلّ"), detail: l("Average at least 70% on first-try quizzes about normal forms, indexes and isolation levels.", "حقق متوسط 70% على الأقل من المحاولة الأولى في اختبارات الصيغ المعيارية والفهارس ومستويات العزل.") },
-        { source: "labs", title: l("Write correct SQL", "اكتب SQL صحيحاً"), detail: l("Pass at least 3 graded SQL labs (joins, aggregates and window functions) run on SQLite.", "اجتز 3 مختبرات SQL مصحَّحة على الأقل (ربط وتجميع ودوال نافذة) تعمل على SQLite.") },
+        { source: "labs", title: l("Write correct SQL", "اكتب SQL صحيحاً"), detail: l("Pass at least 3 graded labs (joins, aggregates, indexes and transactions) run on SQLite.", "اجتز 3 مختبرات مصحَّحة على الأقل (ربط وتجميع وفهارس ومعاملات) تعمل على SQLite.") },
         { source: "challenges", title: l("Handle the edge cases", "عالج الحالات الحدّية"), detail: l("Solve one data challenge graded by hidden tests.", "حُلّ تحدّي بيانات واحداً يُصحَّح باختبارات خفيّة.") },
       ],
     },
@@ -1004,14 +1008,13 @@ print("index lookup comparisons:", lookup)
       { track: "operating-systems" },
       { text: l("Basic C or Python: you should read a loop and a function call without help.", "أساسيات C أو بايثون: يجب أن تقرأ حلقة واستدعاء دالة دون مساعدة.") },
     ],
-    estimatedHours: 8,
-    estimateOnly: true,
+    estimatedHours: 5.5,
     recommendedOrder: 13,
     recommendedAfter: ["operating-systems", "cyber-security"],
     modules: {
-      required: { title: l("Binaries and assembly", "الملفات الثنائية والتجميع"), summary: l("How programs are built and how to read their machine code.", "كيف تُبنى البرامج وكيف تُقرأ أكوادها الآلية.") },
-      important: { title: l("Dynamic analysis", "التحليل الديناميكي"), summary: l("Debugging, decoding and observing programs safely.", "التصحيح وفك الترميز ومراقبة البرامج بأمان.") },
-      optional: { title: l("Malware analysis basics", "أساسيات تحليل البرمجيات الخبيثة"), summary: l("Lab hygiene, reporting and the legal context.", "نظافة المختبر وكتابة التقارير والسياق القانوني.") },
+      required: { title: l("Core reversing skills", "مهارات الهندسة العكسية الأساسية"), summary: l("How programs are built and run, reading assembly, static and dynamic analysis, and the legal and ethical rules.", "كيف تُبنى البرامج وتعمل، وقراءة التجميع، والتحليل الساكن والديناميكي، والقواعد القانونية والأخلاقية.") },
+      important: { title: l("Binary formats and tools", "صيغ الملفات الثنائية وأدواتها"), summary: l("ELF and PE layouts, symbols, imports, relocations and the standard toolbelt.", "بنية ELF وPE، والرموز، والاستيرادات، وإعادة التموضع، وصندوق الأدوات المعتاد.") },
+      optional: { title: l("Malware analysis basics", "أساسيات تحليل البرمجيات الخبيثة"), summary: l("Safe lab practice, triage, indicators and reporting.", "الممارسة الآمنة في المختبر، والفرز الأولي، والمؤشرات، وكتابة التقارير.") },
     },
     assessment: {
       summary: l(
@@ -1020,7 +1023,7 @@ print("index lookup comparisons:", lookup)
       ),
       passing: passing(0.7, 2, 2),
       criteria: [
-        { source: "lessons", title: l("Read machine code", "اقرأ الكود الآلي"), detail: l("Complete every Binaries and assembly lesson.", "أكمل كل دروس الملفات الثنائية والتجميع.") },
+        { source: "lessons", title: l("Master the core skills", "أتقن المهارات الأساسية"), detail: l("Complete every Core reversing skills lesson.", "أكمل كل دروس مهارات الهندسة العكسية الأساسية.") },
         { source: "quizzes", title: l("Explain what you see", "اشرح ما تراه"), detail: l("Average at least 70% on first-try quizzes about registers, the stack and calling conventions.", "حقق متوسط 70% على الأقل من المحاولة الأولى في اختبارات السجلات والمكدّس واصطلاحات الاستدعاء.") },
         { source: "labs", title: l("Decode with scripts", "فكّ بالسكربتات"), detail: l("Pass graded labs that decode XOR, base64 and simple custom encodings.", "اجتز مختبرات مصحَّحة تفك XOR وbase64 وترميزات مخصصة بسيطة.") },
         { source: "challenges", title: l("Crack the crackmes", "اكسر الـ crackme"), detail: l("Solve at least 2 reverse-engineering challenges and capture their flags.", "حُلّ تحدّيين على الأقل في الهندسة العكسية والتقط علميهما.") },
@@ -1028,7 +1031,7 @@ print("index lookup comparisons:", lookup)
     },
     badges: [
       { id: "first-disassembly", icon: "binary", title: l("First Disassembly", "أول تفكيك"), criteria: l("Finish your first lesson.", "أنهِ درسك الأول."), rule: { kind: "lessons", count: 1 } },
-      { id: "assembly-reader", icon: "cpu", title: l("Assembly Reader", "قارئ التجميع"), criteria: l("Complete every Binaries and assembly lesson.", "أكمل كل دروس الملفات الثنائية والتجميع."), rule: { kind: "module", module: "required" } },
+      { id: "assembly-reader", icon: "cpu", title: l("Core Reverser", "متقن الأساسيات"), criteria: l("Complete every Core reversing skills lesson.", "أكمل كل دروس مهارات الهندسة العكسية الأساسية."), rule: { kind: "module", module: "required" } },
       { id: "decoder", icon: "lock", title: l("Decoder", "فاكّ الترميز"), criteria: l("Pass 2 graded lab exercises.", "اجتز تمرينين مصحَّحين في المختبر."), rule: { kind: "labs", count: 2 } },
       { id: "careful-analyst", icon: "bug", title: l("Careful Analyst", "محلل حذر"), criteria: l("Score 80% or more on the first try in 4 lesson quizzes.", "احصل على 80% أو أكثر من المحاولة الأولى في 4 اختبارات دروس."), rule: { kind: "quizzes", min: 0.8, count: 4 } },
       { id: "reverse-engineer", icon: "graduation", title: l("Reverse Engineer", "مهندس عكسي"), criteria: l("Complete every lesson in the track.", "أكمل كل دروس المسار."), rule: { kind: "course" } },

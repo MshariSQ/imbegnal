@@ -22,6 +22,9 @@ const ROADMAP_CERT_FIELD: Record<string, string> = {
 import { getToken, useAuthUser } from "@/lib/auth";
 import { getProgress, markNodeDone, markNodeUndone } from "@/lib/api";
 import { useLang } from "@/lib/lang-context";
+import { getCourse, trackTitle } from "@/lib/catalog";
+import PathsForCourse from "@/components/paths/PathsForCourse";
+import type { CoursePathLink } from "@/lib/career-paths";
 
 const LessonView = dynamic(() => import("@/components/lesson/LessonView"), {
   ssr: false,
@@ -32,10 +35,11 @@ const LessonView = dynamic(() => import("@/components/lesson/LessonView"), {
   ),
 });
 
-const STATUS_COLORS: Record<string, { border: string; bg: string }> = {
-  required:  { border: "#10b981", bg: "#10b98120" },
-  important: { border: "#3b82f6", bg: "#3b82f620" },
-  optional:  { border: "#8b5cf6", bg: "#8b5cf620" },
+// Theme-aware classes (the light theme remaps the -400 text shades to pass WCAG AA contrast)
+const STATUS_COLORS: Record<string, { text: string; pill: string }> = {
+  required:  { text: "text-emerald-400", pill: "text-emerald-400 border-emerald-500/60 bg-emerald-500/10" },
+  important: { text: "text-blue-400",    pill: "text-blue-400 border-blue-500/60 bg-blue-500/10" },
+  optional:  { text: "text-purple-400",  pill: "text-purple-400 border-purple-500/60 bg-purple-500/10" },
 };
 
 const TAG_COLORS: Record<string, string> = {
@@ -86,9 +90,12 @@ function ResourceCard({
 export default function RoadmapClient({
   nodeData,
   roadmapId,
+  paths,
 }: {
   nodeData: RoadmapNodeInfo[];
   roadmapId: string;
+  /** The career paths that include this course (computed by the server page). */
+  paths: CoursePathLink[];
 }) {
   const [selectedId, setSelectedId] = useState(nodeData[0]?.id ?? "");
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -142,9 +149,9 @@ export default function RoadmapClient({
     : [];
 
   const STATUS_GROUPS = [
-    { key: "required",  label: r.groups.required,  color: "#10b981" },
-    { key: "important", label: r.groups.important, color: "#3b82f6" },
-    { key: "optional",  label: r.groups.optional,  color: "#8b5cf6" },
+    { key: "required",  label: r.groups.required,  color: STATUS_COLORS.required.text },
+    { key: "important", label: r.groups.important, color: STATUS_COLORS.important.text },
+    { key: "optional",  label: r.groups.optional,  color: STATUS_COLORS.optional.text },
   ];
 
   const groups = STATUS_GROUPS
@@ -182,19 +189,24 @@ export default function RoadmapClient({
 
   return (
     <div className="flex flex-col bg-bg h-screen overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 border-b border-line px-6 py-4 pt-20 flex items-center gap-4">
-        <a href={`${basePath}/roadmaps/`}
-          className="flex items-center gap-1 text-sm text-fg-subtle hover:text-fg transition-colors">
-          <ArrowLeft size={15} className={lang === "ar" ? "rotate-180" : ""} /> {r.back}
+      {/* Header: this is the course's map (the old /roadmaps/<track>/ URL); career paths live at /roadmaps/<path>/ */}
+      <div className="shrink-0 border-b border-line px-4 sm:px-6 py-3 pt-20 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <a href={getCourse(roadmapId) ? `${basePath}/learn/${roadmapId}/` : `${basePath}/roadmaps/`}
+          className="flex items-center gap-1 min-h-10 text-sm text-fg-subtle hover:text-fg transition-colors">
+          <ArrowLeft size={15} className={lang === "ar" ? "rotate-180" : ""} /> {getCourse(roadmapId) ? tx.paths.backToCourse : r.back}
         </a>
         <div className="w-px h-4 bg-surface-2" />
         {roadmapMeta && (
-          <>
-            <span className="text-xl">{roadmapMeta.icon}</span>
-            <h1 className="font-bold text-fg">{roadmapMeta.title}</h1>
-          </>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xl" aria-hidden>{roadmapMeta.icon}</span>
+            <h1 className="font-bold text-fg">
+              {trackTitle(roadmapId, lang)} <span className="text-fg-subtle font-medium">· {tx.paths.mapEyebrow}</span>
+            </h1>
+          </div>
         )}
+        <div className="sm:ms-auto">
+          <PathsForCourse paths={paths} variant="inline" />
+        </div>
       </div>
 
       {/* Split layout */}
@@ -239,7 +251,7 @@ export default function RoadmapClient({
           <nav className="flex-1 overflow-y-auto py-3">
             {groups.map((group) => (
               <div key={group.key} className="mb-2">
-                <div className="px-4 pb-1.5 pt-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: group.color }}>
+                <div className={`px-4 pb-1.5 pt-2 text-[10px] font-bold uppercase tracking-widest ${group.color}`}>
                   {group.label}
                 </div>
                 {group.nodes.map((node) => {
@@ -277,15 +289,14 @@ export default function RoadmapClient({
                 <div className="flex items-center gap-1.5 text-xs text-fg-faint mb-5">
                   <span>{r.breadcrumb}</span>
                   <span>›</span>
-                  <span style={{ color: s.border }}>{statusLabel}</span>
+                  <span className={s.text}>{statusLabel}</span>
                 </div>
 
                 <h2 className="text-2xl font-extrabold text-fg mb-3 leading-tight">{selected.label}</h2>
                 <p className="text-sm text-fg-muted leading-relaxed max-w-2xl">{selected.description}</p>
 
                 <div className="flex items-center gap-3 mt-5">
-                  <span className="text-xs px-2.5 py-1 rounded-full border font-semibold"
-                    style={{ color: s.border, borderColor: s.border, backgroundColor: s.bg }}>
+                  <span className={`text-xs px-2.5 py-1 rounded-full border font-semibold ${s.pill}`}>
                     {statusLabel}
                   </span>
                 </div>

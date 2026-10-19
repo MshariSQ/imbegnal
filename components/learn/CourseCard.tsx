@@ -49,7 +49,7 @@ export default function CourseCard({ course, done = 0 }: { course: CourseCardDat
         </div>
         {done > 0 ? (
           <div className="flex items-center gap-3">
-            <ProgressBar value={pct} className="flex-1" />
+            <ProgressBar value={pct} className="flex-1" label={`${tx.learn.courseProgress}: ${trackTitle(course.id, lang)}`} />
             <span className="text-xs font-semibold text-emerald-400" dir="ltr">{Math.round(pct * 100)}%</span>
           </div>
         ) : (

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { courses, getCourse, trackDescription, trackTitle } from "@/lib/catalog";
 import { getCourseOutline, getCurriculum, recommendedChallenges } from "@/lib/catalog-server";
+import { coursePathLinks } from "@/lib/career-paths";
 import { SITE_URL, pageOpenGraph } from "@/lib/site";
 import CourseOverview from "@/components/learn/CourseOverview";
 
@@ -72,6 +73,7 @@ export default async function CoursePage({ params }: Props) {
         lessons={outline}
         challenges={challenges}
         courseTracks={courses.map((c) => c.id)}
+        paths={coursePathLinks(track)}
       />
     </>
   );

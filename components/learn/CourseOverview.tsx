@@ -19,6 +19,8 @@ import PracticeCertificate from "./PracticeCertificate";
 import PracticeChips from "./PracticeChips";
 import { fmt } from "./PracticeLink";
 import PracticeSample from "./PracticeSample";
+import PathsForCourse from "@/components/paths/PathsForCourse";
+import type { CoursePathLink } from "@/lib/career-paths";
 
 export interface CourseOverviewProps {
   trackId: string;
@@ -27,6 +29,8 @@ export interface CourseOverviewProps {
   challenges: PracticeChallenge[];
   /** Roadmap ids that have a course page (prerequisite links go there, else to the roadmap). */
   courseTracks: string[];
+  /** "Part of these career paths" (coursePathLinks, computed by the server page). */
+  paths: CoursePathLink[];
 }
 
 function SectionTitle({ id, icon, children }: { id: string; icon: React.ReactNode; children: React.ReactNode }) {
@@ -38,7 +42,7 @@ function SectionTitle({ id, icon, children }: { id: string; icon: React.ReactNod
   );
 }
 
-export default function CourseOverview({ trackId, curriculum: cur, lessons, challenges, courseTracks }: CourseOverviewProps) {
+export default function CourseOverview({ trackId, curriculum: cur, lessons, challenges, courseTracks, paths }: CourseOverviewProps) {
   const { tx, lang } = useLang();
   const T = tx.curriculum;
   const study = useStudy();
@@ -296,6 +300,8 @@ export default function CourseOverview({ trackId, curriculum: cur, lessons, chal
               </div>
             )}
           </div>
+
+          <PathsForCourse paths={paths} />
 
           <div className="card p-6">
             <div className="flex items-center gap-2 text-sm font-bold text-fg mb-4"><Briefcase size={15} aria-hidden /> {tx.learn.careers}</div>

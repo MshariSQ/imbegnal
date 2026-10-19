@@ -1,7 +1,7 @@
 # Curriculum browser specs
 
 Playwright specs for the course page (`/learn/<track>/`), graded lab blocks, practice links,
-the certificate card and the `/courses` directory. They run against the **exported site**
+the certificate card and the external resources directory (`/resources/`, formerly `/courses/`). They run against the **exported site**
 (`out/`), served by a tiny static server on a free port (port 0), so they never collide with
 other dev servers. The Worker is not needed: `/api/*` calls are answered with `204` and
 `GET /api/certificates/<track>` is mocked per test with `page.route`.
@@ -25,6 +25,26 @@ else the newest `chromium-*` / `chromium_headless_shell-*` under `PLAYWRIGHT_BRO
 
 ## What is covered
 
+`paths.spec.ts` (career paths):
+
+* `/roadmaps/`, EN + AR (RTL): one card per career path with its description, "If you like", the
+  first three courses then "+N more", the level range and the hours computed from the lessons;
+  category and level filters (`aria-pressed`), the empty state and "Clear filters"
+* a role page (`/roadmaps/soc-analyst/`), EN + AR: courses grouped by level as "Course k of N" with
+  their "why" line, available courses link to `/learn/<track>/` and their course map, coming-soon
+  courses contain no link (and no link on the page points at a planned course), JSON-LD
+* progress from the study store: a finished course moves every path that contains it; the
+  `complete` and `available-complete` states and the course certificate links
+* an old `/roadmaps/<track-id>/` URL: the course map, retitled, still reads node progress with
+  `GET /api/progress?roadmap_id=<track-id>`, links back to the course and to its career paths;
+  every track URL is still exported and in the sitemap
+* `/courses/`: every course with hours, career path links, the path and level filters, the
+  link to `/resources/`; the "Part of these career paths" block on a course page
+* 360px without horizontal scroll, axe (light/dark x EN/AR) on `/roadmaps/`, a role page, a
+  course map, `/courses/` and `/resources/`
+
+`course.spec.ts`:
+
 * every course page (all roadmaps that have lessons), EN + AR: all sections render, the
   `<h1>` equals the roadmap title (EN) or the curriculum's Arabic name (AR), `dir="rtl"`,
   JSON-LD (`Course`, `hasCourseInstance`, `educationalLevel`, `teaches`, `timeRequired`)
@@ -33,7 +53,7 @@ else the newest `chromium-*` / `chromium_headless_shell-*` under `PLAYWRIGHT_BRO
   (seeded `imb-labs-v1`), XP note, sample-solution disclosure, Practice panel and course chip agree
 * the embedded sample code runs in the browser and prints its documented output
 * certificate card: locked, signed out, authenticated Blob download, friendly 401/403/500/network errors
-* `/courses` chips are canonical roadmap titles (EN + AR), never the directory's raw `field` text
+* `/resources/` (external directory) chips are canonical roadmap titles (EN + AR), never the directory's raw `field` text
 * 360px layout: no horizontal scroll, practice links >= 40px tall
 * axe-core: zero serious/critical violations (light/dark x EN/AR) on a course page and two lesson pages
 * no console errors, page errors or failed same-origin requests (404 prefetches of routes owned by
